@@ -12714,6 +12714,20 @@ do {
     }
     check("adopting releases every child it takes", control.adoptedCount == 0,
           "\(control.adoptedCount) still held after 50 children")
+    // C48's review: `setOutline` and `carryDocumentInfo` register several children
+    // in one scope, and only the last used to be released.
+    control.adopting { register in
+        for _ in 0..<3 {
+            let p = Process()
+            p.executableURL = URL(fileURLWithPath: "/bin/echo")
+            p.standardOutput = FileHandle.nullDevice
+            try? p.run()
+            register(p)
+            p.waitUntilExit()
+        }
+    }
+    check("adopting releases every child one scope takes, not only the last",
+          control.adoptedCount == 0, "\(control.adoptedCount) still held after 3 in one scope")
     // Retire it before the registry checks below, which ask a process-wide
     // question and would otherwise see this one still counting as live.
     control.finished()
@@ -15759,10 +15773,118 @@ do {
             check("C35: …with the cover's exact text kept",
                   outlinedRun.page1 == mixedCoverText,
                   "outlined=\(outlinedRun.page1.count) source=\(mixedCoverText.count)")
+
+            // C48. Printed page numbers and the title, on all three routes: the
+            // splice (which gave rebuilt pages an empty label), the full rebuild
+            // and the Flate route (which had none). A prefix-only label, roman
+            // numerals and a non-ASCII title, because those are what real front
+            // matter holds.
+            let labelledSrc = e2eDir.appendingPathComponent("labelled.pdf")
+            let labelledScans = e2eDir.appendingPathComponent("labelled-scans.pdf")
+            let c48Title = "Up south \u{2014} \u{00E9}t\u{00E9}", c48Author = "A. Countryman"
+            func labelled(_ from: URL, _ to: URL, _ specs: [String]) -> Bool {
+                guard let doc = PDFDocument(url: from) else { return false }
+                doc.documentAttributes = [PDFDocumentAttribute.titleAttribute: c48Title,
+                                          PDFDocumentAttribute.authorAttribute: c48Author]
+                let plain = to.deletingPathExtension().appendingPathExtension("plain.pdf")
+                guard doc.write(to: plain) else { return false }
+                let p = Process()
+                p.executableURL = URL(fileURLWithPath: JBIG2.merger!)
+                p.arguments = [plain.path, "--set-page-labels"] + specs + ["--", to.path]
+                p.standardError = FileHandle.nullDevice
+                guard (try? p.run()) != nil else { return false }
+                p.waitUntilExit()
+                return p.terminationStatus == 0 || p.terminationStatus == 3
+            }
+            func shape(_ url: URL) -> String {
+                guard let doc = PDFDocument(url: url) else { return "unreadable" }
+                let labels = (0..<doc.pageCount).map { doc.page(at: $0)?.label ?? "nil" }
+                let a = doc.documentAttributes ?? [:]
+                return labels.joined(separator: ",")
+                    + " | \(a[PDFDocumentAttribute.titleAttribute] as? String ?? "nil")"
+                    + " | \(a[PDFDocumentAttribute.authorAttribute] as? String ?? "nil")"
+            }
+            let c48Built = labelled(mixedSrc, labelledSrc, ["1:/1/Cover", "2:r"])
+                && labelled(scansOnly, labelledScans, ["1:D/7"])
+            let wantMixed = "Cover,i,ii | \(c48Title) | \(c48Author)"
+            let wantScans = "7,8 | \(c48Title) | \(c48Author)"
+            check("C48: the labelled fixtures were built with their labels and title, "
+                  + "or the rows below prove nothing",
+                  c48Built && shape(labelledSrc) == wantMixed
+                      && shape(labelledScans) == wantScans,
+                  "built=\(c48Built) mixed=\(shape(labelledSrc)) "
+                      + "scans=\(shape(labelledScans))")
+            let splicedRun = publish(labelledSrc, label: "labelled", jbig2: true)
+            let splicedShape = shape(e2eDir.appendingPathComponent("labelled.ocr.pdf"))
+            check("C48: a spliced document keeps every page's label and its title",
+                  splicedRun.ok && splicedRun.tookJBIG2 && splicedShape == wantMixed,
+                  "ok=\(splicedRun.ok) jbig2=\(splicedRun.tookJBIG2) got=\(splicedShape)")
+            let rebuiltRun = publish(labelledScans, label: "labelled-scans", jbig2: true)
+            let rebuiltShape = shape(e2eDir.appendingPathComponent("labelled-scans.ocr.pdf"))
+            check("C48: a fully rebuilt document keeps its labels and its title",
+                  rebuiltRun.ok && rebuiltRun.tookJBIG2 && rebuiltShape == wantScans,
+                  "ok=\(rebuiltRun.ok) jbig2=\(rebuiltRun.tookJBIG2) got=\(rebuiltShape)")
+            let flateRun = publish(labelledSrc, label: "labelled-flate", jbig2: false)
+            let flateShape = shape(e2eDir.appendingPathComponent("labelled-flate.ocr.pdf"))
+            check("C48: …and so does the Flate route",
+                  flateRun.ok && !flateRun.tookJBIG2 && flateShape == wantMixed,
+                  "ok=\(flateRun.ok) jbig2=\(flateRun.tookJBIG2) got=\(flateShape)")
+
+            // C48's review: qpdf resolves neither a label's `/P` nor an `/Info`
+            // value, so a reference copied as it stands pointed at an unrelated
+            // object in the output (here `/Pages`) and read back "equal". Hand-written
+            // so both are indirect; qpdf rebuilds the missing xref.
+            func handPDF(_ name: String, _ body: String) -> URL? {
+                let raw = e2eDir.appendingPathComponent("\(name).raw.pdf")
+                let fixed = e2eDir.appendingPathComponent("\(name).pdf")
+                guard (try? Data(("%PDF-1.4\n" + body + "\n%%EOF\n").utf8).write(to: raw)) != nil
+                else { return nil }
+                let p = Process()
+                p.executableURL = URL(fileURLWithPath: JBIG2.merger!)
+                p.arguments = [raw.path, fixed.path]
+                p.standardError = FileHandle.nullDevice
+                guard (try? p.run()) != nil else { return nil }
+                p.waitUntilExit()
+                return p.terminationStatus == 0 || p.terminationStatus == 3 ? fixed : nil
+            }
+            let pages = "2 0 obj << /Type /Pages /Kids [3 0 R 4 0 R] /Count 2 >> endobj\n"
+                + "3 0 obj << /Type /Page /Parent 2 0 R /MediaBox [0 0 200 200] >> endobj\n"
+                + "4 0 obj << /Type /Page /Parent 2 0 R /MediaBox [0 0 300 300] >> endobj\n"
+            let indirectSrc = handPDF("indirect-src",
+                "1 0 obj << /Type /Catalog /Pages 2 0 R "
+                + "/PageLabels << /Nums [0 << /S /D /P 5 0 R >>] >> >> endobj\n" + pages
+                + "5 0 obj (Pre-) endobj\n6 0 obj << /Title (Hand) /Keywords 7 0 R >> endobj\n"
+                + "7 0 obj (alpha beta) endobj\ntrailer << /Size 8 /Root 1 0 R /Info 6 0 R >>")
+            let indirectOut = handPDF("indirect-out",
+                "1 0 obj << /Type /Catalog /Pages 2 0 R >> endobj\n" + pages
+                + "trailer << /Size 5 /Root 1 0 R >>")
+            var carryError = ""
+            if let indirectSrc, let indirectOut {
+                do {
+                    try JBIG2.carryDocumentInfo(from: indirectSrc, password: nil,
+                                                into: indirectOut, using: JBIG2.merger!)
+                } catch { carryError = error.localizedDescription }
+            }
+            let indirectDoc = indirectOut.flatMap { PDFDocument(url: $0) }
+            let indirectLabels = (0..<(indirectDoc?.pageCount ?? 0))
+                .map { indirectDoc?.page(at: $0)?.label ?? "nil" }
+            let keywords = indirectDoc?.documentAttributes?[PDFDocumentAttribute.keywordsAttribute]
+                .map { "\($0)" } ?? "nil"
+            check("C48: an indirect label prefix and an indirect keyword are followed, "
+                  + "not copied as references",
+                  indirectSrc != nil && indirectOut != nil && carryError.isEmpty
+                      && indirectLabels == ["Pre-1", "Pre-2"]
+                      && indirectDoc?.documentAttributes?[PDFDocumentAttribute.titleAttribute]
+                          as? String == "Hand"
+                      && keywords.contains("alpha"),
+                  "built=\(indirectSrc != nil && indirectOut != nil) error=\(carryError) "
+                      + "labels=\(indirectLabels) keywords=\(keywords)")
         } else {
             skipBlock("C29 (B)'s end-to-end route pair", checks: 13,
                       because: "jbig2enc/qpdf not installed (\(JBIG2.installHint))")
             skipBlock("C35's outlined mixed document", checks: 4,
+                      because: "jbig2enc/qpdf not installed (\(JBIG2.installHint))")
+            skipBlock("C48's labelled documents", checks: 5,
                       because: "jbig2enc/qpdf not installed (\(JBIG2.installHint))")
         }
         resetPrefs()

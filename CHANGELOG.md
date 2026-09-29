@@ -14,6 +14,8 @@ an older entry mentions "Window ▸ Vision Reader Window", the menu item is now
 
 ## Unreleased
 
+- The searchable copy keeps the original's printed page numbers (i-iv, A-M, "p. 530"), so Preview's page
+  field and Go To Page use them, and it keeps the title and author that Preview, Spotlight and Zotero show (C48).
 - In Automatic mode, light coloured type on a page rebuilt in black and white, such as a pink "PRODUCED
   BY UNZ.ORG" notice, now comes out black and can be selected and searched, where it used to vanish (C49).
 - Typewritten and low-resolution grey scans read more words correctly: each line of a page rebuilt in

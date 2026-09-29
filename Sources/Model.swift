@@ -243,11 +243,13 @@ final class RunControl: @unchecked Sendable {
     /// child *per page*, so a 600-page book leaked 600 of them and held them
     /// until the whole batch finished; long enough to exhaust the descriptor
     /// limit. Using this instead of a bare `adopt` makes the pairing structural.
+    /// Every child `body` registers is released, not only the last: `setOutline`
+    /// and `carryDocumentInfo` launch several in one scope (C48's review).
     func adopting<T>(_ body: ((Process) -> Void) throws -> T) rethrows -> T {
-        var adopted: Process?
-        defer { if let adopted { release(adopted) } }
+        var adopted: [Process] = []
+        defer { for process in adopted { release(process) } }
         return try body { process in
-            adopted = process
+            adopted.append(process)
             self.adopt(process)
         }
     }
@@ -2257,6 +2259,8 @@ final class OCRModel: ObservableObject {
         var emptyDocumentNote: String?
         // C35. Set when the outline could not be written after the splice.
         var outlineNote: String?
+        // C48. Set when the page labels and title could not be written.
+        var infoNote: String?
 
         // Read the expected page count now, while everything still exists. The
         // scratch intermediates get deleted as they're spent, so asking later
@@ -2876,6 +2880,22 @@ final class OCRModel: ObservableObject {
                     Annotations.readersMarks(in: file, password: password))
                 if !left.isEmpty { marksNote = left }
             }
+            // C48. The printed page numbers and the title, on every route. After the
+            // transplant, so its rewrite cannot be the thing that drops them. Best
+            // effort, like the outline, and said when it fails.
+            if let qpdf = JBIG2.merger {
+                do {
+                    try control.adopting { register in
+                        try JBIG2.carryDocumentInfo(from: file, password: password,
+                                                    into: finished, using: qpdf,
+                                                    register: register)
+                    }
+                } catch {
+                    if control.isCancelled { report(.cancelled, "Cancelled."); return }
+                    infoNote = "the original's page numbers and title could not be "
+                        + "carried across"
+                }
+            }
             // Last thing before the user's disk is touched.
             //
             // The gate above is several seconds earlier on a long document: `copyOutline`
@@ -2921,7 +2941,8 @@ final class OCRModel: ObservableObject {
         // rather than nil unless the copy grew, so joining on it put a leading " — " in
         // front of the message every ordinary run showed the user.
         report(.succeeded, [sizeNote(from: inputFile, to: output),
-                            emptyDocumentNote ?? "", outlineNote ?? "", marksNote ?? ""]
+                            emptyDocumentNote ?? "", outlineNote ?? "", infoNote ?? "",
+                            marksNote ?? ""]
                              .filter { !$0.isEmpty }.joined(separator: " — "))
     }
 

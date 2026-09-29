@@ -18935,7 +18935,7 @@ has no download line, which may be why C37's keep test misses it [reasoned]. Lay
 Berendzen x1.54 (JPX layers 26K + 20K become one 111K JPEG, mask 77K → 97K), Marth x2.18, Levy/Temin
 x1.58 (full-resolution 2362x3122 JPEGs) [measured].
 
-### C48 · Page labels and the document title are lost — OPEN
+### C48 · Page labels and the document title are lost — FIXED 2026-09-29
 
 *(found 2026-09-27 by `ux-read`: `labels` on 21 documents, `title` on 60, and no output has a title.)*
 
@@ -18947,6 +18947,20 @@ p. 530" becomes "Cover Page, '', ''"). [measured] Preview's page field and Go To
 numbers. The title and author are never written: `SearchableWriter.swift:237` creates the context with no
 info dictionary and the merges start from `--empty`. 60 titles go to nil, and Preview, Spotlight and
 Zotero lose them. [measured]
+
+**Fixed 2026-09-29.** `JBIG2.carryDocumentInfo` runs on every route, just before publishing. In one
+`qpdf --update-from-json` pass it writes the source's number tree (qpdf's own `pagelabels` reading, with
+references followed) into the output catalogue, and the source's `/Title`, `/Author`, `/Subject` and
+`/Keywords` into `/Info`. It then reads both back and checks the pages are unchanged. The step is best
+effort, and when it fails the run says so. Two traps: qpdf writes a non-ASCII `u:` string in PDFDocEncoding
+and reads it back as `b:` hex, so text goes in as UTF-16BE; and it resolves neither `/P` nor `/Info` values.
+The review also found that `RunControl.adopting` released only the last child of a scope, which leaked on
+`setOutline` too; it now releases every child. Measured through the production gate, before -> after: Bird
+1-13 -> A-M; Cohen "Cover Page,,,…" -> "Cover Page,p. [529],p. 530…"; Hobsbawm (first 40 pages) 1-40 ->
+i-iv,1-36; Countryman and Friedman titles nil -> the source's. Outputs grow 68-324 B. ux-regression: 0 worse,
+13 better (labels or title), and the baseline was refreshed. Rejected: PDFKit `documentAttributes` plus
+`write`, which re-encodes every image, and `qpdf --set-page-labels`, which needs label specs rebuilt from
+PDFKit strings and does not touch `/Info`.
 
 ### C49 · Colour that carries meaning on a mostly black page is lost: chart series turn one grey, a pink notice vanishes — FIXED 2026-09-29
 

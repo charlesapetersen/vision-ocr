@@ -285,6 +285,7 @@ enum JBIG2 {
         case cannotAssemblePassthrough(page: Int)
         case spliceFailed(String)
         case outlineFailed(String)
+        case documentInfoFailed(String)
 
         var errorDescription: String? {
             switch self {
@@ -306,6 +307,8 @@ enum JBIG2 {
                 return "Putting the original pages back in failed: \(m)"
             case .outlineFailed(let m):
                 return "Carrying the outline onto the compressed copy failed: \(m)"
+            case .documentInfoFailed(let m):
+                return "Carrying the page numbers and title across failed: \(m)"
             }
         }
     }
@@ -1291,18 +1294,7 @@ enum JBIG2 {
             else { throw Failure.outlineFailed("qpdf could not describe the file") }
             return parsed
         }
-        /// Not object numbers: qpdf renumbers on write, and the outline, reached
-        /// from the catalogue before `/Pages`, now numbers ahead of every page.
-        func fingerprint(_ described: [String: Any]) -> [String] {
-            ((described["pages"] as? [[String: Any]]) ?? []).map { page in
-                let contents = (page["contents"] as? [Any] ?? []).count
-                let images = (page["images"] as? [[String: Any]] ?? []).map { image in
-                    "\(image["width"] ?? "?")x\(image["height"] ?? "?")"
-                        + "\(image["filter"] ?? "")"
-                }.joined(separator: ",")
-                return "\(page["pageposfrom1"] as? Int ?? -1):\(contents):\(images)"
-            }
-        }
+        let fingerprint = pageFingerprint
 
         let before = try json(file, ["pages"])
         guard let pages = before["pages"] as? [[String: Any]], !pages.isEmpty else {
@@ -1416,5 +1408,248 @@ enum JBIG2 {
 
         try FileManager.default.removeItem(at: file)
         try FileManager.default.moveItem(at: patched, to: file)
+    }
+
+    /// Each page's contents and images, from qpdf's `pages` key. Not object
+    /// numbers: qpdf renumbers on write, and an outline, reached from the
+    /// catalogue before `/Pages`, numbers ahead of every page.
+    private static func pageFingerprint(_ described: [String: Any]) -> [String] {
+        ((described["pages"] as? [[String: Any]]) ?? []).map { page in
+            let contents = (page["contents"] as? [Any] ?? []).count
+            let images = (page["images"] as? [[String: Any]] ?? []).map { image in
+                "\(image["width"] ?? "?")x\(image["height"] ?? "?")"
+                    + "\(image["filter"] ?? "")"
+            }.joined(separator: ",")
+            return "\(page["pageposfrom1"] as? Int ?? -1):\(contents):\(images)"
+        }
+    }
+
+    // MARK: - Page labels and the title — C48
+
+    /// A qpdf JSON string as it should be written. qpdf writes a non-ASCII "u:"
+    /// string in PDFDocEncoding and then reads it back as "b:" hex, so text goes
+    /// in as UTF-16BE with its byte-order mark, which qpdf keeps byte for byte.
+    static func qpdfString(_ s: String) -> String {
+        guard s.hasPrefix("u:"), !s.dropFirst(2).allSatisfy(\.isASCII) else { return s }
+        let bytes: [UInt8] = [0xFE, 0xFF] + String(s.dropFirst(2)).utf16.flatMap {
+            [UInt8($0 >> 8), UInt8($0 & 0xFF)] }
+        return "b:" + bytes.map { String(format: "%02x", $0) }.joined()
+    }
+
+    /// What a qpdf JSON string says, so two spellings of one text compare equal.
+    static func qpdfText(_ s: String) -> String {
+        if s.hasPrefix("u:") { return "t:" + s.dropFirst(2) }
+        let hex = Array(s.dropFirst(2).utf8)
+        guard s.hasPrefix("b:"), hex.count % 2 == 0, hex.count >= 4 else { return s }
+        let bytes: [UInt8] = stride(from: 0, to: hex.count, by: 2).compactMap {
+            UInt8(String(decoding: hex[$0..<$0 + 2], as: UTF8.self), radix: 16) }
+        guard bytes.count * 2 == hex.count, bytes[0] == 0xFE, bytes[1] == 0xFF,
+              bytes.count % 2 == 0 else { return s }
+        let units = stride(from: 2, to: bytes.count, by: 2).map {
+            UInt16(bytes[$0]) << 8 | UInt16(bytes[$0 + 1]) }
+        return "t:" + String(decoding: units, as: UTF16.self)
+    }
+
+    /// The `/Info` keys carried across: what Preview, Spotlight and Zotero show.
+    static let carriedInfoKeys = ["/Title", "/Author", "/Subject", "/Keywords"]
+
+    /// Writes `source`'s page labels and its title, author, subject and keywords
+    /// onto a finished file, in place.
+    ///
+    /// C48. Nothing wrote them. A fully rebuilt document lost its printed numbers
+    /// (Hobsbawm i-iv,1-320 became 1-324), a spliced one got qpdf's `{/St n}`
+    /// with no style, which is an empty label, and every output had no title. The
+    /// output has the source's pages in the source's order, so the source's
+    /// number tree applies as it stands. It is copied from qpdf's own reading of
+    /// it, not the source's objects, so a nested tree arrives flat; the values
+    /// inside a label are not resolved, and `text` follows those. The same
+    /// JSON-update route as `setOutline`, verified the same way before it
+    /// replaces anything: labels and info read back as
+    /// written, and every page's contents unchanged.
+    static func carryDocumentInfo(from source: URL, password: String?, into file: URL,
+                                  using qpdf: String,
+                                  register: (Process) -> Void = { _ in }) throws {
+        func json(_ url: URL, password: String? = nil, _ keys: [String],
+                  objects: [String] = []) throws -> [String: Any] {
+            let process = Process()
+            process.executableURL = URL(fileURLWithPath: qpdf)
+            var arguments = [url.path]
+            if let password, !password.isEmpty { arguments.append("--password=\(password)") }
+            process.arguments = arguments + ["--json=2", "--json-stream-data=none"]
+                + keys.map { "--json-key=\($0)" } + objects.map { "--json-object=\($0)" }
+            // Not a pipe: this reads the user's file, whose warnings can fill one
+            // while stdout is being drained, and then both sides wait forever.
+            let out = Pipe()
+            process.standardOutput = out
+            process.standardError = FileHandle.nullDevice
+            try process.run()
+            register(process)
+            let data = out.fileHandleForReading.readDataToEndOfFile()
+            process.waitUntilExit()
+            guard process.terminationStatus == 0 || process.terminationStatus == 3,
+                  let parsed = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
+            else { throw Failure.documentInfoFailed("qpdf could not describe the file") }
+            return parsed
+        }
+        /// A string value, followed if it is a reference: qpdf resolves neither a
+        /// label's `/P` nor an `/Info` entry, and copying "9 0 R" into the output
+        /// would point it at whatever object 9 is there.
+        func text(_ raw: Any?, in url: URL, password: String? = nil) throws -> String? {
+            guard let s = raw as? String else { return nil }
+            if s.hasPrefix("u:") || s.hasPrefix("b:") { return s }
+            guard s.hasSuffix(" R"), s.split(separator: " ").count == 3 else { return nil }
+            let described = try json(url, password: password, ["qpdf"], objects: [s])
+            let resolved = objects(described).flatMap { value($0.all, "obj:\(s)") } as? String
+            return resolved.flatMap { $0.hasPrefix("u:") || $0.hasPrefix("b:") ? $0 : nil }
+        }
+        func objects(_ described: [String: Any]) -> (header: [String: Any], all: [String: Any])? {
+            guard let pair = described["qpdf"] as? [Any], pair.count == 2,
+                  let header = pair[0] as? [String: Any],
+                  let all = pair[1] as? [String: Any] else { return nil }
+            return (header, all)
+        }
+        func value(_ all: [String: Any], _ key: String) -> Any? {
+            (all[key] as? [String: Any])?["value"]
+        }
+        /// The trailer's `/Info` as a dictionary, and its reference when it has one.
+        func info(_ url: URL, password: String? = nil, trailer: [String: Any])
+            throws -> (ref: String?, value: [String: Any]) {
+            if let direct = trailer["/Info"] as? [String: Any] { return (nil, direct) }
+            guard let ref = trailer["/Info"] as? String else { return (nil, [:]) }
+            let described = try json(url, password: password, ["qpdf"], objects: [ref])
+            return (ref, objects(described).flatMap {
+                value($0.all, "obj:\(ref)") as? [String: Any] } ?? [:])
+        }
+        /// Reduced to what a label is, so the source and the output compare alike.
+        func labels(_ described: [String: Any], in url: URL,
+                    password: String? = nil) throws -> [[String: Any]] {
+            try ((described["pagelabels"] as? [[String: Any]]) ?? []).map { entry in
+                guard let index = entry["index"] as? Int,
+                      let label = entry["label"] as? [String: Any] else {
+                    throw Failure.documentInfoFailed("a page label is not the shape this expects")
+                }
+                var kept: [String: Any] = [:]
+                if let style = label["/S"] as? String, style.hasPrefix("/") { kept["/S"] = style }
+                if let start = label["/St"] as? Int { kept["/St"] = start }
+                if label["/P"] != nil {
+                    guard let prefix = try text(label["/P"], in: url, password: password) else {
+                        throw Failure.documentInfoFailed("a page label's prefix is not a string")
+                    }
+                    kept["/P"] = qpdfText(prefix)
+                }
+                return ["index": index, "label": kept]
+            }
+        }
+
+        // The source.
+        let src = try json(source, password: password, ["pagelabels", "qpdf"],
+                           objects: ["trailer"])
+        let wantedLabels = try labels(src, in: source, password: password)
+        guard let srcTrailer = objects(src).flatMap({ value($0.all, "trailer") })
+                as? [String: Any] else {
+            throw Failure.documentInfoFailed("qpdf's JSON is not the shape this expects")
+        }
+        // Strings only, and only non-empty ones: "u:" and "b:" are qpdf's text and
+        // binary string markers, and a bare marker is an empty string. Held as
+        // `qpdfText`, and written back through `qpdfString`.
+        let srcInfo = try info(source, password: password, trailer: srcTrailer).value
+        var carried: [String: String] = [:]
+        for key in carriedInfoKeys {
+            if let s = try text(srcInfo[key], in: source, password: password), s.count > 2 {
+                carried[key] = qpdfText(s)
+            }
+        }
+        func written(_ s: String) -> String {
+            s.hasPrefix("t:") ? qpdfString("u:" + s.dropFirst(2)) : s
+        }
+        func carriedMatch(_ info: [String: Any]) -> Bool {
+            carried.allSatisfy { (info[$0.key] as? String).map(qpdfText) == $0.value }
+        }
+
+        // The output.
+        let before = try json(file, ["pages", "pagelabels", "qpdf"], objects: ["trailer"])
+        guard let (header, all) = objects(before),
+              var trailer = value(all, "trailer") as? [String: Any],
+              let rootRef = trailer["/Root"] as? String else {
+            throw Failure.documentInfoFailed("qpdf's JSON is not the shape this expects")
+        }
+        let (infoRef, outInfo) = try info(file, trailer: trailer)
+        let haveLabels = try labels(before, in: file)
+        let infoDone = carriedMatch(outInfo)
+        if (haveLabels as NSArray).isEqual(to: wantedLabels), infoDone { return }
+
+        guard var catalog = objects(try json(file, ["qpdf"], objects: [rootRef]))
+                .flatMap({ value($0.all, "obj:\(rootRef)") }) as? [String: Any] else {
+            throw Failure.documentInfoFailed("qpdf could not read the catalogue")
+        }
+        var patch: [String: Any] = [:]
+        if wantedLabels.isEmpty {
+            catalog.removeValue(forKey: "/PageLabels")
+        } else {
+            catalog["/PageLabels"] = ["/Nums": wantedLabels.flatMap { entry -> [Any] in
+                var label = entry["label"] as? [String: Any] ?? [:]
+                if let prefix = label["/P"] as? String { label["/P"] = written(prefix) }
+                return [entry["index"]!, label]
+            }]
+        }
+        patch["obj:\(rootRef)"] = ["value": catalog]
+        if !infoDone {
+            let merged = outInfo.merging(carried.mapValues(written)) { $1 }
+            if let infoRef {
+                patch["obj:\(infoRef)"] = ["value": merged]
+            } else {
+                let ref = "\((header["maxobjectid"] as? Int ?? 0) + 1) 0 R"
+                patch["obj:\(ref)"] = ["value": merged]
+                trailer["/Info"] = ref
+                patch["trailer"] = ["value": trailer]
+            }
+        }
+
+        let work = file.deletingLastPathComponent()
+        let patchURL = work.appendingPathComponent("info-\(UUID().uuidString).json")
+        let patched = work.appendingPathComponent("info-\(UUID().uuidString).pdf")
+        defer {
+            try? FileManager.default.removeItem(at: patchURL)
+            try? FileManager.default.removeItem(at: patched)
+        }
+        let document: [String: Any] = ["qpdf": [
+            ["jsonversion": 2, "pdfversion": header["pdfversion"] ?? "1.4"], patch]]
+        guard let body = try? JSONSerialization.data(withJSONObject: document),
+              (try? body.write(to: patchURL)) != nil else {
+            throw Failure.documentInfoFailed("could not write the update")
+        }
+        let apply = Process()
+        apply.executableURL = URL(fileURLWithPath: qpdf)
+        apply.arguments = [file.path, "--update-from-json=\(patchURL.path)", patched.path]
+        let err = Pipe()
+        apply.standardError = err
+        apply.standardOutput = FileHandle.nullDevice
+        try apply.run()
+        register(apply)
+        let errorText = err.fileHandleForReading.readDataToEndOfFile()
+        apply.waitUntilExit()
+        guard apply.terminationStatus == 0 || apply.terminationStatus == 3,
+              FileManager.default.fileExists(atPath: patched.path) else {
+            let message = String(decoding: errorText, as: UTF8.self)
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+            throw Failure.documentInfoFailed(message.isEmpty
+                ? "qpdf exited with code \(apply.terminationStatus)" : message)
+        }
+
+        let after = try json(patched, ["pages", "pagelabels", "qpdf"], objects: ["trailer"])
+        guard pageFingerprint(after) == pageFingerprint(before) else {
+            throw Failure.documentInfoFailed("the pages changed while the labels were written")
+        }
+        guard (try labels(after, in: patched) as NSArray).isEqual(to: wantedLabels) else {
+            throw Failure.documentInfoFailed("the page labels did not read back as written")
+        }
+        guard let afterTrailer = objects(after).flatMap({ value($0.all, "trailer") })
+                as? [String: Any],
+              carriedMatch(try info(patched, trailer: afterTrailer).value) else {
+            throw Failure.documentInfoFailed("the title did not read back as written")
+        }
+
+        // One step, so a failed swap cannot leave the finished file deleted.
+        _ = try FileManager.default.replaceItemAt(file, withItemAt: patched)
     }
 }

@@ -507,7 +507,7 @@ say so in the commit.
       DONE WHEN: AI 2027 p54's three curves are distinguishable at 1x and Kristol p1's pink notice is
       legible in the output; pages that lose only paper tint stay grey; bytes stated.
       BOUND: one code commit. (origin: BUGS.md C49)
-- [ ] **c48-labels-title** — carry `/PageLabels` onto every output page and the source's `/Title` and
+- [x] **c48-labels-title** — carry `/PageLabels` onto every output page and the source's `/Title` and
       `/Author` into the output's info dictionary.
       DONE WHEN: `PDFPage.label` on the outputs of Hobsbawm, Bird and Cohen equals the source's on every
       page, and `documentAttributes` Title equals the source's on Countryman and Friedman.
