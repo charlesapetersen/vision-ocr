@@ -131,3 +131,11 @@ on the three 1939-41 typescripts and letters. The batch took about 50% of the wi
 every done page: dct 3/3,859 (0.08%), jbig2 124/29,274 (0.42%), layered 49/12,584 (0.39%), newspaper
 146/7,841 (1.86%), no-image 2/1,693 (0.12%), unknown 55/6,350 (0.87%). 133 of 215 pages done, 82 `todo`.
 **Next:** the draws from row 93 on.
+
+**Batch 9 (b9), 2026-09-30, full procedure, same session as b8:** rows 93-114 (20 pages; rows 108 and 112
+were already done): the last ux-run green draws, 6 no-image, 3 newspaper, 5 other, 6 unknown. 8,775 words,
+85 check crops, 21 contested (0.24%), none unchecked. Gitlin's New York Times page holds 15 of 1,583 and
+Zipkin's 4 of 420. Readers used 27-49k tokens a page; the batch took about 20% of the window (53% to 73%).
+Rate by route over every done page: dct 3/3,859 (0.08%), jbig2 124/29,274 (0.42%), layered 49/12,584
+(0.39%), newspaper 165/10,063 (1.64%), no-image 2/4,199 (0.05%), other 2/867 (0.23%), unknown 55/9,530
+(0.58%). 153 of 215 pages done, 62 `todo`. **Next:** the ux-run red draws from row 115 on.

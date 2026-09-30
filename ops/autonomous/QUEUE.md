@@ -656,6 +656,9 @@ say so in the commit.
       no-image). 14,997 words, 37 contested (0.25%), no spot unchecked; 9 are Atkinson 1939's comma-joined
       typescript. `cut-crops` fixed for sheets over about 4x the crop size. 133 of 215 pages done
       (`ops/truth/STATUS.md`). (context: truth-set)
+- [x] **truth-set-b9** — batch 9, full procedure: 20 pages, rows 93-114, the last ux-run green draws (6
+      no-image, 3 newspaper, 5 other, 6 unknown). 8,775 words, 21 contested (0.24%), no spot unchecked; 15
+      are Gitlin's New York Times page. 153 of 215 pages done (`ops/truth/STATUS.md`). (context: truth-set)
 - [ ] **truth-harness** — measure published outputs against the truth set, text and everything else alike,
       and run it on today's pipeline. (blocked-on: truth-set)
       TEXT, in `Tools/ux-harness.swift --truth <dir>`. (a) Copy: drag each column the transcript lists, from
