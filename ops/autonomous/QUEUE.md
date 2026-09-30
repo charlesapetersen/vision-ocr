@@ -606,6 +606,18 @@ say so in the commit.
       KEEP IT PRIVATE. The corpus is third-party. Transcripts and lists live in `$STATE/truth/<doc>/p<N>/`,
       each stamped with the source file's hash, and are never committed. Delete each page image once its
       page is done: they are large, and the daemon parks below 8 GB of free disk.
+      FULL PROCEDURE ONLY (owner, 2026-09-29). Batches 2 and 3 were read in-session with the spots unchecked
+      because the window was above 85%. That weaker procedure is not acceptable for this item, and more usage
+      is fine. For this item the USAGE WINDOW thresholds in the resume prompt do not apply: use a reader
+      subagent for every page and check subagents for every spot, at any usage below the end of the window.
+      Never read a page in-session and never leave a spot unchecked. Work page by page and run
+      `finish-page.sh` on each before starting the next, so a cut-off by the window costs at most the page in
+      hand; the daemon retries after the reset and does not count that as an attempt. A page the full
+      procedure cannot read (the content filter) goes in `none.tsv` with its reason; do not substitute.
+      REDO FIRST. The eight pages marked `reader_tokens=session-inline` (Why 3, 4, 7; Briefer 2, 5, 6;
+      Hughes 2, 8) are read again by the full procedure. Keep the old transcript beside the new one, report
+      the word difference between them, and use the new one. Then the rest of the list in order, and Hughes p3
+      again.
       DONE WHEN: every listed page has a transcript and a list, or a recorded reason it has none, and the
       contested-word rate is stated by route.
       BOUND: batches sized from `truth-calibrate`'s usage per page, so that one fits a session. Each batch

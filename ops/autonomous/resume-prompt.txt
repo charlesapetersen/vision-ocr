@@ -176,6 +176,9 @@ start, before handing out subagents, and before any step that will take long.
     at once, in the item's `BUGS.md` entry in your worktree: what is done, what is half done and where,
     and the next step. Then keep working alone, one step at a time, to the end of the item or of the
     window. Update the note after each step that changes it. Commit when a commit is ready, as usual.
+  * An item may say that it overrides these thresholds (`truth-set` does, by the owner's decision of
+    2026-09-29). Then follow the item: use subagents at any usage below 100%, checkpoint after each unit of
+    work as the item says, and expect the window to cut you off.
   * Never wait for the reset inside the session.
 
 HOW YOUR SESSION ENDS. This is a headless run: a message with no tool call in it ends your turn, and that
