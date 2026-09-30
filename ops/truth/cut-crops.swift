@@ -33,7 +33,10 @@ func split(_ x: Int, _ y: Int, _ w: Int, _ h: Int, _ ov: Bool) {
     let tall = h > maxSide
     guard tall || w > maxSide else { crops.append((CGRect(x: x, y: y, width: w, height: h), ov)); return }
     let (start, len) = tall ? (y, h) : (x, w)
-    let (at, white) = cut(start + len / 4, start + min(maxSide - overlap / 2, len * 3 / 4)) { i in
+    // On a side over about 4x maxSide, len / 4 passed the far end and the range was empty, so the search
+    // starts at no more than half the far end (which widens the window on sides over about 2x as well).
+    let far = min(maxSide - overlap / 2, len * 3 / 4)
+    let (at, white) = cut(start + min(len / 4, far / 2), start + far) { i in
         var n = 0
         if tall { for c in x..<(x + w) where ink(c, i) { n += 1 } } else { for r in y..<(y + h) where ink(i, r) { n += 1 } }
         return n

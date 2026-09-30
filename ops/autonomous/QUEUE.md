@@ -652,6 +652,10 @@ say so in the commit.
 - [x] **truth-set-b7** — batch 7, full procedure: four draws (rows 42-45, all jbig2), stopped at 99% of the
       window. 1,011 words, 3 contested (0.30%), no spot unchecked. 89 of 215 pages done
       (`ops/truth/STATUS.md`). (context: truth-set)
+- [x] **truth-set-b8** — batch 8, full procedure: 44 pages, rows 46-92 (6 jbig2, 24 layered, 11 dct, 3
+      no-image). 14,997 words, 37 contested (0.25%), no spot unchecked; 9 are Atkinson 1939's comma-joined
+      typescript. `cut-crops` fixed for sheets over about 4x the crop size. 133 of 215 pages done
+      (`ops/truth/STATUS.md`). (context: truth-set)
 - [ ] **truth-harness** — measure published outputs against the truth set, text and everything else alike,
       and run it on today's pipeline. (blocked-on: truth-set)
       TEXT, in `Tools/ux-harness.swift --truth <dir>`. (a) Copy: drag each column the transcript lists, from

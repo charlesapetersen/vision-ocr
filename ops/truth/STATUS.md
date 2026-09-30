@@ -120,3 +120,14 @@ rows 42-45 (Noble 1977 p104, Anaconda 1958 p9, Hayek 1978 p1, `w7787 2` p1; all 
 spots, 18 check crops, 3 contested (0.30%), none unchecked. Readers used 37-45k tokens a page. The window
 reached 99%, so the batch stopped at four. 89 of 215 pages are done, 126 `todo`. **Next:** the draws from
 row 46 on.
+
+**Batch 8 (b8), 2026-09-30, full procedure, from a fresh window:** rows 46-92 of the list, the last ux-run green jbig2
+draws and the layered, dct and first no-image draws (44 pages; rows 71, 78 and 91 were already done). 14,997
+words, 133 check crops, 37 contested (0.25%), none unchecked. Atkinson 1939 p2, a typescript with no space
+after its commas, holds 9: the reader writes `Merriam,Mollett,Atkinson` as one token and the word crop
+shows part of it. `cut-crops` trapped on the 27 x 36 in sheet of `_1939_Former students` p9 (a side over
+about 4x the crop size made an empty cut range); fixed. Readers used 25-58k tokens a page, and 172-179k
+on the three 1939-41 typescripts and letters. The batch took about 50% of the window. Rate by route over
+every done page: dct 3/3,859 (0.08%), jbig2 124/29,274 (0.42%), layered 49/12,584 (0.39%), newspaper
+146/7,841 (1.86%), no-image 2/1,693 (0.12%), unknown 55/6,350 (0.87%). 133 of 215 pages done, 82 `todo`.
+**Next:** the draws from row 93 on.
