@@ -147,3 +147,12 @@ tokens a page; the batch took about 15% of the window (75% to 90%). Rate by rout
 3/3,859 (0.08%), jbig2 162/34,262 (0.47%), layered 51/13,911 (0.37%), newspaper 165/10,063 (1.64%),
 no-image 2/5,432 (0.04%), other 2/867 (0.23%), unknown 55/9,530 (0.58%). 165 of 215 pages done, 50
 `todo`. **Next:** the red draws from row 127 on.
+
+**Batch 11 (b11), 2026-09-30, full procedure, a session that started at 91% of the window:** rows 128-129
+(NYSE 1956 p110, jbig2, 464 words, 5 contested; Williams 1958 Manchester Guardian p1, newspaper, 1,271 words,
+0 contested). 37 spots, 46 check crops in one shuffled brief, none unchecked. Readers used 57k and 44k tokens.
+Row 127 (the 1926 Anaconda Standard page) was prepared and its reader started, but the window ran out before
+its checks; its directory may hold a transcript with no `words=` line, so it is still `todo` and is redone
+from `prep-page.sh`. Rate by route over every done page: dct 3/3,859 (0.08%), jbig2 167/34,726 (0.48%),
+layered 51/13,911 (0.37%), newspaper 165/11,334 (1.46%), no-image 2/5,432 (0.04%), other 2/867 (0.23%),
+unknown 55/9,530 (0.58%). 167 of 215 pages done, 48 `todo`. **Next:** row 127, then row 130 on.

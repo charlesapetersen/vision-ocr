@@ -662,6 +662,9 @@ say so in the commit.
 - [x] **truth-set-b10** — batch 10, full procedure: 12 pages, rows 115-126, the first ux-run red draws (9
       jbig2, 2 layered, 1 no-image). 7,548 words, 40 contested (0.53%), no spot unchecked; 35 are Xin Qu
       2018 p24. 165 of 215 pages done (`ops/truth/STATUS.md`). (context: truth-set)
+- [x] **truth-set-b11** — batch 11, full procedure: 2 pages, rows 128-129 (NYSE 1956 p110, jbig2; Williams 1958
+      Manchester Guardian p1, newspaper), started at 91% of the window. 1,735 words, 37 spots, 46 check crops, 5 contested
+      (0.29%), none unchecked. 167 of 215 pages done (`ops/truth/STATUS.md`). (context: truth-set)
 - [ ] **truth-harness** — measure published outputs against the truth set, text and everything else alike,
       and run it on today's pipeline. (blocked-on: truth-set)
       TEXT, in `Tools/ux-harness.swift --truth <dir>`. (a) Copy: drag each column the transcript lists, from
