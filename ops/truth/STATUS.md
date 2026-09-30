@@ -156,3 +156,15 @@ its checks; its directory may hold a transcript with no `words=` line, so it is 
 from `prep-page.sh`. Rate by route over every done page: dct 3/3,859 (0.08%), jbig2 167/34,726 (0.48%),
 layered 51/13,911 (0.37%), newspaper 165/11,334 (1.46%), no-image 2/5,432 (0.04%), other 2/867 (0.23%),
 unknown 55/9,530 (0.58%). 167 of 215 pages done, 48 `todo`. **Next:** row 127, then row 130 on.
+
+**Batch 12 (b12), 2026-09-30, full procedure, from a fresh window:** 16 ux-run red draws from rows 130-152
+(12 jbig2, 4 layered). 9,644 words, 301 spots, 331 check crops, 165 contested (1.71%), none unchecked. Three
+pages hold 113: Scott's contents page (p1, 50 of 827) and p7 (39 of 1,125), where the reader writes a
+dotted leader and the name after it as one token (`Profit.......HARRY`) and the check sees only a part,
+and Gelfand p106 (24 of 166), where `wordcrops.py` cut beside the word (`form` checked as `BELOW`). Both
+are the crop artefact noted under b1; the words are not scored. Readers used 31-76k tokens a page, 115k
+for the `___` newspaper (row 134, whose checks are in b13). One reader's Write was refused for the path
+`Har - THE NECKLACE OF KALI./p1`; it wrote to `/private/tmp` and the session moved the file into place.
+Rate by route over every done page: dct 3/3,859 (0.08%), jbig2 268/41,406 (0.65%), layered 115/16,875
+(0.68%), newspaper 165/11,334 (1.46%), no-image 2/5,432 (0.04%), other 2/867 (0.23%), unknown 55/9,530
+(0.58%). 183 of 215 pages done, 32 `todo`, all prepared and read or reading in this session.

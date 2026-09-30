@@ -665,6 +665,10 @@ say so in the commit.
 - [x] **truth-set-b11** — batch 11, full procedure: 2 pages, rows 128-129 (NYSE 1956 p110, jbig2; Williams 1958
       Manchester Guardian p1, newspaper), started at 91% of the window. 1,735 words, 37 spots, 46 check crops, 5 contested
       (0.29%), none unchecked. 167 of 215 pages done (`ops/truth/STATUS.md`). (context: truth-set)
+- [x] **truth-set-b12** — batch 12, full procedure: 16 ux-run red draws, rows 130-152 (12 jbig2, 4 layered).
+      9,644 words, 331 check crops, 165 contested (1.71%), none unchecked; 113 are Scott p1 and p7's dotted
+      leaders and Gelfand p106's word crops, the known crop artefact. 183 of 215 pages done
+      (`ops/truth/STATUS.md`). (context: truth-set)
 - [ ] **truth-harness** — measure published outputs against the truth set, text and everything else alike,
       and run it on today's pipeline. (blocked-on: truth-set)
       TEXT, in `Tools/ux-harness.swift --truth <dir>`. (a) Copy: drag each column the transcript lists, from
