@@ -176,3 +176,16 @@ and the UN-OCred spread p20 35 of 583. Not inspected. Readers used 31-60k tokens
 the two newspapers. Rate by route over every done page: dct 3/3,859 (0.08%), jbig2 369/49,346 (0.75%),
 layered 165/18,672 (0.88%), newspaper 185/16,720 (1.11%), no-image 2/5,432 (0.04%), other 2/867 (0.23%),
 unknown 55/9,530 (0.58%). 196 of 215 pages done, 19 `todo`.
+
+**Batch 14 (b14), 2026-09-30, full procedure, same session:** rows 200-216, the non-text candidates and the
+photograph book (13 layered, 3 jbig2, 1 dct). 4,766 words, 84 spots, 85 check crops, 40 contested (0.84%),
+none unchecked. The handwritten 1939 letter (`Former students` p5, 39 words) holds 24; five photograph pages
+hold under 15 words each. Readers used 37-54k tokens a page, 196k on the letter, which the reader turned
+upright by adding `-rotate -90` to the crop command. Rate by route over every done page: dct 5/4,430
+(0.11%), jbig2 371/51,240 (0.72%), layered 201/20,973 (0.96%), newspaper 185/16,720 (1.11%), no-image
+2/5,432 (0.04%), other 2/867 (0.23%), unknown 55/9,530 (0.58%). 213 of 215 pages done, 2 `todo`: the
+two small-town newspapers, rows 127 and 137. Their transcripts exist (4,199 and 5,676 words).
+**Row 127 is blocked by the instrument:** `spots-page.sh` made 1,612 spots of its 4,199 words, mostly
+plain words (`consider`, `was`, `Missoula`), although `vision-crops.txt` holds 4,104 words. The
+line-by-line alignment is failing on this 300 dpi page, perhaps because the reader's boxes are off. Next:
+find out why `xcheck.py lspots` fails here before checking about 1,700 crops.
