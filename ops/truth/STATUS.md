@@ -168,3 +168,11 @@ for the `___` newspaper (row 134, whose checks are in b13). One reader's Write w
 Rate by route over every done page: dct 3/3,859 (0.08%), jbig2 268/41,406 (0.65%), layered 115/16,875
 (0.68%), newspaper 165/11,334 (1.46%), no-image 2/5,432 (0.04%), other 2/867 (0.23%), unknown 55/9,530
 (0.58%). 183 of 215 pages done, 32 `todo`, all prepared and read or reading in this session.
+
+**Batch 13 (b13), 2026-09-30, full procedure, same session as b12:** 13 more ux-run red draws, rows 134-160
+(9 jbig2, 2 layered, 2 newspaper). 15,123 words, 464 spots, 509 check crops, 171 contested (1.13%), none
+unchecked. CIT 1958 p21 holds 51 of 304 (a table of figures), Scott p10 49 of 936 (dotted leaders again)
+and the UN-OCred spread p20 35 of 583. Not inspected. Readers used 31-60k tokens a page, 70k and 115k for
+the two newspapers. Rate by route over every done page: dct 3/3,859 (0.08%), jbig2 369/49,346 (0.75%),
+layered 165/18,672 (0.88%), newspaper 185/16,720 (1.11%), no-image 2/5,432 (0.04%), other 2/867 (0.23%),
+unknown 55/9,530 (0.58%). 196 of 215 pages done, 19 `todo`.

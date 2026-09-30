@@ -669,6 +669,9 @@ say so in the commit.
       9,644 words, 331 check crops, 165 contested (1.71%), none unchecked; 113 are Scott p1 and p7's dotted
       leaders and Gelfand p106's word crops, the known crop artefact. 183 of 215 pages done
       (`ops/truth/STATUS.md`). (context: truth-set)
+- [x] **truth-set-b13** — batch 13, full procedure: 13 more ux-run red draws, rows 134-160 (9 jbig2, 2 layered,
+      2 newspaper). 15,123 words, 509 check crops, 171 contested (1.13%), none unchecked; CIT 1958 p21's table
+      holds 51. 196 of 215 pages done (`ops/truth/STATUS.md`). (context: truth-set)
 - [ ] **truth-harness** — measure published outputs against the truth set, text and everything else alike,
       and run it on today's pipeline. (blocked-on: truth-set)
       TEXT, in `Tools/ux-harness.swift --truth <dir>`. (a) Copy: drag each column the transcript lists, from
