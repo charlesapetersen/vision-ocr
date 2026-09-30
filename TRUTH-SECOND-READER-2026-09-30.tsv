@@ -1,0 +1,23 @@
+# truth-second-reader, 2026-09-30. Gemini gemini-3.1-flash-lite, minimal thinking, via ops/truth/gemini-read.sh.
+# (a) 1,597 contested-word crops (with hyphen tails), 40 per contact sheet, CHECK prompt, blind: 40 calls.
+# (b) each page re-rendered at its dpi and re-cut (cut-crops; page 4's cut differs from the original's, fixed since); one READER-style call per crop: 98 + 3 timeout retries.
+# Settled: Gemini agrees with the reader (both halves of a hyphen-joined word; any word of its reading, as contest.py; 24 of the 194 matched inside a multi-word reading).
+# Agreement with the check alone is NOT settled, a departure from the item's rule: 227 of those 544 check readings are exactly a word on the
+#   same or an adjacent reader line (266 within two lines), i.e. wordcrops.py cut a neighbour and both models read it.
+# b: Gemini words aligned per crop (difflib, folded); a disagreement is a replace block of <=3 words a side on a line wholly in the crop.
+#   Larger replace blocks (misaligned_block) were inspected on pages 3, 4, 8: column slivers at crop edges and column-order mismatches.
+#   At least 6 of the 40 disagreements are Gemini-side hyphen splits, so the rate errs high. Each disagreement on a settled word was read
+#   again blind by a fresh Claude check on a wordcrops.py crop, and is contested unless it backs the reader.
+# usd is the logged spend at Pro prices (an upper bound), apportioned by calls; $1.1081 in the log with the earlier aborted Pro run, cap $3.
+page	words	contested_before	a_settled_gemini_agrees_reader	a_gemini_agrees_check_only	b_settled_words	b_gemini_agrees	b_gemini_disagrees	b_unaligned	b_unaligned_gemini_omitted	b_unaligned_misaligned_block	b_unaligned_no_crop_text	b_unaligned_line_part_outside_crop	b_fresh_check_backs_reader	b_newly_contested	contested_after	contested_after_if_check_only_settled	disagree_pct_of_aligned_settled	newly_contested_pct	refused_crops	gemini_calls	usd_upper_bound
+newspaperArticle/_1926_Cox resigns, following most severe public criticism that ever has been_Anaconda Standard/p1	4049	865	109	257	3184	2813	4	367	336	27	0	4	2	2	758	501	0.14	0.07	0	35.8	0.2421
+newspaperArticle/_1931_Again, press most excited about Frontier's history section_Helena Daily Independent/p1	5516	169	22	68	5329	5276	16	37	33	2	0	2	13	3	150	82	0.30	0.06	0	19.1	0.1291
+newspaperArticle/___ 2/p1	3144	74	12	18	3066	2989	5	72	12	60	0	0	3	2	64	46	0.17	0.07	0	10.9	0.0738
+newspaperArticle/_1941_Fiedler's hiring at UM announced_Helena Independent/p1	3344	69	31	16	3262	2935	6	321	51	91	179	0	5	1	39	23	0.20	0.03	1	19.8	0.1336
+report/1958_CiT Financial Corporation Annual Report -- 1958/p21	304	51	11	37	139	110	1	28	27	0	0	1	1	0	40	3	0.90	0.00	0	11.3	0.0763
+journalArticle/Scott_TK_The Scientific Selection of Salesmen/p1	827	50	6	33	770	752	3	15	3	3	0	9	2	1	45	12	0.40	0.13	0	10.3	0.0695
+journalArticle/Scott_TK_The Scientific Selection of Salesmen/p10	936	49	2	29	879	872	2	5	5	0	0	0	1	1	48	19	0.23	0.11	0	7.3	0.0491
+owner/Raskin - 1956 - New Jobs Opening to Negro in North/p1	3189	47	1	37	3139	2972	1	166	144	22	0	0	1	0	46	9	0.03	0.00	0	14.8	0.1000
+journalArticle/Scott_TK_The Scientific Selection of Salesmen/p7	1125	39	0	16	1081	1073	2	6	6	0	0	0	2	0	39	23	0.19	0.00	0	5.0	0.0338
+journalArticle/Xin Qu et al_2018_Executive stock option vesting conditions, corporate governance and CEO/p24	287	35	0	33	231	112	0	119	87	31	0	1	0	0	35	2	0.00	0.00	0	6.9	0.0465
+TOTAL	22721	1448	194	544	21080	19904	40	1136	704	236	179	17	30	10	1264	720	0.20	0.05	1	141 (+1 smoke test)	0.9605

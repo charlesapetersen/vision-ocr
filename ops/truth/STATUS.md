@@ -202,3 +202,18 @@ it scores on 3,184. Check readers used 25-40k tokens per 45 crops; the batch too
 **All 215 pages are done; none in `none.tsv`.** Contested rate by route: dct 5/4,430 (0.11%), jbig2
 371/51,240 (0.72%), layered 201/20,973 (0.96%), newspaper 1,219/26,285 (4.64%; 1.59% without row 127),
 no-image 2/5,432 (0.04%), other 2/867 (0.23%), unknown 55/9,530 (0.58%).
+
+# truth-second-reader — 2026-09-30
+
+Gemini (3.1 Flash Lite) read the ten most-contested pages; per page in `TRUTH-SECOND-READER-2026-09-30.tsv`.
+**Claude's error on old print, estimated: under 1% on every page**, so nothing changes for `truth-harness` or
+`truth-read`. Gemini disagreed with 40 of the 19,944 settled words it aligned (0.20%; highest CiT p21, 1 of
+111), at least 6 of them its own hyphen splits. A fresh Claude check backed the reader on 30, and 10 became
+contested (0.05%; `Snider`/`Shider`, `CHICACO`/`CHICAGO`). Of the 1,448 contested words, Gemini settled 194
+by agreeing with the reader; with the 10 new ones, 1,264 are contested. It agreed with the check alone on 544,
+and 227 of those are exactly a word on the same or an adjacent line, because `wordcrops.py` cut the neighbour.
+So many contested words are miscut crops, not doubtful readings. They stay contested. 1,136 settled words were
+not compared: 704 Gemini left out (Xin Qu p24's table, 87), 236 in misaligned blocks (column slivers at crop
+edges), 179 in Fiedler 1941's one refused crop (`RECITATION`), 17 on lines crossing a crop edge. Each page's
+`contested-second.tsv` (in `$STATE/truth/`) is `contested.tsv` with this applied; `truth-harness` should read
+it where it exists.

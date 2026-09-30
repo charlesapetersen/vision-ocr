@@ -680,7 +680,7 @@ say so in the commit.
       words, 2,244 check crops, 1,034 contested, none unchecked; row 127 holds 865 (21.4%, 450 `?` on 42 px
       crops of worn newsprint). All 215 pages done; contested rate by route in `ops/truth/STATUS.md`
       (newspaper 4.64%, every other route under 1%). (context: truth-set)
-- [ ] **truth-second-reader** — have Gemini read the most-contested truth-set pages, to settle contested
+- [x] **truth-second-reader** — have Gemini read the most-contested truth-set pages, to settle contested
       words and to measure how often the Claude transcripts are wrong on old print. (effort: medium)
       WHY. `truth-calibrate` could not calibrate old print: the only real book had an OCR layer, not a true
       one. Two Claude readers share one model's blind spots, and 1,855 of the set's 118,757 words are
