@@ -680,6 +680,33 @@ say so in the commit.
       words, 2,244 check crops, 1,034 contested, none unchecked; row 127 holds 865 (21.4%, 450 `?` on 42 px
       crops of worn newsprint). All 215 pages done; contested rate by route in `ops/truth/STATUS.md`
       (newspaper 4.64%, every other route under 1%). (context: truth-set)
+- [ ] **truth-second-reader** — have Gemini read the most-contested truth-set pages, to settle contested
+      words and to measure how often the Claude transcripts are wrong on old print. (effort: medium)
+      WHY. `truth-calibrate` could not calibrate old print: the only real book had an OCR layer, not a true
+      one. Two Claude readers share one model's blind spots, and 1,855 of the set's 118,757 words are
+      contested, most on newspapers (4.64%; the 1926 Anaconda Standard page alone 21%). Gemini is a
+      different model family and leads a February 2026 benchmark of historical and degraded documents
+      (socOCRbench: Gemini 3 and 3.1 Pro about 0.70, Claude 4.6 about 0.56–0.58; Claude 5.x was not
+      tested). The owner authorised the API spend on 2026-09-30.
+      WHAT. Take the ten pages with the most contested words (the newspapers, Raskin and the worst of the
+      rest; list them in the output first). (a) Every contested word's crop, read blind by Gemini with the
+      CHECK prompt. (b) An independent Gemini transcript of each of the ten pages, made from the same crops
+      with the READER prompt, aligned with the Claude transcript. Use `gemini-3.1-pro` through the REST API
+      with curl (the framework python3 has no root certificates). Take the key the way
+      `~/Claude/Archive Suite/ArchiveProcessor/test-smoke.sh` does, into an environment variable only:
+      never print it, write it to a file, log it or commit it. If the session cannot read the key, stop and
+      record that in the SESSION LOG; do not look for it any other way.
+      RULES. Gemini never overrules on its own, the lesson of `truth-calibrate`'s v1 cross-check. A contested
+      word is settled when Gemini's blind reading agrees with the Claude reader's or check's reading;
+      otherwise it stays contested. Where Gemini's transcript disagrees with a settled Claude word, a fresh
+      Claude check reads a tight crop; if it still disagrees, the word becomes contested. A `Recitation` or
+      other refusal (copyrighted text) is counted and the page kept as it is. Spend cap $20; stop and record
+      if it is reached. Nothing is committed but counts; transcripts stay in `$STATE/truth/`.
+      DONE WHEN, committed as `TRUTH-SECOND-READER-<date>.tsv`, per page: contested before and after,
+      Gemini-Claude disagreement on words Claude had settled (the estimate of Claude's error on old print),
+      refusals, and the spend. If that disagreement is above 1% on some kind of page, say so in
+      `ops/truth/STATUS.md` for `truth-harness` and `truth-read`; do not extend this to more pages
+      without the owner. BOUND: one session. (context: owner request 2026-09-30)
 - [ ] **truth-harness** — measure published outputs against the truth set, text and everything else alike,
       and run it on today's pipeline. (blocked-on: truth-set)
       TEXT, in `Tools/ux-harness.swift --truth <dir>`. (a) Copy: drag each column the transcript lists, from
