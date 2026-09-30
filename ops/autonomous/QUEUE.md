@@ -682,6 +682,8 @@ say so in the commit.
       (newspaper 4.64%, every other route under 1%). (context: truth-set)
 - [ ] **truth-second-reader** — have Gemini read the most-contested truth-set pages, to settle contested
       words and to measure how often the Claude transcripts are wrong on old print. (effort: medium)
+      [hold] needs: owner — the daemon denies `curl`, so the API call needs a wrapper script that reads the
+      key itself; being set up on 2026-09-30.
       WHY. `truth-calibrate` could not calibrate old print: the only real book had an OCR layer, not a true
       one. Two Claude readers share one model's blind spots, and 1,855 of the set's 118,757 words are
       contested, most on newspapers (4.64%; the 1926 Anaconda Standard page alone 21%). Gemini is a
