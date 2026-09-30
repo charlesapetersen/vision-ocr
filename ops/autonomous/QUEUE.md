@@ -700,7 +700,7 @@ say so in the commit.
       word is settled when Gemini's blind reading agrees with the Claude reader's or check's reading;
       otherwise it stays contested. Where Gemini's transcript disagrees with a settled Claude word, a fresh
       Claude check reads a tight crop; if it still disagrees, the word becomes contested. A `Recitation` or
-      other refusal (copyrighted text) is counted and the page kept as it is. Spend cap $20; stop and record
+      other refusal (copyrighted text) is counted and the page kept as it is. Spend cap $3 (owner, 2026-09-30), tracked from each response's token counts: do (a) first, then (b) page by page from the most contested, and stop and record
       if it is reached. Nothing is committed but counts; transcripts stay in `$STATE/truth/`.
       DONE WHEN, committed as `TRUTH-SECOND-READER-<date>.tsv`, per page: contested before and after,
       Gemini-Claude disagreement on words Claude had settled (the estimate of Claude's error on old print),
