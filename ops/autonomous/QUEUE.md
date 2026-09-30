@@ -643,6 +643,9 @@ say so in the commit.
       (0.79%; 0.21% without the two small-town newspapers), no spot unchecked. The redone pages match the
       in-session words but one (`E LTON`). The whole regression set and selftest now has truth
       (`ops/truth/STATUS.md`). (context: truth-set)
+- [x] **truth-set-b5** — batch 5, full procedure: the first 20 draws of the list (rows 2-21, all jbig2).
+      6,437 words, 33 contested (0.51%), no spot unchecked; 7 are a library stamp on CIT 1958's cover,
+      and many others are word-crop artefacts at hyphens and footnote marks. 65 of 215 pages done (`ops/truth/STATUS.md`). (context: truth-set)
 - [ ] **truth-harness** — measure published outputs against the truth set, text and everything else alike,
       and run it on today's pipeline. (blocked-on: truth-set)
       TEXT, in `Tools/ux-harness.swift --truth <dir>`. (a) Copy: drag each column the transcript lists, from

@@ -98,3 +98,11 @@ the newspapers; checks about 33k per brief. The batch took about 34% of the wind
 Rate by route over every done page: dct 0/182, jbig2 15/13,339 (0.11%), layered 17/4,863 (0.35%),
 newspaper 146/7,841 (1.86%), no-image 1/435 (0.23%), unknown 55/6,350 (0.87%). **Next:** the draws in
 list order (row 2 on, `todo`), about 40 a session.
+
+**Batch 5 (b5), 2026-09-29, full procedure, same session as b4:** the first 20 `todo` draws in list order
+(rows 2-21, all ux-run green jbig2). 6,437 words, 84 check crops over 81 spots, 33 contested (0.51%), none
+unchecked. The rate overstates doubt. CIT 1958's cover holds 7 (six `[?]` in an illegible library stamp,
+which perhaps should not count as words). On Naylor p67, 5 of 6 are `wordcrops.py` cutting beside a
+line-end hyphen or footnote mark (`pro-`, `necessa`), the artefact noted under b1. Readers used 35-57k tokens a page, and the batch about 21% of the window (46% to
+67%). jbig2 over every done page: 48 of 19,776 (0.24%). 65 of 215 pages are done, 150 `todo`. **Next:** the
+draws from row 22 on.
