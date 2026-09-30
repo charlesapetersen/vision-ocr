@@ -674,8 +674,8 @@ say so in the commit.
       holds 51. 196 of 215 pages done (`ops/truth/STATUS.md`). (context: truth-set)
 - [x] **truth-set-b14** — batch 14, full procedure: rows 200-216, the non-text candidates and the photograph
       book (13 layered, 3 jbig2, 1 dct). 4,766 words, 85 check crops, 40 contested (0.84%), none unchecked; 24
-      are a handwritten 1939 letter. 213 of 215 pages done; rows 127 and 137 remain, and 127's spot alignment
-      fails (1,612 spots of 4,199 words) (`ops/truth/STATUS.md`). (context: truth-set)
+      are a handwritten 1939 letter. 213 of 215 pages done; rows 127 and 137 remain, and 127 needs about 1,700
+      check crops, because Vision misses whole columns of it (1,612 spots of 4,199 words) (`ops/truth/STATUS.md`). (context: truth-set)
 - [ ] **truth-harness** — measure published outputs against the truth set, text and everything else alike,
       and run it on today's pipeline. (blocked-on: truth-set)
       TEXT, in `Tools/ux-harness.swift --truth <dir>`. (a) Copy: drag each column the transcript lists, from

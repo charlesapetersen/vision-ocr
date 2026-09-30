@@ -185,7 +185,8 @@ upright by adding `-rotate -90` to the crop command. Rate by route over every do
 (0.11%), jbig2 371/51,240 (0.72%), layered 201/20,973 (0.96%), newspaper 185/16,720 (1.11%), no-image
 2/5,432 (0.04%), other 2/867 (0.23%), unknown 55/9,530 (0.58%). 213 of 215 pages done, 2 `todo`: the
 two small-town newspapers, rows 127 and 137. Their transcripts exist (4,199 and 5,676 words).
-**Row 127 is blocked by the instrument:** `spots-page.sh` made 1,612 spots of its 4,199 words, mostly
-plain words (`consider`, `was`, `Missoula`), although `vision-crops.txt` holds 4,104 words. The
-line-by-line alignment is failing on this 300 dpi page, perhaps because the reader's boxes are off. Next:
-find out why `xcheck.py lspots` fails here before checking about 1,700 crops.
+**Row 127 needs about 1,700 check crops:** `spots-page.sh` made 1,612 spots of its 4,199 words, mostly
+plain words (`consider`, `was`, `Missoula`). They are genuine under the procedure. Vision, over the page and
+over each crop, misses whole columns (`severe` is in neither reading), and the layer's lines do not align
+with the reader's. So the page is a session's worth of checks on its own; the b14 note that the alignment
+fails was wrong.
