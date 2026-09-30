@@ -592,7 +592,7 @@ say so in the commit.
       on a waiver for a scorer artefact). v1's cross-check made readings worse and is replaced. Canby's
       layer is old OCR, so real-book pages are not calibrated: `truth-set` scores them only for lost lines
       and blocks (`ops/truth/STATUS.md`).
-- [ ] **truth-set** — make the truth for about 220 real pages with the procedure `truth-calibrate` fixed.
+- [x] **truth-set** — make the truth for about 220 real pages with the procedure `truth-calibrate` fixed.
       (blocked-on: truth-calibrate) (effort: medium)
       THE PAGES, committed first as `TRUTH-PAGES-<date>.tsv` (document, page, why chosen, status):
       * about 100 drawn at random from `ux-run`'s green pages, spread over the routes (JBIG2, DCT, layered
@@ -676,6 +676,10 @@ say so in the commit.
       book (13 layered, 3 jbig2, 1 dct). 4,766 words, 85 check crops, 40 contested (0.84%), none unchecked; 24
       are a handwritten 1939 letter. 213 of 215 pages done; rows 127 and 137 remain, and 127 needs about 1,700
       check crops, because Vision misses whole columns of it (1,612 spots of 4,199 words) (`ops/truth/STATUS.md`). (context: truth-set)
+- [x] **truth-set-b15** — batch 15, full procedure: rows 127 and 137, the two small-town newspapers. 9,565
+      words, 2,244 check crops, 1,034 contested, none unchecked; row 127 holds 865 (21.4%, 450 `?` on 42 px
+      crops of worn newsprint). All 215 pages done; contested rate by route in `ops/truth/STATUS.md`
+      (newspaper 4.64%, every other route under 1%). (context: truth-set)
 - [ ] **truth-harness** — measure published outputs against the truth set, text and everything else alike,
       and run it on today's pipeline. (blocked-on: truth-set)
       TEXT, in `Tools/ux-harness.swift --truth <dir>`. (a) Copy: drag each column the transcript lists, from

@@ -190,3 +190,15 @@ plain words (`consider`, `was`, `Missoula`). They are genuine under the procedur
 over each crop, misses whole columns (`severe` is in neither reading), and the layer's lines do not align
 with the reader's. So the page is a session's worth of checks on its own; the b14 note that the alignment
 fails was wrong.
+
+**Batch 15 (b15), 2026-09-30, full procedure, from a fresh window:** rows 127 and 137, the two small-town
+newspapers, closed from the transcripts already written. Row 137 (Helena Daily Independent 1931): 5,516
+words, 445 spots, 522 check crops, 169 contested (3.06%). Row 127 (Anaconda Standard 1926): 4,049 words,
+1,612 spots, 1,722 check crops in 39 briefs, 865 contested (21.4%), 450 of them `?`. None unchecked on
+either. The `?`s were looked at: the crops are 42 px tall at 300 dpi of worn newsprint, and some sit
+beside their word (`Hasty,`'s crop shows a `J`), the `wordcrops.py` artefact noted under b1 and b12. So
+the page's single-word checks cannot confirm much of what its reader read; those words are unscored, and
+it scores on 3,184. Check readers used 25-40k tokens per 45 crops; the batch took about half the window.
+**All 215 pages are done; none in `none.tsv`.** Contested rate by route: dct 5/4,430 (0.11%), jbig2
+371/51,240 (0.72%), layered 201/20,973 (0.96%), newspaper 1,219/26,285 (4.64%; 1.59% without row 127),
+no-image 2/5,432 (0.04%), other 2/867 (0.23%), unknown 55/9,530 (0.58%).
