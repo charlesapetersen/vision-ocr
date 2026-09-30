@@ -646,6 +646,9 @@ say so in the commit.
 - [x] **truth-set-b5** — batch 5, full procedure: the first 20 draws of the list (rows 2-21, all jbig2).
       6,437 words, 33 contested (0.51%), no spot unchecked; 7 are a library stamp on CIT 1958's cover,
       and many others are word-crop artefacts at hyphens and footnote marks. 65 of 215 pages done (`ops/truth/STATUS.md`). (context: truth-set)
+- [x] **truth-set-b6** — batch 6, full procedure: the next 20 draws (rows 22-41, all jbig2). 6,146 words,
+      72 contested (1.17%), no spot unchecked; the two pages of `_1979_Ideology of American Neo-Conservatism_`
+      hold 36. 85 of 215 pages done (`ops/truth/STATUS.md`). (context: truth-set)
 - [ ] **truth-harness** — measure published outputs against the truth set, text and everything else alike,
       and run it on today's pipeline. (blocked-on: truth-set)
       TEXT, in `Tools/ux-harness.swift --truth <dir>`. (a) Copy: drag each column the transcript lists, from

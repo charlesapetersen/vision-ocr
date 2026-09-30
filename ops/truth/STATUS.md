@@ -106,3 +106,11 @@ which perhaps should not count as words). On Naylor p67, 5 of 6 are `wordcrops.p
 line-end hyphen or footnote mark (`pro-`, `necessa`), the artefact noted under b1. Readers used 35-57k tokens a page, and the batch about 21% of the window (46% to
 67%). jbig2 over every done page: 48 of 19,776 (0.24%). 65 of 215 pages are done, 150 `todo`. **Next:** the
 draws from row 22 on.
+
+**Batch 6 (b6), 2026-09-29, full procedure, same session:** the next 20 `todo` draws (rows 22-41, all
+jbig2). 6,146 words, 156 spots, 164 check crops, 72 contested (1.17%), none unchecked. The two pages of
+`_1979_Ideology of American Neo-Conservatism_` hold 36 (p4 12 of 508, p8 24 of 490). Cartwright p1 holds 12
+of 96, General Foods 1958 p21 10 of 151, and ppf_description p1 8 of 259. Not inspected; the b5 review found
+such counts partly crop artefacts. Readers used 33-63k tokens a page. The session ended at 90% of the window
+with this batch. jbig2 over every done page: 120 of 25,922 (0.46%). 85 of 215 pages are done, 130 `todo`.
+**Next:** the draws from row 42 on.
