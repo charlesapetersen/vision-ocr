@@ -756,6 +756,11 @@ say so in the commit.
 - [x] **truth-harness-regress** — the element ink and colour check (`elInk`, `elCol`, `tink`, `tcolour`) and
       `truth` rows in `Tools/ux-regression.sh` and its baseline (43 pages), 2026-09-30. Self-test PASS; see
       `ops/truth/STATUS.md`. Left for `truth-harness`: the run. (context: owner request 2026-09-29)
+- [x] **truth-harness-run1** — the run with no model, 2026-09-30: `ops/truth/run-harness.sh` over all 215 pages
+      at `832b7ac`, old measures and truth on the same output, 0 crashes; `TRUTH-RUN-2026-09-30-pages.tsv` and
+      `-docs.tsv`. 42 pages pass the old measures and fail the truth (35 on text alone), 10 the reverse; by
+      route in `ops/truth/STATUS.md`. Left for `truth-harness`: the blind re-read of each `truth-words.tsv`
+      and the judges on `pairs/`, from `$STATE/truth-run-2026-09-30/`. (context: owner request 2026-09-29)
 - [ ] **truth-read** — read `truth-harness`'s output and turn what it finds into queued work.
       (blocked-on: truth-harness)
       Start with the pages the old measures pass and the truth fails, since those hold the defects the old

@@ -228,3 +228,30 @@ Self-test PASS (measured): Why p5 at 1.14.0 `tcolour` (elCol 0.00), Why pp5-6 at
 every green page green. On today's pipeline the element check alone reddens Why p10 (`tcolour`, the owner's
 grey logo), Hyman p8 (`tink,tcolour`, C45's highlights), Why p2 (`tink` 0.23), Glazer p1 and Kristol p1
 (`tcolour`); not looked at, so for `truth-read`. Left for `truth-harness`: the run over the 215 pages.
+
+# truth-harness, the run, batch 1 (no model) — 2026-09-30
+
+`ops/truth/run-harness.sh <W>` cut the 128 documents to their 215 truth pages, published them with the gate
+at `832b7ac` (default settings, helper processes, 8 chunks, about 35 minutes) and scored each with
+`ux-regression.sh --score-one`: the old measures and `--truth` on the same output. 0 crashes. `run-table.py`
+wrote `TRUTH-RUN-2026-09-30-pages.tsv` and `-docs.tsv`. Classes, old measures against the truth (measured):
+
+    route      pages  green  red  old-only  truth-only
+    dct           13     10    0         0           3
+    jbig2        107     49   27         6          25
+    layered       55     31   11         4           9
+    newspaper     11      1    7         0           3
+    no-image      11     10    1         0           0
+    other          5      4    0         0           1
+    unknown       13     10    2         0           1
+    all          215    115   48        10          42
+
+Of the 42 truth-only pages, 35 fail on text alone (`tcopy`, copyErr 0.05-0.47), 3 on the element check alone
+(`tink`: Why p2 in both copies, elInk 0.22 and 0.23; Ford 1941 p2, 0.08), 4 on both. The 10 old-only pages are
+the old legibility proxy (6), find (2), selection and colour. Pooled: 115,714 words scored, 8,983 wrong, 2,772
+missing, 85,744 added; 75,925 of the added are on the 11 pages whose added exceed their scored words (mostly
+newspapers, with Raskin p1), whose column drags take in the next columns (`c52-column-jumps`'s class; not
+looked at). Scored words missing from Vision's reading of the source 0.19, from the output's layer 0.076.
+NOT YET, both need subagents (this session started at 89% of the window): the blind re-read of each page's
+`score/d<N>/truth-words.tsv`, so a `tcopy` still counts unconfirmed words, and the judges on `score/d<N>/pairs/`,
+with `pairs-key.tsv` kept from them. Run 1 stays in `$STATE/truth-run-2026-09-30/` (`jobs.txt` maps d<N>).
