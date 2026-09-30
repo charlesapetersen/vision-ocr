@@ -649,6 +649,9 @@ say so in the commit.
 - [x] **truth-set-b6** — batch 6, full procedure: the next 20 draws (rows 22-41, all jbig2). 6,146 words,
       72 contested (1.17%), no spot unchecked; the two pages of `_1979_Ideology of American Neo-Conservatism_`
       hold 36. 85 of 215 pages done (`ops/truth/STATUS.md`). (context: truth-set)
+- [x] **truth-set-b7** — batch 7, full procedure: four draws (rows 42-45, all jbig2), stopped at 99% of the
+      window. 1,011 words, 3 contested (0.30%), no spot unchecked. 89 of 215 pages done
+      (`ops/truth/STATUS.md`). (context: truth-set)
 - [ ] **truth-harness** — measure published outputs against the truth set, text and everything else alike,
       and run it on today's pipeline. (blocked-on: truth-set)
       TEXT, in `Tools/ux-harness.swift --truth <dir>`. (a) Copy: drag each column the transcript lists, from

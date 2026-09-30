@@ -114,3 +114,9 @@ of 96, General Foods 1958 p21 10 of 151, and ppf_description p1 8 of 259. Not in
 such counts partly crop artefacts. Readers used 33-63k tokens a page. The session ended at 90% of the window
 with this batch. jbig2 over every done page: 120 of 25,922 (0.46%). 85 of 215 pages are done, 130 `todo`.
 **Next:** the draws from row 42 on.
+
+**Batch 7 (b7), 2026-09-29, full procedure, a session that started at 94% of the window:** four draws,
+rows 42-45 (Noble 1977 p104, Anaconda 1958 p9, Hayek 1978 p1, `w7787 2` p1; all jbig2). 1,011 words, 16
+spots, 18 check crops, 3 contested (0.30%), none unchecked. Readers used 37-45k tokens a page. The window
+reached 99%, so the batch stopped at four. 89 of 215 pages are done, 126 `todo`. **Next:** the draws from
+row 46 on.
