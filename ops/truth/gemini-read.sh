@@ -8,10 +8,11 @@
 #   gemini-read.sh --spent        print the spend so far
 # Exit: 0 text printed · 3 Gemini refused (RECITATION, SAFETY, blocked) · 4 cap reached · 2 any other error.
 export PATH=/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin
-MODEL="${GEMINI_MODEL:-gemini-3.1-pro-preview}"
+MODEL="${GEMINI_MODEL:-gemini-3.1-flash-lite}"
 CAP="${GEMINI_CAP_USD:-3}"
-# USD per million tokens, input and output (thinking tokens are billed as output). Gemini 3 Pro's published
-# price for prompts under 200k tokens; check the current price before relying on the cap's accuracy.
+# USD per million tokens, input and output (thinking tokens are billed as output). These are Gemini 3 Pro's published
+# prices, kept as the default although the model is Flash Lite: they overstate its cost, so the cap can only
+# trip early, never late. Set GEMINI_PRICE_IN/OUT to the current Flash Lite price for an accurate figure.
 PRICE_IN="${GEMINI_PRICE_IN:-2.00}"
 PRICE_OUT="${GEMINI_PRICE_OUT:-12.00}"
 USAGE="$HOME/.local/state/visionocr-autonomous/truth/gemini-usage.tsv"
@@ -38,7 +39,7 @@ for img in "$@"; do
   base64 -i "$img" | tr -d '\n' > "$tmp/b64"
   jq --arg mt "$mt" --rawfile d "$tmp/b64" '. + [{inline_data: {mime_type: $mt, data: $d}}]' "$parts" > "$tmp/p2" && mv "$tmp/p2" "$parts"
 done
-jq -n --slurpfile p "$parts" '{contents: [{parts: $p[0]}], generationConfig: {thinkingConfig: {thinkingLevel: "low"}}}' > "$tmp/body.json"
+jq -n --slurpfile p "$parts" '{contents: [{parts: $p[0]}], generationConfig: {thinkingConfig: {thinkingLevel: ($ENV.GEMINI_THINKING // "minimal")}}}' > "$tmp/body.json"
 
 printf 'x-goog-api-key: %s\n' "$KEY" | curl -sS --max-time 180 -H @- -H 'Content-Type: application/json' \
   --data-binary @"$tmp/body.json" -o "$tmp/resp.json" -w '%{http_code}' \

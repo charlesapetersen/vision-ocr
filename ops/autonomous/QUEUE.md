@@ -695,10 +695,12 @@ say so in the commit.
       `ops/truth/gemini-read.sh <prompt-file> <image>...`, which reads the key from the Keychain itself, logs
       every call's tokens and cost to `$STATE/truth/gemini-usage.tsv`, and refuses calls once the logged spend
       reaches $3 (`--spent` prints it). Never read the key or call the API any other way. Model
-      `gemini-3.1-pro-preview`. Measured 2026-09-30: one word crop cost 1,105 input tokens, about $0.002, so
-      reading 1,800 crops one per call would spend the cap on (a) alone. Put about 40 numbered crops on one
-      contact-sheet image per call, as the check briefs do, and ask for one numbered line per crop. Check the
-      current Gemini 3.1 Pro price first and set GEMINI_PRICE_IN/OUT if it differs from the script's.
+      `gemini-3.1-flash-lite` with minimal thinking (owner, 2026-09-30: the quality difference from Pro is
+      small). The script prices calls at Pro's rates, which overstate Flash Lite's, so the logged spend is an
+      upper bound. One word crop is about 1,100 input tokens, so put about 40 numbered crops on one
+      contact-sheet image per call, as the check briefs do, and ask for one numbered line per crop. An aborted
+      first run on Pro (29 calls, about $0.15, counted in the log) left `$STATE/truth/second-reader-pro-aborted/`;
+      do not use its readings.
       RULES. Gemini never overrules on its own, the lesson of `truth-calibrate`'s v1 cross-check. A contested
       word is settled when Gemini's blind reading agrees with the Claude reader's or check's reading;
       otherwise it stays contested. Where Gemini's transcript disagrees with a settled Claude word, a fresh
