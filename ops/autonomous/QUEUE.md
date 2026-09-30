@@ -741,6 +741,18 @@ say so in the commit.
       same answer every time.
       BOUND: one commit for the tool, its self-test and the regression change; then the run, in batches like
       `truth-set`'s. (context: owner request 2026-09-29)
+- [x] **truth-harness-tool** — `Tools/ux-harness.swift --truth <doc-dir>` and its self-test, 2026-09-30.
+      Copy, Find, column order, figure and handwriting apart, `visMiss`/`layerMiss`, `truth-words.tsv` for
+      the blind re-read, crop pairs for the judge. Self-test PASS (measured): `tcopy` red on Raskin p1 (copy
+      error 4.17), Hughes p5 at 24a8f6a (0.85) and Why p5 at 1.14.0 (0.69); green on Why pp3-8, Hughes
+      pp1-3, 5, 7-9, Briefer pp5-6 (at most 0.048). Briefer pp1-4, green on every old measure, are red: the
+      output's layer lacks 3-10% of their words, whole clean lines, which Vision's reading of the source lacks
+      too. That is `truth-read`'s. Judges on Why p5's pairs, blind (measured): the current output passes,
+      1.14.0 loses the red headings, and 24a8f6a's headings are an illegible smear. One judge found the colour
+      loss but named the wrong image on 4 of 5 pairs, so the run's judge prompt must describe A and B apart
+      before it gives a verdict. NOT DONE: the `ux-regression.sh` change (its `pages` mode renumbers pages,
+      so the truth's `p<N>` must be mapped) and the ink and colour check for each element's box; then the run.
+      (context: owner request 2026-09-29)
 - [ ] **truth-read** — read `truth-harness`'s output and turn what it finds into queued work.
       (blocked-on: truth-harness)
       Start with the pages the old measures pass and the truth fails, since those hold the defects the old

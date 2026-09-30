@@ -131,6 +131,43 @@ case_ green-hughes   "$O/$HUG.pdf" "$GREEN/$HUG.ocr.pdf" "1 2 3 5 7 8 9" -
 case_ rotated-green  "$W/in/rotfix.pdf" "$GREEN/rotfix.ocr.pdf" "1" -
 case_ rotated-cols   "$W/in/rotfix.pdf" "$GREEN/rotfix.ocr.pdf" "2" rotated
 
+# TRUTH (`--truth`): the same pages scored against the truth set's transcripts ($STATE/truth/owner/),
+# on the TRUTH rows' own flags. Red where the owner's report is about the text: Raskin p1 and Hughes p5
+# at 24a8f6a, and Why p5 at 1.14.0, whose drags leave their columns (copy error 0.69-4.2). Why pp5-6 at
+# 24a8f6a are illegible, not wrong: their text scores clean, and only the crop-pair judge can see that.
+# Green: Why pp3-8, Hughes pp1-3, 5, 7-9, Briefer pp5-6 (copy error at most 0.048). Briefer pp1-4 are
+# RED on the truth although every measure above passes them: the output's text layer lacks 3-10% of the
+# page's words, whole lines of clean type (p1: "are even less different from those of the", in the
+# source's own layer too), which Vision's reading of the source, the old reference, lacks as well.
+TR="$STATE/truth/owner"
+case_truth() {
+    local label="$1" truth="$2" src="$3" out="$4" pages="$5" want="$6"
+    if [ ! -d "$TR/$truth" ]; then echo "skip  $label: no truth set at $TR/$truth"; return; fi
+    if [ ! -f "$out" ]; then echo "FAIL  $label: no output $out"; bad=1; return; fi
+    "$W/ux" --truth "$TR/$truth" "$src" "$out" "$W/$label" "$(echo $pages | tr ' ' ',')" > "$W/$label.tsv" 2> /dev/null
+    local p
+    for p in $pages; do
+        local flags
+        flags="$(awk -F'\t' -v p="$p" '$1 == "TRUTH" && $2 == p {print $NF}' "$W/$label.tsv")"
+        if [ -z "$flags" ]; then echo "FAIL  $label p$p: no truth row"; bad=1; continue; fi
+        if [ "$want" = "-" ]; then
+            if [ "$flags" = "-" ]; then echo "ok    $label p$p green on the truth"
+            else echo "FAIL  $label p$p should be green on the truth, is $flags"; bad=1; fi
+        else
+            case ",$flags," in *",$want,"*) echo "ok    $label p$p red on the truth: $flags";;
+                *) echo "FAIL  $label p$p should be red for $want on the truth, is $flags"; bad=1;; esac
+        fi
+    done
+}
+case_truth truth-raskin     "$RASKIN" "$O/$RASKIN.pdf" "$O/$RASKIN.ocr-24a8f6a.pdf" "1" tcopy
+case_truth truth-hughes     "$HUG" "$O/$HUG.pdf" "$O/Hughes - The Knitting of Racial Groups in Industry (Desktop copy).ocr-24a8f6a.pdf" "5" tcopy
+case_truth truth-why-1.14.0 "1954 - Why" "$O/1954 - Why.pdf" "$O/1954 - Why.ocr-1.14.0.pdf" "5" tcopy
+case_truth truth-why-legib  "1954 - Why" "$O/1954 - Why.pdf" "$O/1954 - Why.ocr-24a8f6a.pdf" "5 6" -
+case_truth truth-green-why  "1954 - Why" "$O/1954 - Why.pdf" "$GREEN/1954 - Why.ocr.pdf" "3 4 5 6 7 8" -
+case_truth truth-green-hug  "$HUG" "$O/$HUG.pdf" "$GREEN/$HUG.ocr.pdf" "1 2 3 5 7 8 9" -
+case_truth truth-green-bri  "1951 - Briefer Book Notes" "$O/1951 - Briefer Book Notes.pdf" "$GREEN/1951 - Briefer Book Notes.ocr.pdf" "5 6" -
+case_truth truth-lost-lines "1951 - Briefer Book Notes" "$O/1951 - Briefer Book Notes.pdf" "$GREEN/1951 - Briefer Book Notes.ocr.pdf" "1 2 3 4" tcopy
+
 echo "renders and TSVs: $W"
 [ "$bad" = 0 ] && { echo "ux-harness-selftest: PASS"; exit 0; }
 echo "ux-harness-selftest: FAIL"; exit 1

@@ -72,22 +72,57 @@ import Foundation
 // UX_VERBOSE=1 prints each column's drag, the lines it missed or took from outside, the reference and
 // copied words, and each Find miss, on stderr. UX_REFSCALE sets the reference render's scale (default 3).
 //
+// --truth <dir>: also score the page against the truth set (`ops/truth/procedure.md`), where `<dir>` is a
+// document's directory under `$STATE/truth/` holding `p<N>/transcript.txt`; pages without one are not
+// scored. Each such page prints a `TRUTH` row after its own and writes `<outdir>/truth.tsv`:
+//   trWords contested scored  the transcript's words (line-end hyphens joined), those not scored (contested
+//              by the check or the second reader, or `[?]`), and the body words scored
+//   right wrong missing added  a drag down each of the transcript's COLUMNS (3+ body lines), from its first
+//              line's start to its last line's end, and each other body line's own box, aligned word by word
+//              with the transcript; contested words and figure text in a column are free either way
+//   splits welds hyph  words split by a stray space, two words welded, a line-end hyphen the copy did not join
+//   copyErr    (wrong + missing + added) / scored          find  of up to 30 transcript words (5+ letters)
+//              the share `findString` finds with a hit over the word on this page
+//   order      of adjacent columns, how many follow each other in the page's text layer; reported, never
+//              red: a footnote at a column's foot is read before or after the next column (Hughes p2)
+//   fig hand   figure text and handwriting, apart: words a selection over each line holds, of all
+//   visMiss    share of the scored words missing from Vision's reading of the source (the page's
+//              `vision.txt`, a plain render); layerMiss  the same for the output's whole text layer
+//   pairs      crop pairs written: the page at 1x, and each OBJECTS element at 2x, as `pairs/p<N>-<k>-A.png`
+//              and `-B.png`, output and source in an order `pairs-key.tsv` (outside `pairs/`) holds and the judge is not told;
+//              `pairs/p<N>-elements.txt` is the judge's checklist. A Swift tool cannot call a model: the
+//              session gives each page's pairs to a judge subagent.
+//   tflags     `tcopy` copyErr > 0.05, `tfind` find < 0.80 (set on `Tools/ux-harness-selftest.sh`'s pages)
+// `truth-words.tsv` lists every wrong, missing and unfound word with its box in the transcript's pixels,
+// for the blind re-read on a tight crop that must confirm a word before it counts against the app.
+// Blind spots: the transcript's boxes are the reader's estimates, and a word's box is estimated from its
+// character offset; a copy that joins a real compound split at a line end is scored right.
+//
 // Build: swiftc -O -o /tmp/ux-harness Tools/ux-harness.swift
 // Self-test: Tools/ux-harness-selftest.sh (the owner's reports go red, a sample of good pages stays green)
-// Exit: 0 every page and the document green · 1 something red · 2 usage or a PDF will not open.
+// Exit: 0 every page and the document green (and, with --truth, every TRUTH row) · 1 something red ·
+// 2 usage or a PDF will not open.
 
 let pageHeader = "page\trefWords\tleg1\tleg2\tinkRatio\tinkLum\tsrcCol\tcolKept\tfind\tcols\tinside\tcover\toverInk\twer\tprec\trecall\tsplits\twelds\techoes\thyph\tmidBreaks\tgeom\tmsSrc\tmsOut\tflags"
 let docHeader = "pages\tbytes\topenMs\topen\tqpdf\toutline\tlabels\tlinks\tannots\ttitle\tflags"
+let truthHeader = "page\ttrWords\tcontested\tscored\tright\twrong\tmissing\tadded\tsplits\twelds\thyph\tcopyErr\tfind\torder\tfig\thand\tvisMiss\tlayerMiss\tpairs\ttflags"
 
 func fail(_ s: String, _ code: Int32) -> Never {
     FileHandle.standardError.write("ux-harness: \(s)\n".data(using: .utf8)!)
     exit(code)
 }
 
-let args = CommandLine.arguments
+var args = CommandLine.arguments
 if args.count == 2 && args[1] == "--header" { print(pageHeader); print(docHeader); exit(0) }
+var truthDir: URL? = nil
+if let k = args.firstIndex(of: "--truth") {
+    guard k + 1 < args.count else { fail("--truth needs a directory", 2) }
+    truthDir = URL(fileURLWithPath: args[k + 1])
+    guard FileManager.default.fileExists(atPath: truthDir!.path) else { fail("no truth directory \(args[k + 1])", 2) }
+    args.removeSubrange(k...(k + 1))
+}
 guard args.count >= 4 else {
-    fail("usage: ux-harness <source.pdf> <output.pdf> <outdir> [pages]  |  ux-harness --header", 2)
+    fail("usage: ux-harness [--truth <dir>] <source.pdf> <output.pdf> <outdir> [pages]  |  ux-harness --header", 2)
 }
 let srcURL = URL(fileURLWithPath: args[1]), outURL = URL(fileURLWithPath: args[2])
 let outDir = URL(fileURLWithPath: args[3])
@@ -316,6 +351,300 @@ func area(_ r: CGRect) -> CGFloat { r.isNull ? 0 : r.width * r.height }
 func selects(_ b: CGRect, _ l: CGRect) -> Bool {
     min(b.maxY, l.maxY) - max(b.minY, l.minY) >= 0.5 * min(b.height, l.height) &&
         min(b.maxX, l.maxX) - max(b.minX, l.minX) >= 0.5 * l.width
+}
+
+// MARK: - Truth (--truth)
+// A truth page is `ops/truth/procedure.md`'s output: `<dir>/p<N>/transcript.txt` (`x y w h<TAB>text` per
+// printed line in page pixels, then `COLUMNS:` and `OBJECTS:`), `meta.txt` (`px=WxH`), and the contested
+// words, `contested-second.tsv` where the second reader wrote one, else `contested.tsv`, by index into the
+// transcript's words with line-end hyphens joined as `contest.py` joins them.
+
+struct TWord { let text: String; let line: Int; let kind: String; let joined: Bool; var contested: Bool; let px: CGRect }
+struct TLine { let px: CGRect; let text: String; let kind: String }
+struct TPage { var lines: [TLine] = []; var words: [TWord] = []; var columns: [CGRect] = []
+               var objects: [(px: CGRect, desc: String)] = []; var pxW = 0.0, pxH = 0.0 }
+
+func firstBox(_ s: String) -> CGRect? {
+    let ns = s as NSString
+    guard let m = try! NSRegularExpression(pattern: #"([0-9]+)\s+([0-9]+)\s+([0-9]+)\s+([0-9]+)"#)
+        .firstMatch(in: s, range: NSRange(location: 0, length: ns.length)) else { return nil }
+    let v = (1...4).map { Double(ns.substring(with: m.range(at: $0)))! }
+    return CGRect(x: v[0], y: v[1], width: v[2], height: v[3])
+}
+
+func loadTruth(_ dir: URL) -> TPage? {
+    guard let tr = try? String(contentsOf: dir.appendingPathComponent("transcript.txt"), encoding: .utf8),
+          let meta = try? String(contentsOf: dir.appendingPathComponent("meta.txt"), encoding: .utf8),
+          let r = meta.range(of: #"px=\d+x\d+"#, options: .regularExpression) else { return nil }
+    var t = TPage()
+    let wh = meta[r].dropFirst(3).split(separator: "x")
+    t.pxW = Double(wh[0])!; t.pxH = Double(wh[1])!
+    // lines split and matched as Python's universal newlines and `re` do, so indices agree with `contest.py`
+    let lineRE = try! NSRegularExpression(pattern: #"(?s)^\s*([0-9]+)\s+([0-9]+)\s+([0-9]+)\s+([0-9]+)\s*\t(.*)$"#)
+    let markRE = try! NSRegularExpression(pattern: #"^\s*(\[(fig|table|hand)\]\s*)+"#)
+    var section = "lines"
+    for raw in tr.replacingOccurrences(of: "\r\n", with: "\n").replacingOccurrences(of: "\r", with: "\n").components(separatedBy: "\n") {
+        if raw.hasPrefix("COLUMNS:") { section = "columns"; continue }
+        if raw.hasPrefix("OBJECTS:") { section = "objects"; continue }
+        if section == "columns" { if let b = firstBox(raw) { t.columns.append(b) }; continue }
+        if section == "objects" {
+            let low = raw.trimmingCharacters(in: .whitespaces).lowercased()
+            // scanner borders, dust and the paper tint are not content, wherever the line says `ignore`
+            if low.hasPrefix("paper") || low.split(whereSeparator: { $0.isWhitespace }).contains("ignore") { continue }
+            if let b = firstBox(raw), b.width > 0, b.height > 0 { t.objects.append((b, raw)) }
+            continue
+        }
+        let ns = raw as NSString
+        guard let m = lineRE.firstMatch(in: raw, range: NSRange(location: 0, length: ns.length)) else { continue }
+        let v = (1...4).map { Double(ns.substring(with: m.range(at: $0)))! }
+        var text = ns.substring(with: m.range(at: 5)), kind = "body"
+        // `[table]` is body text: a reader copies a table. Figure text and handwriting are scored apart.
+        if let mm = markRE.firstMatch(in: text, range: NSRange(location: 0, length: (text as NSString).length)) {
+            let mark = (text as NSString).substring(with: mm.range)
+            kind = mark.contains("[fig]") ? "fig" : mark.contains("[hand]") ? "hand" : "body"
+            text = (text as NSString).substring(from: mm.range.length)
+        }
+        t.lines.append(TLine(px: CGRect(x: v[0], y: v[1], width: v[2], height: v[3]), text: text, kind: kind))
+    }
+    // words, each with a box estimated from its character offset in the line (as `xcheck.py` does), and a
+    // line-end hyphen joined to the next line's first word exactly as `contest.py` joins it, so the
+    // contested indices name the same words
+    for (li, l) in t.lines.enumerated() {
+        let ch = Array(l.text), L = Double(max(ch.count, 1))
+        var i = 0
+        while i < ch.count {
+            while i < ch.count, ch[i].isWhitespace { i += 1 }
+            guard i < ch.count else { break }
+            var j = i
+            while j < ch.count, !ch[j].isWhitespace { j += 1 }
+            let wd = String(ch[i..<j])
+            let box = CGRect(x: l.px.minX + l.px.width * Double(i) / L, y: l.px.minY,
+                             width: max(l.px.width * Double(j - i) / L, 10), height: l.px.height)
+            if let prev = t.words.last, prev.text.range(of: #"\w-$"#, options: .regularExpression) != nil,
+               l.px.minY > t.lines[prev.line].px.minY, let c = wd.first, c.isLetter || c.isNumber {
+                t.words[t.words.count - 1] = TWord(text: String(prev.text.dropLast()) + wd, line: prev.line, kind: prev.kind,
+                                                   joined: true, contested: false, px: prev.px)
+            } else {
+                t.words.append(TWord(text: wd, line: li, kind: l.kind, joined: false, contested: false, px: box))
+            }
+            i = j
+        }
+    }
+    let second = dir.appendingPathComponent("contested-second.tsv")
+    let cf = FileManager.default.fileExists(atPath: second.path) ? second : dir.appendingPathComponent("contested.tsv")
+    for row in ((try? String(contentsOf: cf, encoding: .utf8)) ?? "").split(separator: "\n") {
+        if let k = Int(row.split(separator: "\t").first ?? ""), k >= 0, k < t.words.count { t.words[k].contested = true }
+    }
+    // a word the reader could not read is not scored either
+    for k in t.words.indices where t.words[k].text.contains("[?]") { t.words[k].contested = true }
+    return t
+}
+
+func pxToDisp(_ t: TPage, _ page: PDFPage, _ r: CGRect) -> CGRect {
+    let s = displaySize(page), sx = s.width / t.pxW, sy = s.height / t.pxH
+    return CGRect(x: r.minX * sx, y: s.height - r.maxY * sy, width: r.width * sx, height: r.height * sy)
+}
+
+/// Word-level alignment of a copy against the truth. An optional truth word (contested, or figure text
+/// inside a column) costs nothing matched to anything or left out, and is not counted either way.
+func alignCopy(_ ref: [(w: String, opt: Bool)], _ got: [String]) -> (right: Int, wrong: [(Int, String)], missing: [Int], added: Int) {
+    let n = ref.count, m = got.count
+    var d = [[Int]](repeating: [Int](repeating: 0, count: m + 1), count: n + 1)
+    for j in 0...m { d[0][j] = j }
+    if n > 0 { for i in 1...n {
+        d[i][0] = d[i - 1][0] + (ref[i - 1].opt ? 0 : 1)
+        if m > 0 { for j in 1...m {
+            let sub = ref[i - 1].opt || ref[i - 1].w == got[j - 1] ? 0 : 1
+            d[i][j] = min(d[i - 1][j - 1] + sub, d[i - 1][j] + (ref[i - 1].opt ? 0 : 1), d[i][j - 1] + 1)
+        } }
+    } }
+    var i = n, j = m, right = 0, added = 0
+    var wrong: [(Int, String)] = [], missing: [Int] = []
+    while i > 0 || j > 0 {
+        let opt = i > 0 && ref[i - 1].opt
+        if i > 0, j > 0, d[i][j] == d[i - 1][j - 1] + (opt || ref[i - 1].w == got[j - 1] ? 0 : 1) {
+            if !opt { if ref[i - 1].w == got[j - 1] { right += 1 } else { wrong.append((i - 1, got[j - 1])) } }
+            i -= 1; j -= 1
+        } else if i > 0, d[i][j] == d[i - 1][j] + (opt ? 0 : 1) {
+            if !opt { missing.append(i - 1) }
+            i -= 1
+        } else { added += 1; j -= 1 }
+    }
+    return (right, wrong, missing, added)
+}
+
+/// A copy's tokens with a word split by a stray space mended (`valu able`), and two words welded into one
+/// (`valuablestudy`) cut apart, each counted; `hyph` counts the splits that are a line-end hyphen the copy
+/// did not join. Judged against the truth words of the same stretch, as the reference measures do.
+func mend(_ got: [String], _ ref: [String], joined: Set<String>) -> (tokens: [String], splits: Int, welds: Int, hyph: Int) {
+    let refSet = Set(ref)
+    var pairs: [String: (String, String)] = [:]
+    for k in ref.indices.dropLast() where !refSet.contains(ref[k] + ref[k + 1]) { pairs[ref[k] + ref[k + 1]] = (ref[k], ref[k + 1]) }
+    var out: [String] = [], splits = 0, welds = 0, hyph = 0, i = 0
+    while i < got.count {
+        let a = got[i]
+        if i + 1 < got.count, refSet.contains(a + got[i + 1]), !(refSet.contains(a) && refSet.contains(got[i + 1])) {
+            out.append(a + got[i + 1])
+            if joined.contains(a + got[i + 1]) { hyph += 1 } else { splits += 1 }
+            i += 2; continue
+        }
+        if !refSet.contains(a), let (x, y) = pairs[a] { out += [x, y]; welds += 1; i += 1; continue }
+        out.append(a); i += 1
+    }
+    return (out, splits, welds, hyph)
+}
+
+// Red, on the truth: set on the owner's reports and the green pages (`Tools/ux-harness-selftest.sh`)
+let truthCopyMax = 0.05, truthFindMin = 0.80
+var truthRows: [String] = []
+var truthWordRows: [String] = []
+var pairKeyRows: [String] = []
+
+/// The truth measures of one page, or nil when the truth directory has no transcript for it.
+func truthPage(_ p: Int, _ sp: PDFPage, _ op: PDFPage, _ out: PDFDocument, _ pairs: [(CGImage, CGImage, CGFloat)]) -> String? {
+    guard let dir = truthDir?.appendingPathComponent("p\(p)"), let t = loadTruth(dir) else { return nil }
+    var flags: [String] = []
+    let body = t.words.indices.filter { t.words[$0].kind == "body" }
+    let scoredIdx = body.filter { !t.words[$0].contested && !norm(t.words[$0].text).isEmpty }
+    // each body line in the first listed column holding its centre; the rest are loose
+    var lineCol: [Int?] = t.lines.map { l in
+        // the reader's column boxes are drawn by eye: a column's last line can hang below its box
+        t.columns.firstIndex { $0.insetBy(dx: -l.px.height, dy: -l.px.height).contains(CGPoint(x: l.px.midX, y: l.px.midY)) }
+    }
+    // A "column" of one or two body lines (a running head, a footer, a caption) is scored line by line: a
+    // drag along a running head selected the whole column below it on Hughes p5, because the page number
+    // at the head's end follows the column in the text layer, and that is not a column drag's question.
+    for c in t.columns.indices where t.lines.indices.filter({ lineCol[$0] == c && t.lines[$0].kind == "body" }).count < 3 {
+        for li in t.lines.indices where lineCol[li] == c { lineCol[li] = nil }
+    }
+    var right = 0, added = 0, splits = 0, welds = 0, hyph = 0
+    var fails: [(Int, String, String)] = []   // word index, kind, what the copy has there
+    func score(_ idx: [Int], _ text: String, _ label: String) {
+        if verbose { FileHandle.standardError.write("p\(p) truth \(label): \(text.replacingOccurrences(of: "\n", with: "|"))\n".data(using: .utf8)!) }
+        let ref = idx.map { (w: norm(t.words[$0].text), opt: t.words[$0].contested || t.words[$0].kind != "body" || norm(t.words[$0].text).isEmpty) }
+        let joined = Set(idx.filter { t.words[$0].joined }.map { norm(t.words[$0].text) })
+        let m = mend(tokens(text), ref.map { $0.w }, joined: joined)
+        splits += m.splits; welds += m.welds; hyph += m.hyph
+        let a = alignCopy(ref, m.tokens)
+        right += a.right; added += a.added
+        for (k, g) in a.wrong { fails.append((idx[k], "wrong", g)) }
+        for k in a.missing { fails.append((idx[k], "missing", "")) }
+    }
+    func rectText(_ px: CGRect) -> String {
+        let r = pxToDisp(t, op, px)
+        return op.selection(for: dispToPage(op, r.insetBy(dx: 0, dy: r.height * 0.25)))?.string ?? ""
+    }
+    // (a) Copy: a drag down each column, from its first line's start to its last line's end
+    var colTokens: [[String]] = []
+    for c in t.columns.indices {
+        let ls = t.lines.indices.filter { lineCol[$0] == c && t.lines[$0].kind == "body" }
+        let idx = t.words.indices.filter { lineCol[t.words[$0].line] == c }
+        if !idx.isEmpty { colTokens.append(idx.filter { !t.words[$0].contested && t.words[$0].kind == "body" }.map { norm(t.words[$0].text) }.filter { !$0.isEmpty }) }
+        guard let f = ls.first, let l = ls.last else { continue }
+        let a = pxToDisp(t, op, t.lines[f].px), b = pxToDisp(t, op, t.lines[l].px)
+        let sel = op.selection(from: dispToPage(op, CGPoint(x: a.minX + 1, y: a.midY)), to: dispToPage(op, CGPoint(x: b.maxX - 1, y: b.midY)))
+        score(idx, sel?.string ?? "", "column \(c + 1)")
+    }
+    // body lines in no column, each by its own box
+    for li in t.lines.indices where lineCol[li] == nil && t.lines[li].kind == "body" {
+        score(t.words.indices.filter { t.words[$0].line == li }, rectText(t.lines[li].px), "loose line \(li + 1)")
+    }
+    // figure text and handwriting, apart: the share of each line's words a selection over it holds
+    var apart: [String: (Int, Int)] = ["fig": (0, 0), "hand": (0, 0)]
+    for li in t.lines.indices where t.lines[li].kind != "body" {
+        let w = t.words.indices.filter { t.words[$0].line == li && !t.words[$0].contested }.map { norm(t.words[$0].text) }.filter { !$0.isEmpty }
+        let (r0, n0) = apart[t.lines[li].kind]!
+        apart[t.lines[li].kind] = (r0 + matched(w, tokens(rectText(t.lines[li].px))), n0 + w.count)
+    }
+    let scored = scoredIdx.count
+    let wrongN = fails.filter { $0.1 == "wrong" }.count, missN = fails.filter { $0.1 == "missing" }.count
+    let copyErr: Double? = scored >= 20 ? Double(wrongN + missN + added) / Double(scored) : nil
+
+    // (b) Find: up to 30 words of 5+ letters, each must have a hit on this page over the word
+    var findShare: Double? = nil
+    let cand = scoredIdx.filter { k in let n = norm(t.words[k].text); return !t.words[k].joined && n.count >= 5 && n.allSatisfy { $0.isLetter } }
+    if cand.count >= 5 {
+        let step = max(1, cand.count / 30)
+        let sample = stride(from: 0, to: cand.count, by: step).prefix(30).map { cand[$0] }
+        var ok = 0
+        for k in sample {
+            let w = pxToDisp(t, op, t.words[k].px), line = pxToDisp(t, op, t.lines[t.words[k].line].px)
+            // the box is estimated from a character offset, so it is widened along the line
+            let zone = w.insetBy(dx: -max(3 * w.height, 0.15 * line.width), dy: -w.height)
+            let hits = out.findString(norm(t.words[k].text), withOptions: [.caseInsensitive])
+            if hits.contains(where: { h in
+                guard h.pages.contains(where: { out.index(for: $0) == p - 1 }) else { return false }
+                let hb = pageToDisp(op, h.bounds(for: op))
+                return zone.contains(CGPoint(x: hb.midX, y: hb.midY))
+            }) { ok += 1 } else { fails.append((k, "find", "")) }
+        }
+        findShare = Double(ok) / Double(sample.count)
+    }
+
+    // (c) Column order: where each column's first three words first appear in the page's text
+    let pageTok = tokens(op.string ?? "")
+    var pos: [Int] = []
+    for c in colTokens where c.count >= 4 {
+        let g = Array(c.prefix(3))
+        if let at = pageTok.indices.dropLast(2).first(where: { Array(pageTok[$0..<($0 + 3)]) == g }) { pos.append(at) }
+    }
+    if verbose { FileHandle.standardError.write("p\(p) truth order: \(pos)\n".data(using: .utf8)!) }
+    let inOrder = pos.count < 2 ? 0 : (1..<pos.count).filter { pos[$0] > pos[$0 - 1] }.count
+    let order = pos.count < 2 ? "-" : "\(inOrder)/\(pos.count - 1)"
+
+    // how far Vision's reading of the source render, and the output's whole text layer, are from the truth
+    let truthTok = scoredIdx.map { norm(t.words[$0].text) }
+    let visTok = tokens((try? String(contentsOf: dir.appendingPathComponent("vision.txt"), encoding: .utf8)) ?? "")
+    let visMiss: Double? = scored >= 20 && !visTok.isEmpty ? 1 - Double(matched(truthTok, visTok)) / Double(scored) : nil
+    let layerMiss: Double? = scored >= 20 ? 1 - Double(matched(truthTok, pageTok)) / Double(scored) : nil
+
+    if (copyErr ?? 0) > truthCopyMax { flags.append("tcopy") }
+    if (findShare ?? 1) < truthFindMin { flags.append("tfind") }
+
+    // every failure, with its box in the transcript's pixels, for the blind re-read before it counts
+    for (k, kind, g) in fails {
+        let w = t.words[k]
+        truthWordRows.append("\(p)\t\(k)\t\(kind)\t\(w.text)\t\(g)\t\(Int(w.px.minX)) \(Int(w.px.minY)) \(Int(w.px.width)) \(Int(w.px.height))")
+    }
+
+    // EVERYTHING ELSE: the page and each listed object as a crop pair, source and output in an order the
+    // judge is not told (`pairs-key.tsv` holds it). The order is fixed by page and object, so a rerun
+    // writes the same pairs.
+    let pdir = outDir.appendingPathComponent("pairs")
+    try? FileManager.default.createDirectory(at: pdir, withIntermediateDirectories: true)
+    var list = ["0\twhole page"]
+    let items = [(CGRect?.none, "whole page")] + t.objects.map { (Optional(pxToDisp(t, op, $0.px)), $0.desc) }
+    for (k, item) in items.enumerated() {
+        let (sImg, oImg, sc) = k == 0 ? pairs[0] : pairs[1]
+        var crop = CGRect(x: 0, y: 0, width: sImg.width, height: sImg.height)
+        if let r = item.0 {
+            let H = displaySize(op).height
+            crop = CGRect(x: r.minX * sc - 8, y: (H - r.maxY) * sc - 8, width: r.width * sc + 16, height: r.height * sc + 16)
+                .intersection(CGRect(x: 0, y: 0, width: min(sImg.width, oImg.width), height: min(sImg.height, oImg.height)))
+        }
+        guard !crop.isNull, crop.width >= 2, crop.height >= 2,
+              let sc2 = sImg.cropping(to: crop.integral), let oc2 = oImg.cropping(to: crop.integral) else { continue }
+        var h = UInt64(p) &* 0x9E3779B97F4A7C15 ^ UInt64(k) &* 0xC2B2AE3D27D4EB4F
+        h ^= h >> 29; h = h &* 0xBF58476D1CE4E5B9; h ^= h >> 32
+        let outIsA = h & 1 == 0
+        func save(_ img: CGImage, _ name: String) {
+            if let d = NSBitmapImageRep(cgImage: img).representation(using: .png, properties: [:]) { try? d.write(to: pdir.appendingPathComponent(name)) }
+        }
+        save(outIsA ? oc2 : sc2, "p\(p)-\(k)-A.png"); save(outIsA ? sc2 : oc2, "p\(p)-\(k)-B.png")
+        pairKeyRows.append("\(p)\t\(k)\t\(outIsA ? "A" : "B")\t\(item.1)")
+        if k > 0 { list.append("\(k)\t\(item.1)") }
+    }
+    try? (list.joined(separator: "\n") + "\n").write(to: pdir.appendingPathComponent("p\(p)-elements.txt"), atomically: true, encoding: .utf8)
+
+    let fa = apart["fig"]!, ha = apart["hand"]!
+    let figCell: String = fa.1 > 0 ? "\(fa.0)/\(fa.1)" : "-"
+    let handCell: String = ha.1 > 0 ? "\(ha.0)/\(ha.1)" : "-"
+    let contestedN = t.words.filter { $0.contested }.count
+    var cells: [String] = [String(p), String(t.words.count), String(contestedN), String(scored), String(right)]
+    cells += [String(wrongN), String(missN), String(added), String(splits), String(welds), String(hyph)]
+    cells += [f4(copyErr), f2(findShare), order, figCell, handCell, f4(visMiss), f4(layerMiss)]
+    cells += [String(items.count), flags.isEmpty ? "-" : flags.joined(separator: ",")]
+    return cells.joined(separator: "\t")
 }
 
 // MARK: - Main
@@ -588,6 +917,11 @@ if let out = out {
                    flags.isEmpty ? "-" : flags.joined(separator: ",")].joined(separator: "\t")
         pageRows.append(row)
         print(row)
+        if truthDir != nil, let tr = truthPage(p, sp, op, out, [(s1i, o1i, 1), (s2i, o2i, 2)]) {
+            truthRows.append(tr)
+            if !tr.hasSuffix("\t-") { anyRed = true }
+            print("TRUTH\t" + tr)
+        }
         fflush(stdout)
     }
 }
@@ -653,4 +987,12 @@ try? ([pageHeader] + pageRows).joined(separator: "\n").appending("\n")
     .write(to: outDir.appendingPathComponent("pages.tsv"), atomically: true, encoding: .utf8)
 try? [docHeader, docRow].joined(separator: "\n").appending("\n")
     .write(to: outDir.appendingPathComponent("document.tsv"), atomically: true, encoding: .utf8)
+if truthDir != nil {
+    try? ([truthHeader] + truthRows).joined(separator: "\n").appending("\n")
+        .write(to: outDir.appendingPathComponent("truth.tsv"), atomically: true, encoding: .utf8)
+    try? (["page\tidx\tkind\tword\tcopy\tpx"] + truthWordRows).joined(separator: "\n").appending("\n")
+        .write(to: outDir.appendingPathComponent("truth-words.tsv"), atomically: true, encoding: .utf8)
+    try? (["page\telement\toutput\twhat"] + pairKeyRows).joined(separator: "\n").appending("\n")
+        .write(to: outDir.appendingPathComponent("pairs-key.tsv"), atomically: true, encoding: .utf8)
+}
 exit(anyRed ? 1 : 0)
