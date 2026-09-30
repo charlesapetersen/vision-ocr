@@ -217,3 +217,14 @@ not compared: 704 Gemini left out (Xin Qu p24's table, 87), 236 in misaligned bl
 edges), 179 in Fiedler 1941's one refused crop (`RECITATION`), 17 on lines crossing a crop edge. Each page's
 `contested-second.tsv` (in `$STATE/truth/`) is `contested.tsv` with this applied; `truth-harness` should read
 it where it exists.
+
+# truth-harness, step 2 — 2026-09-30
+
+`ux-harness --truth` now checks each OBJECTS element's box for ink and colour with no model (`elInk`, `elCol`:
+the least share of an element's dark or coloured pixels the output keeps; `tink`, `tcolour` under 0.50).
+`ux-regression.sh` scores the set's truth pages as `truth` rows keyed `T<N>` (for `pages` mode, `p<N>` is
+linked under the renumbered page), and the baseline holds them: 43 pages, 0 worse on the old rows.
+Self-test PASS (measured): Why p5 at 1.14.0 `tcolour` (elCol 0.00), Why pp5-6 at 24a8f6a `tink` (0.00, 0.38),
+every green page green. On today's pipeline the element check alone reddens Why p10 (`tcolour`, the owner's
+grey logo), Hyman p8 (`tink,tcolour`, C45's highlights), Why p2 (`tink` 0.23), Glazer p1 and Kristol p1
+(`tcolour`); not looked at, so for `truth-read`. Left for `truth-harness`: the run over the 215 pages.

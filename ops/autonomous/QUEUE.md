@@ -753,6 +753,9 @@ say so in the commit.
       before it gives a verdict. NOT DONE: the `ux-regression.sh` change (its `pages` mode renumbers pages,
       so the truth's `p<N>` must be mapped) and the ink and colour check for each element's box; then the run.
       (context: owner request 2026-09-29)
+- [x] **truth-harness-regress** — the element ink and colour check (`elInk`, `elCol`, `tink`, `tcolour`) and
+      `truth` rows in `Tools/ux-regression.sh` and its baseline (43 pages), 2026-09-30. Self-test PASS; see
+      `ops/truth/STATUS.md`. Left for `truth-harness`: the run. (context: owner request 2026-09-29)
 - [ ] **truth-read** — read `truth-harness`'s output and turn what it finds into queued work.
       (blocked-on: truth-harness)
       Start with the pages the old measures pass and the truth fails, since those hold the defects the old

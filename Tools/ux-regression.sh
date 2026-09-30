@@ -21,6 +21,10 @@
 # its output grows more than 2%, keeps fewer pages, outline entries, links or annotations, or gains a
 # document flag. A page or document that crashes the harness is WORSE, and one that already crashed is
 # WORSE if it now crashes differently (it no longer publishes, say); so is the gate exiting differently.
+# A page in the truth set (`$STATE/truth/<source>/p<N>`) also gets a `truth` row, keyed `T<N>`, from
+# `ux-harness --truth`: WORSE when copyErr or layerMiss rises, or find, elInk, elCol or the fig/hand share
+# falls, by more than 0.02, when splits welds or hyph rise at all, or when it gains a tflag. No model is
+# called, so it gives the same answer every time.
 # `cols` is reported when it changes and never counts either way. Timings are ignored. Vision is
 # deterministic here: a second run on unchanged code read 0 worse, 0 better (2026-09-28). The harness's own blind spots stand (see the queue item
 # `ux-regression-set`): legibility is unreliable, `find` strips punctuation, `echoes` cannot see C44.
@@ -53,6 +57,7 @@ def load(p):
     return rows
 base, new = load(sys.argv[1]), load(sys.argv[2])
 PH = "page refWords leg1 leg2 inkRatio inkLum srcCol colKept find cols inside cover overInk wer prec recall splits welds echoes hyph midBreaks geom msSrc msOut flags".split()
+TH = "trWords contested scored right wrong missing added splits welds hyph copyErr find order fig hand visMiss layerMiss pairs elInk elCol tflags".split()
 DH = "pages bytes openMs open qpdf outline labels links annots title flags".split()
 def num(s):
     try: return float(s)
@@ -67,7 +72,7 @@ worse, notes = [], []
 def say(bad, where, what, o, n):
     (worse if bad else notes).append(("WORSE  " if bad else "better ") + f"{where}  {what}  {o} -> {n}")
 for key, b in sorted(base.items()):
-    where = {"DOC": f"{key[0]} (document)", "-": key[0]}.get(key[1], f"{key[0]} p{key[1]}")
+    where = {"DOC": f"{key[0]} (document)", "-": key[0]}.get(key[1], f"{key[0]} p{key[1].lstrip('T')}" + (" truth" if key[1][:1] == "T" else ""))
     n = new.get(key)
     if n is None: worse.append(f"WORSE  {where}  no row in the results"); continue
     if len(n) != len(b) and n[0] == b[0]:
@@ -80,7 +85,23 @@ for key, b in sorted(base.items()):
         # a crash that crashes differently, or a gate that exits differently, is not known to be better
         if b[3:] != n[3:]: worse.append(f"WORSE  {where}  {' '.join(b[3:])} -> {' '.join(n[3:])}")
         continue
-    if b[0] == "page":
+    if b[0] == "truth":
+        B, N = dict(zip(TH, b[3:])), dict(zip(TH, n[3:]))
+        for m, up in (("copyErr", True), ("layerMiss", True), ("find", False), ("elInk", False), ("elCol", False)):
+            o, v = num(B[m]), num(N[m])
+            if o is not None and v is None: say(True, where, m, B[m], N[m])
+            elif o is not None and abs(v - o) > 0.02 + 1e-9: say((v > o) == up, where, m, B[m], N[m])
+        for m in ("fig", "hand"):
+            o, v = frac(B[m], True), frac(N[m], True)
+            if o is not None and v is not None and abs(v - o) > 0.02 + 1e-9: say(v < o, where, m, B[m], N[m])
+        for m in ("splits", "welds", "hyph"):
+            o, v = num(B[m]), num(N[m])
+            if o is not None and v is not None and v != o: say(v > o, where, m, B[m], N[m])
+        if B["order"] != N["order"]: notes.append(f"changed {where}  order  {B['order']} -> {N['order']}")
+        gained, lost = flags(N["tflags"]) - flags(B["tflags"]), flags(B["tflags"]) - flags(N["tflags"])
+        if gained: say(True, where, "tflags", B["tflags"], N["tflags"])
+        elif lost: say(False, where, "tflags", B["tflags"], N["tflags"])
+    elif b[0] == "page":
         B, N = dict(zip(PH, b[2:])), dict(zip(PH, n[2:]))
         for m in "leg1 leg2 colKept find inside cover overInk prec recall".split():
             o, v = num(B[m]), num(N[m])
@@ -118,11 +139,12 @@ for key, b in sorted(base.items()):
         if gained: say(True, where, "flags", B["flags"], N["flags"])
         elif lost: say(False, where, "flags", B["flags"], N["flags"])
 for key in sorted(set(new) - set(base)):
-    notes.append(f"new    {key[0]} p{key[1]}  not in the baseline")
+    notes.append(f"new    {key[0]} p{key[1].lstrip('T')}{' truth' if key[1][:1] == 'T' else ''}  not in the baseline")
 for l in notes + worse: print(l)
-pages = sum(1 for k, v in base.items() if k[1] not in ("DOC", "-"))
+pages = sum(1 for k, v in base.items() if k[1] not in ("DOC", "-") and not k[1].startswith("T"))
+truths = sum(1 for k, v in base.items() if k[1].startswith("T"))
 docs = sum(1 for k, v in base.items() if k[1] == "DOC")
-print(f"ux-regression: {len(worse)} worse, {sum(1 for l in notes if l.startswith('better'))} better, over {pages} pages and {docs} documents")
+print(f"ux-regression: {len(worse)} worse, {sum(1 for l in notes if l.startswith('better'))} better, over {pages} pages, {truths} of them on the truth, and {docs} documents")
 sys.exit(1 if worse else 0)
 PY
     local rc=$?
@@ -151,8 +173,16 @@ if [ "$MODE" = score-one ]; then
     mkdir -p "$d"
     list="$pages"
     [ "$mode" = pages ] && list="$(seq 1 "$(echo "$pages" | tr ',' '\n' | /usr/bin/wc -l | tr -d ' ')" | paste -sd, -)"
+    # the truth set's pages, linked under the numbers the harness sees here (`pages` mode renumbers them)
+    tdir="$STATE/truth/${label%.pdf}" truth=()
+    i=0
+    for p in $(echo "$pages" | tr ',' ' '); do
+        i=$((i + 1)); q="$p"; [ "$mode" = pages ] && q="$i"
+        if [ -f "$tdir/p$p/transcript.txt" ]; then mkdir -p "$d/truth"; ln -s "$tdir/p$p" "$d/truth/p$q"; fi
+    done
+    [ -d "$d/truth" ] && truth=(--truth "$d/truth")
     rc=0
-    if [ -f "$out" ]; then "$W/ux" "$src" "$out" "$d" "$list" > "$d/stdout.tsv" 2> "$d/stderr.txt" || rc=$?
+    if [ -f "$out" ]; then "$W/ux" ${truth[@]+"${truth[@]}"} "$src" "$out" "$d" "$list" > "$d/stdout.tsv" 2> "$d/stderr.txt" || rc=$?
     else rc=noout; fi
     : > "$rows"
     i=0
@@ -161,6 +191,10 @@ if [ "$MODE" = score-one ]; then
         row="$(awk -F'\t' -v q="$q" 'NR > 1 && $1 == q' "$d/pages.tsv" 2>/dev/null)"
         if [ -n "$row" ]; then printf 'page\t%s\t%s\t%s\n' "$label" "$p" "$(echo "$row" | cut -f2-)" >> "$rows"
         else printf 'crash\t%s\t%s\tharness exit %s, no row\n' "$label" "$p" "$rc" >> "$rows"; fi
+        [ -e "$d/truth/p$q" ] || continue
+        row="$(awk -F'\t' -v q="$q" 'NR > 1 && $1 == q' "$d/truth.tsv" 2>/dev/null)"
+        if [ -n "$row" ]; then printf 'truth\t%s\t%s\t%s\n' "$label" "T$p" "$(echo "$row" | cut -f2-)" >> "$rows"
+        else printf 'crash\t%s\tT%s\tharness exit %s, no truth row\n' "$label" "$p" "$rc" >> "$rows"; fi
     done
     row="$(sed -n 2p "$d/document.tsv" 2>/dev/null)"
     if [ -n "$row" ]; then printf 'doc\t%s\tDOC\t%s\n' "$label" "$row" >> "$rows"

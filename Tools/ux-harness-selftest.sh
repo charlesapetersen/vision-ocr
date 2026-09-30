@@ -134,7 +134,8 @@ case_ rotated-cols   "$W/in/rotfix.pdf" "$GREEN/rotfix.ocr.pdf" "2" rotated
 # TRUTH (`--truth`): the same pages scored against the truth set's transcripts ($STATE/truth/owner/),
 # on the TRUTH rows' own flags. Red where the owner's report is about the text: Raskin p1 and Hughes p5
 # at 24a8f6a, and Why p5 at 1.14.0, whose drags leave their columns (copy error 0.69-4.2). Why pp5-6 at
-# 24a8f6a are illegible, not wrong: their text scores clean, and only the crop-pair judge can see that.
+# 24a8f6a are illegible, not wrong: their text scores clean, and their headings' boxes keep none (p5) and
+# 38% (p6) of the source's dark ink (`tink`); Why p5 at 1.14.0 keeps none of their colour (`tcolour`).
 # Green: Why pp3-8, Hughes pp1-3, 5, 7-9, Briefer pp5-6 (copy error at most 0.048). Briefer pp1-4 are
 # RED on the truth although every measure above passes them: the output's text layer lacks 3-10% of the
 # page's words, whole lines of clean type (p1: "are even less different from those of the", in the
@@ -162,7 +163,8 @@ case_truth() {
 case_truth truth-raskin     "$RASKIN" "$O/$RASKIN.pdf" "$O/$RASKIN.ocr-24a8f6a.pdf" "1" tcopy
 case_truth truth-hughes     "$HUG" "$O/$HUG.pdf" "$O/Hughes - The Knitting of Racial Groups in Industry (Desktop copy).ocr-24a8f6a.pdf" "5" tcopy
 case_truth truth-why-1.14.0 "1954 - Why" "$O/1954 - Why.pdf" "$O/1954 - Why.ocr-1.14.0.pdf" "5" tcopy
-case_truth truth-why-legib  "1954 - Why" "$O/1954 - Why.pdf" "$O/1954 - Why.ocr-24a8f6a.pdf" "5 6" -
+case_truth truth-why-colour "1954 - Why" "$O/1954 - Why.pdf" "$O/1954 - Why.ocr-1.14.0.pdf" "5" tcolour
+case_truth truth-why-legib  "1954 - Why" "$O/1954 - Why.pdf" "$O/1954 - Why.ocr-24a8f6a.pdf" "5 6" tink
 case_truth truth-green-why  "1954 - Why" "$O/1954 - Why.pdf" "$GREEN/1954 - Why.ocr.pdf" "3 4 5 6 7 8" -
 case_truth truth-green-hug  "$HUG" "$O/$HUG.pdf" "$GREEN/$HUG.ocr.pdf" "1 2 3 5 7 8 9" -
 case_truth truth-green-bri  "1951 - Briefer Book Notes" "$O/1951 - Briefer Book Notes.pdf" "$GREEN/1951 - Briefer Book Notes.ocr.pdf" "5 6" -

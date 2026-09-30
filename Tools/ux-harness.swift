@@ -92,7 +92,10 @@ import Foundation
 //              and `-B.png`, output and source in an order `pairs-key.tsv` (outside `pairs/`) holds and the judge is not told;
 //              `pairs/p<N>-elements.txt` is the judge's checklist. A Swift tool cannot call a model: the
 //              session gives each page's pairs to a judge subagent.
-//   tflags     `tcopy` copyErr > 0.05, `tfind` find < 0.80 (set on `Tools/ux-harness-selftest.sh`'s pages)
+//   elInk elCol  of the OBJECTS elements whose source box holds 50+ dark (luminance < 128) or coloured
+//              pixels at 2x, the least share of them the output keeps: no model, so the same every run
+//   tflags     `tcopy` copyErr > 0.05, `tfind` find < 0.80, `tink` elInk < 0.50, `tcolour` elCol < 0.50
+//              (set on `Tools/ux-harness-selftest.sh`'s pages)
 // `truth-words.tsv` lists every wrong, missing and unfound word with its box in the transcript's pixels,
 // for the blind re-read on a tight crop that must confirm a word before it counts against the app.
 // Blind spots: the transcript's boxes are the reader's estimates, and a word's box is estimated from its
@@ -105,7 +108,7 @@ import Foundation
 
 let pageHeader = "page\trefWords\tleg1\tleg2\tinkRatio\tinkLum\tsrcCol\tcolKept\tfind\tcols\tinside\tcover\toverInk\twer\tprec\trecall\tsplits\twelds\techoes\thyph\tmidBreaks\tgeom\tmsSrc\tmsOut\tflags"
 let docHeader = "pages\tbytes\topenMs\topen\tqpdf\toutline\tlabels\tlinks\tannots\ttitle\tflags"
-let truthHeader = "page\ttrWords\tcontested\tscored\tright\twrong\tmissing\tadded\tsplits\twelds\thyph\tcopyErr\tfind\torder\tfig\thand\tvisMiss\tlayerMiss\tpairs\ttflags"
+let truthHeader = "page\ttrWords\tcontested\tscored\tright\twrong\tmissing\tadded\tsplits\twelds\thyph\tcopyErr\tfind\torder\tfig\thand\tvisMiss\tlayerMiss\tpairs\telInk\telCol\ttflags"
 
 func fail(_ s: String, _ code: Int32) -> Never {
     FileHandle.standardError.write("ux-harness: \(s)\n".data(using: .utf8)!)
@@ -294,6 +297,14 @@ func inkStats(_ r: Raster) -> (count: Int, lum: Double) {
         if l < 128 { n += 1; sum += l }
     } }
     return (n, n > 0 ? sum / Double(n) : 0)
+}
+
+func raster(_ img: CGImage) -> Raster {
+    let W = img.width, H = img.height
+    let ctx = CGContext(data: nil, width: W, height: H, bitsPerComponent: 8, bytesPerRow: W * 4,
+                        space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)!
+    ctx.draw(img, in: CGRect(x: 0, y: 0, width: W, height: H))
+    return Raster(w: W, h: H, px: Array(UnsafeBufferPointer(start: ctx.data!.assumingMemoryBound(to: UInt8.self), count: W * H * 4)))
 }
 
 func colour(_ s: Raster, _ o: Raster) -> (share: Double, kept: Double?) {
@@ -495,7 +506,7 @@ func mend(_ got: [String], _ ref: [String], joined: Set<String>) -> (tokens: [St
 }
 
 // Red, on the truth: set on the owner's reports and the green pages (`Tools/ux-harness-selftest.sh`)
-let truthCopyMax = 0.05, truthFindMin = 0.80
+let truthCopyMax = 0.05, truthFindMin = 0.80, truthElInkMin = 0.50, truthElColMin = 0.50
 var truthRows: [String] = []
 var truthWordRows: [String] = []
 var pairKeyRows: [String] = []
@@ -613,6 +624,7 @@ func truthPage(_ p: Int, _ sp: PDFPage, _ op: PDFPage, _ out: PDFDocument, _ pai
     let pdir = outDir.appendingPathComponent("pairs")
     try? FileManager.default.createDirectory(at: pdir, withIntermediateDirectories: true)
     var list = ["0\twhole page"]
+    var elInk: Double? = nil, elCol: Double? = nil
     let items = [(CGRect?.none, "whole page")] + t.objects.map { (Optional(pxToDisp(t, op, $0.px)), $0.desc) }
     for (k, item) in items.enumerated() {
         let (sImg, oImg, sc) = k == 0 ? pairs[0] : pairs[1]
@@ -631,10 +643,21 @@ func truthPage(_ p: Int, _ sp: PDFPage, _ op: PDFPage, _ out: PDFDocument, _ pai
             if let d = NSBitmapImageRep(cgImage: img).representation(using: .png, properties: [:]) { try? d.write(to: pdir.appendingPathComponent(name)) }
         }
         save(outIsA ? oc2 : sc2, "p\(p)-\(k)-A.png"); save(outIsA ? sc2 : oc2, "p\(p)-\(k)-B.png")
+        // each listed element, with no model: the share of its dark ink and of its coloured pixels the
+        // output keeps, where the source's box holds enough of either to judge
+        if k > 0 {
+            let s = raster(sc2), o = raster(oc2)
+            let si = inkStats(s).count, oi = inkStats(o).count
+            if si >= 50 { let r = min(Double(oi) / Double(si), 1); elInk = min(elInk ?? r, r) }
+            let c = colour(s, o)
+            if let kept = c.kept, c.share * Double(s.w * s.h) >= 50 { elCol = min(elCol ?? kept, kept) }
+        }
         pairKeyRows.append("\(p)\t\(k)\t\(outIsA ? "A" : "B")\t\(item.1)")
         if k > 0 { list.append("\(k)\t\(item.1)") }
     }
     try? (list.joined(separator: "\n") + "\n").write(to: pdir.appendingPathComponent("p\(p)-elements.txt"), atomically: true, encoding: .utf8)
+    if (elInk ?? 1) < truthElInkMin { flags.append("tink") }
+    if (elCol ?? 1) < truthElColMin { flags.append("tcolour") }
 
     let fa = apart["fig"]!, ha = apart["hand"]!
     let figCell: String = fa.1 > 0 ? "\(fa.0)/\(fa.1)" : "-"
@@ -643,7 +666,7 @@ func truthPage(_ p: Int, _ sp: PDFPage, _ op: PDFPage, _ out: PDFDocument, _ pai
     var cells: [String] = [String(p), String(t.words.count), String(contestedN), String(scored), String(right)]
     cells += [String(wrongN), String(missN), String(added), String(splits), String(welds), String(hyph)]
     cells += [f4(copyErr), f2(findShare), order, figCell, handCell, f4(visMiss), f4(layerMiss)]
-    cells += [String(items.count), flags.isEmpty ? "-" : flags.joined(separator: ",")]
+    cells += [String(items.count), f2(elInk), f2(elCol), flags.isEmpty ? "-" : flags.joined(separator: ",")]
     return cells.joined(separator: "\t")
 }
 
