@@ -659,6 +659,9 @@ say so in the commit.
 - [x] **truth-set-b9** — batch 9, full procedure: 20 pages, rows 93-114, the last ux-run green draws (6
       no-image, 3 newspaper, 5 other, 6 unknown). 8,775 words, 21 contested (0.24%), no spot unchecked; 15
       are Gitlin's New York Times page. 153 of 215 pages done (`ops/truth/STATUS.md`). (context: truth-set)
+- [x] **truth-set-b10** — batch 10, full procedure: 12 pages, rows 115-126, the first ux-run red draws (9
+      jbig2, 2 layered, 1 no-image). 7,548 words, 40 contested (0.53%), no spot unchecked; 35 are Xin Qu
+      2018 p24. 165 of 215 pages done (`ops/truth/STATUS.md`). (context: truth-set)
 - [ ] **truth-harness** — measure published outputs against the truth set, text and everything else alike,
       and run it on today's pipeline. (blocked-on: truth-set)
       TEXT, in `Tools/ux-harness.swift --truth <dir>`. (a) Copy: drag each column the transcript lists, from

@@ -139,3 +139,11 @@ Zipkin's 4 of 420. Readers used 27-49k tokens a page; the batch took about 20% o
 Rate by route over every done page: dct 3/3,859 (0.08%), jbig2 124/29,274 (0.42%), layered 49/12,584
 (0.39%), newspaper 165/10,063 (1.64%), no-image 2/4,199 (0.05%), other 2/867 (0.23%), unknown 55/9,530
 (0.58%). 153 of 215 pages done, 62 `todo`. **Next:** the ux-run red draws from row 115 on.
+
+**Batch 10 (b10), 2026-09-30, full procedure, same session:** rows 115-126, the first 12 ux-run red draws (9
+jbig2, 2 layered, 1 no-image). 7,548 words, 120 check crops, 40 contested (0.53%), none unchecked. Xin Qu
+2018 p24 holds 35 of its 287 (83 spots on one page, probably a table; not inspected). Readers used 34-58k
+tokens a page; the batch took about 15% of the window (75% to 90%). Rate by route over every done page: dct
+3/3,859 (0.08%), jbig2 162/34,262 (0.47%), layered 51/13,911 (0.37%), newspaper 165/10,063 (1.64%),
+no-image 2/5,432 (0.04%), other 2/867 (0.23%), unknown 55/9,530 (0.58%). 165 of 215 pages done, 50
+`todo`. **Next:** the red draws from row 127 on.
