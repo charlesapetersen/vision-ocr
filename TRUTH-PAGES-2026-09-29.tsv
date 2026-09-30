@@ -105,7 +105,7 @@ journalArticle/Robin_Stephens_1996_Against the Grain_Social Text.pdf	1	ux-run gr
 bookSection/Canby_1929_Comment on Several Subjects.pdf	2	ux-run green, other	other	todo
 journalArticle/Burke - The Expansion of American Higher Education.pdf	1	ux-run green, other	other	todo
 owner/1957 - Employment on Merit The Continuing Challenge to Business (Joseph J. Morrow).pdf	3	ux-run green, unknown	unknown	todo
-owner/Hughes - The Knitting of Racial Groups in Industry (Desktop copy 2026-09-26).pdf	3	ux-run green, unknown	unknown	none: reader output blocked by the API content filter, twice (b1); retry with a later batch
+owner/Hughes - The Knitting of Racial Groups in Industry (Desktop copy 2026-09-26).pdf	3	ux-run green, unknown	unknown	done b4: words=748 contested=1
 owner/Sewell - 1999 - Contracting racial equality Affirmative action policy and practice in the United States, 1945-1970.pdf	244	ux-run green, unknown	unknown	todo
 owner/Hughes - The Knitting of Racial Groups in Industry (Desktop copy 2026-09-26).pdf	7	ux-run green, unknown	unknown	todo
 owner/1957 - Employment on Merit The Continuing Challenge to Business (Joseph J. Morrow).pdf	2	ux-run green, unknown	unknown	todo
@@ -173,30 +173,30 @@ owner/Leland - 1952 - We Believe in Employment on Merit, but.pdf	2	ux-regression
 owner/Leland - 1952 - We Believe in Employment on Merit, but.pdf	5	ux-regression set	jbig2	done b1: words=448 contested=0
 owner/Leland - 1952 - We Believe in Employment on Merit, but.pdf	6	ux-regression set	jbig2	done b1: words=447 contested=1
 owner/Delton - 2007 - Before the EEOC How Management Integrated the Workplace.pdf	2	ux-regression set	jbig2	done b1: words=358 contested=1
-thesis/Zarifa_2008_Emerging Forms of Stratification in Higher Education_.pdf	92	ux-regression set	jbig2	todo
-newspaperArticle/Berendzen_1981_The Soaring Lesson of America in Space_Newsday (1940-1990), Nassau ed.; Long Island, N.Y..pdf	1	ux-regression set	newspaper	todo
-document/2013 - Silicon Valley Program Transcript.pdf	10	ux-regression set	jbig2	todo
-journalArticle/Surani et al. - AI for Scaling Legal Reform Mapping and Redacting Racial Covenants in Santa Clara County.pdf	10	ux-regression set	jbig2	todo
-bookSection/Berger_2013_Toward a Third Industrial Divide_.pdf	18	ux-regression set	jbig2	todo
-magazineArticle/Glazer_2002_Higher Ed_New Republic.pdf	1	ux-regression set	layered	todo
-newspaperArticle/___ 2.pdf	1	ux-regression set	newspaper	todo
-bookSection/Hyman_2012_Rethinking the Postwar Corporation_Oxford University Press.pdf	8	ux-regression set	jbig2	todo
-journalArticle/Riesman_1949_Men, Women, and Marriage_Nation.pdf	2	ux-regression set	jbig2	todo
-magazineArticle/Marth_1982_Why Unions Lose At Many Companies_Nation's Business (pre-1986); Washington.pdf	2	ux-regression set	layered	todo
-document/_1953_99 Cong_ 2.pdf	16	ux-regression set	jbig2	todo
-thesis/Ries_Marshall_1955_web.pdf	54	ux-regression set	jbig2	todo
-magazineArticle/Kristol_1960_High, Low, and Modern_Encounter.pdf	1	ux-regression set	jbig2	todo
-report/AI 2027.pdf	54	ux-regression set	jbig2	todo
-newspaperArticle/_1941_Fiedler's hiring at UM announced_Helena Independent.pdf	1	ux-regression set	newspaper	todo
-bookSection/Allen_2011_The Origins of Political Philosophy_Oxford University Press.pdf	8	ux-regression set	jbig2	todo
-owner/1954 - Why.pdf	3	ux-harness selftest	jbig2	done b2: words=312 contested=0
-owner/1954 - Why.pdf	4	ux-harness selftest	layered	done b2: words=514 contested=7
-owner/1954 - Why.pdf	7	ux-harness selftest	layered	done b2: words=483 contested=0
-owner/1951 - Briefer Book Notes.pdf	2	ux-harness selftest	jbig2	done b2: words=672 contested=3
-owner/1951 - Briefer Book Notes.pdf	5	ux-harness selftest	jbig2	done b2: words=588 contested=4
-owner/1951 - Briefer Book Notes.pdf	6	ux-harness selftest	jbig2	done b2: words=649 contested=0
-owner/Hughes - The Knitting of Racial Groups in Industry (Desktop copy 2026-09-26).pdf	2	ux-harness selftest	unknown	done b3: words=625 contested=3
-owner/Hughes - The Knitting of Racial Groups in Industry (Desktop copy 2026-09-26).pdf	8	ux-harness selftest	unknown	done b3: words=775 contested=6
+thesis/Zarifa_2008_Emerging Forms of Stratification in Higher Education_.pdf	92	ux-regression set	jbig2	done b4: words=512 contested=0
+newspaperArticle/Berendzen_1981_The Soaring Lesson of America in Space_Newsday (1940-1990), Nassau ed.; Long Island, N.Y..pdf	1	ux-regression set	newspaper	done b4: words=1353 contested=3
+document/2013 - Silicon Valley Program Transcript.pdf	10	ux-regression set	jbig2	done b4: words=386 contested=1
+journalArticle/Surani et al. - AI for Scaling Legal Reform Mapping and Redacting Racial Covenants in Santa Clara County.pdf	10	ux-regression set	jbig2	done b4: words=690 contested=0
+bookSection/Berger_2013_Toward a Third Industrial Divide_.pdf	18	ux-regression set	jbig2	done b4: words=475 contested=1
+magazineArticle/Glazer_2002_Higher Ed_New Republic.pdf	1	ux-regression set	layered	done b4: words=1200 contested=0
+newspaperArticle/___ 2.pdf	1	ux-regression set	newspaper	done b4: words=3144 contested=74
+bookSection/Hyman_2012_Rethinking the Postwar Corporation_Oxford University Press.pdf	8	ux-regression set	jbig2	done b4: words=911 contested=0
+journalArticle/Riesman_1949_Men, Women, and Marriage_Nation.pdf	2	ux-regression set	jbig2	done b4: words=1099 contested=3
+magazineArticle/Marth_1982_Why Unions Lose At Many Companies_Nation's Business (pre-1986); Washington.pdf	2	ux-regression set	layered	done b4: words=737 contested=8
+document/_1953_99 Cong_ 2.pdf	16	ux-regression set	jbig2	done b4: words=1540 contested=1
+thesis/Ries_Marshall_1955_web.pdf	54	ux-regression set	jbig2	done b4: words=222 contested=0
+magazineArticle/Kristol_1960_High, Low, and Modern_Encounter.pdf	1	ux-regression set	jbig2	done b4: words=462 contested=1
+report/AI 2027.pdf	54	ux-regression set	jbig2	done b4: words=303 contested=3
+newspaperArticle/_1941_Fiedler's hiring at UM announced_Helena Independent.pdf	1	ux-regression set	newspaper	done b4: words=3344 contested=69
+bookSection/Allen_2011_The Origins of Political Philosophy_Oxford University Press.pdf	8	ux-regression set	jbig2	done b4: words=608 contested=1
+owner/1954 - Why.pdf	3	ux-harness selftest	jbig2	done b4: words=312 contested=0
+owner/1954 - Why.pdf	4	ux-harness selftest	layered	done b4: words=514 contested=0
+owner/1954 - Why.pdf	7	ux-harness selftest	layered	done b4: words=483 contested=4
+owner/1951 - Briefer Book Notes.pdf	2	ux-harness selftest	jbig2	done b4: words=672 contested=1
+owner/1951 - Briefer Book Notes.pdf	5	ux-harness selftest	jbig2	done b4: words=588 contested=0
+owner/1951 - Briefer Book Notes.pdf	6	ux-harness selftest	jbig2	done b4: words=649 contested=0
+owner/Hughes - The Knitting of Racial Groups in Industry (Desktop copy 2026-09-26).pdf	2	ux-harness selftest	unknown	done b4: words=625 contested=0
+owner/Hughes - The Knitting of Racial Groups in Industry (Desktop copy 2026-09-26).pdf	8	ux-harness selftest	unknown	done b4: words=775 contested=6
 document/Stanford_1891_Jane Stanford opening day speech (undelivered).pdf	4	non-text candidate, source colour 0.78	layered	todo
 document/_1939_Former students to Board re Merriam_.pdf	5	non-text candidate, source colour 0.38	layered	todo
 document/Lyons oral history.pdf	3	non-text candidate, source colour 0.24	layered	todo

@@ -82,3 +82,19 @@ counted contested). 1,400 words, 9 contested (0.64%): Hughes 8's 6 are the dots 
 `Work-`/`ers`. All 8 selftest pages are now done. Rate by route over every done page: dct 0/182, jbig2
 10/6,131 (0.16%), layered 12/2,926 (0.41%), no-image 1/435 (0.23%), unknown 57/5,602 (1.02%). **Next:** the
 16 testdocs pages of the regression set (Zarifa 92 first, in list order), then the draws; Hughes p3 again.
+
+**Batch 4 (b4), 2026-09-29, full procedure (reader and check subagents, every spot checked):** the eight
+`session-inline` pages again, Hughes p3, and the 16 testdocs pages of the regression set. 25 pages, 22,352
+words, 177 contested (0.79%). The two small-town newspapers hold 143 of them (`___ 2` 74 of 3,144; Fiedler
+69 of 3,344); without them it is 34 of 15,864 (0.21%). Hughes p3 got past the content filter, and Allen p8
+was blocked once and read on the retry. **The redo:** the old transcripts are in each page's `inline/`.
+Order-free, with dashes and quotes folded, the new reading matches the old on every word but Hughes p2's
+`E LTON`/`ELTON` (none in the other seven pages, about 4,000 words). As written, the new ones differ in dash and quote glyphs
+and in where Hughes p2 puts its footnote. Contested counts moved from 7/0/3/4/0/3/6 to 0/4/1/0/0/0/6
+(Why 4, 7; Briefer 2, 5, 6; Hughes 2, 8), because checks now settle spots. Each reader was handed its
+`brief.txt` to Read, not the prompt pasted in. The file holds the READER prompt verbatim and no page
+text. Checks: 502 crops in 13 shuffled briefs of 39. Cost: readers 41-67k tokens a page, 76k and 111k for
+the newspapers; checks about 33k per brief. The batch took about 34% of the window (12% to 46%).
+Rate by route over every done page: dct 0/182, jbig2 15/13,339 (0.11%), layered 17/4,863 (0.35%),
+newspaper 146/7,841 (1.86%), no-image 1/435 (0.23%), unknown 55/6,350 (0.87%). **Next:** the draws in
+list order (row 2 on, `todo`), about 40 a session.

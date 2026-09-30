@@ -638,6 +638,11 @@ say so in the commit.
       spots unchecked (the session started at 92% of the window). 1,400 words, 9 contested (0.64%; 6 are
       ellipsis dots). Every regression owner page and selftest page is done but Hughes p3
       (`ops/truth/STATUS.md`). (context: truth-set)
+- [x] **truth-set-b4** — batch 4, full procedure: the eight in-session pages read again, Hughes p3 (read
+      this time), and the 16 testdocs pages of the regression set. 25 pages, 22,352 words, 177 contested
+      (0.79%; 0.21% without the two small-town newspapers), no spot unchecked. The redone pages match the
+      in-session words but one (`E LTON`). The whole regression set and selftest now has truth
+      (`ops/truth/STATUS.md`). (context: truth-set)
 - [ ] **truth-harness** — measure published outputs against the truth set, text and everything else alike,
       and run it on today's pipeline. (blocked-on: truth-set)
       TEXT, in `Tools/ux-harness.swift --truth <dir>`. (a) Copy: drag each column the transcript lists, from
