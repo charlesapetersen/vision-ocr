@@ -682,8 +682,6 @@ say so in the commit.
       (newspaper 4.64%, every other route under 1%). (context: truth-set)
 - [ ] **truth-second-reader** — have Gemini read the most-contested truth-set pages, to settle contested
       words and to measure how often the Claude transcripts are wrong on old print. (effort: medium)
-      [hold] needs: owner — the daemon denies `curl`, so the API call needs a wrapper script that reads the
-      key itself; being set up on 2026-09-30.
       WHY. `truth-calibrate` could not calibrate old print: the only real book had an OCR layer, not a true
       one. Two Claude readers share one model's blind spots, and 1,855 of the set's 118,757 words are
       contested, most on newspapers (4.64%; the 1926 Anaconda Standard page alone 21%). Gemini is a
@@ -693,11 +691,14 @@ say so in the commit.
       WHAT. Take the ten pages with the most contested words (the newspapers, Raskin and the worst of the
       rest; list them in the output first). (a) Every contested word's crop, read blind by Gemini with the
       CHECK prompt. (b) An independent Gemini transcript of each of the ten pages, made from the same crops
-      with the READER prompt, aligned with the Claude transcript. Use `gemini-3.1-pro` through the REST API
-      with curl (the framework python3 has no root certificates). Take the key the way
-      `~/Claude/Archive Suite/ArchiveProcessor/test-smoke.sh` does, into an environment variable only:
-      never print it, write it to a file, log it or commit it. If the session cannot read the key, stop and
-      record that in the SESSION LOG; do not look for it any other way.
+      with the READER prompt, aligned with the Claude transcript. Call Gemini only through
+      `ops/truth/gemini-read.sh <prompt-file> <image>...`, which reads the key from the Keychain itself, logs
+      every call's tokens and cost to `$STATE/truth/gemini-usage.tsv`, and refuses calls once the logged spend
+      reaches $3 (`--spent` prints it). Never read the key or call the API any other way. Model
+      `gemini-3.1-pro-preview`. Measured 2026-09-30: one word crop cost 1,105 input tokens, about $0.002, so
+      reading 1,800 crops one per call would spend the cap on (a) alone. Put about 40 numbered crops on one
+      contact-sheet image per call, as the check briefs do, and ask for one numbered line per crop. Check the
+      current Gemini 3.1 Pro price first and set GEMINI_PRICE_IN/OUT if it differs from the script's.
       RULES. Gemini never overrules on its own, the lesson of `truth-calibrate`'s v1 cross-check. A contested
       word is settled when Gemini's blind reading agrees with the Claude reader's or check's reading;
       otherwise it stays contested. Where Gemini's transcript disagrees with a settled Claude word, a fresh
