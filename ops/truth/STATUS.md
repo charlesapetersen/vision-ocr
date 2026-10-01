@@ -400,4 +400,6 @@ The `unread` column still counts run 1's selection (8,424), where final4's uncon
 The diff review found the tie-break flaw above and nits; its result-changing fixes were reverted (the tie-break did
 worse), so final4 is this code's run: the committed Swift differs from `final4/h/main.swift` by comments and a guard
 against non-finite boxes only (checked by `diff`, by me, not by a second reviewer: the window was past 85%).
-`Tools/ux-regression.sh --baseline` not yet run: its truth rows will move with Copy, none worse (no page's copy error rose).
+`Tools/ux-regression.sh --baseline` (measured): truth rows only, 4 better (Delton p2 0.0965 -> 0.0029 and its `tcopy`,
+Xin Qu p24 1.39 -> 1.06, Riesman 1949 p2 figure text 9/45 -> 12/45) and 1 worse, accepted: `___ 2` p1's welds 1 -> 2, the
+drag kept there having fewer errors in all; the page is red on copy either way. Baseline refreshed.
