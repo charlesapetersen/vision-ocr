@@ -494,6 +494,16 @@ note_progress() {
 # through any session whose whole output was closing a `BUGS.md` entry, and would then FALSE-PARK a healthy
 # run at $MAX_NOCOMPLETE. Errs toward COUNTING a completion: a missed one false-parks (bad), a spurious one
 # only misses a runaway, which the budget cap and idle backoff still backstop.
+# Ticked boxes in origin/main's QUEUE.md, for the attempt count (3e). A session pushes from its own worktree and
+# the primary checkout often lags behind, so this reads the remote-tracking ref, which every push updates.
+origin_ticks() {
+  local n
+  n=$(git -C "$REPO" show refs/remotes/origin/main:ops/autonomous/QUEUE.md 2>/dev/null \
+        | grep -cE '^[[:space:]]*[-*][[:space:]]+\[[xX]\]')
+  case "$n" in ''|*[!0-9]*) n=0 ;; esac
+  echo "$n"
+}
+
 completed_items() {
   local q b re='^[[:space:]]*[-*][[:space:]]+\[[xX]\]'
   q=$(grep -cE "$re" "$QUEUE" 2>/dev/null)
@@ -1672,6 +1682,7 @@ culprits are per-worktree build/ directories and Tools/mutation-out/. Free some 
   # 3d. Snapshot the decision surface BEFORE the session, so afterwards we can tell whether it actually
   #     advanced the run. Also snapshot the completed-item count, to tell a checkpoint from a completion.
   local fp_before cc_before; fp_before="$(work_fingerprint)"; cc_before="$(completed_items)"
+  local ticks_before; ticks_before="$(origin_ticks)"
 
   # 4. Acquire the lock + heartbeat it for the child's lifetime, so overlapping cycles skip.
   touch "$LOCK"
@@ -1813,8 +1824,10 @@ culprits are per-worktree build/ directories and Tools/mutation-out/. Free some 
     note_no_progress || verdict=9
   fi
 
-  # Count the attempt for 3e: the session ran (not a usage-limit fast-fail) and the head item is still open.
-  if [ -n "$head_tag" ] && [ "$w_cutoff" = 0 ]; then
+  # Count the attempt for 3e: the session ran (not a usage-limit fast-fail), the head item is still open, and the
+  # session ticked no box. A session that ticked a sub-box for a finished part made progress; counting it raised
+  # multi-session items such as truth-harness to max effort for doing their job in steps (owner, 2026-10-01).
+  if [ -n "$head_tag" ] && [ "$w_cutoff" = 0 ] && [ "$(origin_ticks)" -le "${ticks_before:-0}" ]; then
     if "$REPO/ops/autonomous/next-item.sh" "$REPO" 2>/dev/null | awk -F'\t' -v t="$head_tag" '$2==t{f=1} END{exit !f}'; then
       printf '%s\t%s\t%s\t%s\n' "$head_tag" "$(date '+%Y-%m-%d %H:%M')" "$eff" "$(( SECONDS - _t0 ))" >> "$STATE/attempts.tsv" 2>/dev/null || true
     fi
