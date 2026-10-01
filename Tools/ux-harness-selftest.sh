@@ -14,6 +14,8 @@
 #   Left out, because the harness is right that they are wrong: Why p9 (a drag down the left column
 #   takes 13 lines of the right one), Why p10 (the red logo is grey, C38), Hughes p6 (the text layer runs
 #   across both columns row by row), Hughes p4 (the diagram's labels are not in the text layer).
+# CONTESTED: a word the truth-harness re-read did not confirm (`contested-harness.tsv`) is not scored, and
+#   a row of it naming another word than the transcript's stops the harness.
 # ROTATED (invariant 5): `rotfix.pdf`, built here from Why pp5 and 9 as bitmaps, the second drawn sideways
 #   under /Rotate 90 on a page of the other orientation. Page 1 must be green; page 2 must find its
 #   columns (2 or more) and not be red for geometry, since the pipeline publishes it upright at /Rotate 0.
@@ -169,6 +171,43 @@ case_truth truth-green-why  "1954 - Why" "$O/1954 - Why.pdf" "$GREEN/1954 - Why.
 case_truth truth-green-hug  "$HUG" "$O/$HUG.pdf" "$GREEN/$HUG.ocr.pdf" "1 2 3 5 7 8 9" -
 case_truth truth-green-bri  "1951 - Briefer Book Notes" "$O/1951 - Briefer Book Notes.pdf" "$GREEN/1951 - Briefer Book Notes.ocr.pdf" "5 6" -
 case_truth truth-lost-lines "1951 - Briefer Book Notes" "$O/1951 - Briefer Book Notes.pdf" "$GREEN/1951 - Briefer Book Notes.ocr.pdf" "1 2 3 4" tcopy
+
+# CONTESTED BY THE RE-READ: a word in a page's `contested-harness.tsv` (`ops/truth/reread.py`, the words the
+# blind re-read did not confirm) is not scored. A copy of Raskin p1's truth page contests every word the
+# truth-raskin case scored wrong, beside whatever the page already contests: none may be left wrong, and
+# `scored` must fall by exactly that many.
+case_contest() {
+    local r="$W/truth-raskin" t="$W/contest-truth/p1" f n
+    if [ ! -f "$r/truth-words.tsv" ]; then echo "skip  truth-contest: truth-raskin did not run"; return; fi
+    mkdir -p "$t"
+    for f in "$TR/$RASKIN/p1/"*; do [ "$(basename "$f")" = contested-harness.tsv ] || ln -s "$f" "$t/"; done
+    awk -F'\t' 'NR > 1 && $1 == 1 && $3 == "wrong" {print $2}' "$r/truth-words.tsv" | sort -un > "$W/contest-wrong.txt"
+    n=$(wc -l < "$W/contest-wrong.txt" | tr -d ' ')
+    { cut -f1 "$TR/$RASKIN/p1/contested-harness.tsv" 2> /dev/null; cat "$W/contest-wrong.txt"; } | sort -un > "$t/contested-harness.tsv"
+    "$W/ux" --truth "$W/contest-truth" "$O/$RASKIN.pdf" "$O/$RASKIN.ocr-24a8f6a.pdf" "$W/truth-contest" 1 > "$W/truth-contest.tsv" 2> /dev/null
+    local b a
+    b="$(awk -F'\t' '$1 == "TRUTH" && $2 == 1 {print $5, $7}' "$W/truth-raskin.tsv")"
+    a="$(awk -F'\t' '$1 == "TRUTH" && $2 == 1 {print $5, $7}' "$W/truth-contest.tsv")"
+    if [ "$n" -gt 0 ] && [ "${a#* }" = 0 ] && [ "${a% *}" = "$(( ${b% *} - n ))" ]; then
+        echo "ok    truth-contest: $n contested words left out (scored, wrong: $b -> $a)"
+    else echo "FAIL  truth-contest: contesting $n words took scored, wrong from $b to ${a:-no row}"; bad=1; fi
+}
+case_contest
+
+# A STALE RE-READ: a `contested-harness.tsv` row naming another word than the transcript has at its index
+# (a transcript corrected after the re-read moves every later index) must stop the harness, exit 2, rather
+# than leave some other word out in silence.
+case_stale() {
+    local t="$W/stale-truth/p1" f rc=0
+    mkdir -p "$t"
+    for f in "$TR/$RASKIN/p1/"*; do [ "$(basename "$f")" = contested-harness.tsv ] || ln -s "$f" "$t/"; done
+    printf '0\tnot-the-first-word\t?\n' > "$t/contested-harness.tsv"
+    "$W/ux" --truth "$W/stale-truth" "$O/$RASKIN.pdf" "$O/$RASKIN.ocr-24a8f6a.pdf" "$W/truth-stale" 1 > "$W/truth-stale.tsv" 2> "$W/truth-stale.err" || rc=$?
+    if [ "$rc" = 2 ] && grep -q 'run the re-read again' "$W/truth-stale.err" && ! grep -q '^TRUTH' "$W/truth-stale.tsv"; then
+        echo "ok    truth-stale: a re-read row naming another word stops the harness (exit 2)"
+    else echo "FAIL  truth-stale: exit $rc and $(grep -c '^TRUTH' "$W/truth-stale.tsv") TRUTH rows, not exit 2 and none"; bad=1; fi
+}
+case_stale
 
 echo "renders and TSVs: $W"
 [ "$bad" = 0 ] && { echo "ux-harness-selftest: PASS"; exit 0; }

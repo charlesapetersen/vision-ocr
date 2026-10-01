@@ -761,6 +761,14 @@ say so in the commit.
       `-docs.tsv`. 42 pages pass the old measures and fail the truth (35 on text alone), 10 the reverse; by
       route in `ops/truth/STATUS.md`. Left for `truth-harness`: the blind re-read of each `truth-words.tsv`
       and the judges on `pairs/`, from `$STATE/truth-run-2026-09-30/`. (context: owner request 2026-09-29)
+- [x] **truth-harness-run2** — the blind re-read, the judges' first round and the rescore, 2026-10-01: 3,753 rows
+      of `truth-words.tsv` re-read on tight crops (3,304 confirmed; 427 words on 59 pages contested and no longer
+      scored), 659 crop pairs judged blind, all 215 pages scored again with Find fixed (it searched `high-school`
+      as `highschool`, and its sample moved when words were contested). The DONE WHEN check failed the judges on
+      the self-test's green Why pages (shades of red, staple marks); the sharpened prompt, tried on those pages and
+      the controls, keeps 17 of 17 controls and only real losses (C28's cartoons and pencil marks). Left for
+      `truth-harness`: that prompt over the other 221 pairs, briefs written; `ops/truth/STATUS.md` says how.
+      (context: owner request 2026-09-29)
 - [ ] **truth-read** — read `truth-harness`'s output and turn what it finds into queued work.
       (blocked-on: truth-harness)
       Start with the pages the old measures pass and the truth fails, since those hold the defects the old

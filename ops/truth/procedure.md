@@ -69,6 +69,47 @@ resolution, and measure again.
 > Open this one image with the Read tool and nothing else. It shows one printed word, or a few. Write
 > exactly what is printed, character for character, with no correction. Write `?` if you cannot tell.
 
+## CHECK prompt, sheets (verbatim; `truth-harness`'s re-read, `reread.py sheets`)
+
+The CHECK prompt above for crops laid out on numbered contact sheets, as the second reader had them.
+
+> Each image named below is a sheet of numbered crops. Each crop sits in a grey frame with its number
+> in blue above it, and shows one printed word, or a few; ink cut off at a frame's edge belongs to a
+> neighbouring line. Open the sheets with the Read tool and nothing else. For every number, write
+> exactly what is printed in that frame, character for character, with no correction, or `?` if you
+> cannot tell. Nothing on a sheet belongs to the same sentence. Read each crop once, and do not open a
+> sheet again.
+
+## JUDGE prompt (verbatim; `truth-harness`'s judges, `judge.py`, not part of the reading procedure)
+
+> Each numbered item below is a pair of images, A and B, of the same region of one printed page: two
+> renderings, one of which may have lost something. You are not told which is which, and it does not
+> matter. Open ONLY the image files listed, with the Read tool: open a pair's A and B together in one
+> turn, look once, and do not open them again. Open nothing else.
+>
+> For each pair, first describe A on its own, in under 20 words: what it shows, the colours of its ink
+> and paper, and how easily its text reads. Then describe B on its own in the same way. Only then
+> compare them. List each thing that is in one image and missing from the other, fainter or paler in
+> one, harder to read in one (broken, smeared, blurred, too light, too heavy), or a different colour in
+> one, naming the image it is worse in each time. Ignore what a reader would not notice: a shift of a
+> few pixels, compression speckle, a slightly different paper tone with nothing else changed. Ignore
+> the marks of the scanning rather than of the page: staples and their holes, the gutter's shadow, the
+> scan's edges, the paper's tone. Count a colour only when it is lost or turns into another colour (red
+> printed black or grey, a coloured line gone grey): the same colour a shade lighter, darker or pinker,
+> with every stroke as solid and as easy to read, is `same`. The item's checklist line names what the
+> region holds; check that thing in particular. The checklist was written from a grey image, so its
+> colour names may be wrong: judge colour from the images.
+>
+> Write one line per pair: the pair's number, then, separated by tabs, your description of A, your
+> description of B, the verdict, and the differences. The verdict is `same`,
+> `A worse`, `B worse` or `both` (each is worse in some way). Write each difference as `missing`,
+> `faded`, `harder` or `colour`, a colon, the image it is worse in, a colon, and what: `colour: B: the
+> heading is black, red in A`. Separate differences with ` | `, and write `-` when there are none.
+
+The first round (2026-09-30, `judge/out/`) had this prompt without the sentences on scanning marks and
+on shades of a colour. Its judges called the output worse on Why pp3-8, the self-test's green pages, for
+a red a shade pinker, for staple marks and for the gutter's shadow (DONE WHEN check, 2026-10-01).
+
 ## Output
 
 `$STATE/truth/<doc>/p<N>/transcript.txt`, `objects.txt`, `contested.tsv`, and `meta.txt` holding the

@@ -255,3 +255,72 @@ looked at). Scored words missing from Vision's reading of the source 0.19, from 
 NOT YET, both need subagents (this session started at 89% of the window): the blind re-read of each page's
 `score/d<N>/truth-words.tsv`, so a `tcopy` still counts unconfirmed words, and the judges on `score/d<N>/pairs/`,
 with `pairs-key.tsv` kept from them. Run 1 stays in `$STATE/truth-run-2026-09-30/` (`jobs.txt` maps d<N>).
+
+# truth-harness, the run, batch 2 (re-read and judges) — 2026-10-01
+
+Run 1's outputs (`$STATE/truth-run-2026-09-30/`, W, pipeline `832b7ac`) scored again with the re-read and the judges
+in, into `$STATE/truth-run-2026-09-30-final/` (in/ and pub/ link to W; nothing published again). All measured.
+
+RE-READ (`reread.py`). 3,753 of the 12,177 rows of `truth-words.tsv` read blind on a tight crop: every row on the 161
+pages a re-read could flip (3,315), and on the 30 pages red on copy whatever it finds, 100 per class and every Find
+row (438). 3,719 crops: 45 read one at a time, the rest on 135 contact sheets; 661 `nearest` crops that disagreed
+cut again with a word either side (66 sheets). 3,304 confirmed (369 by the wide crop), 449 contested: 427 words on
+59 pages, now in each page's `contested-harness.tsv` and not scored. 141 of the 427 read `?`; on General Foods
+1958 p21 (48 words, looked at) the crops show the line above, because the reader's line box sits a line off, and
+the harness drags from the same box, so those words cannot count either way. The 30 red pages' samples: 8% of
+far, 14% of near, 8% of missing and 7% of Find rows contested; their 8,417 other rows (`unread`) were not re-read
+and still count.
+REJECTED: correcting the transcript in place, as the item says. A single word read off a crop copies broken glyphs
+(procedure v2), so a disagreement contests the word instead, and it counts neither way.
+
+JUDGES (`judge.py`). 1,067 pairs on the 215 pages: 408 byte-identical, 659 judged blind on 142 pages (41 more were
+`ignore:` elements, now dropped, below). Round 1 (the prompt without the two sentences below): output same 416,
+worse 205, better 30, both 8; 17 of 17 control pairs named the output worse (Why p5 at 1.14.0 for colour, Why pp5-6
+at 24a8f6a harder). Five pages' pairs were split across 2-4 judges by hand (`brief-<i>a.txt`..).
+C4 FAILED ON ROUND 1 (the DONE WHEN check): the judges called the output worse on all six of the self-test's green Why
+pages, pp3-8, for a red a shade pinker or deeper (both ways, even on one page), staple marks and the gutter's shadow.
+The JUDGE prompt now says a shade of the same colour is `same` and marks of the scanning are not content. ROUND 2 on
+those pages and the controls (50 pairs, `judge/out2/brief-1..4.tsv`, measured): 17 of 17 controls still worse, for the
+right reasons (headings black; text blurred to illegibility); on the green pages 15 worse, better or both became
+`same` and 7 stayed worse, all real and alike: p3's pencil marks thinned or gone to specks, and the cartoons on pp4, 6
+and 7 published blurred (j425 looked at: strokes thinner, paler and jagged). That is C28's loss, ink no word box
+holds kept only in the low-resolution background, so the harness is right that pp3, 4, 6 and 7 are wrong; pp5 (both
+copies) and p8 are now green on the judges.
+NOT DONE, the next session (the window was at 74%): round 2 for the other 221 non-`same` pairs on 60 pages, which still
+carry round 1's verdicts. Their briefs are written: `$STATE/truth-run-2026-09-30/judge/rejudge/brief-5.txt` to
+`brief-17.txt` (13, up to 20 pairs, a page's pairs together; lists in `judge/rejudge-lists/`). Give each to one
+subagent as "Your instructions are in the file <brief>. Read that file first (the only non-image file you may open),
+then follow it exactly", at most about ten at once (a load of 20 pairs is about 2% of the window). Then
+`judge.py apply W`, `run-table.py $STATE/truth-run-2026-09-30-final/results.tsv TRUTH-RUN-2026-09-30-pages.tsv
+TRUTH-RUN-2026-09-30-docs.tsv W`, recount the classes below, a DONE WHEN check, tick `truth-harness`. Round 1's `same`
+pairs are not judged again: the new sentences only narrow what counts (11 of 11 such pairs stayed `same` in round 2).
+
+FIXED IN THE HARNESS, after the diff review (each would have misled `truth-read`). Find searched a word's letters
+alone, so `high-school` was sought as `highschool`: the final run's Find failures are run 1's less 168 such words and
+51 contested ones (the second review's count). A word with punctuation inside it is now left out of the sample.
+Contesting a word moved every later Find pick (98 new Find rows in a rescore, none re-read); the sample is now drawn
+before the re-read's words come out, and every row the final run counts on the 161 pages is one the re-read
+confirmed (2,770; 0 new). REJECTED: searching such a word with its punctuation, since which form a reader types is a
+guess. A `contested-harness.tsv` row naming another word than the transcript's stops the harness (exit 2; self-test
+`truth-stale`), and its rows split at any newline (CRLF). Objects marked `ignore:` were scored and paired. `judge.py
+prep` refuses to renumber judged pairs. Left: `same()` accepts a neighbour in a multi-word reading (5 of 3,304
+confirmations, the first review's count).
+
+    route      pages  green  red  old-only  truth-only   text  other  judge   (judge: round 2 on 7 pages only)
+    dct           13      8    0         0           5      3      2      4
+    jbig2        107     47   24         9          27     39      9     21
+    layered       55     23   14         1          17     13      8     26
+    newspaper     11      1    7         0           3     10      1      2
+    no-image      11     10    1         0           0      1      1      1
+    other          5      4    0         0           1      1      0      0
+    unknown       13     10    2         0           1      3      0      0
+    all          215    103   48        10          54     70     21     54
+
+Against run 1: 9 pages left `text`, 7 `tcopy` and General Foods p21 (`tcopy,tfind`) by the re-read and Lloyd-Jones
+1938 p18 (`tfind`) mostly by the Find fix; ___ 2 p1 lost `tfind` and keeps `tcopy`. The judges made 18 green pages
+truth-only, a count round 2 will lower. Of the 54 truth-only pages, 25 fail on text alone, 18 on the judges alone,
+11 on more than one. `TRUTH-RUN-2026-09-30-pages.tsv` and `-docs.tsv` carry the re-read and judge columns.
+`ux-regression.sh --baseline`: only truth rows moved, 24 better (22 Find, Delton p2's copyErr, ___ 2 p1's flags) and
+2 worse, both Xin Qu p24, an artefact of the smaller population: copyErr is over 1 there (1.32 -> 1.39), so leaving
+out a wrong word raises it, and layerMiss rose (0.26 -> 0.30) because contested words the layer held left the count.
+Self-test PASS (twice, the second on the final Swift).

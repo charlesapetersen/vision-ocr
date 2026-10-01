@@ -76,13 +76,16 @@ import Foundation
 // document's directory under `$STATE/truth/` holding `p<N>/transcript.txt`; pages without one are not
 // scored. Each such page prints a `TRUTH` row after its own and writes `<outdir>/truth.tsv`:
 //   trWords contested scored  the transcript's words (line-end hyphens joined), those not scored (contested
-//              by the check or the second reader, or `[?]`), and the body words scored
+//              by the check, the second reader or the re-read of `truth-words.tsv`, or `[?]`), and the body
+//              words scored
 //   right wrong missing added  a drag down each of the transcript's COLUMNS (3+ body lines), from its first
 //              line's start to its last line's end, and each other body line's own box, aligned word by word
 //              with the transcript; contested words and figure text in a column are free either way
 //   splits welds hyph  words split by a stray space, two words welded, a line-end hyphen the copy did not join
 //   copyErr    (wrong + missing + added) / scored          find  of up to 30 transcript words (5+ letters)
-//              the share `findString` finds with a hit over the word on this page
+//              the share `findString` finds with a hit over the word on this page; the sample is fixed by the
+//              transcript, so the re-read's contested words drop out of it without moving the others, and a
+//              word with punctuation inside it is not searched
 //   order      of adjacent columns, how many follow each other in the page's text layer; reported, never
 //              red: a footnote at a column's foot is read before or after the next column (Hughes p2)
 //   fig hand   figure text and handwriting, apart: words a selection over each line holds, of all
@@ -97,7 +100,8 @@ import Foundation
 //   tflags     `tcopy` copyErr > 0.05, `tfind` find < 0.80, `tink` elInk < 0.50, `tcolour` elCol < 0.50
 //              (set on `Tools/ux-harness-selftest.sh`'s pages)
 // `truth-words.tsv` lists every wrong, missing and unfound word with its box in the transcript's pixels,
-// for the blind re-read on a tight crop that must confirm a word before it counts against the app.
+// for the blind re-read on a tight crop that must confirm a word before it counts against the app
+// (`ops/truth/reread.py`; a word it does not confirm goes into `contested-harness.tsv`).
 // Blind spots: the transcript's boxes are the reader's estimates, and a word's box is estimated from its
 // character offset; a copy that joins a real compound split at a line end is scored right.
 //
@@ -367,10 +371,12 @@ func selects(_ b: CGRect, _ l: CGRect) -> Bool {
 // MARK: - Truth (--truth)
 // A truth page is `ops/truth/procedure.md`'s output: `<dir>/p<N>/transcript.txt` (`x y w h<TAB>text` per
 // printed line in page pixels, then `COLUMNS:` and `OBJECTS:`), `meta.txt` (`px=WxH`), and the contested
-// words, `contested-second.tsv` where the second reader wrote one, else `contested.tsv`, by index into the
-// transcript's words with line-end hyphens joined as `contest.py` joins them.
+// words, `contested-second.tsv` where the second reader wrote one, else `contested.tsv`, and with either
+// `contested-harness.tsv`, the words the blind re-read did not confirm (`ops/truth/reread.py`), all by
+// index into the transcript's words with line-end hyphens joined as `contest.py` joins them.
 
-struct TWord { let text: String; let line: Int; let kind: String; let joined: Bool; var contested: Bool; let px: CGRect }
+// `reread`: contested by the blind re-read alone (`contested-harness.tsv`), not by the transcript's own lists
+struct TWord { let text: String; let line: Int; let kind: String; let joined: Bool; var contested: Bool; let px: CGRect; var reread = false }
 struct TLine { let px: CGRect; let text: String; let kind: String }
 struct TPage { var lines: [TLine] = []; var words: [TWord] = []; var columns: [CGRect] = []
                var objects: [(px: CGRect, desc: String)] = []; var pxW = 0.0, pxH = 0.0 }
@@ -401,7 +407,8 @@ func loadTruth(_ dir: URL) -> TPage? {
         if section == "objects" {
             let low = raw.trimmingCharacters(in: .whitespaces).lowercased()
             // scanner borders, dust and the paper tint are not content, wherever the line says `ignore`
-            if low.hasPrefix("paper") || low.split(whereSeparator: { $0.isWhitespace }).contains("ignore") { continue }
+            if low.hasPrefix("paper") || low.split(whereSeparator: { $0.isWhitespace })
+                .contains(where: { $0.trimmingCharacters(in: .punctuationCharacters) == "ignore" }) { continue }
             if let b = firstBox(raw), b.width > 0, b.height > 0 { t.objects.append((b, raw)) }
             continue
         }
@@ -443,11 +450,26 @@ func loadTruth(_ dir: URL) -> TPage? {
     }
     let second = dir.appendingPathComponent("contested-second.tsv")
     let cf = FileManager.default.fileExists(atPath: second.path) ? second : dir.appendingPathComponent("contested.tsv")
-    for row in ((try? String(contentsOf: cf, encoding: .utf8)) ?? "").split(separator: "\n") {
+    // rows split at any newline: "\r\n" is one Character in Swift, so a split at "\n" alone keeps a CRLF file whole
+    for row in ((try? String(contentsOf: cf, encoding: .utf8)) ?? "").split(whereSeparator: { $0.isNewline }) {
         if let k = Int(row.split(separator: "\t").first ?? ""), k >= 0, k < t.words.count { t.words[k].contested = true }
     }
     // a word the reader could not read is not scored either
     for k in t.words.indices where t.words[k].text.contains("[?]") { t.words[k].contested = true }
+    // the words the blind re-read did not confirm, each named after its index: a transcript changed since the
+    // re-read moves every later index, so a row naming another word stops the run rather than leave out the
+    // wrong words in silence
+    let hf = dir.appendingPathComponent("contested-harness.tsv")
+    for row in ((try? String(contentsOf: hf, encoding: .utf8)) ?? "").split(whereSeparator: { $0.isNewline }) {
+        let f = row.split(separator: "\t", omittingEmptySubsequences: false)
+        guard let k = Int(f.first ?? ""), k >= 0, k < t.words.count else { continue }
+        if f.count > 1, String(f[1]) != t.words[k].text {
+            FileHandle.standardError.write("ux-harness: \(hf.path): word \(k) is \"\(t.words[k].text)\" in the transcript, \"\(f[1])\" here; run the re-read again\n".data(using: .utf8)!)
+            exit(2)
+        }
+        if !t.words[k].contested { t.words[k].reread = true }
+        t.words[k].contested = true
+    }
     return t
 }
 
@@ -571,12 +593,18 @@ func truthPage(_ p: Int, _ sp: PDFPage, _ op: PDFPage, _ out: PDFDocument, _ pai
     let wrongN = fails.filter { $0.1 == "wrong" }.count, missN = fails.filter { $0.1 == "missing" }.count
     let copyErr: Double? = scored >= 20 ? Double(wrongN + missN + added) / Double(scored) : nil
 
-    // (b) Find: up to 30 words of 5+ letters, each must have a hit on this page over the word
+    // (b) Find: up to 30 words of 5+ letters, each must have a hit on this page over the word. The sample is
+    // drawn before the re-read's contested words come out, so contesting a word never moves another pick and
+    // every word sampled is one the re-read was given. A word with punctuation inside it (`high-school`,
+    // `Women's`) is then left out too: the search is for its letters alone, which a correct layer lacks.
     var findShare: Double? = nil
-    let cand = scoredIdx.filter { k in let n = norm(t.words[k].text); return !t.words[k].joined && n.count >= 5 && n.allSatisfy { $0.isLetter } }
-    if cand.count >= 5 {
-        let step = max(1, cand.count / 30)
-        let sample = stride(from: 0, to: cand.count, by: step).prefix(30).map { cand[$0] }
+    let cand = body.filter { k in
+        let w = t.words[k], n = norm(w.text)
+        return (!w.contested || w.reread) && !w.joined && n.count >= 5 && n.allSatisfy { $0.isLetter }
+    }
+    let sample = cand.count < 5 ? [] : stride(from: 0, to: cand.count, by: max(1, cand.count / 30)).prefix(30).map { cand[$0] }
+        .filter { k in !t.words[k].contested && t.words[k].text.trimmingCharacters(in: CharacterSet.alphanumerics.inverted).allSatisfy { $0.isLetter } }
+    if sample.count >= 5 {
         var ok = 0
         for k in sample {
             let w = pxToDisp(t, op, t.words[k].px), line = pxToDisp(t, op, t.lines[t.words[k].line].px)
