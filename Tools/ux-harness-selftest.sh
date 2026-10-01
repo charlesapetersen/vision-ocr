@@ -138,10 +138,13 @@ case_ rotated-cols   "$W/in/rotfix.pdf" "$GREEN/rotfix.ocr.pdf" "2" rotated
 # at 24a8f6a, and Why p5 at 1.14.0, whose drags leave their columns (copy error 0.69-4.2). Why pp5-6 at
 # 24a8f6a are illegible, not wrong: their text scores clean, and their headings' boxes keep none (p5) and
 # 38% (p6) of the source's dark ink (`tink`); Why p5 at 1.14.0 keeps none of their colour (`tcolour`).
-# Green: Why pp3-8, Hughes pp1-3, 5, 7-9, Briefer pp5-6 (copy error at most 0.048). Briefer pp1-4 are
-# RED on the truth although every measure above passes them: the output's text layer lacks 3-10% of the
+# Green: Why pp3-8, Hughes pp1-3, 5, 7-9, Briefer pp2, 5-6 (copy error at most 0.036). Briefer pp1, 3 and 4
+# are RED on the truth although every measure above passes them: the output's text layer lacks 5-9% of the
 # page's words, whole lines of clean type (p1: "are even less different from those of the", in the
-# source's own layer too), which Vision's reading of the source, the old reference, lacks as well.
+# source's own layer too), which Vision's reading of the source, the old reference, lacks as well. Briefer
+# p2 was red here too until the drags were made from the ink as well (2026-10-01): its foot-of-page boxes
+# sit half a line above their ink, so a drag ended a line early and the next began a line early, and its
+# copy error went from 0.072 to 0.034. Its layer lacks 3.1% of its words, as p6's lacks 3.4%.
 TR="$STATE/truth/owner"
 case_truth() {
     local label="$1" truth="$2" src="$3" out="$4" pages="$5" want="$6"
@@ -169,8 +172,8 @@ case_truth truth-why-colour "1954 - Why" "$O/1954 - Why.pdf" "$O/1954 - Why.ocr-
 case_truth truth-why-legib  "1954 - Why" "$O/1954 - Why.pdf" "$O/1954 - Why.ocr-24a8f6a.pdf" "5 6" tink
 case_truth truth-green-why  "1954 - Why" "$O/1954 - Why.pdf" "$GREEN/1954 - Why.ocr.pdf" "3 4 5 6 7 8" -
 case_truth truth-green-hug  "$HUG" "$O/$HUG.pdf" "$GREEN/$HUG.ocr.pdf" "1 2 3 5 7 8 9" -
-case_truth truth-green-bri  "1951 - Briefer Book Notes" "$O/1951 - Briefer Book Notes.pdf" "$GREEN/1951 - Briefer Book Notes.ocr.pdf" "5 6" -
-case_truth truth-lost-lines "1951 - Briefer Book Notes" "$O/1951 - Briefer Book Notes.pdf" "$GREEN/1951 - Briefer Book Notes.ocr.pdf" "1 2 3 4" tcopy
+case_truth truth-green-bri  "1951 - Briefer Book Notes" "$O/1951 - Briefer Book Notes.pdf" "$GREEN/1951 - Briefer Book Notes.ocr.pdf" "2 5 6" -
+case_truth truth-lost-lines "1951 - Briefer Book Notes" "$O/1951 - Briefer Book Notes.pdf" "$GREEN/1951 - Briefer Book Notes.ocr.pdf" "1 3 4" tcopy
 
 # CONTESTED BY THE RE-READ: a word in a page's `contested-harness.tsv` (`ops/truth/reread.py`, the words the
 # blind re-read did not confirm) is not scored. A copy of Raskin p1's truth page contests every word the
@@ -209,13 +212,16 @@ case_stale() {
 }
 case_stale
 
-# BOXES DRAWN OFF: the reader draws boxes by eye, and Copy must not turn on where in a line one sits. Three
+# BOXES DRAWN OFF: the reader draws boxes by eye, and Copy must not turn on where in a line one sits. Four
 # copies of Hughes p2's truth page (green above) must score as the page does: right, wrong, missing and added
 # alike. `moved`: every line and column box a third of a line lower; a selection over the middle half of a
 # box held nothing that far off (Wilson 1975 p1's 18 words, all in the layer, counted missing). `widened`: a
 # column's full-width last line boxed 200 px into the column beside it; a drag ended there ran on through
 # that column (Kelly 2014 p3). `narrowed`: a column box with no column beside it cut to its middle third,
 # inside its own first or last line; stopping a drag at such a box would cut a centred headline short.
+# `raised`: every line and column box 0.45 of a line higher, as Delton p2's footer boxes and Briefer p2's
+# last lines sit; a drag ended at a last line's box ended on the line above, and a loose line's text was
+# nearer the box below its own.
 case_boxes() {
     local mode="$1" base="$W/truth-green-hug.tsv" t="$W/$1-truth/p2" f b a
     if [ ! -f "$base" ]; then echo "skip  truth-$mode: truth-green-hug did not run"; return; fi
@@ -234,8 +240,9 @@ for i, r in enumerate(rows):
 def get(i): return [int(box.match(rows[i]).group(k)) for k in (2, 4, 6, 8)]
 def put(i, v):
     m = box.match(rows[i]); rows[i] = f"{m.group(1)}{v[0]}{m.group(3)}{v[1]}{m.group(5)}{v[2]}{m.group(7)}{v[3]}{m.group(9)}"
-if mode == "moved":
-    dy = round(statistics.median(get(i)[3] for i in lines) / 3)
+if mode in ("moved", "raised"):
+    h = statistics.median(get(i)[3] for i in lines)
+    dy = round(h / 3) if mode == "moved" else -round(h * 0.45)
     for i in lines + cols: v = get(i); v[1] += dy; put(i, v)
 elif mode == "widened":
     for c in cols:
@@ -269,6 +276,7 @@ PY
 case_boxes moved
 case_boxes widened
 case_boxes narrowed
+case_boxes raised
 
 echo "renders and TSVs: $W"
 [ "$bad" = 0 ] && { echo "ux-harness-selftest: PASS"; exit 0; }

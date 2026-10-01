@@ -781,6 +781,13 @@ say so in the commit.
       215 pages rescored: 412 fewer words missing, `tcopy` on 61 pages, not 70; 116 green, 49 red, 9 old-only, 41
       truth-only. Left for `truth-harness`: the DONE WHEN check, from a fresh window (this session ended at 89%
       of it). (context: owner request 2026-09-29)
+- [x] **truth-harness-inkfix** — Copy drags each column from its line boxes' ends and from their ink's, and keeps
+      the nearer the transcript; a loose line keeps the text nearest its ink, 2026-10-01. The DONE WHEN check had
+      failed Copy again: boxes off their ink made Delton p2 and Cooley 2008 p94 red for the harness's sake. All
+      215 pages rescored: those two, Briefer p2 and 1979 Ideology p8 go green, none red; 119 green, 48 red, 10
+      old-only, 38 truth-only. Self-test PASS with a `raised` case. The DONE WHEN check then failed Copy narrowly:
+      CAMFIELD p1 and Banks 2006 p101 are red by one glyph at a drag's end. Left for `truth-harness`: the fix in
+      `ops/truth/STATUS.md` (NEXT), a rescore, the check. (context: owner request 2026-09-29)
 - [ ] **truth-read** — read `truth-harness`'s output and turn what it finds into queued work.
       (blocked-on: truth-harness)
       Start with the pages the old measures pass and the truth fails, since those hold the defects the old

@@ -2,25 +2,25 @@
 # bytes is the cut document's output over its source (the harness's `bytes`), docFlags the harness's document flags.
 document	pages	oldRed	truthText	truthOther	judgeWorse	scored	wrong	missing	added	copyErr	confirmed	rrContested	unread	bytes	docFlags
 book/1954 - Why.pdf	2	0	0	1	1	537	4	0	1	0.009	5	1	0	530802>117129	-
-book/Boltanski_2006_On justification_Princeton University Press.pdf	2	1	0	0	0	1863	5	28	0	0.018	34	2	0	160797>239737	-
+book/Boltanski_2006_On justification_Princeton University Press.pdf	2	1	0	0	0	1863	4	28	0	0.017	34	2	0	160797>239737	-
 book/Cohen_1990_Making a New Deal_Cambridge University Press.pdf	1	0	0	0	0	155	0	0	0	0.000	3	0	0	62505>60884	-
 book/Countryman - 2006 - Up south  civil rights and Black power in Philadelphia.pdf	2	0	0	0	0	499	6	0	0	0.012	6	0	0	366539>368264	-
 book/Friedman_1962_Capitalism and freedom_University of Chicago Press.pdf	1	0	0	0	0	14	0	0	0	0.000	0	0	0	98240>107023	-
 book/Gowan and Demos - 1964 - The education and guidance of the ablest.pdf	1	0	1	0	1	81	3	2	2	0.086	8	0	0	190690>47133	-
 book/Guilford_Psychometric Methods.pdf	1	0	0	0	0	572	10	0	0	0.017	11	5	0	62466>68480	-
 book/Hayek_1978_The constitution of liberty_University of Chicago Press.pdf	1	0	0	0	0	15	0	0	0	0.000	0	0	0	30043>13805	-
-book/Ibson_2006_Picturing men.pdf	11	1	0	0	6	3683	36	2	8	0.012	61	0	0	3128193>910141	-
+book/Ibson_2006_Picturing men.pdf	11	1	0	0	6	3683	35	2	8	0.012	61	0	0	3128193>910141	-
 book/JAH Review.pdf	1	1	0	1	1	459	3	0	0	0.007	3	0	0	136527>102305	links
 book/Mitchell_1958_Stanford University, 1916-1941_Stanford Unoversity Press.pdf	1	1	0	1	1	1012	1	0	0	0.001	1	0	0	349743>141376	annots
-book/Morgan_1975_American Slavery, American Freedom_Norton.pdf	3	2	2	2	2	1787	9	5	1009	0.572	13	0	8	426704>392446	links
-book/New York Stock Exchange_1956_Stock ownership plans for employees.pdf	2	2	2	0	2	743	292	179	1122	2.144	286	7	225	60862>66792	-
+book/Morgan_1975_American Slavery, American Freedom_Norton.pdf	3	2	2	2	2	1787	8	5	1009	0.572	13	0	8	426704>392446	links
+book/New York Stock Exchange_1956_Stock ownership plans for employees.pdf	2	2	2	0	2	743	291	179	1122	2.143	286	7	225	60862>66792	-
 book/Noble_1977_America by design.pdf	1	0	0	0	0	406	9	0	1	0.025	10	0	0	53735>60698	-
 book/Riesman - 1954 - Individualism reconsidered, and other essays.pdf	5	0	0	0	1	1679	3	0	0	0.002	5	0	0	1519600>526902	-
 book/UN-OCred.pdf	2	1	1	0	0	549	23	7	559	1.073	4	0	28	140865>100012	-
 book/Westad_2005_The Global Cold War_Cambridge University Press.pdf	1	0	0	0	0	155	0	0	0	0.000	0	0	0	62922>61311	-
-book/_2010_New Materialisms_Duke University Press.pdf	1	0	0	0	0	769	24	10	0	0.044	35	1	0	63384>70911	-
+book/_2010_New Materialisms_Duke University Press.pdf	1	0	0	0	0	769	24	0	0	0.031	35	1	0	63384>70911	-
 bookSection/Allen_2011_The Origins of Political Philosophy_Oxford University Press.pdf	1	0	0	0	0	607	2	0	0	0.003	2	0	0	109061>87369	-
-bookSection/Berger_2013_Toward a Third Industrial Divide_.pdf	1	0	1	0	0	470	10	1	45	0.119	4	0	9	95774>66187	-
+bookSection/Berger_2013_Toward a Third Industrial Divide_.pdf	1	0	1	0	0	470	9	1	45	0.117	4	0	9	95774>66187	-
 bookSection/Canby_1915_Current Literature and the Colleges_Harper & Brothers.pdf	1	1	0	0	0	142	5	1	1	0.049	7	1	0	180594>32380	-
 bookSection/Canby_1929_Comment on Several Subjects.pdf	1	0	1	0	0	84	3	12	8	0.274	22	0	0	82145>76101	-
 bookSection/Falasca-Zamponi_2004_The »Culture« of Personality.pdf	1	0	0	0	0	149	0	0	0	0.000	0	0	0	44613>49739	-
@@ -28,7 +28,7 @@ bookSection/Findlay_1992_Stanford Industrial Park_University of California Press
 bookSection/Hyman_2012_Rethinking the Postwar Corporation_Oxford University Press.pdf	1	1	0	1	1	911	14	0	1	0.016	15	0	0	50309>41861	annots
 bookSection/Krippner__The political economy of financial exuberance_Emerald Group Publishing Limited.pdf	2	0	0	0	0	904	2	0	0	0.002	2	2	0	294083>94739	-
 bookSection/Lloyd-Jones_Smith_1938_Selection and Admissions.pdf	1	1	0	0	0	316	2	0	0	0.006	6	7	0	31157>39353	-
-bookSection/Merriam, H. G_1948_Does the Northwest Believe in Itself_Macmillan Co.pdf	1	1	1	0	0	124	2	5	66	0.589	2	0	7	41161>40600	-
+bookSection/Merriam, H. G_1948_Does the Northwest Believe in Itself_Macmillan Co.pdf	1	1	1	0	0	124	2	4	66	0.581	2	0	7	41161>40600	-
 bookSection/Moyn_2014_Imaginary Intellectual History_Oxford University Press, 2014 (2015-03-31 16-01-49).pdf	1	1	0	1	1	495	3	0	0	0.006	4	0	0	31273>34939	annots
 document/(F) Dickens.pdf	1	0	0	0	0	389	0	5	0	0.013	5	9	0	35287>42860	-
 document/2008_Hoagland oral history.pdf	2	0	0	0	0	618	2	8	1	0.018	12	0	0	147378>31673	-
@@ -37,71 +37,71 @@ document/2024 - Class Action lawsuit re need blind admissions.pdf	1	0	0	0	0	262	
 document/Atkinson_1939_Atkinson on firings_.pdf	1	0	1	0	1	417	9	1	14	0.058	14	3	0	530522>83519	-
 document/Ford_1941_Speech_.pdf	1	0	0	1	1	318	2	0	0	0.006	3	0	0	519495>63205	-
 document/Freud_Fetishism.pdf	1	0	1	0	0	63	1	0	5	0.095	5	0	0	57331>71279	-
-document/Galison_1998_Trading Zone_.pdf	1	0	0	0	0	1096	6	0	0	0.005	7	2	0	230626>245345	-
+document/Galison_1998_Trading Zone_.pdf	1	0	0	0	0	1096	5	0	0	0.005	7	2	0	230626>245345	-
 document/Herbert Marks papers.pdf	2	2	1	0	2	329	15	9	3	0.082	27	1	0	304304>68419	-
 document/Lyons oral history.pdf	1	0	0	0	0	8	0	2	0	0.250	2	0	0	48590>59320	-
 document/Nogales oral history.pdf	1	0	0	0	0	4	0	0	0	0.000	0	0	0	165187>231799	-
 document/RIESMAN_1942_American Law Institute Proceedings_.pdf	1	1	1	0	0	193	22	5	108	0.699	4	0	31	1091923>434141	-
 document/Stanford_1891_Jane Stanford opening day speech (undelivered).pdf	2	2	1	2	2	598	10	11	0	0.035	23	0	0	261190>154381	-
 document/_1939_Former students to Board re Merriam_.pdf	2	1	0	0	1	292	3	7	0	0.034	10	0	0	1034571>315508	-
-document/_1953_99 Cong_ 2.pdf	2	2	2	0	0	3110	73	70	3313	1.111	15	0	136	429354>367299	-
-document/_1953_99 Cong_.pdf	1	1	1	0	0	1465	61	18	947	0.700	7	1	75	211198>190845	-
-document/_1953_Conspicuous Production_.pdf	1	1	0	0	0	1395	5	34	0	0.028	41	2	0	658951>144829	-
-document/_1979_Ideology of American Neo-Conservatism_.pdf	2	1	1	0	0	958	37	13	4	0.056	56	4	0	210334>176950	-
+document/_1953_99 Cong_ 2.pdf	2	2	2	0	0	3110	72	63	3313	1.109	15	0	136	429354>367299	-
+document/_1953_99 Cong_.pdf	1	1	1	0	0	1465	60	13	947	0.696	7	1	75	211198>190845	-
+document/_1953_Conspicuous Production_.pdf	1	1	0	0	0	1395	3	34	0	0.027	41	2	0	658951>144829	-
+document/_1979_Ideology of American Neo-Conservatism_.pdf	2	1	0	0	0	958	37	1	4	0.044	56	4	0	210334>176950	-
 document/ppf_description.pdf	1	0	1	0	0	247	2	8	7	0.069	13	4	0	29075>39424	-
 journalArticle/1935_Title Page.pdf	1	0	0	0	0	107	0	0	0	0.000	1	0	0	18240>17702	-
 journalArticle/Albanese_1997_Senate Will Examine Stock Option Bill.pdf	1	1	1	0	0	795	1	0	388	0.489	1	0	1	827215>244699	-
 journalArticle/Batzell - Free Labor, Capitalism and the Antislavery Origins of Chinese Labor Exclusion in 1870s California.pdf	3	0	0	0	0	1312	0	0	0	0.000	1	0	0	82465>79364	-
 journalArticle/Borges_The Lottery in Babylon.pdf	1	0	0	0	0	530	1	0	0	0.002	2	1	0	20010>26498	-
 journalArticle/Burke - The Expansion of American Higher Education.pdf	1	0	0	0	0	272	0	3	0	0.011	4	0	0	238809>237719	-
-journalArticle/Har - THE NECKLACE OF KALI..pdf	1	1	1	0	0	1731	248	61	2781	1.785	14	1	300	8253400>1725695	-
-journalArticle/Jones et al_2010_The Productivity Effects of Stock Option Schemes.pdf	1	1	1	1	1	574	53	14	247	0.547	8	0	62	51449>58937	-
+journalArticle/Har - THE NECKLACE OF KALI..pdf	1	1	1	0	0	1731	247	53	2781	1.780	14	1	300	8253400>1725695	-
+journalArticle/Jones et al_2010_The Productivity Effects of Stock Option Schemes.pdf	1	1	1	1	1	574	52	14	247	0.545	8	0	62	51449>58937	-
 journalArticle/Lemieux et al. - Performance Pay and Wage Inequality.pdf	1	0	0	0	0	167	0	0	0	0.000	3	0	0	125505>124690	-
 journalArticle/Riesman_1942_Democracy and Defamation_Columbia Law Review (2017-04-04 13-44-43).pdf	1	0	1	0	0	573	15	13	4	0.056	28	2	0	62078>65970	links
-journalArticle/Riesman_1949_Men, Women, and Marriage_Nation.pdf	2	1	1	0	0	2159	19	1	418	0.203	14	2	12	596094>204141	-
+journalArticle/Riesman_1949_Men, Women, and Marriage_Nation.pdf	2	1	1	0	0	2159	18	1	418	0.202	14	2	12	596094>204141	-
 journalArticle/Riesman_1976_Thoughts on the Graduate Experience_Change.pdf	1	0	0	0	0	701	3	0	2	0.007	10	0	0	57956>66971	links
-journalArticle/Robin_Stephens_1996_Against the Grain_Social Text.pdf	2	1	0	1	0	584	2	1	0	0.005	5	0	0	173132>135205	links
-journalArticle/Scott_TK_The Scientific Selection of Salesmen.pdf	3	3	3	0	1	2721	693	512	972	0.800	586	14	675	266640>244152	links
+journalArticle/Robin_Stephens_1996_Against the Grain_Social Text.pdf	2	1	0	1	0	584	2	0	0	0.003	5	0	0	173132>135205	links
+journalArticle/Scott_TK_The Scientific Selection of Salesmen.pdf	3	3	3	0	1	2721	693	505	973	0.798	586	14	675	266640>244152	links
 journalArticle/Surani et al. - AI for Scaling Legal Reform Mapping and Redacting Racial Covenants in Santa Clara County.pdf	3	1	0	0	0	1342	0	0	0	0.000	2	0	0	1718257>1703829	-
 journalArticle/Wells_2015_A Long View of Shareholder Power.pdf	1	0	0	0	0	426	2	1	0	0.007	4	0	0	30670>39933	links
 journalArticle/Wilson_1975_Review of The Welfare State and Equality_Journal of Economic Literature.pdf	1	0	0	0	0	153	0	0	0	0.000	18	0	0	119680>118895	-
-journalArticle/Xin Qu et al_2018_Executive stock option vesting conditions, corporate governance and CEO.pdf	3	1	1	0	1	879	89	81	108	0.316	189	36	0	95918>96580	-
+journalArticle/Xin Qu et al_2018_Executive stock option vesting conditions, corporate governance and CEO.pdf	3	1	1	0	1	879	88	81	44	0.242	189	36	0	95918>96580	-
 magazineArticle/Davis_2005_Optimism of the Will_Nation.pdf	1	0	1	1	1	557	76	5	100	0.325	86	0	0	237598>237752	annots
-magazineArticle/Ehrenreich_2000_Maid to order_Harper's Magazine.pdf	1	0	0	0	0	69	2	0	1	0.043	6	3	0	375513>150726	-
+magazineArticle/Ehrenreich_2000_Maid to order_Harper's Magazine.pdf	1	0	0	0	0	69	1	0	1	0.029	6	3	0	375513>150726	-
 magazineArticle/Glazer_2002_Higher Ed_New Republic.pdf	1	1	0	1	1	1199	7	1	1	0.008	10	0	0	814695>279372	-
 magazineArticle/Kelly_2014_Orders of Magnitude_TLS.pdf	2	1	1	2	2	2590	31	52	40	0.047	51	0	34	1440224>1430598	qpdf,annots
-magazineArticle/Kristol_1960_High, Low, and Modern_Encounter.pdf	1	1	1	1	1	454	5	10	37	0.115	19	7	0	778770>61553	-
+magazineArticle/Kristol_1960_High, Low, and Modern_Encounter.pdf	1	1	1	1	1	454	4	10	37	0.112	19	7	0	778770>61553	-
 magazineArticle/Lipset_Luethy_1955_European traditions and American sociology_Commentary (pre-1986); New York.pdf	2	2	0	0	0	1562	17	0	2	0.012	24	10	0	132415>139088	-
-magazineArticle/Luethy_1955_Social mobility again--And elites_Commentary (pre-1986); New York.pdf	2	2	0	0	1	1576	14	14	10	0.024	30	15	0	133856>136769	-
-magazineArticle/Marth_1982_Why Unions Lose At Many Companies_Nation's Business (pre-1986); Washington.pdf	1	1	1	0	0	672	8	0	329	0.501	0	0	8	66493>79515	-
-magazineArticle/Merriam_1913_Clutter of Things_The Independent.pdf	1	1	0	0	1	978	27	4	2	0.034	35	0	0	890042>106495	annots
+magazineArticle/Luethy_1955_Social mobility again--And elites_Commentary (pre-1986); New York.pdf	2	2	0	0	1	1576	15	4	10	0.018	30	15	0	133856>136769	-
+magazineArticle/Marth_1982_Why Unions Lose At Many Companies_Nation's Business (pre-1986); Washington.pdf	1	1	1	0	0	672	4	0	329	0.496	0	0	8	66493>79515	-
+magazineArticle/Merriam_1913_Clutter of Things_The Independent.pdf	1	1	0	0	1	978	26	4	2	0.033	35	0	0	890042>106495	annots
 magazineArticle/_1958_Executive Pay_Nation's Business (pre-1986); Washington.pdf	1	0	0	0	0	1012	4	0	5	0.009	16	0	0	70002>79982	-
-magazineArticle/_1967_Yearly Increase of 15% Expected by Ampex_Boxoffice (Archive 1920-2000); New York.pdf	1	0	1	1	1	1285	11	2	411	0.330	3	0	13	158930>110999	-
+magazineArticle/_1967_Yearly Increase of 15% Expected by Ampex_Boxoffice (Archive 1920-2000); New York.pdf	1	0	1	1	1	1285	9	2	411	0.328	3	0	13	158930>110999	-
 magazineArticle/_1977_What We're About_Washington Monthly.pdf	1	0	0	0	0	317	2	1	1	0.013	5	5	0	57479>53225	-
-newspaperArticle/Berendzen_1981_The Soaring Lesson of America in Space_Newsday (1940-1990), Nassau ed.; Long Island, N.Y..pdf	1	0	1	0	0	1348	19	16	210	0.182	2	0	35	158403>169637	-
+newspaperArticle/Berendzen_1981_The Soaring Lesson of America in Space_Newsday (1940-1990), Nassau ed.; Long Island, N.Y..pdf	1	0	1	0	0	1348	19	8	210	0.176	2	0	35	158403>169637	-
 newspaperArticle/Gitlin_2000_How Our Crowd Got Lonely_New York Times.pdf	1	0	1	1	1	1497	69	14	16	0.066	91	51	0	106737>116263	-
 newspaperArticle/Glazer_2003_Neoconservatives, Then and Now_New York Times.pdf	1	0	0	0	0	216	9	0	0	0.042	9	0	0	134406>32722	-
 newspaperArticle/Williams_1958_DEMOCRACY OR MERITOCRACY_The Manchester Guardian (1901-1959); Manchester (UK).pdf	1	1	1	0	0	1269	95	2	2318	1.903	5	0	113	400452>166754	-
-newspaperArticle/Zipkin_2000_Management.pdf	1	0	1	0	0	339	8	21	1	0.088	29	23	0	78552>78773	-
-newspaperArticle/_1926_Cox resigns, following most severe public criticism that ever has been_Anaconda Standard.pdf	1	1	1	0	0	3277	1543	18	15051	5.069	43	14	1536	351117>261565	-
-newspaperArticle/_1931_Again, press most excited about Frontier's history section_Helena Daily Independent.pdf	1	1	1	0	0	5339	2093	158	24575	5.025	91	5	2212	419560>335150	-
-newspaperArticle/_1941_Fiedler's hiring at UM announced_Helena Independent.pdf	1	1	1	0	0	3251	1031	61	9928	3.390	41	1	1060	437561>336730	-
-newspaperArticle/___ 2.pdf	1	1	1	0	0	3027	584	92	2527	1.058	26	15	672	251647>205493	-
-newspaperArticle/___ 4.pdf	1	1	1	0	0	1526	181	1	4703	3.201	7	0	184	442356>491478	-
-newspaperArticle/___.pdf	1	1	1	0	0	3778	657	240	7586	2.245	34	0	882	15055067>3469932	-
-owner/1951 - Briefer Book Notes.pdf	6	0	4	0	0	3793	90	118	24	0.061	250	18	0	513091>464387	-
+newspaperArticle/Zipkin_2000_Management.pdf	1	0	1	0	0	339	7	21	1	0.086	29	23	0	78552>78773	-
+newspaperArticle/_1926_Cox resigns, following most severe public criticism that ever has been_Anaconda Standard.pdf	1	1	1	0	0	3277	1543	18	15005	5.055	43	14	1536	351117>261565	-
+newspaperArticle/_1931_Again, press most excited about Frontier's history section_Helena Daily Independent.pdf	1	1	1	0	0	5339	2086	163	24575	5.024	91	5	2212	419560>335150	-
+newspaperArticle/_1941_Fiedler's hiring at UM announced_Helena Independent.pdf	1	1	1	0	0	3251	1015	61	9938	3.388	41	1	1060	437561>336730	-
+newspaperArticle/___ 2.pdf	1	1	1	0	0	3027	580	92	2528	1.057	26	15	672	251647>205493	-
+newspaperArticle/___ 4.pdf	1	1	1	0	0	1526	175	1	4703	3.197	7	0	184	442356>491478	-
+newspaperArticle/___.pdf	1	1	1	0	0	3778	659	223	7405	2.193	34	0	882	15055067>3469932	-
+owner/1951 - Briefer Book Notes.pdf	6	0	3	0	0	3793	90	107	10	0.055	250	18	0	513091>464387	-
 owner/1954 - Why.pdf	10	2	1	2	6	3358	27	20	281	0.098	46	0	15	2089723>508115	-
 owner/1957 - Employment on Merit The Continuing Challenge to Business (Joseph J. Morrow).pdf	3	0	0	0	0	1405	15	0	3	0.013	43	1	0	208767>173167	-
 owner/Bird - 1963 - More Room at the Top Company Experiences in Employing Negroes in Professional and Management Jobs.pdf	2	0	0	0	0	916	4	1	0	0.005	27	0	0	108622>123047	-
-owner/Delton - 2007 - Before the EEOC How Management Integrated the Workplace.pdf	5	0	1	0	0	1894	13	36	11	0.032	62	15	0	230914>258317	-
+owner/Delton - 2007 - Before the EEOC How Management Integrated the Workplace.pdf	5	0	0	0	0	1894	12	13	3	0.015	62	15	0	230914>258317	-
 owner/Dobbin_2009_Inventing equal opportunity_Princeton University Press.pdf	3	0	0	0	0	881	2	0	10	0.014	5	0	0	80629>91206	-
-owner/Hughes - The Knitting of Racial Groups in Industry (Desktop copy 2026-09-26).pdf	8	1	1	0	0	4532	26	18	136	0.040	55	4	16	374798>416804	-
+owner/Hughes - The Knitting of Racial Groups in Industry (Desktop copy 2026-09-26).pdf	8	1	1	0	0	4532	23	12	136	0.038	55	4	16	374798>416804	-
 owner/Hughes - The Knitting of Racial Groups in Industry.pdf	1	0	0	0	0	136	0	0	0	0.000	1	0	0	123351>122545	-
-owner/Leland - 1952 - We Believe in Employment on Merit, but.pdf	4	0	0	0	0	1647	12	12	0	0.015	80	1	0	156671>172654	-
-owner/Raskin - 1956 - New Jobs Opening to Negro in North.pdf	1	1	1	0	0	3140	54	22	4974	1.608	1	0	75	522998>445230	-
-owner/Sewell - 1999 - Contracting racial equality Affirmative action policy and practice in the United States, 1945-1970.pdf	1	0	0	0	0	359	4	0	1	0.014	4	0	0	49624>59611	-
-report/1958_CiT Financial Corporation Annual Report -- 1958.pdf	2	1	2	0	0	165	17	20	1	0.230	56	6	0	43112>41570	-
-report/1958_General Foods Corporation Annual Report -- 1958.pdf	1	0	0	0	0	93	3	1	0	0.043	7	52	0	80142>57690	-
+owner/Leland - 1952 - We Believe in Employment on Merit, but.pdf	4	0	0	0	0	1647	12	3	0	0.009	80	1	0	156671>172654	-
+owner/Raskin - 1956 - New Jobs Opening to Negro in North.pdf	1	1	1	0	0	3140	52	17	4974	1.606	1	0	75	522998>445230	-
+owner/Sewell - 1999 - Contracting racial equality Affirmative action policy and practice in the United States, 1945-1970.pdf	1	0	0	0	0	359	3	0	1	0.011	4	0	0	49624>59611	-
+report/1958_CiT Financial Corporation Annual Report -- 1958.pdf	2	1	2	0	0	165	16	20	1	0.224	56	6	0	43112>41570	-
+report/1958_General Foods Corporation Annual Report -- 1958.pdf	1	0	0	0	0	93	3	0	0	0.032	7	52	0	80142>57690	-
 report/1958_The Anaconda Company Annual Report -- 1958.pdf	1	0	0	0	0	438	11	1	0	0.027	24	2	0	38738>45628	-
 report/AI 2027.pdf	3	0	1	0	0	972	1	8	8	0.017	10	0	0	539055>531583	-
 report/Hoxby_1997_How the Changing Market Structure of U_National Bureau of Economic Research.pdf	1	0	0	0	0	18	0	0	0	0.000	0	0	0	74182>14897	-
@@ -112,10 +112,10 @@ thesis/Banks - 2006 - “The last bastion of discrimination” The New York City
 thesis/CAMFIELD_Psychologists at War.pdf	1	0	1	0	0	59	1	1	1	0.051	2	0	0	10726>24027	-
 thesis/CARTWRIGHT_Legislation Against Discrimination in Employment in New York State.pdf	1	0	0	0	0	82	2	1	0	0.037	3	0	0	275619>31618	-
 thesis/Clark_The graphic rating scale at Northwestern University.pdf	1	0	0	0	0	288	1	0	0	0.003	2	1	0	271020>63084	-
-thesis/Cooley - 2008 - Moving up, moving out Race and social mobility in Chicago, 1914–1972.pdf	1	0	1	0	0	399	4	17	1	0.055	23	0	0	26222>31879	-
+thesis/Cooley - 2008 - Moving up, moving out Race and social mobility in Chicago, 1914–1972.pdf	1	0	0	0	0	399	4	2	1	0.018	23	0	0	26222>31879	-
 thesis/DAUTEN_1954_The Economic Impact and Significance of Substantial Stock Sales by Individual_The University of Iowa.pdf	1	0	0	0	0	194	1	0	0	0.005	3	0	0	184976>40618	-
 thesis/DOBBS_1955_A Technique for the Development and Validation of Job Evaluation Cases_University of North Texas.pdf	1	0	0	0	0	191	2	0	0	0.010	2	13	0	275834>44963	-
-thesis/Doermann_1967_The market for college education in the United States.pdf	1	0	1	0	1	384	25	1	2	0.073	28	7	0	1125460>128940	-
+thesis/Doermann_1967_The market for college education in the United States.pdf	1	0	1	0	1	384	24	1	2	0.070	28	7	0	1125460>128940	-
 thesis/Drumright - 2005 - A river for war, a watershed to change The Tennessee Valley Authority during World War II.pdf	1	0	0	0	0	323	3	0	2	0.015	3	13	0	252664>64853	-
 thesis/GELFAND_1956_The Avoidance of Federal Personal Income Taxes in the United States_New York University.pdf	2	2	2	0	0	286	66	0	10	0.266	80	43	0	336626>91245	-
 thesis/Ho_Useful fiction.pdf	1	0	0	0	0	33	0	0	0	0.000	0	0	0	16959>18815	-

@@ -356,9 +356,48 @@ more than one. `TRUTH-RUN-2026-09-30-pages.tsv` and `-docs.tsv` carry the re-rea
 out a wrong word raises it, and layerMiss rose (0.26 -> 0.30) because contested words the layer held left the count.
 Self-test PASS (twice, the second on the final Swift).
 
-DONE WHEN RE-CHECK NOT RUN, 2026-10-01 (eighth session). The session opened at 96% of the window, so it started no
-subagent. Next session, first thing: give one fresh subagent the `truth-harness` item text from `QUEUE.md` verbatim,
-the tables at `f171bcd` (`TRUTH-RUN-2026-09-30-pages.tsv`, `-docs.tsv`), the run `$STATE/truth-run-2026-09-30-final3`
-(outputs are run 1's `pub/` at `832b7ac`) and the last check's finding above (C1, Copy). Ask for pass or fail on each
-criterion with what it looked at, C1 first on Wilson 1975 p1, Leland pp2 and 5, Delton p27, Kelly 2014 p3; no suite,
-no `./build.sh`. Every criterion passes: tick `truth-harness`, which unblocks `truth-read`.
+DONE WHEN RE-CHECK, 2026-10-01 (ninth session): FAILED C1 again, C2-C8 passed. The pages the last check named are
+right, and the Copy fix made no page falsely green (loose lines: the harness credits 2,009 of 2,273 words, the best of
+a reader's three drags 2,057; more than the reader on 22 lines, 51 words, all on pages red anyway). But a drag from a
+box's end that sits off its ink begins or ends where PDFKit finds the nearest character, on another line: Delton p2
+(0.0965) and Cooley 2008 p94 (0.0551) were red for the harness's sake alone. Caveats with the passes: 30 red pages
+hold 8,203 rows never re-read, none of which could turn one green (C4); the A/B order is a hash of page and element,
+so every whole-page pair of a cut page 1 shows the output as B, which no one judge sees (C5).
+INK ANCHORS, 2026-10-01 (measured). Each column drag is made twice, from the boxes' ends and from their ink's in the
+output's 2x render (0.3 pt left of the first glyph, 0.3 pt inside the last), and the one nearer the transcript kept, the
+boxes' on a tie; a loose line keeps the text lines nearest its ink, not its box. A census on run 1's outputs first
+(`$STATE/truth-run-2026-09-30-final3/census-dragends/`, harness code extracted unchanged). REJECTED, measured: ink
+anchors alone (Canby 1915 p1's drop capital puts the ink below the text, `ot` for `Not`; one inside the first glyph
+began after it, NAYLOR p67 green to red), and ends 0.15 of a line or 0.5 pt outside the ink (Boltanski 2006 p102 0.0368
+-> 0.5074, the drag ran on into later text). After the diff review, REJECTED: breaking a loose line's tie by its box
+(Hughes p2 with boxes 24 px high: 12 missing and 8 added, against 5 missing untied; the comment states the blind spot).
+All 215 pages rescored into `$STATE/truth-run-2026-09-30-final4`, 0 crashes: 49 pages moved, Copy columns only; missing
+2,165 -> 2,014, added 85,479 -> 85,178, wrong 8,774 -> 8,711. Red to green on the truth: Delton p2 0.0965 -> 0.0029,
+Cooley p94 0.0551 -> 0.0175, Briefer p2 0.0719 -> 0.0344, 1979 Ideology p8 0.0667 -> 0.0409; none to red. Every counted
+row on a page a re-read could flip is confirmed. Self-test PASS with a case `raised` (boxes 0.45 of a line high), which
+the old harness fails (Hughes p2 607/7/10/0 -> 559/7/58/8); Briefer p2 is green in it now (its layer lacks 3.1% of its
+words, as p6's lacks 3.4%), and pp1, 3, 4 stay red.
+
+    route      pages  green  red  old-only  truth-only   text  other  judge   (ink anchors; judges' round 2)
+    dct           13     10    0         0           3      1      2      3
+    jbig2        107     60   24         9          14     30      9     15
+    layered       55     23   14         1          17     12      8     24
+    newspaper     11      1    7         0           3     10      1      1
+    no-image      11     10    1         0           0      1      1      1
+    other          5      4    0         0           1      1      0      0
+    unknown       13     11    2         0           0      2      0      0
+    all          215    119   48        10          38     57     21     44
+
+DONE WHEN RE-CHECK ON final4, 2026-10-01: FAILED C1 narrowly, C2-C8 passed. The four pages above are what a reader's
+drag gets, no page went falsely green, and the 49 changed rows reproduce. Two truth-only pages are still red for the
+harness's sake, by one glyph at a drag's end: CAMFIELD p1 (0.0508; both drags begin inside the `T` of `This` and copy
+`his`, since the ink's start is taken from the middle of the letter height, where a T's first ink is its stem; a
+reader's copy scores 0.0339) and Banks 2006 p101 (0.0559; a raised `40` beginning column 2 copies `0`, and column 1's
+last `of` copies `o`, the drag ending 0.3 pt inside the f's stem; a reader's 0.0497). NEXT: take the ink's ends over
+the line's full height, or add a third drag just outside both ends to those compared (an end past the last glyph ran on
+at Boltanski p102, so it must stay one candidate of three, not replace one); rescore; the DONE WHEN check again.
+The `unread` column still counts run 1's selection (8,424), where final4's unconfirmed rows are 8,109 (C4's note).
+The diff review found the tie-break flaw above and nits; its result-changing fixes were reverted (the tie-break did
+worse), so final4 is this code's run: the committed Swift differs from `final4/h/main.swift` by comments and a guard
+against non-finite boxes only (checked by `diff`, by me, not by a second reviewer: the window was past 85%).
+`Tools/ux-regression.sh --baseline` not yet run: its truth rows will move with Copy, none worse (no page's copy error rose).
