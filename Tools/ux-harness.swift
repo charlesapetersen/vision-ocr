@@ -563,31 +563,53 @@ func truthPage(_ p: Int, _ sp: PDFPage, _ op: PDFPage, _ out: PDFDocument, _ pai
         for (k, g) in a.wrong { fails.append((idx[k], "wrong", g)) }
         for k in a.missing { fails.append((idx[k], "missing", "")) }
     }
-    func rectText(_ px: CGRect) -> String {
-        let r = pxToDisp(t, op, px)
-        return op.selection(for: dispToPage(op, r.insetBy(dx: 0, dy: r.height * 0.25)))?.string ?? ""
+    // A line scored alone: the text over its box, grown three quarters of a line up and down and a quarter
+    // line each side, and of that each line of text whose nearest transcript line, of those over it, is this
+    // one. The middle half of the box alone held nothing when the text or the box sat a third of a line off
+    // (Wilson 1975 p1: 18 words in the layer, all counted missing); a fixed band in its place took the line
+    // above too where the text sits a third of a line low (Leland p5). A drag along the line takes the column
+    // below Hughes p5's running head, as the comment above says, and one begun outside the box took the end of
+    // a line in the next column across a narrow gutter (Leland p5, Delton p1).
+    let lineBoxes = t.lines.map { pxToDisp(t, op, $0.px) }
+    func lineText(_ li: Int) -> String {
+        // a line's height is its box's narrow side when the box runs up the page (handwriting along a margin)
+        let r = lineBoxes[li], h = r.height > max(3 * r.width, 50) ? r.width : r.height
+        guard let sel = op.selection(for: dispToPage(op, r.insetBy(dx: -h / 4, dy: -h * 0.75))) else { return "" }
+        return sel.selectionsByLine().filter { s in
+            let b = pageToDisp(op, s.bounds(for: op))
+            let over = lineBoxes.indices.filter { lineBoxes[$0].minX < b.maxX && lineBoxes[$0].maxX > b.minX }
+            return over.min { abs(lineBoxes[$0].midY - b.midY) < abs(lineBoxes[$1].midY - b.midY) } == li
+        }.compactMap { $0.string }.joined(separator: "\n")
     }
-    // (a) Copy: a drag down each column, from its first line's start to its last line's end
+    // (a) Copy: a drag down each column, from its first line's start to its last line's end. Where that line's
+    // box reaches into a column box beside it, the drag stops at its own column's edge: Kelly 2014 p3's last
+    // line in one column is boxed 31 px into the next, and a drag ended there ran on through that column (316
+    // words added). A column box drawn narrower than a headline it holds is no reason to cut the headline.
     var colTokens: [[String]] = []
+    let colBoxes = t.columns.map { pxToDisp(t, op, $0) }
     for c in t.columns.indices {
         let ls = t.lines.indices.filter { lineCol[$0] == c && t.lines[$0].kind == "body" }
         let idx = t.words.indices.filter { lineCol[t.words[$0].line] == c }
         if !idx.isEmpty { colTokens.append(idx.filter { !t.words[$0].contested && t.words[$0].kind == "body" }.map { norm(t.words[$0].text) }.filter { !$0.isEmpty }) }
         guard let f = ls.first, let l = ls.last else { continue }
-        let a = pxToDisp(t, op, t.lines[f].px), b = pxToDisp(t, op, t.lines[l].px)
-        let sel = op.selection(from: dispToPage(op, CGPoint(x: a.minX + 1, y: a.midY)), to: dispToPage(op, CGPoint(x: b.maxX - 1, y: b.midY)))
+        let a = lineBoxes[f], b = lineBoxes[l], box = colBoxes[c]
+        let beside = colBoxes.indices.filter { $0 != c }.map { colBoxes[$0] }
+        let leftIn = beside.contains { $0.maxX <= box.minX && $0.maxX > a.minX && $0.minY < a.maxY && $0.maxY > a.minY }
+        let rightIn = beside.contains { $0.minX >= box.maxX && $0.minX < b.maxX && $0.minY < b.maxY && $0.maxY > b.minY }
+        let sel = op.selection(from: dispToPage(op, CGPoint(x: (leftIn ? max(a.minX, box.minX) : a.minX) + 1, y: a.midY)),
+                               to: dispToPage(op, CGPoint(x: (rightIn ? min(b.maxX, box.maxX) : b.maxX) - 1, y: b.midY)))
         score(idx, sel?.string ?? "", "column \(c + 1)")
     }
-    // body lines in no column, each by its own box
+    // body lines in no column, each selected alone
     for li in t.lines.indices where lineCol[li] == nil && t.lines[li].kind == "body" {
-        score(t.words.indices.filter { t.words[$0].line == li }, rectText(t.lines[li].px), "loose line \(li + 1)")
+        score(t.words.indices.filter { t.words[$0].line == li }, lineText(li), "loose line \(li + 1)")
     }
     // figure text and handwriting, apart: the share of each line's words a selection over it holds
     var apart: [String: (Int, Int)] = ["fig": (0, 0), "hand": (0, 0)]
     for li in t.lines.indices where t.lines[li].kind != "body" {
         let w = t.words.indices.filter { t.words[$0].line == li && !t.words[$0].contested }.map { norm(t.words[$0].text) }.filter { !$0.isEmpty }
         let (r0, n0) = apart[t.lines[li].kind]!
-        apart[t.lines[li].kind] = (r0 + matched(w, tokens(rectText(t.lines[li].px))), n0 + w.count)
+        apart[t.lines[li].kind] = (r0 + matched(w, tokens(lineText(li))), n0 + w.count)
     }
     let scored = scoredIdx.count
     let wrongN = fails.filter { $0.1 == "wrong" }.count, missN = fails.filter { $0.1 == "missing" }.count

@@ -311,8 +311,19 @@ column of one or two lines, is scored by `selection(for:)` over the middle half 
 so a line whose text or box sits a third of a line off selects nothing and its words all count missing: Wilson 1975
 p1's 18 missing words are all in the output's layer (`layerMiss` 0.0000). The checker names Wilson 1975 p1, Leland
 pp2 and 5, Delton p27, 1957 Employment p3 and Banks p202, each truth-only on text alone, and Kelly 2014 p3, whose
-column-4 last-line box reaches 31 px into column 5, so that drag ends there (316 added words). Fix next: drag a loose
-line as a column is dragged, keeping what lies on the line, and end a column drag inside its column's box.
+column-4 last-line box reaches 31 px into column 5, so that drag ends there (316 added words).
+COPY FIXED, 2026-10-01 (measured). A loose line now takes the text over its box grown three quarters of a line up and
+down, keeping each line of text whose nearest transcript box is its own (a drag along it took the next column across a
+narrow gutter on Leland p5; a fixed band took the line above). A column drag stops at its column's edge only where its
+end line's box reaches into a column box beside it: 3 of 499 drags (Kelly p3, Scott p7, Xin Qu p24). A first clamp at
+every column edge moved 14 and cut centred headlines (Kristol 1960 p1, Williams 1958 p1); the code review found it.
+Self-test PASS with three new cases on Hughes p2 (`truth-moved`, `-widened`, `-narrowed`), which the old harness fails
+twice and the first clamp once. All 215 pages rescored with no model into `$STATE/truth-run-2026-09-30-final3`, 0
+crashes: 412 fewer words missing, 265 fewer added, 1 more wrong; `tcopy` on 61 pages, not 70. Worse on three pages, all
+red either way: Delton p2 (+8 added: its JSTOR boxes sit half a line above the ink and the text a quarter below, so line
+37's text is nearer box 38), Scott p7 (+24: overlapping column boxes), Gowan and Demos p1 (+2: a stamp line the
+transcript leaves out). Every counted row on a page red on text that a re-read could flip is still confirmed; Kelly
+p3's 34 unread rows now sit on a page green on text. `ux-regression.sh --baseline`: 0 worse, 11 better, truth rows only.
 
 FIXED IN THE HARNESS, after the diff review (each would have misled `truth-read`). Find searched a word's letters
 alone, so `high-school` was sought as `highschool`: the final run's Find failures are run 1's less 168 such words and
@@ -325,20 +336,21 @@ guess. A `contested-harness.tsv` row naming another word than the transcript's s
 prep` refuses to renumber judged pairs. Left: `same()` accepts a neighbour in a multi-word reading (5 of 3,304
 confirmations, the first review's count).
 
-    route      pages  green  red  old-only  truth-only   text  other  judge   (judge: round 2 wherever round 1 was not `same`)
-    dct           13      9    0         0           4      3      2      3
-    jbig2        107     52   25         8          22     39      9     15
-    layered       55     23   14         1          17     13      8     24
+    route      pages  green  red  old-only  truth-only   text  other  judge   (Copy fixed; judges' round 2)
+    dct           13     10    0         0           3      1      2      3
+    jbig2        107     57   25         8          17     34      9     15
+    layered       55     23   14         1          17     12      8     24
     newspaper     11      1    7         0           3     10      1      1
     no-image      11     10    1         0           0      1      1      1
     other          5      4    0         0           1      1      0      0
-    unknown       13     10    2         0           1      3      0      0
-    all          215    109   49         9          48     70     21     44
+    unknown       13     11    2         0           0      2      0      0
+    all          215    116   49         9          41     61     21     44
 
 Against run 1: 9 pages left `text`, 7 `tcopy` and General Foods p21 (`tcopy,tfind`) by the re-read and Lloyd-Jones
-1938 p18 (`tfind`) mostly by the Find fix; ___ 2 p1 lost `tfind` and keeps `tcopy`. Of the 48 truth-only pages, 25
-fail on text alone, 12 on the judges alone (18 before round 2), 1 on the element check alone (Why p2), 10 on more
-than one. `TRUTH-RUN-2026-09-30-pages.tsv` and `-docs.tsv` carry the re-read and judge columns.
+1938 p18 (`tfind`) mostly by the Find fix; ___ 2 p1 lost `tfind` and keeps `tcopy`. With Copy fixed, Wilson 1975
+p1, Delton p27, Leland pp2 and 5, Anaconda 1958 p9, Banks p202 and 1957 Employment p3 went truth-only to green. Of
+the 41 truth-only pages, 18 fail on text alone, 13 on the judges alone, 1 on the element check alone (Why p2), 9 on
+more than one. `TRUTH-RUN-2026-09-30-pages.tsv` and `-docs.tsv` carry the re-read and judge columns.
 `ux-regression.sh --baseline`: only truth rows moved, 24 better (22 Find, Delton p2's copyErr, ___ 2 p1's flags) and
 2 worse, both Xin Qu p24, an artefact of the smaller population: copyErr is over 1 there (1.32 -> 1.39), so leaving
 out a wrong word raises it, and layerMiss rose (0.26 -> 0.30) because contested words the layer held left the count.

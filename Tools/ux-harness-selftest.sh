@@ -209,6 +209,67 @@ case_stale() {
 }
 case_stale
 
+# BOXES DRAWN OFF: the reader draws boxes by eye, and Copy must not turn on where in a line one sits. Three
+# copies of Hughes p2's truth page (green above) must score as the page does: right, wrong, missing and added
+# alike. `moved`: every line and column box a third of a line lower; a selection over the middle half of a
+# box held nothing that far off (Wilson 1975 p1's 18 words, all in the layer, counted missing). `widened`: a
+# column's full-width last line boxed 200 px into the column beside it; a drag ended there ran on through
+# that column (Kelly 2014 p3). `narrowed`: a column box with no column beside it cut to its middle third,
+# inside its own first or last line; stopping a drag at such a box would cut a centred headline short.
+case_boxes() {
+    local mode="$1" base="$W/truth-green-hug.tsv" t="$W/$1-truth/p2" f b a
+    if [ ! -f "$base" ]; then echo "skip  truth-$mode: truth-green-hug did not run"; return; fi
+    mkdir -p "$t"
+    for f in "$TR/$HUG/p2/"*; do [ "$(basename "$f")" = transcript.txt ] || ln -s "$f" "$t/"; done
+    python3 - "$mode" "$TR/$HUG/p2/transcript.txt" "$t/transcript.txt" <<'PY' || { echo "FAIL  truth-$mode: no copy made"; bad=1; return; }
+import re, statistics, sys
+mode, src, dst = sys.argv[1:]
+rows = open(src, encoding="utf-8").read().split("\n")
+box = re.compile(r"^(\s*)(\d+)(\s+)(\d+)(\s+)(\d+)(\s+)(\d+)(.*)$")
+sec, lines, cols = "lines", [], []
+for i, r in enumerate(rows):
+    if r.startswith("COLUMNS:"): sec = "columns"; continue
+    if r.startswith("OBJECTS:"): sec = "objects"; continue
+    if box.match(r) and (sec == "columns" or (sec == "lines" and "\t" in r)): (cols if sec == "columns" else lines).append(i)
+def get(i): return [int(box.match(rows[i]).group(k)) for k in (2, 4, 6, 8)]
+def put(i, v):
+    m = box.match(rows[i]); rows[i] = f"{m.group(1)}{v[0]}{m.group(3)}{v[1]}{m.group(5)}{v[2]}{m.group(7)}{v[3]}{m.group(9)}"
+if mode == "moved":
+    dy = round(statistics.median(get(i)[3] for i in lines) / 3)
+    for i in lines + cols: v = get(i); v[1] += dy; put(i, v)
+elif mode == "widened":
+    for c in cols:
+        x, y, w, h = get(c)
+        beside = [get(o) for o in cols if get(o)[0] > x + w and get(o)[1] < y + h and get(o)[1] + get(o)[3] > y]
+        mine = [i for i in lines if x <= get(i)[0] + get(i)[2] / 2 <= x + w and y <= get(i)[1] + get(i)[3] / 2 <= y + h]
+        if not beside or len(mine) < 3: continue
+        last = max(mine, key=lambda i: get(i)[1]); v = get(last)
+        if v[0] + v[2] < x + w - 10: continue
+        v[2] = min(o[0] for o in beside) + 200 - v[0]; put(last, v); break
+    else: sys.exit("no column with a full last line and another beside it")
+elif mode == "narrowed":
+    for c in cols:
+        x, y, w, h = get(c)
+        beside = [o for o in cols if o != c and get(o)[1] < y + h and get(o)[1] + get(o)[3] > y]
+        mine = [i for i in lines if x <= get(i)[0] + get(i)[2] / 2 <= x + w and y <= get(i)[1] + get(i)[3] / 2 <= y + h]
+        nx, nw = x + w // 3, w // 3
+        if beside or len(mine) < 3 or get(mine[0])[0] >= nx and sum(get(mine[-1])[0:3:2]) <= nx + nw: continue
+        if any(not nx - get(i)[3] <= get(i)[0] + get(i)[2] / 2 <= nx + nw + get(i)[3] for i in mine): continue
+        put(c, [nx, y, nw, h]); break
+    else: sys.exit("no column of three lines alone across the page, with an end line past its middle third")
+else: sys.exit(f"no mode {mode}")
+open(dst, "w", encoding="utf-8").write("\n".join(rows))
+PY
+    "$W/ux" --truth "$W/$mode-truth" "$O/$HUG.pdf" "$GREEN/$HUG.ocr.pdf" "$W/truth-$mode" 2 > "$W/truth-$mode.tsv" 2> /dev/null
+    b="$(awk -F'\t' '$1 == "TRUTH" && $2 == 2 {print $6, $7, $8, $9}' "$base")"
+    a="$(awk -F'\t' '$1 == "TRUTH" && $2 == 2 {print $6, $7, $8, $9}' "$W/truth-$mode.tsv")"
+    if [ -n "$b" ] && [ "$a" = "$b" ]; then echo "ok    truth-$mode: Hughes p2 scores as itself (right, wrong, missing, added: $a)"
+    else echo "FAIL  truth-$mode: Hughes p2 scores ${a:-no row}, itself $b (right, wrong, missing, added)"; bad=1; fi
+}
+case_boxes moved
+case_boxes widened
+case_boxes narrowed
+
 echo "renders and TSVs: $W"
 [ "$bad" = 0 ] && { echo "ux-harness-selftest: PASS"; exit 0; }
 echo "ux-harness-selftest: FAIL"; exit 1

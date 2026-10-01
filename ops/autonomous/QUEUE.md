@@ -775,6 +775,11 @@ say so in the commit.
       of ink or colour that the element check also flags; measured in `ops/truth/STATUS.md`. The DONE WHEN check
       then failed Copy: a loose line is selected over the middle half of its box, so one set a third of a line off
       counts all missing (Wilson 1975 p1 and five more pages). (context: owner request 2026-09-29)
+- [x] **truth-harness-copyfix** — Copy no longer misses a loose line set off its box, nor runs a column drag on
+      through the next column from a last line boxed into it, 2026-10-01. Self-test PASS with three new cases; all
+      215 pages rescored: 412 fewer words missing, `tcopy` on 61 pages, not 70; 116 green, 49 red, 9 old-only, 41
+      truth-only. Left for `truth-harness`: the DONE WHEN check, from a fresh window (this session ended at 89%
+      of it). (context: owner request 2026-09-29)
 - [ ] **truth-read** — read `truth-harness`'s output and turn what it finds into queued work.
       (blocked-on: truth-harness)
       Start with the pages the old measures pass and the truth fails, since those hold the defects the old
