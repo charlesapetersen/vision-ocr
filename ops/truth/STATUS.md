@@ -355,3 +355,10 @@ more than one. `TRUTH-RUN-2026-09-30-pages.tsv` and `-docs.tsv` carry the re-rea
 2 worse, both Xin Qu p24, an artefact of the smaller population: copyErr is over 1 there (1.32 -> 1.39), so leaving
 out a wrong word raises it, and layerMiss rose (0.26 -> 0.30) because contested words the layer held left the count.
 Self-test PASS (twice, the second on the final Swift).
+
+DONE WHEN RE-CHECK NOT RUN, 2026-10-01 (eighth session). The session opened at 96% of the window, so it started no
+subagent. Next session, first thing: give one fresh subagent the `truth-harness` item text from `QUEUE.md` verbatim,
+the tables at `f171bcd` (`TRUTH-RUN-2026-09-30-pages.tsv`, `-docs.tsv`), the run `$STATE/truth-run-2026-09-30-final3`
+(outputs are run 1's `pub/` at `832b7ac`) and the last check's finding above (C1, Copy). Ask for pass or fail on each
+criterion with what it looked at, C1 first on Wilson 1975 p1, Leland pp2 and 5, Delton p27, Kelly 2014 p3; no suite,
+no `./build.sh`. Every criterion passes: tick `truth-harness`, which unblocks `truth-read`.
