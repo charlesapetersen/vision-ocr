@@ -286,14 +286,33 @@ right reasons (headings black; text blurred to illegibility); on the green pages
 and 7 published blurred (j425 looked at: strokes thinner, paler and jagged). That is C28's loss, ink no word box
 holds kept only in the low-resolution background, so the harness is right that pp3, 4, 6 and 7 are wrong; pp5 (both
 copies) and p8 are now green on the judges.
-NOT DONE, the next session (the window was at 74%): round 2 for the other 221 non-`same` pairs on 60 pages, which still
-carry round 1's verdicts. Their briefs are written: `$STATE/truth-run-2026-09-30/judge/rejudge/brief-5.txt` to
-`brief-17.txt` (13, up to 20 pairs, a page's pairs together; lists in `judge/rejudge-lists/`). Give each to one
-subagent as "Your instructions are in the file <brief>. Read that file first (the only non-image file you may open),
-then follow it exactly", at most about ten at once (a load of 20 pairs is about 2% of the window). Then
-`judge.py apply W`, `run-table.py $STATE/truth-run-2026-09-30-final/results.tsv TRUTH-RUN-2026-09-30-pages.tsv
-TRUTH-RUN-2026-09-30-docs.tsv W`, recount the classes below, a DONE WHEN check, tick `truth-harness`. Round 1's `same`
-pairs are not judged again: the new sentences only narrow what counts (11 of 11 such pairs stayed `same` in round 2).
+ROUND 2 FOR THE REST, 2026-10-01 (measured): the other 221 non-`same` pairs on 60 pages (`judge/rejudge/brief-5..17`),
+one judge each, every brief complete; round 1's `same` pairs were not judged again (11 of 11 stayed `same` above).
+Against round 1 on those 221: of 190 `worse`, 163 stayed, 23 became `same`, 4 `better`; of 24 `better`, 8 stayed, 15
+`same`, 1 `worse`; of 7 `both`, 3 `same`, 2 each `better` and `worse`. The 659 judged pairs now read same 472, worse
+173, better 14 (408 identical); controls 17 of 17 `worse`. Six pages went truth-only to green (Findlay 1992 p47,
+Countryman p218, Ibson pp245, 248, Allen 2011 p8, Robertson 1990 p50: scan rules, page edges, text weight), Luethy 1955
+p2 old-only to red (output text near bold), and four red pages and the owner's Why p2 lost their judge failure. Text
+weight is judged both ways (heavier is `worse` on Luethy p2, `better` on Allen p8), so look at a page failing on it
+alone. The book copy's Why p2, the same scan, keeps its failure: its pencilled `(2)` is `worse` in both rounds (j140),
+where the owner copy's judge called the same pixels `same` (j214).
+JUDGE ERRORS, from each changed pair's ink and coloured-pixel shares (no model) and a look: round 2 made four right
+verdicts wrong, all losses of ink or colour. `same`: Robin Stephens p24's blue JSTOR link published black (j2, an
+18 px crop, 0 of 635 coloured pixels kept), Gitlin 2000 p1's rule faded to a trace (j25, 18 px, 16% of its ink), JAH
+Review p2's link (j693, whole page); `better`: Morgan 1975 p2's link, the judge seeing the blue on the wrong side
+(j582, whole page). The element check flags all four pages, and no class rests on those verdicts. It counts any pixel
+of chroma over 60 as coloured, paper included, as the old colour measure does: Stanford 1891 p4's `tcolour` is its
+cream paper published grey (the pencilled folio's box, 1,364 of 1,365 pixels coloured, holds no ink), though its
+brown ink is published black too. Its `tink` on the owner's Why p2 is a pencilled `21`, legible and a little paler
+(j212). A judge cannot know which image is the source, so an output that darkens a pale mark (UN-OCred p20's pencil)
+gets `better`. The element check and the judges disagree on 27 pages, so `truth-read` reads both.
+DONE WHEN CHECK, 2026-10-01: FAILED C1 (Copy), every other criterion passed. A loose line, and so every line of a
+column of one or two lines, is scored by `selection(for:)` over the middle half of its transcript box (`rectText`),
+so a line whose text or box sits a third of a line off selects nothing and its words all count missing: Wilson 1975
+p1's 18 missing words are all in the output's layer (`layerMiss` 0.0000). The checker names Wilson 1975 p1, Leland
+pp2 and 5, Delton p27, 1957 Employment p3 and Banks p202, each truth-only on text alone, and Kelly 2014 p3, whose
+column-4 last-line box reaches 31 px into column 5, so that drag ends there (316 added words). Fix next: drag a loose
+line as a column is dragged, keeping what lies on the line, and end a column drag inside its column's box.
 
 FIXED IN THE HARNESS, after the diff review (each would have misled `truth-read`). Find searched a word's letters
 alone, so `high-school` was sought as `highschool`: the final run's Find failures are run 1's less 168 such words and
@@ -306,20 +325,20 @@ guess. A `contested-harness.tsv` row naming another word than the transcript's s
 prep` refuses to renumber judged pairs. Left: `same()` accepts a neighbour in a multi-word reading (5 of 3,304
 confirmations, the first review's count).
 
-    route      pages  green  red  old-only  truth-only   text  other  judge   (judge: round 2 on 7 pages only)
-    dct           13      8    0         0           5      3      2      4
-    jbig2        107     47   24         9          27     39      9     21
-    layered       55     23   14         1          17     13      8     26
-    newspaper     11      1    7         0           3     10      1      2
+    route      pages  green  red  old-only  truth-only   text  other  judge   (judge: round 2 wherever round 1 was not `same`)
+    dct           13      9    0         0           4      3      2      3
+    jbig2        107     52   25         8          22     39      9     15
+    layered       55     23   14         1          17     13      8     24
+    newspaper     11      1    7         0           3     10      1      1
     no-image      11     10    1         0           0      1      1      1
     other          5      4    0         0           1      1      0      0
     unknown       13     10    2         0           1      3      0      0
-    all          215    103   48        10          54     70     21     54
+    all          215    109   49         9          48     70     21     44
 
 Against run 1: 9 pages left `text`, 7 `tcopy` and General Foods p21 (`tcopy,tfind`) by the re-read and Lloyd-Jones
-1938 p18 (`tfind`) mostly by the Find fix; ___ 2 p1 lost `tfind` and keeps `tcopy`. The judges made 18 green pages
-truth-only, a count round 2 will lower. Of the 54 truth-only pages, 25 fail on text alone, 18 on the judges alone,
-11 on more than one. `TRUTH-RUN-2026-09-30-pages.tsv` and `-docs.tsv` carry the re-read and judge columns.
+1938 p18 (`tfind`) mostly by the Find fix; ___ 2 p1 lost `tfind` and keeps `tcopy`. Of the 48 truth-only pages, 25
+fail on text alone, 12 on the judges alone (18 before round 2), 1 on the element check alone (Why p2), 10 on more
+than one. `TRUTH-RUN-2026-09-30-pages.tsv` and `-docs.tsv` carry the re-read and judge columns.
 `ux-regression.sh --baseline`: only truth rows moved, 24 better (22 Find, Delton p2's copyErr, ___ 2 p1's flags) and
 2 worse, both Xin Qu p24, an artefact of the smaller population: copyErr is over 1 there (1.32 -> 1.39), so leaving
 out a wrong word raises it, and layerMiss rose (0.26 -> 0.30) because contested words the layer held left the count.

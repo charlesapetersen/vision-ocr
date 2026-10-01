@@ -4,27 +4,27 @@ document	pages	oldRed	truthText	truthOther	judgeWorse	scored	wrong	missing	added
 book/1954 - Why.pdf	2	0	0	1	1	537	5	0	1	0.011	5	1	0	530802>117129	-
 book/Boltanski_2006_On justification_Princeton University Press.pdf	2	1	0	0	0	1863	5	28	0	0.018	34	2	0	160797>239737	-
 book/Cohen_1990_Making a New Deal_Cambridge University Press.pdf	1	0	0	0	0	155	0	0	0	0.000	3	0	0	62505>60884	-
-book/Countryman - 2006 - Up south  civil rights and Black power in Philadelphia.pdf	2	0	0	0	1	499	6	0	0	0.012	6	0	0	366539>368264	-
+book/Countryman - 2006 - Up south  civil rights and Black power in Philadelphia.pdf	2	0	0	0	0	499	6	0	0	0.012	6	0	0	366539>368264	-
 book/Friedman_1962_Capitalism and freedom_University of Chicago Press.pdf	1	0	0	0	0	14	0	0	0	0.000	0	0	0	98240>107023	-
 book/Gowan and Demos - 1964 - The education and guidance of the ablest.pdf	1	0	1	0	1	81	3	2	0	0.062	8	0	0	190690>47133	-
 book/Guilford_Psychometric Methods.pdf	1	0	0	0	0	572	10	0	0	0.017	11	5	0	62466>68480	-
 book/Hayek_1978_The constitution of liberty_University of Chicago Press.pdf	1	0	0	0	0	15	0	0	0	0.000	0	0	0	30043>13805	-
-book/Ibson_2006_Picturing men.pdf	11	1	1	0	8	3683	34	21	8	0.017	61	0	0	3128193>910141	-
+book/Ibson_2006_Picturing men.pdf	11	1	1	0	6	3683	34	21	8	0.017	61	0	0	3128193>910141	-
 book/JAH Review.pdf	1	1	0	1	1	459	3	0	0	0.007	3	0	0	136527>102305	links
 book/Mitchell_1958_Stanford University, 1916-1941_Stanford Unoversity Press.pdf	1	1	0	1	1	1012	1	0	0	0.001	1	0	0	349743>141376	annots
 book/Morgan_1975_American Slavery, American Freedom_Norton.pdf	3	2	2	2	2	1787	9	5	1009	0.572	13	0	8	426704>392446	links
 book/New York Stock Exchange_1956_Stock ownership plans for employees.pdf	2	2	2	0	2	743	295	181	1122	2.151	286	7	225	60862>66792	-
 book/Noble_1977_America by design.pdf	1	0	0	0	0	406	9	0	1	0.025	10	0	0	53735>60698	-
 book/Riesman - 1954 - Individualism reconsidered, and other essays.pdf	5	0	0	0	1	1679	3	0	0	0.002	5	0	0	1519600>526902	-
-book/UN-OCred.pdf	2	1	1	0	1	549	23	7	559	1.073	4	0	28	140865>100012	-
+book/UN-OCred.pdf	2	1	1	0	0	549	23	7	559	1.073	4	0	28	140865>100012	-
 book/Westad_2005_The Global Cold War_Cambridge University Press.pdf	1	0	0	0	0	155	0	0	0	0.000	0	0	0	62922>61311	-
 book/_2010_New Materialisms_Duke University Press.pdf	1	0	0	0	0	769	24	10	0	0.044	35	1	0	63384>70911	-
-bookSection/Allen_2011_The Origins of Political Philosophy_Oxford University Press.pdf	1	0	0	0	1	607	2	0	0	0.003	2	0	0	109061>87369	-
+bookSection/Allen_2011_The Origins of Political Philosophy_Oxford University Press.pdf	1	0	0	0	0	607	2	0	0	0.003	2	0	0	109061>87369	-
 bookSection/Berger_2013_Toward a Third Industrial Divide_.pdf	1	0	1	0	0	470	10	1	45	0.119	4	0	9	95774>66187	-
 bookSection/Canby_1915_Current Literature and the Colleges_Harper & Brothers.pdf	1	1	0	0	0	142	5	1	1	0.049	7	1	0	180594>32380	-
 bookSection/Canby_1929_Comment on Several Subjects.pdf	1	0	1	0	0	84	3	12	8	0.274	22	0	0	82145>76101	-
 bookSection/Falasca-Zamponi_2004_The »Culture« of Personality.pdf	1	0	0	0	0	149	0	0	0	0.000	0	0	0	44613>49739	-
-bookSection/Findlay_1992_Stanford Industrial Park_University of California Press.pdf	2	0	0	0	1	824	3	0	1	0.005	5	4	0	94187>90779	-
+bookSection/Findlay_1992_Stanford Industrial Park_University of California Press.pdf	2	0	0	0	0	824	3	0	1	0.005	5	4	0	94187>90779	-
 bookSection/Hyman_2012_Rethinking the Postwar Corporation_Oxford University Press.pdf	1	1	0	1	1	911	14	0	1	0.016	15	0	0	50309>41861	annots
 bookSection/Krippner__The political economy of financial exuberance_Emerald Group Publishing Limited.pdf	2	0	0	0	0	904	2	0	0	0.002	2	2	0	294083>94739	-
 bookSection/Lloyd-Jones_Smith_1938_Selection and Admissions.pdf	1	1	0	0	0	316	2	0	0	0.006	6	7	0	31157>39353	-
@@ -41,7 +41,7 @@ document/Galison_1998_Trading Zone_.pdf	1	0	0	0	0	1096	6	0	0	0.005	7	2	0	230626>
 document/Herbert Marks papers.pdf	2	2	1	0	2	329	15	9	3	0.082	27	1	0	304304>68419	-
 document/Lyons oral history.pdf	1	0	0	0	0	8	0	2	0	0.250	2	0	0	48590>59320	-
 document/Nogales oral history.pdf	1	0	0	0	0	4	0	0	0	0.000	0	0	0	165187>231799	-
-document/RIESMAN_1942_American Law Institute Proceedings_.pdf	1	1	1	0	1	193	20	12	104	0.705	4	0	31	1091923>434141	-
+document/RIESMAN_1942_American Law Institute Proceedings_.pdf	1	1	1	0	0	193	20	12	104	0.705	4	0	31	1091923>434141	-
 document/Stanford_1891_Jane Stanford opening day speech (undelivered).pdf	2	2	1	2	2	598	10	11	0	0.035	23	0	0	261190>154381	-
 document/_1939_Former students to Board re Merriam_.pdf	2	1	0	0	1	292	3	7	0	0.034	10	0	0	1034571>315508	-
 document/_1953_99 Cong_ 2.pdf	2	2	2	0	0	3110	73	74	3313	1.113	15	0	136	429354>367299	-
@@ -60,7 +60,7 @@ journalArticle/Lemieux et al. - Performance Pay and Wage Inequality.pdf	1	0	0	0	
 journalArticle/Riesman_1942_Democracy and Defamation_Columbia Law Review (2017-04-04 13-44-43).pdf	1	0	1	0	0	573	15	13	4	0.056	28	2	0	62078>65970	links
 journalArticle/Riesman_1949_Men, Women, and Marriage_Nation.pdf	2	1	1	0	0	2159	19	4	418	0.204	14	2	12	596094>204141	-
 journalArticle/Riesman_1976_Thoughts on the Graduate Experience_Change.pdf	1	0	0	0	0	701	3	7	2	0.017	10	0	0	57956>66971	links
-journalArticle/Robin_Stephens_1996_Against the Grain_Social Text.pdf	2	1	0	1	1	584	2	1	0	0.005	5	0	0	173132>135205	links
+journalArticle/Robin_Stephens_1996_Against the Grain_Social Text.pdf	2	1	0	1	0	584	2	1	0	0.005	5	0	0	173132>135205	links
 journalArticle/Scott_TK_The Scientific Selection of Salesmen.pdf	3	3	3	0	1	2721	713	510	948	0.798	586	14	675	266640>244152	links
 journalArticle/Surani et al. - AI for Scaling Legal Reform Mapping and Redacting Racial Covenants in Santa Clara County.pdf	3	1	0	0	0	1342	0	0	0	0.000	2	0	0	1718257>1703829	-
 journalArticle/Wells_2015_A Long View of Shareholder Power.pdf	1	0	0	0	0	426	2	1	0	0.007	4	0	0	30670>39933	links
@@ -72,7 +72,7 @@ magazineArticle/Glazer_2002_Higher Ed_New Republic.pdf	1	1	0	1	1	1199	7	2	1	0.00
 magazineArticle/Kelly_2014_Orders of Magnitude_TLS.pdf	2	1	2	2	2	2590	31	53	356	0.170	51	0	34	1440224>1430598	qpdf,annots
 magazineArticle/Kristol_1960_High, Low, and Modern_Encounter.pdf	1	1	1	1	1	454	5	11	37	0.117	19	7	0	778770>61553	-
 magazineArticle/Lipset_Luethy_1955_European traditions and American sociology_Commentary (pre-1986); New York.pdf	2	2	0	0	0	1562	17	7	2	0.017	24	10	0	132415>139088	-
-magazineArticle/Luethy_1955_Social mobility again--And elites_Commentary (pre-1986); New York.pdf	2	2	0	0	0	1576	14	14	10	0.024	30	15	0	133856>136769	-
+magazineArticle/Luethy_1955_Social mobility again--And elites_Commentary (pre-1986); New York.pdf	2	2	0	0	1	1576	14	14	10	0.024	30	15	0	133856>136769	-
 magazineArticle/Marth_1982_Why Unions Lose At Many Companies_Nation's Business (pre-1986); Washington.pdf	1	1	1	0	0	672	8	0	329	0.501	0	0	8	66493>79515	-
 magazineArticle/Merriam_1913_Clutter of Things_The Independent.pdf	1	1	0	0	1	978	27	8	2	0.038	35	0	0	890042>106495	annots
 magazineArticle/_1958_Executive Pay_Nation's Business (pre-1986); Washington.pdf	1	0	0	0	0	1012	4	12	5	0.021	16	0	0	70002>79982	-
@@ -83,14 +83,14 @@ newspaperArticle/Gitlin_2000_How Our Crowd Got Lonely_New York Times.pdf	1	0	1	1
 newspaperArticle/Glazer_2003_Neoconservatives, Then and Now_New York Times.pdf	1	0	0	0	0	216	9	0	0	0.042	9	0	0	134406>32722	-
 newspaperArticle/Williams_1958_DEMOCRACY OR MERITOCRACY_The Manchester Guardian (1901-1959); Manchester (UK).pdf	1	1	1	0	0	1269	95	21	2318	1.918	5	0	113	400452>166754	-
 newspaperArticle/Zipkin_2000_Management.pdf	1	0	1	0	0	339	8	21	1	0.088	29	23	0	78552>78773	-
-newspaperArticle/_1926_Cox resigns, following most severe public criticism that ever has been_Anaconda Standard.pdf	1	1	1	0	1	3277	1543	22	15051	5.070	43	14	1536	351117>261565	-
+newspaperArticle/_1926_Cox resigns, following most severe public criticism that ever has been_Anaconda Standard.pdf	1	1	1	0	0	3277	1543	22	15051	5.070	43	14	1536	351117>261565	-
 newspaperArticle/_1931_Again, press most excited about Frontier's history section_Helena Daily Independent.pdf	1	1	1	0	0	5339	2069	219	24563	5.029	91	5	2212	419560>335150	-
 newspaperArticle/_1941_Fiedler's hiring at UM announced_Helena Independent.pdf	1	1	1	0	0	3251	1031	61	9928	3.390	41	1	1060	437561>336730	-
 newspaperArticle/___ 2.pdf	1	1	1	0	0	3027	584	107	2527	1.063	26	15	672	251647>205493	-
 newspaperArticle/___ 4.pdf	1	1	1	0	0	1526	181	7	4703	3.205	7	0	184	442356>491478	-
 newspaperArticle/___.pdf	1	1	1	0	0	3778	658	255	7586	2.250	34	0	882	15055067>3469932	-
 owner/1951 - Briefer Book Notes.pdf	6	0	4	0	0	3793	89	148	24	0.069	250	18	0	513091>464387	-
-owner/1954 - Why.pdf	10	2	1	2	7	3358	27	20	281	0.098	46	0	15	2089723>508115	-
+owner/1954 - Why.pdf	10	2	1	2	6	3358	27	20	281	0.098	46	0	15	2089723>508115	-
 owner/1957 - Employment on Merit The Continuing Challenge to Business (Joseph J. Morrow).pdf	3	0	1	0	0	1405	15	22	2	0.028	43	1	0	208767>173167	-
 owner/Bird - 1963 - More Room at the Top Company Experiences in Employing Negroes in Professional and Management Jobs.pdf	2	0	0	0	0	916	4	22	0	0.028	27	0	0	108622>123047	-
 owner/Delton - 2007 - Before the EEOC How Management Integrated the Workplace.pdf	5	0	2	0	0	1894	13	44	3	0.032	62	15	0	230914>258317	-
@@ -124,7 +124,7 @@ thesis/Koh - 2008 - Essays on stock options expensing and stock option.pdf	1	0	0
 thesis/NAYLOR_Arthur E.pdf	3	0	0	0	0	837	8	15	8	0.037	27	0	0	325660>121990	-
 thesis/PANG_1971_An Optimizing Approach to Educational Planning in Singapore_University of Illinois at Urbana-Champaign.pdf	1	0	0	0	0	204	6	0	0	0.029	7	11	0	50012>45683	-
 thesis/Ries_Marshall_1955_web.pdf	2	0	0	0	1	246	8	3	0	0.045	13	0	0	127717>31265	-
-thesis/Robertson_1990_Organizational adaptation to environmental change_Stanford University copy.pdf	1	0	0	0	1	225	1	0	0	0.004	1	0	0	248689>27258	-
+thesis/Robertson_1990_Organizational adaptation to environmental change_Stanford University copy.pdf	1	0	0	0	0	225	1	0	0	0.004	1	0	0	248689>27258	-
 thesis/Schwaller - 2026 - Silicon Valley Landscapes Architecture and the Soft Power of Big Tech.pdf	3	0	0	0	0	964	0	0	0	0.000	2	0	0	1013840>1009791	-
 thesis/Silberman_1961_A study of industry policy considerations in the transition from airplane to_University of Southern California.pdf	1	0	0	0	0	193	1	0	0	0.005	1	0	0	193241>52125	links
 thesis/Zarifa_2008_Emerging Forms of Stratification in Higher Education_.pdf	1	0	0	0	0	510	0	7	0	0.014	7	0	0	64806>75755	links

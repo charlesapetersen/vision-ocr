@@ -769,6 +769,12 @@ say so in the commit.
       the controls, keeps 17 of 17 controls and only real losses (C28's cartoons and pencil marks). Left for
       `truth-harness`: that prompt over the other 221 pairs, briefs written; `ops/truth/STATUS.md` says how.
       (context: owner request 2026-09-29)
+- [x] **truth-harness-run3** — the judges' second round over the other 221 non-`same` pairs, 2026-10-01: 659 judged
+      pairs read same 472, worse 173, better 14; controls 17 of 17 `worse`. Classes: 109 green, 49 red, 9 old-only,
+      48 truth-only (25 on text alone, 12 on the judges alone). Round 2 made four right verdicts wrong, all losses
+      of ink or colour that the element check also flags; measured in `ops/truth/STATUS.md`. The DONE WHEN check
+      then failed Copy: a loose line is selected over the middle half of its box, so one set a third of a line off
+      counts all missing (Wilson 1975 p1 and five more pages). (context: owner request 2026-09-29)
 - [ ] **truth-read** — read `truth-harness`'s output and turn what it finds into queued work.
       (blocked-on: truth-harness)
       Start with the pages the old measures pass and the truth fails, since those hold the defects the old
