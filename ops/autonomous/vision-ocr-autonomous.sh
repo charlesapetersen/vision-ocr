@@ -155,6 +155,8 @@ BUDGET="${VISIONOCR_BUDGET:-70}"          # doubled 35 -> 70 by the owner 2026-0
 BUDGET_MAX="${VISIONOCR_BUDGET_MAX:-140}" # a session at max effort (3e) gets twice the cap (owner, 2026-09-26;
                                           # doubled 70 -> 140 on 2026-09-27): it thinks more per turn, and one
                                           # that dies on its cap only spends another attempt at the same effort.
+WINDOW_NOSUB_AT="${VISIONOCR_WINDOW_NOSUB_AT:-85}" # the resume prompt bars new subagents from here; a session that
+                                          # opens at or above it is not counted as an attempt (owner, 2026-10-01)
 WINDOW_WAIT_AT="${VISIONOCR_WINDOW_WAIT_AT:-95}" # usage window (owner, 2026-09-27): sessions work up to 100%,
                                           # so launch whenever the five-hour window is under this; at or over
                                           # it, or after a session the window cut off, wait for the reset
@@ -1784,6 +1786,7 @@ culprits are per-worktree build/ directories and Tools/mutation-out/. Free some 
   u_all="$(grep -o '"five_hour":{"utilization":[0-9.]*,"resetsAt":[0-9]*' "$SLOG" 2>/dev/null \
     | sed -E 's/.*"utilization":([0-9.]*),"resetsAt":([0-9]*)/\1 \2/' \
     | awk '{printf "%d %s\n", $1*100 + 0.5, $2}')"
+  local u_first; u_first="$(printf '%s\n' "$u_all" | awk 'NF==2{print $1; exit}')"
   usage_row session "$(( u_end - (SECONDS - _t0) ))" "$u_end" "${head_tag:--}" "$eff" "$rc" \
     "$(printf '%s\n' "$u_all" | head -1)" \
     "$(printf '%s\n' "$u_all" | awk 'NF==2{if(!($2 in m)){o[++n]=$2; m[$2]=$1} else if($1>m[$2]) m[$2]=$1}
@@ -1827,7 +1830,9 @@ culprits are per-worktree build/ directories and Tools/mutation-out/. Free some 
   # Count the attempt for 3e: the session ran (not a usage-limit fast-fail), the head item is still open, and the
   # session ticked no box. A session that ticked a sub-box for a finished part made progress; counting it raised
   # multi-session items such as truth-harness to max effort for doing their job in steps (owner, 2026-10-01).
-  if [ -n "$head_tag" ] && [ "$w_cutoff" = 0 ] && [ "$(origin_ticks)" -le "${ticks_before:-0}" ]; then
+  # Nor is a session that opened at or above $WINDOW_NOSUB_AT% of the window: it could start no subagent.
+  if [ -n "$head_tag" ] && [ "$w_cutoff" = 0 ] && [ "$(origin_ticks)" -le "${ticks_before:-0}" ] \
+     && [ "${u_first:-0}" -lt "$WINDOW_NOSUB_AT" ] 2>/dev/null; then
     if "$REPO/ops/autonomous/next-item.sh" "$REPO" 2>/dev/null | awk -F'\t' -v t="$head_tag" '$2==t{f=1} END{exit !f}'; then
       printf '%s\t%s\t%s\t%s\n' "$head_tag" "$(date '+%Y-%m-%d %H:%M')" "$eff" "$(( SECONDS - _t0 ))" >> "$STATE/attempts.tsv" 2>/dev/null || true
     fi
