@@ -12,6 +12,12 @@ edits its own history is worth less than one that reads slightly awkwardly. Wher
 an older entry mentions "Window ▸ Vision Reader Window", the menu item is now
 "Window ▸ Vision OCR Window"; nothing else moved.
 
+## Unreleased
+
+- Clean lines that were missing from the text layer of some scanned pages, such as a book notice's second
+  line or the last line of a footnote, can now be found and copied. Lines the recogniser can read only as
+  garbled text are now named in the run log by page (C53).
+
 ## 1.15.0 — 2026-09-29
 
 - Already-compact JBIG2 scans that were drawn through a form or upside down, such as JSTOR reviews and

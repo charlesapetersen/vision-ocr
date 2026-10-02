@@ -9492,6 +9492,88 @@ do {
     } else {
         check("the banding fixture draws", false)
     }
+
+    // C53: `Briefer` p1's shape. Vision's boxes run past their ink, 94 rows over a
+    // 55-row pitch, so the kept line above reached 58% of the band line's middle half.
+    let tallBoxes = [obs("ECONOMICS OF NATIONAL SECURITY.", x: 0.19, top: 1000, width: 0.65,
+                         height: 94, page: 4000),
+                     obs("provides a comprehensive account", x: 0.15, top: 1110, width: 0.68,
+                         height: 94, page: 4000)]
+    let harvey = Recogniser.mergeBands(
+        whole: tallBoxes,
+        bands: [(observations: [one("and T. H. Harvey. Prentice-Hall", x: 0.15, top: 1055,
+                                    width: 0.6, height: 72)],
+                 top: 800, bottom: 1800)],
+        pageHeight: 4000)
+    check("C53: a band line is admitted when the tall boxes of the lines either side reach into it",
+          harvey.map(\.text).contains("and T. H. Harvey. Prentice-Hall"), "\(harvey.map(\.text))")
+    let reread = Recogniser.mergeBands(
+        whole: tallBoxes,
+        bands: [(observations: [one("ECONOMICS OF NATIONAL SECURTTY.", x: 0.19, top: 1036,
+                                    width: 0.65, height: 72)],
+                 top: 800, bottom: 1800)],
+        pageHeight: 4000)
+    check("C53: …while a band's copy of a kept line, offset 25 rows (Bird p3's 16), is still refused",
+          reread.map(\.text) == tallBoxes.map(\.text), "\(reread.map(\.text))")
+
+    // C53: `Briefer` p3's shape. Every band read the line and the one under it as one
+    // box at 0.3, never a candidate, so no refused line stood beside the kept fragment.
+    let fragmentPage = [obs("line above", x: 0.1, top: 950, width: 0.8, height: 40, page: 4000),
+                        obs("378 pages. $8.50.", x: 0.1, top: 1000, width: 0.2, height: 40,
+                            page: 4000),
+                        obs("line below", x: 0.1, top: 1050, width: 0.8, height: 40, page: 4000)]
+    let fusedBand = [(observations: [one("prin and of the earne", x: 0.1, top: 1000, width: 0.8,
+                                         height: 120, confidence: 0.3)],
+                      top: 800, bottom: 1800)]
+    var besideFragment: [Box] = []
+    _ = Recogniser.mergeBands(whole: fragmentPage, bands: fusedBand, pageHeight: 4000,
+                              hasInk: { _ in true }, unread: { besideFragment.append($0) })
+    check("C53: the inked rest of a kept fragment's line is reported with no band line beside it",
+          besideFragment.count == 1 && abs(besideFragment[0].x - 0.3) < 1e-6
+              && abs(besideFragment[0].width - 0.6) < 1e-6
+              && abs(besideFragment[0].y * 4000 - 1000) < 1e-6,
+          "\(besideFragment)")
+    var blankBesideFragment: [Box] = []
+    _ = Recogniser.mergeBands(whole: fragmentPage, bands: fusedBand, pageHeight: 4000,
+                              hasInk: { _ in false }, unread: { blankBesideFragment.append($0) })
+    check("C53: …but not a short line with blank paper after it",
+          blankBesideFragment.isEmpty, "\(blankBesideFragment)")
+
+    // C53: `Banks 2006` p101's shape, one line the request skipped under one it read.
+    var lastLine = [Bool](repeating: false, count: h)
+    for top in [100, 125, 150] { for y in top..<(top + 18) { lastLine[y] = true } }
+    let twoRead = [obs("first", x: 0.1, top: 98, width: 0.8, height: 22, page: 1000),
+                   obs("second", x: 0.1, top: 123, width: 0.8, height: 30, page: 1000)]
+    check("C53: one unread line under a line that was read buys the bands",
+          Recogniser.hasUnreadLine(inked: lastLine, observations: twoRead, pageHeight: h,
+                                   lineHeight: 20)
+              && !Recogniser.hasVoid(inked: lastLine, observations: twoRead, pageHeight: h,
+                                     lineHeight: 20))
+    check("C53: …and is read once a box is centred on it",
+          !Recogniser.hasUnreadLine(inked: lastLine, observations: twoRead
+                                        + [obs("third", x: 0.1, top: 148, width: 0.8, height: 22,
+                                               page: 1000)],
+                                    pageHeight: h, lineHeight: 20))
+    var pageNumber = [Bool](repeating: false, count: h)
+    for top in [100, 125, 180] { for y in top..<(top + 18) { pageNumber[y] = true } }
+    check("C53: …while a mark a line height of paper below the block buys nothing",
+          !Recogniser.hasUnreadLine(inked: pageNumber, observations: twoRead, pageHeight: h,
+                                    lineHeight: 20))
+
+    // C53: lines that stay junk are counted for the run report, page numbers only.
+    let junkLeft = [obs("a line", x: 0.1, top: 100, width: 0.8, height: 20, page: 1000),
+                    obs("another", x: 0.1, top: 130, width: 0.8, height: 20, page: 1000),
+                    obs("Brazian nation co Peda", x: 0.1, top: 160, width: 0.8, height: 45,
+                        page: 1000)]
+    var lowJunk = junkLeft
+    lowJunk[2] = Obs(boundingBox: junkLeft[2].boundingBox, text: junkLeft[2].text, confidence: 0.3)
+    check("C53: a fused box below full confidence is counted as unreadable lines, at 1.0 it is not",
+          Recogniser.unreadableLines(lowJunk) == 1 && Recogniser.unreadableLines(junkLeft) == 0,
+          "\(Recogniser.unreadableLines(lowJunk)) \(Recogniser.unreadableLines(junkLeft))")
+    let unreadNote = OCRModel.unreadLineSummary([(page: 14, boxes: 1), (page: 20, boxes: 2)])
+    check("C53: the run report names the pages and counts, never the text",
+          unreadNote.contains("3 place(s) on 2 page(s)") && unreadNote.contains("p14 (1); p20 (2)")
+              && !unreadNote.contains("Brazian"), unreadNote)
     resetPrefs()
 }
 

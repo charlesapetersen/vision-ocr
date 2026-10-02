@@ -19389,6 +19389,43 @@ drag snaps up because the line under it is missing, so it may be one defect. Not
 Briefer because `ops/truth/prep-page.sh` asks Vision once with no bands; production's bands recover most of
 those lines.
 
+**2026-10-02, `c53-skipped-lines` — four causes traced and fixed; two junk boxes now reported; ux-regression
+worse on newspapers, so the box stays open.** Captured the helper's bitmaps (a wrapper polling its page
+directory) and traced `recogniseInBands` per line [measured]. The "reasoned" cause above was wrong on three of four pages:
+- *Briefer p1*: the bands DO run and read both lines at 1.0. `mergeBands`'s cover test refused them: boxes are
+  94 rows on a 55-row pitch, so the line above covered 58% of the next line's middle half. A neighbouring
+  line's box now covers with its own middle half; one centred within half a box height (the same line again,
+  16 rows off on Bird p3) or over two line heights still covers in full. A first draft without the centre
+  rule admitted duplicates (Bird p3, Hyman p8), caught by ux-regression.
+- *Briefer p4*: the stretch crop showed Vision half of each neighbouring line and it read `(Address E. G.
+  Wilson…` as junk at 0.3; the rows outside the stretch are now painted white.
+- *Briefer p3*: every band fused the two lines at 0.3, never a candidate, so no refused band line stood beside
+  `378 pages. $8.50.`; `mergeBands` now also reports inked open stretches beside any kept line, out to the
+  reach of the lines within 1.5 line heights.
+- *Banks p101*: one missed last line; `hasUnreadLine` (an inked run nearest no box's centre, under a line of
+  paper from a read one) now buys the bands.
+- *Riesman p14, Jensen p429*: no band reads them cleanly off a seam. `Recogniser.unreadableLines` counts
+  fused-shape boxes below 1.0, and the run log says "N place(s) on M page(s) hold lines the recogniser read
+  only as garbled text…: p1 (1)" (page numbers only, A4.1). It will also fire on a wide heading read at 0.5.
+- Words of the transcript missing from PDFKit's `page.string` [measured]: Briefer p1 46 -> 22, p3 44 -> 25, p4
+  58 -> 22, Banks p101 8 -> 2; Riesman 41 and Jensen 24 unchanged but reported. Suite 1719/1719; with the cover
+  and stretch changes off, the `harvey` and fragment checks fail (1717/1719).
+- **ux-regression: 20 worse, 28 better.** Better: Cong p16 copyErr 0.69 -> 0.02, Briefer p1 copyErr 0.085 ->
+  0.047, p3 0.057 -> 0.025. Worse: Fiedler p1 column cover 0.50 -> 0.00 and recall 0.52 -> 0.07 (its copyErr is
+  3.4 either way; +89 words recovered, 21 lost), Raskin p1 copyErr 1.61 -> 2.14 (a fused box replaced by
+  fragments, `pg. 26` and `skin.` added at the margins), `___ 2` p1 splits 5 -> 7, NYSE p110 prec 0.40 -> 0.33,
+  Briefer p1 splits 1 -> 2, p3 find 0.90 -> 0.87. On Fiedler every one of the four changes moves 100+ lines
+  alone; bounding the new stretches by any box on the rows did not help. Next: find which drag Fiedler and
+  Raskin lose, likely the order of added lines on many-column pages (C52's ground). Not done: the trigger's
+  cost over the corpus was not counted; a page that fires it but whose bands cannot read the mark pays both passes.
+- DONE WHEN check (separate agent, PDFKit Find and drags on before/after) [measured]: (a) FAIL in part. p3's
+  three tails, p4's `E. G. Wilson` and `198 pages` lines, and Banks' last line are found and copy, where none
+  were before. Still failing on p4: `achieving industrial peace…` comes back as `chieving industria neace`,
+  unfound and unreported; the heading's `Employee Interchange. By Raymond W. Peters…` is not found, and a drag
+  over it copies nothing. Briefer p1's two lines are found but copy only on a drag low on the line, 3 pt
+  below its ink (C55). (b) PASS for Riesman and Jensen. (c) FAIL as above. (d) PASS for the two merge checks;
+  no check pins the trigger's wiring or the paint-out.
+
 ### C54 · Pale typewriting on layered pages is published broken and faded — OPEN
 
 *(found 2026-10-01 by `truth-read`. C31 fixed the ink's colour; this is the stencil's shape.)*

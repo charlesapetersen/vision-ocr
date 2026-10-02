@@ -1565,7 +1565,10 @@ final class OCRModel: ObservableObject {
                         progress: note, fellBack: fellBack,
                         tookJBIG2Route: tookJBIG2Route,
                         shrunkTextPageNote: shrunkTextPageNote,
-                        digitalTextPageNote: digitalTextPageNote, report: report)
+                        digitalTextPageNote: digitalTextPageNote,
+                        // The same logged channel: one closure called twice logs both
+                        // lines (the parameter's doc comment), so sharing it loses none.
+                        unreadLineNote: digitalTextPageNote, report: report)
                     return
                 }
 
@@ -1861,6 +1864,9 @@ final class OCRModel: ObservableObject {
         /// R41 *would* apply. Found by the adversarial review of the adoption that
         /// pushed `591d3f3`.
         digitalTextPageNote: @escaping (String) -> Void = { _ in },
+        /// Called at most once per document, when pages were published with lines
+        /// the recogniser read only as a garbled box (C53). Logged, like the two above.
+        unreadLineNote: @escaping (String) -> Void = { _ in },
         report: @escaping (Runner.Result.Outcome, String) -> Void
     ) {
         // Shares of the wall clock, measured on a 22-page run: rebuilding and
@@ -3026,6 +3032,13 @@ final class OCRModel: ObservableObject {
         if !passedThroughPages.isEmpty {
             digitalTextPageNote(Self.passedThroughPageSummary(passedThroughPages))
         }
+        // C53: lines Vision returned only as a garbled box are in the file as junk, so
+        // they cannot be found or copied, and invariant 1 says to say so.
+        let unreadable = byPage.keys.sorted().compactMap { page -> (page: Int, boxes: Int)? in
+            let n = Recogniser.unreadableLines(byPage[page] ?? [])
+            return n > 0 ? (page, n) : nil
+        }
+        if !unreadable.isEmpty { unreadLineNote(Self.unreadLineSummary(unreadable)) }
         // `filter { !$0.isEmpty }`, not `compactMap`: `sizeNote` returns an empty string
         // rather than nil unless the copy grew, so joining on it put a leading " — " in
         // front of the message every ordinary run showed the user.
@@ -3202,6 +3215,19 @@ final class OCRModel: ObservableObject {
         return "\(pages.count) page(s) already carried text of their own and were "
             + "copied through unchanged rather than rasterised, so their exact text "
             + "is still exact: \(detail)"
+            + (pages.count > 3 ? " …" : "")
+    }
+
+    /// C53. What the run report says about pages holding lines the recogniser could
+    /// read only as one garbled box (`Recogniser.unreadableLines`). Page numbers and
+    /// counts, never content (A4.1), three at most and then `…`, as the summaries
+    /// above. Not a failure: the rest of the page is read, and the box's lines are
+    /// still in the image.
+    nonisolated static func unreadLineSummary(_ pages: [(page: Int, boxes: Int)]) -> String {
+        let detail = pages.prefix(3).map { "p\($0.page) (\($0.boxes))" }.joined(separator: "; ")
+        let boxes = pages.reduce(0) { $0 + $1.boxes }
+        return "\(boxes) place(s) on \(pages.count) page(s) hold lines the recogniser read "
+            + "only as garbled text, so they cannot be found or copied: \(detail)"
             + (pages.count > 3 ? " …" : "")
     }
 

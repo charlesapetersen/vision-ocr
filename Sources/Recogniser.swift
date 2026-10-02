@@ -1331,6 +1331,8 @@ enum Recogniser {
             guard hasVoid(inkedStrips: inked, observations: merged, pageHeight: h,
                           lineHeight: line)
                     || hasFusedLine(merged, pageWidth: w, pageHeight: h, lineHeight: line)
+                    || hasUnreadLine(inkedStrips: inked, observations: merged, pageHeight: h,
+                                     lineHeight: line)
             else { break }
             let plan = bandPlan(height: h, lineHeight: line, shifted: pass == 1)
             guard !plan.isEmpty else { break }
@@ -1375,9 +1377,18 @@ enum Recogniser {
             else { continue }
             var local = settings
             local.minTextHeight = min(1, settings.minTextHeight * Double(h) / Double(rect.bottom - rect.top))
-            guard let crop = image.cropping(to: CGRect(x: rect.left, y: rect.top,
-                                                       width: rect.right - rect.left,
-                                                       height: rect.bottom - rect.top)),
+            // The rows above and below the stretch's own painted white (C53): the crop
+            // keeps a line height of paper either side for the seam test, and shown the
+            // halves of the neighbouring lines there, Vision read `Briefer` p4's
+            // `(Address E. G. Wilson, …` as junk at 0.3 that a band read cleanly.
+            let (width, height) = (rect.right - rect.left, rect.bottom - rect.top)
+            let own = (top: max(0, Int((s.y * Double(h)).rounded(.down)) - rect.top),
+                       bottom: min(height, Int(((s.y + s.height) * Double(h)).rounded(.up)) - rect.top))
+            guard let cut = image.cropping(to: CGRect(x: rect.left, y: rect.top,
+                                                      width: width, height: height)),
+                  let crop = paintedOut([CGRect(x: 0, y: 0, width: width, height: own.top),
+                                         CGRect(x: 0, y: own.bottom, width: width,
+                                                height: height - own.bottom)], of: cut),
                   let read = try? recognise(crop, settings: local)
             else { continue }
             pieces.append(stretchPiece(read, of: s, crop: rect, pageWidth: w, pageHeight: h))
@@ -1950,6 +1961,71 @@ enum Recogniser {
         return false
     }
 
+    /// Whether a strip's rows hold one line no observation reads, beside a line one
+    /// does (C53): a run of inked rows, a quarter line to one and a half lines tall,
+    /// that is nearest no observation's centre, under a line height of paper from a
+    /// run that is. `Banks 2006` p101's request skipped the last line of a footnote,
+    /// one line where `hasVoid` wants two, and the box of the line above it reached
+    /// over it, so no row of it was uncovered. A page number set off by more than a
+    /// line height of paper is not a line of the block, and buys no bands.
+    static func hasUnreadLine(inked: [Bool], observations: [SearchableWriter.Observation],
+                              pageHeight h: Int, lineHeight line: Int) -> Bool {
+        guard h > 0, line > 0, inked.count >= h else { return false }
+        var runs: [(top: Int, bottom: Int)] = []
+        var start: Int?
+        for y in 0...h {
+            if y < h, inked[y] {
+                if start == nil { start = y }
+            } else if let s = start {
+                if y - s >= max(2, line / 4) { runs.append((s, y)) }
+                start = nil
+            }
+        }
+        guard runs.count >= 2 else { return false }
+        var read = [Bool](repeating: false, count: runs.count)
+        for o in observations {
+            let centre = (o.boundingBox.y + o.boundingBox.height / 2) * Double(h)
+            guard centre.isFinite, let nearest = runs.indices.min(by: {
+                abs(Double(runs[$0].top + runs[$0].bottom) / 2 - centre)
+                    < abs(Double(runs[$1].top + runs[$1].bottom) / 2 - centre)
+            }) else { continue }
+            read[nearest] = true
+        }
+        for j in runs.indices where !read[j] && 2 * (runs[j].bottom - runs[j].top) <= 3 * line {
+            if j > 0, read[j - 1], runs[j].top - runs[j - 1].bottom < line { return true }
+            if j + 1 < runs.count, read[j + 1], runs[j + 1].top - runs[j].bottom < line { return true }
+        }
+        return false
+    }
+
+    /// How many of a page's published observations are lines Vision could not read
+    /// (C53): `hasFusedLine`'s shape, over 1.4 line heights tall and eight wide, at
+    /// under full confidence. Two footnote lines of `Riesman_1942` p14 came back as
+    /// one box at 0.3 (`Brazian nation co Peda…`) that no band read cleanly enough to
+    /// replace, and of the band lines no fused box survived at full confidence on the
+    /// pages C33 and C53 name. Taken over normalised boxes, so the width test assumes
+    /// a square page: on a portrait page the bar is about six line heights.
+    static func unreadableLines(_ observations: [SearchableWriter.Observation]) -> Int {
+        let heights = observations.map(\.boundingBox.height).filter { $0.isFinite && $0 > 0 }.sorted()
+        guard !heights.isEmpty else { return 0 }
+        let line = heights[heights.count / 2]
+        return observations.filter {
+            $0.confidence < 1 && $0.boundingBox.height > 1.4 * line && $0.boundingBox.width > 8 * line
+        }.count
+    }
+
+    /// `hasUnreadLine` over each of `voidStrips`, a strip's rows read only by the
+    /// observations that reach into it sideways.
+    static func hasUnreadLine(inkedStrips: [[Bool]], observations: [SearchableWriter.Observation],
+                              pageHeight h: Int, lineHeight line: Int,
+                              strips: [(from: Double, to: Double)] = voidStrips) -> Bool {
+        zip(inkedStrips, strips).contains { rows, strip in
+            hasUnreadLine(inked: rows, observations: observations.filter {
+                min($0.boundingBox.x + $0.boundingBox.width, strip.to) > max($0.boundingBox.x, strip.from)
+            }, pageHeight: h, lineHeight: line)
+        }
+    }
+
     /// Whether the page holds a box that may be two lines read as one: over 1.4
     /// line heights tall and over eight wide, the shape of every fused reading on
     /// C33's pages (`since nhe dades indicated: meitlapolis…`, 1.7 line heights at
@@ -2131,7 +2207,19 @@ enum Recogniser {
             for o in candidates {
                 let box = o.boundingBox
                 let middle = middleHalf(of: box)
-                guard coveredShare(of: middle, by: kept) < 0.5,
+                // A neighbouring line covers with its own middle half (C53): Vision's
+                // boxes run past their line's ink, 94 rows over 52-row type on a 55-row
+                // pitch on `Briefer` p1, so the line above reached 58% of the next line's
+                // middle half and refused it, read cleanly by two bands. A kept box whose
+                // centre is within half the shorter box's height of this one's is this
+                // line read again, offset (16 rows on `Bird` p3), and covers with all of
+                // it; so does a box over two line heights, as junk across lines did.
+                let centre = box.y + box.height / 2
+                let cover = kept.map { k in
+                    k.height > tallest || abs(k.y + k.height / 2 - centre) < min(k.height, box.height) / 2
+                        ? k : middleHalf(of: k)
+                }
+                guard coveredShare(of: middle, by: cover) < 0.5,
                       !kept.contains(where: { k in
                           sameLine(k, middle) && sidewaysOverlap(k, box) > min(k.width, box.width) / 10
                       })
@@ -2198,6 +2286,41 @@ enum Recogniser {
                     let stretch = SearchableWriter.BoundingBox(x: from, y: box.y,
                                                                width: to - from, height: box.height)
                     if hasInk.map({ $0(middleHalf(of: stretch)) }) ?? true { stretches.append((stretch, nil)) }
+                }
+            }
+            // And beside any kept line, over ink, out to where the lines above and below
+            // it reach (C53): on `Briefer` p3 every band read `378 pages. $8.50. A
+            // comprehensive review…` and the line under it as one box at 0.3, which is
+            // never a candidate, so no refused line stood beside the kept `378 pages.
+            // $8.50.` to report the rest.
+            let pitch = 1.5 * Double(line) / Double(h)
+            for box in kept where box.height <= tallest {
+                let middle = middleHalf(of: box)
+                let centre = box.y + box.height / 2
+                let near = kept.filter {
+                    $0.height <= tallest && !sameLine($0, middle) && overlapsSideways($0, box)
+                        && abs($0.y + $0.height / 2 - centre) <= pitch
+                }
+                guard let left = near.map(\.x).min(),
+                      let right = near.map({ $0.x + $0.width }).max() else { continue }
+                let (from, to) = (min(left, box.x), max(right, box.x + box.width))
+                // Stopped by any kept box reaching this line's middle rows, not only one
+                // on its line: a newspaper's next column sets its lines off this one's.
+                let spans = kept.filter {
+                    min($0.y + $0.height, middle.y + middle.height) > max($0.y, middle.y)
+                }
+                    .map { (max($0.x, from), min($0.x + $0.width, to)) }
+                    .filter { $0.1 > $0.0 }.sorted { $0.0 < $1.0 }
+                var reach = from
+                for (a, b) in spans + [(to, to)] {
+                    if a - reach > word {
+                        let stretch = SearchableWriter.BoundingBox(x: reach, y: box.y,
+                                                                   width: a - reach, height: box.height)
+                        if hasInk.map({ $0(middleHalf(of: stretch)) }) ?? false {
+                            stretches.append((stretch, nil))
+                        }
+                    }
+                    reach = max(reach, b)
                 }
             }
             // Only what the final kept set leaves open, other than the box a stretch
