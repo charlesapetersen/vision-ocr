@@ -19426,6 +19426,24 @@ directory) and traced `recogniseInBands` per line [measured]. The "reasoned" cau
   below its ink (C55). (b) PASS for Riesman and Jensen. (c) FAIL as above. (d) PASS for the two merge checks;
   no check pins the trigger's wiring or the paint-out.
 
+**2026-10-02, second session — the Fiedler and Raskin regressions are PDFKit's grouping flipping, not lost
+text; no code (the item's one-commit BOUND is spent at medium effort).** [measured by subagent: content
+streams diffed, drags replayed through PDFKit `selection(from:to:)`, the harness rerun on edited files.]
+- *Fiedler p1*: the worst column (the ad at x38-96, y1151-1320) has byte-identical runs before and after. Its
+  top run, the over-tall `wall finish!` (9.1 pt against 4.5), used to group with the line below it; now PDFKit
+  groups it with `They said it was` across a 60 pt gutter, so the drag runs backwards and copies 4 words
+  (cover 0/8, recall 0.07). No single added run causes it: deleting 7 runs unchanged in both files, 200 pt
+  away, restores cover 0.50 and recall 0.45. Accepted as instability under rule 9.
+- *Raskin p1*: four changes, all correct text (`pg. 26` under the header, `It is seldom sufficient, how` for a
+  fused junk run, `• be`/`as` beside a kept line, `skin.`). Deleting only `pg. 26` restores overInk 0.80;
+  copyErr's remaining rise (1.92 with all four removed) is the lost junk run's geometry. Accepted likewise.
+- The smaller regressions (NYSE p110 prec, Cong p16 prec, `___ 2` and Briefer p1 splits, Briefer p3
+  find/cover) were not traced, so the baseline is not refreshed.
+- Next, for the max-effort session: the two Briefer p4 lines (DONE WHEN (a)); a check pinning the trigger and
+  the paint-out (d); then trace the small regressions and refresh the baseline. Untested lever for the
+  grouping flips: `SearchableWriter` capping a run's height near its line pitch when it is over ~1.5x its
+  column neighbours' (C52/C55 ground). Confining stretches to their column would change neither page above.
+
 ### C54 · Pale typewriting on layered pages is published broken and faded — OPEN
 
 *(found 2026-10-01 by `truth-read`. C31 fixed the ink's colour; this is the stencil's shape.)*
