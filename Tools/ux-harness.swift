@@ -337,9 +337,11 @@ func gray(_ img: CGImage) -> Gray {
 /// core; then the first and last columns holding ink in the core's middle half, between `x0` and `x1`. A row is
 /// ink when it holds a tenth of the window's densest row, so the descenders touching across the gap between two
 /// close lines (Delton p2's footer, in 7 pt type) leave a gap and the lines part. nil where there is no ink.
+/// `fx0`/`fx1` are the same ends over the band's full height, ascenders and raised figures included: a `T`'s
+/// first ink in the middle half is its stem, and a drag begun there copies `his` (CAMFIELD p1).
 /// Blind spot: an underline or a rule touching the text can be taken for its core, a third of a line low, with
 /// the rule's ends for the line's.
-struct InkLine { let x0: CGFloat, x1: CGFloat, yMid: CGFloat }
+struct InkLine { let x0: CGFloat, x1: CGFloat, yMid: CGFloat, fx0: CGFloat, fx1: CGFloat }
 func inkLine(_ g: Gray, _ sc: CGFloat, _ dispH: CGFloat, _ r: CGRect, _ x0: CGFloat, _ x1: CGFloat) -> InkLine? {
     guard [r.minX, r.minY, r.width, r.height, x0, x1].allSatisfy({ $0.isFinite }) else { return nil }
     let hpx = r.height * sc
@@ -365,6 +367,7 @@ func inkLine(_ g: Gray, _ sc: CGFloat, _ dispH: CGFloat, _ r: CGRect, _ x0: CGFl
     if overlap(band) == 0 { band = runs.min { dist($0) < dist($1) }! }
     // lines run together with no gap: the band about the box
     if Double(band.1 - band.0) > 1.6 * Double(hpx) { band = (max(band.0, top - Int(0.2 * hpx)), min(band.1, bot + Int(0.2 * hpx))) }
+    let full = band
     let densest = (band.0...band.1).map { cnt[$0 - ya] }.max() ?? 0
     let core = (band.0...band.1).filter { Double(cnt[$0 - ya]) >= 0.35 * Double(densest) }
     if let c0 = core.first, let c1 = core.last { band = (c0, c1) }
@@ -372,7 +375,11 @@ func inkLine(_ g: Gray, _ sc: CGFloat, _ dispH: CGFloat, _ r: CGRect, _ x0: CGFl
     var first = -1, last = -1
     for x in cx0...cx1 { for y in m0...m1 where dark(x, y) { if first < 0 { first = x }; last = x; break } }
     guard first >= 0 else { return nil }
-    return InkLine(x0: CGFloat(first) / sc, x1: CGFloat(last + 1) / sc, yMid: dispH - CGFloat(band.0 + band.1) / 2 / sc)
+    var ffirst = first, flast = last
+    for x in cx0..<first { if (full.0...full.1).contains(where: { dark(x, $0) }) { ffirst = x; break } }
+    if last < cx1 { for x in stride(from: cx1, to: last, by: -1) { if (full.0...full.1).contains(where: { dark(x, $0) }) { flast = x; break } } }
+    return InkLine(x0: CGFloat(first) / sc, x1: CGFloat(last + 1) / sc, yMid: dispH - CGFloat(band.0 + band.1) / 2 / sc,
+                   fx0: CGFloat(ffirst) / sc, fx1: CGFloat(flast + 1) / sc)
 }
 
 func colour(_ s: Raster, _ o: Raster) -> (share: Double, kept: Double?) {
@@ -666,8 +673,8 @@ func truthPage(_ p: Int, _ sp: PDFPage, _ op: PDFPage, _ out: PDFDocument, _ pai
     // box reaches into a column box beside it, the drag stops at its own column's edge: Kelly 2014 p3's last
     // line in one column is boxed 31 px into the next, and a drag ended there ran on through that column (316
     // words added). A column box drawn narrower than a headline it holds is no reason to cut the headline.
-    // The drag is made twice, from the boxes' ends and from the ink's, and the one nearer the transcript is
-    // kept (the boxes' on a tie), as a reader who sees the highlight miss a line moves the drag. A box's end
+    // The drag is made from the boxes' ends and from the ink's, and the one nearest the transcript is
+    // kept (on a tie the boxes', then the core ink's), as a reader who sees the highlight miss a line moves the drag. A box's end
     // can sit off its ink, and PDFKit then begins or ends the selection on the nearest character, in another
     // line: Cooley 2008 p94's footnotes begin at a box drawn from the column's edge, 100 px left of their first
     // figure, so the drag began on the line below (15 words missing); Leland p2's last line is boxed 140 px
@@ -675,6 +682,10 @@ func truthPage(_ p: Int, _ sp: PDFPage, _ op: PDFPage, _ out: PDFDocument, _ pai
     // 0.3 pt left of the first glyph, since one inside it begins after it (`ot` for `Not`), and ends 0.3 pt inside
     // the last, since a point past it ran on into later text (Boltanski 2006 p102, 385 words); a drop capital
     // puts the first line's ink below its text (Canby 1915 p1), and there the boxes' drag is the nearer.
+    // A third drag takes the ink's ends over the line's full height, ascenders and raised figures included: in
+    // the x-height core a `T` begins at its stem (CAMFIELD p1 copied `his`), a raised `40` is not there at all,
+    // and an `f` ends at its stem (Banks 2006 p101 copied `0` and `o`). It is one more candidate, not a
+    // replacement, since a drop capital or a rule touching the line widens the full height's ends.
     var colTokens: [[String]] = []
     let colBoxes = t.columns.map { pxToDisp(t, op, $0) }
     for c in t.columns.indices {
@@ -692,13 +703,16 @@ func truthPage(_ p: Int, _ sp: PDFPage, _ op: PDFPage, _ out: PDFDocument, _ pai
         let ia = inkLine(og, osc, dispH, a, leftIn ? max(a.minX, box.minX) : a.minX - a.height / 4, a.maxX + a.height / 4)
         let ib = inkLine(og, osc, dispH, b, b.minX - b.height / 4, rightIn ? min(b.maxX, box.maxX) : b.maxX + b.height / 4)
         let inkFrom = ia.map { CGPoint(x: $0.x0 - 0.3, y: $0.yMid) } ?? from, inkTo = ib.map { CGPoint(x: $0.x1 - 0.3, y: $0.yMid) } ?? to
-        let inkText = op.selection(from: dispToPage(op, inkFrom), to: dispToPage(op, inkTo))?.string ?? ""
-        let byBox = evaluate(idx, boxText), byInk = evaluate(idx, inkText)
-        let ink = byInk.errors < byBox.errors
+        let fullFrom = ia.map { CGPoint(x: $0.fx0 - 0.3, y: $0.yMid) } ?? from, fullTo = ib.map { CGPoint(x: $0.fx1 - 0.3, y: $0.yMid) } ?? to
+        let drags = [("box", boxText),
+                     ("ink", op.selection(from: dispToPage(op, inkFrom), to: dispToPage(op, inkTo))?.string ?? ""),
+                     ("full", op.selection(from: dispToPage(op, fullFrom), to: dispToPage(op, fullTo))?.string ?? "")]
+        let scored = drags.map { evaluate(idx, $0.1) }
+        let k = scored.indices.min { scored[$0].errors < scored[$1].errors }!
         if verbose {
-            FileHandle.standardError.write("p\(p) truth column \(c + 1) (\(ink ? "ink" : "box") drag; errors box \(byBox.errors), ink \(byInk.errors)): \((ink ? inkText : boxText).replacingOccurrences(of: "\n", with: "|"))\n".data(using: .utf8)!)
+            FileHandle.standardError.write("p\(p) truth column \(c + 1) (\(drags[k].0) drag; errors \(zip(drags, scored).map { "\($0.0) \($1.errors)" }.joined(separator: ", "))): \(drags[k].1.replacingOccurrences(of: "\n", with: "|"))\n".data(using: .utf8)!)
         }
-        commit(ink ? byInk : byBox)
+        commit(scored[k])
     }
     // body lines in no column, each selected alone
     for li in t.lines.indices where lineCol[li] == nil && t.lines[li].kind == "body" {

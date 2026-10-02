@@ -713,7 +713,7 @@ say so in the commit.
       refusals, and the spend. If that disagreement is above 1% on some kind of page, say so in
       `ops/truth/STATUS.md` for `truth-harness` and `truth-read`; do not extend this to more pages
       without the owner. BOUND: one session. (context: owner request 2026-09-30)
-- [ ] **truth-harness** — measure published outputs against the truth set, text and everything else alike,
+- [x] **truth-harness** — measure published outputs against the truth set, text and everything else alike,
       and run it on today's pipeline. (blocked-on: truth-set)
       TEXT, in `Tools/ux-harness.swift --truth <dir>`. (a) Copy: drag each column the transcript lists, from
       its line boxes, so a column Vision never found is still dragged, and align the selection's `string`
@@ -788,6 +788,10 @@ say so in the commit.
       old-only, 38 truth-only. Self-test PASS with a `raised` case. The DONE WHEN check then failed Copy narrowly:
       CAMFIELD p1 and Banks 2006 p101 are red by one glyph at a drag's end. Left for `truth-harness`: the fix in
       `ops/truth/STATUS.md` (NEXT), a rescore, the check. (context: owner request 2026-09-29)
+- [x] **truth-harness-fullink** — a third column drag from the ink's ends over the line's full height, 2026-10-01:
+      CAMFIELD p1 and Banks 2006 p101 score what a reader's drag scores and go green; all 215 pages rescored
+      (`final5`): 15 better, none worse, 121 green, 48 red, 10 old-only, 36 truth-only. The DONE WHEN check passed
+      every criterion, so `truth-harness` is ticked. (context: owner request 2026-09-29)
 - [ ] **truth-read** — read `truth-harness`'s output and turn what it finds into queued work.
       (blocked-on: truth-harness)
       Start with the pages the old measures pass and the truth fails, since those hold the defects the old

@@ -278,6 +278,21 @@ case_boxes widened
 case_boxes narrowed
 case_boxes raised
 
+# A DRAG'S FIRST AND LAST GLYPH: a drag made from the ink of a line's x-height core begins at a `T`'s stem and
+# ends at an `f`'s, and misses a raised figure, so CAMFIELD p1 copied `his` for `This` and Banks 2006 p101 `0`
+# for `40` and `o` for `of`, red by a glyph each (copy error 0.0508 and 0.0559; a reader's own drag 0.0339 and
+# 0.0497). Both must be green. Run 1's outputs at 832b7ac in `$STATE/truth-run-2026-09-30` (corpus pages,
+# never committed); the truth's page is linked as p1, as `ux-regression.sh` renumbers a cut document.
+RUN1="$STATE/truth-run-2026-09-30"
+case_glyph() {
+    local label="$1" doc="$2" n="$3" page="$4" t="$W/$1-truth"
+    if [ ! -f "$RUN1/pub/d$n.ocr.pdf" ] || [ ! -d "$STATE/truth/$doc/p$page" ]; then echo "skip  $label: no run-1 output or truth"; return; fi
+    mkdir -p "$t"; ln -sfn "$STATE/truth/$doc/p$page" "$t/p1"
+    TR="$W" case_truth "$label" "$label-truth" "$RUN1/in/d$n.pdf" "$RUN1/pub/d$n.ocr.pdf" "1" -
+}
+case_glyph truth-tstem  "thesis/CAMFIELD_Psychologists at War" 6 1
+case_glyph truth-raised-figure "$(cd "$STATE/truth/thesis" 2> /dev/null && ls -d Banks\ -\ 2006* 2> /dev/null | head -1 | sed 's|^|thesis/|')" 23 101
+
 echo "renders and TSVs: $W"
 [ "$bad" = 0 ] && { echo "ux-harness-selftest: PASS"; exit 0; }
 echo "ux-harness-selftest: FAIL"; exit 1

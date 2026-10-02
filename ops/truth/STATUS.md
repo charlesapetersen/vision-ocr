@@ -403,3 +403,27 @@ against non-finite boxes only (checked by `diff`, by me, not by a second reviewe
 `Tools/ux-regression.sh --baseline` (measured): truth rows only, 4 better (Delton p2 0.0965 -> 0.0029 and its `tcopy`,
 Xin Qu p24 1.39 -> 1.06, Riesman 1949 p2 figure text 9/45 -> 12/45) and 1 worse, accepted: `___ 2` p1's welds 1 -> 2, the
 drag kept there having fewer errors in all; the page is red on copy either way. Baseline refreshed.
+
+FULL-HEIGHT INK, 2026-10-01 (tenth session, measured). A third column drag, from the ink's ends over the line's full
+height (ascenders and raised figures in, `yMid` still the core's), joins the boxes' and the core ink's; the fewest errors
+wins, ties to box then core. REJECTED: replacing the core's ends, since a drop capital or a touching rule widens the full
+height's (Canby p1, the Boltanski run-on). All 215 pages rescored into `$STATE/truth-run-2026-09-30-final5`, 0 crashes:
+15 pages moved, all better, wrong 18 fewer, missing and added unchanged. CAMFIELD p1 0.0508 -> 0.0339 and Banks 2006
+p101 0.0559 -> 0.0497, each what a reader's own drag scores, truth-only -> green; no other class moved. Self-test PASS
+with `truth-tstem` and `truth-raised-figure` (run 1's outputs, both `tcopy` under the old harness). `ux-regression.sh
+--baseline`: 0 worse, 0 better, baseline not rewritten.
+
+    route      pages  green  red  old-only  truth-only   text  other  judge   (full-height ink; judges' round 2)
+    dct           13     10    0         0           3      1      2      3
+    jbig2        107     62   24         9          12     28      9     15
+    layered       55     23   14         1          17     12      8     24
+    newspaper     11      1    7         0           3     10      1      1
+    no-image      11     10    1         0           0      1      1      1
+    other          5      4    0         0           1      1      0      0
+    unknown       13     11    2         0           0      2      0      0
+    all          215    121   48        10          36     55     21     44
+DONE WHEN RE-CHECK ON final5, 2026-10-01: every criterion passed (C1 measured: CAMFIELD p1 and Banks p101 copy what the
+checker's own drags copy, 0.5-4 pt outside the boxes; the 15 changed rows are 1-3 words wrong -> right each). For
+`truth-read`: Banks p101 is green at 0.0497 with 14 words lost from the layer (the footnote's last line and a half
+cannot be copied; dragging `Columbia ...` returns the line above), just under the 0.05 threshold.
+`truth-harness` TICKED.
