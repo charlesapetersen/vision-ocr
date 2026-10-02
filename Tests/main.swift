@@ -9574,6 +9574,238 @@ do {
     check("C53: the run report names the pages and counts, never the text",
           unreadNote.contains("3 place(s) on 2 page(s)") && unreadNote.contains("p14 (1); p20 (2)")
               && !unreadNote.contains("Brazian"), unreadNote)
+
+    // C53: the trigger `recogniseInBands` asks is the three tests together. Boxes of an
+    // ordinary height, so no fused box starts the bands, and one missed last line, so
+    // no void does: only the unread line can.
+    let readTwo = [obs("first", x: 0.1, top: 98, width: 0.8, height: 22, page: 1000),
+                   obs("second", x: 0.1, top: 123, width: 0.8, height: 22, page: 1000)]
+    check("C53: one missed line under two read ones buys the bands through the page's trigger",
+          Recogniser.wantsBands(inkedStrips: [lastLine], observations: readTwo, pageWidth: 1000,
+                                pageHeight: h, lineHeight: 20)
+              && !Recogniser.hasVoid(inkedStrips: [lastLine], observations: readTwo, pageHeight: h,
+                                     lineHeight: 20, strips: [(0, 1)])
+              && !Recogniser.hasFusedLine(readTwo, pageWidth: 1000, pageHeight: h, lineHeight: 20)
+              && !Recogniser.wantsBands(inkedStrips: [lastLine],
+                                        observations: readTwo + [obs("third", x: 0.1, top: 148,
+                                                                     width: 0.8, height: 22,
+                                                                     page: 1000)],
+                                        pageWidth: 1000, pageHeight: h, lineHeight: 20))
+
+    // C53: `Briefer` p4's shape, on real pixels. A box that stops in its line's x-height
+    // is padded a quarter line before Vision is shown it, and read right that way; a box
+    // as Vision draws it is not. Tightly leaded, so the neighbours' ascenders and
+    // descenders meet this line's, as they do there.
+    let tightWidth = 1700, tightHeight = 1200, pitch = 44, firstBase = 500
+    var tightPage: CGImage?
+    if let ctx = CGContext(data: nil, width: tightWidth, height: tightHeight, bitsPerComponent: 8,
+                           bytesPerRow: tightWidth, space: CGColorSpaceCreateDeviceGray(),
+                           bitmapInfo: CGImageAlphaInfo.none.rawValue) {
+        ctx.setFillColor(gray: 1, alpha: 1)
+        ctx.fill(CGRect(x: 0, y: 0, width: tightWidth, height: tightHeight))
+        ctx.setFillColor(gray: 0, alpha: 1)
+        let font = CTFontCreateWithName("Times-Roman" as CFString, 40, nil)
+        for (i, s) in ["of employers and of union representatives toward bargaining are far",
+                       "important in achieving industrial peace than outside factors such as",
+                       "the size, profitability or location of the company or the number of",
+                       "unions involved. A highly readable and instructive case account."].enumerated() {
+            ctx.textPosition = CGPoint(x: 150, y: CGFloat(tightHeight - (firstBase + i * pitch)))
+            CTLineDraw(CTLineCreateWithAttributedString(
+                NSAttributedString(string: s, attributes: [.font: font])), ctx)
+        }
+        tightPage = ctx.makeImage()
+    }
+    if let image = tightPage, let scan = Recogniser.inkScan(of: image) {
+        let settings = Prefs.Snapshot.current()
+        let whole = (try? Recogniser.recognise(image, settings: settings)) ?? []
+        let line = Recogniser.lineHeight(of: whole, pageHeight: tightHeight)
+        // The second line's x-height is 18 rows over its baseline; this box is four rows
+        // higher, as `chieving industria neace` was, over the line's right-hand half.
+        let base = firstBase + pitch
+        let short = Box(x: 0.5, y: Double(base - 22) / Double(tightHeight), width: 0.45,
+                        height: 18.0 / Double(tightHeight))
+        let drawn = whole.first { $0.text.contains("achieving") }
+        check("C53: a box that stops in its line's x-height cuts its ink, and Vision's own box does not",
+              Recogniser.cutsItsInk(short, of: image, level: scan.level, lineHeight: line)
+                  && drawn.map { !Recogniser.cutsItsInk($0.boundingBox, of: image, level: scan.level,
+                                                        lineHeight: line) } == true,
+              "line \(line) whole \(whole.map(\.text))")
+        let padded = Recogniser.readStretch(short, of: image, settings: settings, lineHeight: line,
+                                            padded: true)?.observations.map(\.text).joined(separator: " ")
+        check("C53: …and padded a quarter line, the stretch over it reads its words",
+              padded?.contains("outside factors such as") == true, "\(padded ?? "nil")")
+    } else {
+        check("C53: the tightly leaded fixture draws and scans", false)
+    }
+    // The rows shown: the stretch's own, and a quarter line more each side when padded.
+    if let rect = Recogniser.stretchCrop(stretch, pageWidth: 4000, pageHeight: 4000, lineHeight: 40) {
+        let plain = Recogniser.stretchRows(stretch, crop: rect, pageHeight: 4000, lineHeight: 40,
+                                           padded: false)
+        let wide = Recogniser.stretchRows(stretch, crop: rect, pageHeight: 4000, lineHeight: 40,
+                                          padded: true)
+        check("C53: a stretch is shown its own rows, and a quarter line more each side padded",
+              plain.top == 40 && plain.bottom == 80 && wide.top == 30 && wide.bottom == 90,
+              "\(plain) \(wide)")
+    }
+
+    // C53: a stretch's ends run out over its line's ink, to the next kept box at most,
+    // and only for more ink than the crop's own margin would show (`Emp` of `Employee`
+    // began 89 px left of the junk box the stretch was cut from on `Briefer` p4).
+    let unreadLeft = Box(x: 0.20, y: 0.25, width: 0.30, height: 0.01)
+    let lineInk: (Box) -> Bool = { $0.x < 0.5 && $0.x + $0.width > 0.1 }
+    let reached = Recogniser.reachingInk(unreadLeft, walls: [], pageWidth: 4000, pageHeight: 4000,
+                                         lineHeight: 40, hasInk: lineInk)
+    let walled = Recogniser.reachingInk(unreadLeft,
+                                        walls: [Box(x: 0.05, y: 0.25, width: 0.10, height: 0.01)],
+                                        pageWidth: 4000, pageHeight: 4000, lineHeight: 40, hasInk: lineInk)
+    let letter = Recogniser.reachingInk(unreadLeft, walls: [], pageWidth: 4000, pageHeight: 4000,
+                                        lineHeight: 40, hasInk: { $0.x < 0.2 && $0.x + $0.width > 0.1975 })
+    check("C53: a stretch runs out over its line's ink, stops at a kept box, and not for a letter",
+          abs(reached.x - 0.1) < 0.003 && abs(reached.x + reached.width - 0.5) < 1e-9
+              && walled.x >= 0.15 && walled.x < 0.153
+              && Recogniser.same(letter, unreadLeft),
+          "\(reached) \(walled) \(letter)")
+    // …and no further than the lines above and below it reach: past them is a margin's
+    // rule or the next column, not its line.
+    let column = Recogniser.reachingInk(unreadLeft,
+                                        walls: [Box(x: 0.16, y: 0.239, width: 0.7, height: 0.01),
+                                                Box(x: 0.17, y: 0.261, width: 0.7, height: 0.01)],
+                                        pageWidth: 4000, pageHeight: 4000, lineHeight: 40, hasInk: lineInk)
+    check("C53: …and goes no further than the lines above and below it, by a step",
+          column.x >= 0.1575 && column.x < 0.16, "\(column)")
+    // The same at the right-hand end: out over ink, stopped by a kept box or the lines
+    // above and below, and not for a letter.
+    let inkToRight: (Box) -> Bool = { $0.x < 0.9 && $0.x + $0.width > 0.2 }
+    let outRight = Recogniser.reachingInk(unreadLeft, walls: [], pageWidth: 4000, pageHeight: 4000,
+                                          lineHeight: 40, hasInk: inkToRight)
+    let wallRight = Recogniser.reachingInk(unreadLeft, walls: [Box(x: 0.7, y: 0.25, width: 0.1, height: 0.01)],
+                                           pageWidth: 4000, pageHeight: 4000, lineHeight: 40, hasInk: inkToRight)
+    let capRight = Recogniser.reachingInk(unreadLeft,
+                                          walls: [Box(x: 0.1, y: 0.239, width: 0.5, height: 0.01)],
+                                          pageWidth: 4000, pageHeight: 4000, lineHeight: 40, hasInk: inkToRight)
+    let letterRight = Recogniser.reachingInk(unreadLeft, walls: [], pageWidth: 4000, pageHeight: 4000,
+                                             lineHeight: 40, hasInk: { $0.x < 0.5025 && $0.x + $0.width > 0.5 })
+    check("C53: …and the same at its right-hand end",
+          abs(outRight.x + outRight.width - 0.9) < 0.003
+              && wallRight.x + wallRight.width <= 0.7 + 1e-9 && wallRight.x + wallRight.width > 0.697
+              && capRight.x + capRight.width <= 0.6025 + 1e-9 && capRight.x + capRight.width > 0.6
+              && Recogniser.same(letterRight, unreadLeft),
+          "\(outRight) \(wallRight) \(capRight) \(letterRight)")
+    // …though the junk box it was cut from, whose end is its own, says nothing there.
+    let cutFrom = Recogniser.reachingInk(unreadLeft,
+                                         walls: [Box(x: 0.2, y: 0.235, width: 0.7, height: 0.03)],
+                                         pageWidth: 4000, pageHeight: 4000, lineHeight: 40, hasInk: lineInk)
+    check("C53: …nor the junk box whose end the stretch took",
+          cutFrom.x < 0.1 + 0.003, "\(cutFrom)")
+
+    // C53: the band lines kept beside a stretch on its line are read again; the page's
+    // own lines and lines elsewhere are not. One to the stretch's right continues it.
+    let besideStretch = Box(x: 0.3, y: 0.25, width: 0.5, height: 0.01)
+    let bandBeside = Box(x: 0.1, y: 0.25, width: 0.2, height: 0.01)
+    let bandAfter = Box(x: 0.8, y: 0.25, width: 0.1, height: 0.01)
+    let bandBelow = Box(x: 0.1, y: 0.27, width: 0.2, height: 0.01)
+    let pageBeside = Box(x: 0.8, y: 0.25, width: 0.1, height: 0.01)
+    let fragments = Recogniser.besideFragments([besideStretch], kept: [bandBeside, bandBelow, pageBeside],
+                                               whole: [pageBeside], pageWidth: 4000, lineHeight: 40)
+    let after = Recogniser.besideFragments([besideStretch], kept: [bandAfter], whole: [],
+                                           pageWidth: 4000, lineHeight: 40)
+    check("C53: only a band line beside a stretch on its line is read again",
+          fragments.count == 1 && Recogniser.same(fragments[0].box, bandBeside) && !fragments[0].follows
+              && after.count == 1 && after[0].follows, "\(fragments) \(after)")
+    // A reread is judged in the page's rows: its piece's boxes are in its crop's.
+    let crop = (observations: [Obs(boundingBox: Box(x: 0.1, y: 40.0 / 120, width: 0.2, height: 40.0 / 120),
+                                   text: "achieving industrial peace", confidence: 1)], top: 960, bottom: 1080)
+    check("C53: a reread spans its band line in the page's rows, at full confidence",
+          Recogniser.rereadSpans(crop, bandBeside, pageHeight: 4000, pageWidth: 4000, lineHeight: 40)
+              && !Recogniser.rereadSpans(crop, bandBelow, pageHeight: 4000, pageWidth: 4000, lineHeight: 40)
+              && !Recogniser.rereadSpans((observations: crop.observations.map {
+                  Obs(boundingBox: $0.boundingBox, text: $0.text, confidence: 0.5) }, top: 960, bottom: 1080),
+                                         bandBeside, pageHeight: 4000, pageWidth: 4000, lineHeight: 40))
+    // …and its line is spread over the band line's box too, top and ends, so it keeps the
+    // band line's place in the page's order and its reach (`_1953_99 Cong_ 2` p16).
+    let lowRead = (observations: [Obs(boundingBox: Box(x: 0.1, y: 55.0 / 120, width: 0.18, height: 36.0 / 120),
+                                      text: "of small business.", confidence: 1)], top: 960, bottom: 1080)
+    let spread = Recogniser.spreadOver(bandBeside, lowRead, pageHeight: 4000).observations[0].boundingBox
+    check("C53: a reread is spread over its band line's box, so it keeps the band line's place",
+          abs(spread.y * 120 - 40) < 1e-9 && abs((spread.y + spread.height) * 120 - 91) < 1e-9
+              && abs(spread.x - 0.1) < 1e-9 && abs(spread.x + spread.width - 0.3) < 1e-9, "\(spread)")
+    // …and on a long band line, nine tenths of it is two words short: half a line at most.
+    let longBand = Box(x: 0.1, y: 0.25, width: 0.6, height: 0.01)
+    let shortRead = (observations: [Obs(boundingBox: Box(x: 0.1, y: 40.0 / 120, width: 0.54, height: 40.0 / 120),
+                                        text: "a long line read short", confidence: 1)], top: 960, bottom: 1080)
+    check("C53: …leaving no more than half a line of a long band line unread",
+          !Recogniser.rereadSpans(shortRead, longBand, pageHeight: 4000, pageWidth: 4000, lineHeight: 40))
+    // A moved or padded stretch is kept only if it read something the merge admits.
+    let junkRead = (observations: [Obs(boundingBox: Box(x: 0.1, y: 0.3, width: 0.2, height: 0.3),
+                                       text: "uoromont", confidence: 0.3)], top: 960, bottom: 1080)
+    check("C53: a moved stretch that read only junk is read again as it was, an unmoved one is kept",
+          !Recogniser.keepsRead(junkRead, changed: true) && Recogniser.keepsRead(junkRead, changed: false)
+              && Recogniser.keepsRead(crop, changed: true) && !Recogniser.keepsRead(nil, changed: false))
+
+    // C53: a reread replaces the band line it spans, and the rest of the line still
+    // follows it; a reread that would refuse a stretch's reading beside it is dropped.
+    let cutLine = obs("chieving industria neace", x: 0.1, top: 1000, width: 0.2, height: 40, page: 4000)
+    let around = [obs("line above", x: 0.1, top: 950, width: 0.8, height: 40, page: 4000), cutLine,
+                  obs("line below", x: 0.1, top: 1050, width: 0.8, height: 40, page: 4000)]
+    let tail = (observations: [one("than outside factors", x: 0.3, top: 1000, width: 0.6, height: 40)],
+                top: 800, bottom: 1800)
+    let tailStretch = Box(x: 0.3, y: 0.25, width: 0.6, height: 0.01)
+    func rereading(_ text: String, width: Double)
+        -> (piece: (observations: [Obs], top: Int, bottom: Int), stretch: Box?, replaces: Box) {
+        ((observations: [one(text, x: 0.095, top: 1000, width: width, height: 40)], top: 800, bottom: 1800),
+         nil, cutLine.boundingBox)
+    }
+    let replaced = Recogniser.mergeRereading(
+        input: around, bands: [], pieces: [tail], rereads: [rereading("achieving industrial peace", width: 0.205)],
+        pageHeight: 4000, lineHeight: 40, pageWidth: 4000, hasInk: nil, continuing: [tailStretch])
+    check("C53: a reread replaces the band line it spans, and the rest of the line follows it",
+          replaced.map(\.text) == ["line above", "achieving industrial peace", "than outside factors",
+                                   "line below"], "\(replaced.map(\.text))")
+    // The same with the band line read in the last pass, so a band's, not the input's.
+    let fromBand = Recogniser.mergeRereading(
+        input: [around[0], around[2]],
+        bands: [(observations: [one("chieving industria neace", x: 0.1, top: 1000, width: 0.2, height: 40)],
+                 top: 800, bottom: 1800)],
+        pieces: [tail], rereads: [rereading("achieving industrial peace", width: 0.205)],
+        pageHeight: 4000, lineHeight: 40, pageWidth: 4000, hasInk: nil, continuing: [tailStretch])
+    check("C53: …and replaces it as well when the last pass's band read it",
+          fromBand.map(\.text) == ["line above", "achieving industrial peace", "than outside factors",
+                                   "line below"], "\(fromBand.map(\.text))")
+    // A band line an earlier pass kept is replaced where it stands, after the page's own
+    // line on its row (`_1941_Fiedler's…` p1: added, `mat-` went before `they attended`).
+    let endOfRow = obs("mat-", x: 0.7, top: 1000, width: 0.1, height: 40, page: 4000)
+    let inPlace = Recogniser.mergeRereading(
+        input: [around[0], obs("they attended", x: 0.1, top: 1000, width: 0.2, height: 40, page: 4000),
+                endOfRow, around[2]],
+        bands: [], pieces: [],
+        rereads: [((observations: [one("mat-", x: 0.7, top: 1001, width: 0.1, height: 40)], top: 800, bottom: 1800),
+                   nil, endOfRow.boundingBox)],
+        pageHeight: 4000, lineHeight: 40, pageWidth: 4000, hasInk: nil, continuing: [])
+    check("C53: …and a band line kept by an earlier pass is replaced in its place on the row",
+          inPlace.map(\.text) == ["line above", "they attended", "mat-", "line below"]
+              && inPlace[2].boundingBox.y * 4000 > 1000.5, "\(inPlace.map(\.text))")
+    let overreach = Recogniser.mergeRereading(
+        input: around, bands: [], pieces: [tail], rereads: [rereading("achieving industrial peace than", width: 0.3)],
+        pageHeight: 4000, lineHeight: 40, pageWidth: 4000, hasInk: nil, continuing: [tailStretch])
+    check("C53: …but one that would refuse the stretch beside it is dropped and the line kept",
+          overreach.map(\.text) == ["line above", "chieving industria neace", "than outside factors",
+                                    "line below"], "\(overreach.map(\.text))")
+    // A fused box at full confidence that comes back over the lines it hides does not
+    // span them: they are lost, and the rereads beside them go.
+    let kept4 = [around[0], cutLine, obs("than outside factors", x: 0.3, top: 1000, width: 0.6, height: 40,
+                                          page: 4000), around[2]]
+    let fusedBack = [around[0], obs("chieving the company of", x: 0.1, top: 1000, width: 0.8, height: 70,
+                                    page: 4000), around[2]]
+    let lostUnder = Recogniser.unspanned(kept4, by: fusedBack, pageHeight: 4000, lineHeight: 40, pageWidth: 4000)
+    check("C53: …and a fused box that comes back is no line spanning the lines under it",
+          lostUnder.count == 2 && Recogniser.unspanned(kept4, by: kept4, pageHeight: 4000, lineHeight: 40,
+                                                       pageWidth: 4000).isEmpty, "\(lostUnder)")
+    // A line of large type, a fused box's shape, is held too: kept, it is not lost.
+    let largeType = [obs("A HEADING IN LARGE TYPE", x: 0.1, top: 900, width: 0.8, height: 70, page: 4000)]
+    check("C53: …while a line of large type kept in both counts as kept, and dropped as lost",
+          Recogniser.unspanned(largeType, by: largeType, pageHeight: 4000, lineHeight: 40, pageWidth: 4000).isEmpty
+              && Recogniser.unspanned(largeType, by: [], pageHeight: 4000, lineHeight: 40,
+                                      pageWidth: 4000).count == 1)
     resetPrefs()
 }
 

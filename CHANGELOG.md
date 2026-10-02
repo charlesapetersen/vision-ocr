@@ -17,6 +17,8 @@ an older entry mentions "Window ▸ Vision Reader Window", the menu item is now
 - Clean lines that were missing from the text layer of some scanned pages, such as a book notice's second
   line or the last line of a footnote, can now be found and copied. Lines the recogniser can read only as
   garbled text are now named in the run log by page (C53).
+- On tightly set pages, lines that came out with letters garbled or missing at their ends ("chieving
+  industria neace" for "achieving industrial peace", "loyee" for "Employee") now read as printed (C53).
 
 ## 1.15.0 — 2026-09-29
 

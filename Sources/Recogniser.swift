@@ -1328,11 +1328,8 @@ enum Recogniser {
                    bands: [(observations: [SearchableWriter.Observation], top: Int, bottom: Int)],
                    stretches: [SearchableWriter.BoundingBox])?
         for pass in 0..<2 {
-            guard hasVoid(inkedStrips: inked, observations: merged, pageHeight: h,
-                          lineHeight: line)
-                    || hasFusedLine(merged, pageWidth: w, pageHeight: h, lineHeight: line)
-                    || hasUnreadLine(inkedStrips: inked, observations: merged, pageHeight: h,
-                                     lineHeight: line)
+            guard wantsBands(inkedStrips: inked, observations: merged, pageWidth: w,
+                             pageHeight: h, lineHeight: line)
             else { break }
             let plan = bandPlan(height: h, lineHeight: line, shifted: pass == 1)
             guard !plan.isEmpty else { break }
@@ -1370,34 +1367,429 @@ enum Recogniser {
         // `United States Department of Labor…`, which lets the band's clean lines
         // replace a fused junk box.
         guard let last, !last.stretches.isEmpty else { return merged }
-        var pieces: [(observations: [SearchableWriter.Observation], top: Int, bottom: Int)] = []
-        for s in last.stretches {
-            if isCancelled() { return merged }
-            guard let rect = stretchCrop(s, pageWidth: w, pageHeight: h, lineHeight: line)
-            else { continue }
-            var local = settings
-            local.minTextHeight = min(1, settings.minTextHeight * Double(h) / Double(rect.bottom - rect.top))
-            // The rows above and below the stretch's own painted white (C53): the crop
-            // keeps a line height of paper either side for the seam test, and shown the
-            // halves of the neighbouring lines there, Vision read `Briefer` p4's
-            // `(Address E. G. Wilson, …` as junk at 0.3 that a band read cleanly.
-            let (width, height) = (rect.right - rect.left, rect.bottom - rect.top)
-            let own = (top: max(0, Int((s.y * Double(h)).rounded(.down)) - rect.top),
-                       bottom: min(height, Int(((s.y + s.height) * Double(h)).rounded(.up)) - rect.top))
-            guard let cut = image.cropping(to: CGRect(x: rect.left, y: rect.top,
-                                                      width: width, height: height)),
-                  let crop = paintedOut([CGRect(x: 0, y: 0, width: width, height: own.top),
-                                         CGRect(x: 0, y: own.bottom, width: width,
-                                                height: height - own.bottom)], of: cut),
-                  let read = try? recognise(crop, settings: local)
-            else { continue }
-            pieces.append(stretchPiece(read, of: s, crop: rect, pageWidth: w, pageHeight: h))
+        let ink: (SearchableWriter.BoundingBox) -> Bool = { hasInk(in: $0, of: image, level: scan.level) }
+        // Each stretch run out to the ends of its line's ink (C53, `reachingInk`).
+        let kept = merged.map(\.boundingBox)
+        let stretches = last.stretches.indices.map { k in
+            reachingInk(last.stretches[k],
+                        walls: kept + last.stretches.indices.filter { $0 != k }.map { last.stretches[$0] },
+                        pageWidth: w, pageHeight: h, lineHeight: line, hasInk: ink)
         }
-        guard !pieces.isEmpty else { return merged }
-        return mergeBands(whole: last.input, bands: last.bands + pieces, pageHeight: h,
-                          lineHeight: line, pageWidth: w,
-                          hasInk: { hasInk(in: $0, of: image, level: scan.level) },
-                          continuing: last.stretches)
+        typealias Piece = (observations: [SearchableWriter.Observation], top: Int, bottom: Int)
+        func read(_ s: SearchableWriter.BoundingBox, padded: Bool) -> Piece? {
+            readStretch(s, of: image, settings: settings, lineHeight: line, padded: padded)
+        }
+        // A stretch moved or padded that reads nothing at full confidence, which is all the
+        // merge admits, is read again as it was: Vision reads a crop a few pixels
+        // different differently, and on `Briefer` p1 one moved crop read nothing at all.
+        var pieces: [Piece] = []
+        for (k, s) in stretches.enumerated() {
+            if isCancelled() { return merged }
+            let padded = cutsItsInk(s, of: image, level: scan.level, lineHeight: line)
+            let changed = padded || !same(s, last.stretches[k])
+            let first = read(s, padded: padded)
+            if keepsRead(first, changed: changed), let first {
+                pieces.append(first)
+            } else if changed, let again = read(last.stretches[k], padded: false) ?? first {
+                // The reading as it was, or, failing that, the moved one: its boxes under
+                // full confidence are still evidence of text for `replaces`.
+                pieces.append(again)
+            }
+        }
+        // A band line kept beside a stretch is read again on its own, as a stretch is
+        // (C53, `besideFragments`): on `Briefer` p4 both passes' bands read only
+        // `chieving industria neace` of `achieving industrial peace than outside
+        // factors…`, and nothing of the rest; shown that line alone, Vision reads it word
+        // for word. The reading replaces the band line only when it spans it at full
+        // confidence (`rereadSpans`). Out to its ink first, which a band's box can stop
+        // short of. It is the rest of a line, for the merge's order, only when it follows
+        // a stretch on its line; one that starts its line is not.
+        var rereads: [(piece: Piece, stretch: SearchableWriter.BoundingBox?,
+                       replaces: SearchableWriter.BoundingBox)] = []
+        for (f, follows) in besideFragments(stretches, kept: kept, whole: whole.map(\.boundingBox),
+                                            pageWidth: w, lineHeight: line) {
+            if isCancelled() { return merged }
+            let alone = reachingInk(f, walls: kept.filter { !same($0, f) } + stretches,
+                                    pageWidth: w, pageHeight: h, lineHeight: line, hasInk: ink)
+            guard let piece = read(alone, padded: cutsItsInk(alone, of: image, level: scan.level,
+                                                              lineHeight: line)),
+                  rereadSpans(piece, f, pageHeight: h, pageWidth: w, lineHeight: line)
+            else { continue }
+            rereads.append((spreadOver(f, piece, pageHeight: h), follows ? alone : nil, f))
+        }
+        guard !pieces.isEmpty || !rereads.isEmpty else { return merged }
+        return mergeRereading(input: last.input, bands: last.bands, pieces: pieces, rereads: rereads,
+                              pageHeight: h, lineHeight: line, pageWidth: w, hasInk: ink,
+                              continuing: stretches)
+    }
+
+    /// A reread's piece with each line on `f`'s line spread over `f`'s box as well as its
+    /// own (C53), so it takes the band line's place in the page's order and keeps its
+    /// reach to its neighbours. Read alone, Vision draws a tighter box: on `_1953_99
+    /// Cong_ 2` p16 the reread of `of small business.` began 15 rows lower than the band
+    /// line, and ended 10 px sooner, so the gap to `We know the im-` beside it passed a
+    /// line's width and that fragment no longer followed it; either way the hyphen it
+    /// ends was no longer joined to `portance`. Its own box is kept too, for a band line
+    /// that saw only its x-height (`chieving industria neace`, 21 rows of a 48-row line)
+    /// or stopped short of its ink (`low to Negotiate`).
+    static func spreadOver(_ f: SearchableWriter.BoundingBox,
+                           _ piece: (observations: [SearchableWriter.Observation], top: Int, bottom: Int),
+                           pageHeight h: Int)
+        -> (observations: [SearchableWriter.Observation], top: Int, bottom: Int) {
+        let rows = Double(piece.bottom - piece.top)
+        guard rows > 0, h > 0 else { return piece }
+        let fTop = (f.y * Double(h) - Double(piece.top)) / rows
+        let fBottom = ((f.y + f.height) * Double(h) - Double(piece.top)) / rows
+        return (piece.observations.map { o in
+            let b = o.boundingBox
+            let top = (Double(piece.top) + b.y * rows) / Double(h)
+            let tall = b.height * rows / Double(h)
+            guard abs(top + tall / 2 - (f.y + f.height / 2)) < min(tall, f.height) / 2 else { return o }
+            let y = min(b.y, fTop), bottom = max(b.y + b.height, fBottom)
+            let x = min(b.x, f.x), right = max(b.x + b.width, f.x + f.width)
+            return SearchableWriter.Observation(
+                boundingBox: SearchableWriter.BoundingBox(x: x, y: y, width: right - x, height: bottom - y),
+                text: o.text, confidence: o.confidence, quarterTurns: o.quarterTurns)
+        }, piece.top, piece.bottom)
+    }
+
+    /// Whether `recogniseInBands` keeps a stretch's reading (C53): always for a stretch
+    /// read as reported, and for one moved or padded (`changed`) only when it holds a
+    /// line at full confidence, the only kind the merge admits; else the stretch is read
+    /// again as it was.
+    static func keepsRead(_ piece: (observations: [SearchableWriter.Observation], top: Int, bottom: Int)?,
+                          changed: Bool) -> Bool {
+        guard let piece else { return false }
+        return !changed || piece.observations.contains { $0.confidence >= 1 }
+    }
+
+    /// Whether a band line's reading on its own (`readStretch`'s piece, rows of its crop)
+    /// holds one observation at full confidence that spans the band line `f`, centred on
+    /// its line in the page's rows. Spans means leaving at most a tenth of it, and at
+    /// most half a line of `line` pixels on a page `pageWidth` wide, uncovered: a share
+    /// alone would let a reading of a long line leave two words out unremarked.
+    static func rereadSpans(_ piece: (observations: [SearchableWriter.Observation], top: Int, bottom: Int),
+                            _ f: SearchableWriter.BoundingBox, pageHeight h: Int,
+                            pageWidth w: Int, lineHeight line: Int) -> Bool {
+        spanningRead(piece, f, pageHeight: h, pageWidth: w, lineHeight: line) != nil
+    }
+
+    /// The observation of a reread's piece that spans the band line `f` (`rereadSpans`),
+    /// by its index in the piece and in the page's rows; nil when none does.
+    static func spanningRead(_ piece: (observations: [SearchableWriter.Observation], top: Int, bottom: Int),
+                             _ f: SearchableWriter.BoundingBox, pageHeight h: Int,
+                             pageWidth w: Int, lineHeight line: Int)
+        -> (index: Int, observation: SearchableWriter.Observation)? {
+        guard h > 0, w > 0 else { return nil }
+        let rows = Double(piece.bottom - piece.top)
+        let open = min(0.1 * f.width, 0.5 * Double(line) / Double(w))
+        for (i, o) in piece.observations.enumerated() {
+            let b = o.boundingBox
+            let top = (Double(piece.top) + b.y * rows) / Double(h)
+            let tall = b.height * rows / Double(h)
+            guard o.confidence >= 1, sidewaysOverlap(b, f) >= f.width - open,
+                  abs(top + tall / 2 - (f.y + f.height / 2)) < min(tall, f.height) / 2 else { continue }
+            return (i, SearchableWriter.Observation(
+                boundingBox: SearchableWriter.BoundingBox(x: b.x, y: top, width: b.width, height: tall),
+                text: o.text, confidence: o.confidence, quarterTurns: o.quarterTurns))
+        }
+        return nil
+    }
+
+    /// The last merge of `recogniseInBands`, over `input` with `bands` and then the
+    /// stretches' `pieces`, and with each reread of a band line (C53) when it does no
+    /// harm. A band line in `input`, kept by an earlier pass, is replaced there by its
+    /// reading, in its place, so the page's order keeps the line where it was: added
+    /// instead, on `_1941_Fiedler's hiring…` p1 `mat-` went before `they attended` on its
+    /// own line. The rest of that reading, and the reading of a band line the last pass
+    /// read, are tried before every band, so the pass's copy of the line does not refuse
+    /// them; a reread's `stretch`, where it has one, is the rest of a line for the
+    /// merge's order (`continuing`). Invariant 1, against the merge without rereads:
+    /// every line that merge keeps at full confidence must be kept in this one, or
+    /// spanned by its clean lines (`unspanned`), the band lines taken out included.
+    /// Where a line is not spanned (the merge refused a reread beside a line of the
+    /// page's own; a reread reaching into the next stretch refused that stretch's
+    /// reading, `STAT. (1930) c. 135, s` on `Riesman_1942` p14; a junk box a band line had
+    /// helped replace came back), the rereads beside it are dropped and the merge run
+    /// again; with none beside it, all of them.
+    static func mergeRereading(
+        input: [SearchableWriter.Observation],
+        bands: [(observations: [SearchableWriter.Observation], top: Int, bottom: Int)],
+        pieces: [(observations: [SearchableWriter.Observation], top: Int, bottom: Int)],
+        rereads: [(piece: (observations: [SearchableWriter.Observation], top: Int, bottom: Int),
+                   stretch: SearchableWriter.BoundingBox?, replaces: SearchableWriter.BoundingBox)],
+        pageHeight h: Int, lineHeight line: Int, pageWidth w: Int,
+        hasInk: ((SearchableWriter.BoundingBox) -> Bool)?,
+        continuing: [SearchableWriter.BoundingBox]
+    ) -> [SearchableWriter.Observation] {
+        let usual = mergeBands(whole: input, bands: bands + pieces, pageHeight: h, lineHeight: line,
+                               pageWidth: w, hasInk: hasInk, continuing: continuing)
+        guard h > 0, w > 0 else { return usual }
+        let reach = Double(line) / Double(w)
+        var rereads = rereads
+        while !rereads.isEmpty {
+            var page = input
+            var first: [(observations: [SearchableWriter.Observation], top: Int, bottom: Int)] = []
+            for r in rereads {
+                if let i = page.firstIndex(where: { same($0.boundingBox, r.replaces) }),
+                   let read = spanningRead(r.piece, r.replaces, pageHeight: h, pageWidth: w, lineHeight: line) {
+                    page[i] = read.observation
+                    var rest = r.piece
+                    rest.observations.remove(at: read.index)
+                    if !rest.observations.isEmpty { first.append(rest) }
+                } else {
+                    first.append(r.piece)
+                }
+            }
+            let out = rereads.map(\.replaces)
+            let again = mergeBands(whole: page.filter { o in !out.contains { same($0, o.boundingBox) } },
+                                   bands: first + bands + pieces, pageHeight: h,
+                                   lineHeight: line, pageWidth: w, hasInk: hasInk,
+                                   continuing: continuing + rereads.compactMap(\.stretch))
+            let lost = unspanned(usual, by: again, pageHeight: h, lineHeight: line, pageWidth: w)
+            if lost.isEmpty { return again }
+            let beside = rereads.filter { r in
+                lost.contains { u in
+                    min(u.y + u.height, r.replaces.y + r.replaces.height) > max(u.y, r.replaces.y)
+                        && sidewaysOverlap(u, r.replaces) > -reach
+                }
+            }
+            if beside.isEmpty { break }
+            rereads.removeAll { r in beside.contains { same($0.replaces, r.replaces) } }
+        }
+        return usual
+    }
+
+    /// The lines of `held` at full confidence, no taller than two line heights, that
+    /// `again` neither keeps, box for box, nor spans with its clean lines (`spanned`,
+    /// C53). A clean line is one of those of no fused box's shape (`hasFusedLine`),
+    /// which may be two lines read as one: a fused box at full confidence that came back
+    /// over the lines it hides would otherwise span them. A fused-shaped line `held`
+    /// keeps, large type say, counts as kept only when `again` keeps it too.
+    static func unspanned(_ held: [SearchableWriter.Observation], by again: [SearchableWriter.Observation],
+                          pageHeight h: Int, lineHeight line: Int, pageWidth w: Int)
+        -> [SearchableWriter.BoundingBox] {
+        guard h > 0, w > 0 else { return [] }
+        let tallest = 2 * Double(line) / Double(h)
+        let lines = again.filter {
+            $0.confidence >= 1 && $0.boundingBox.height <= tallest
+                && !hasFusedLine([$0], pageWidth: w, pageHeight: h, lineHeight: line)
+        }.map(\.boundingBox)
+        let open = 0.5 * Double(line) / Double(w)
+        return held.filter { $0.confidence >= 1 && $0.boundingBox.height <= tallest }.map(\.boundingBox)
+            .filter { b in !again.contains { same($0.boundingBox, b) } && !spanned(b, by: lines, open: open) }
+    }
+
+    /// Whether `boxes` centred on `box`'s line cover it between them, leaving at most a
+    /// tenth of its width, and at most `open`, uncovered.
+    static func spanned(_ box: SearchableWriter.BoundingBox, by boxes: [SearchableWriter.BoundingBox],
+                        open: Double) -> Bool {
+        let centre = box.y + box.height / 2
+        let spans = boxes.filter { abs($0.y + $0.height / 2 - centre) < min($0.height, box.height) / 2 }
+            .map { (max($0.x, box.x), min($0.x + $0.width, box.x + box.width)) }
+            .filter { $0.1 > $0.0 }.sorted { $0.0 < $1.0 }
+        var covered = 0.0, reach = box.x
+        for (a, b) in spans where b > reach {
+            covered += b - max(a, reach)
+            reach = b
+        }
+        return covered >= box.width - min(0.1 * box.width, open)
+    }
+
+    /// Whether a page's reading so far buys the bands: a void (`hasVoid`), a box shaped
+    /// like two fused lines (`hasFusedLine`), or one unread line beside a read one
+    /// (`hasUnreadLine`, C53).
+    static func wantsBands(inkedStrips: [[Bool]], observations: [SearchableWriter.Observation],
+                           pageWidth w: Int, pageHeight h: Int, lineHeight line: Int) -> Bool {
+        hasVoid(inkedStrips: inkedStrips, observations: observations, pageHeight: h, lineHeight: line)
+            || hasFusedLine(observations, pageWidth: w, pageHeight: h, lineHeight: line)
+            || hasUnreadLine(inkedStrips: inkedStrips, observations: observations, pageHeight: h,
+                             lineHeight: line)
+    }
+
+    /// One unread stretch recognised on its own, as a band for `mergeBands`: cropped
+    /// (`stretchCrop`), painted white outside its rows (`stretchRows`, `padded` when its
+    /// box stops inside its line's type, `cutsItsInk`) and lifted back (`stretchPiece`).
+    /// Nil when the crop or the request fails, which adds nothing.
+    static func readStretch(_ s: SearchableWriter.BoundingBox, of image: CGImage,
+                            settings: Prefs.Snapshot, lineHeight line: Int, padded: Bool)
+        -> (observations: [SearchableWriter.Observation], top: Int, bottom: Int)? {
+        let w = image.width, h = image.height
+        guard let rect = stretchCrop(s, pageWidth: w, pageHeight: h, lineHeight: line) else { return nil }
+        var local = settings
+        local.minTextHeight = min(1, settings.minTextHeight * Double(h) / Double(rect.bottom - rect.top))
+        let (width, height) = (rect.right - rect.left, rect.bottom - rect.top)
+        let own = stretchRows(s, crop: rect, pageHeight: h, lineHeight: line, padded: padded)
+        guard let cut = image.cropping(to: CGRect(x: rect.left, y: rect.top, width: width, height: height)),
+              let crop = paintedOut([CGRect(x: 0, y: 0, width: width, height: own.top),
+                                     CGRect(x: 0, y: own.bottom, width: width, height: height - own.bottom)],
+                                    of: cut),
+              let read = try? recognise(crop, settings: local)
+        else { return nil }
+        return stretchPiece(read, of: s, crop: rect, pageWidth: w, pageHeight: h)
+    }
+
+    /// The rows of a stretch's crop (`stretchCrop`) shown to Vision, as rows of the crop:
+    /// the stretch's own; the rest is painted white (C53). The crop keeps a line height
+    /// of paper either side for the seam test, and shown the halves of the neighbouring
+    /// lines there, Vision read `Briefer` p4's `(Address E. G. Wilson, …` as junk at 0.3
+    /// that a band read cleanly. A stretch `padded`, cut to a box that stops inside its
+    /// line's type (`cutsItsInk`), keeps a quarter line more each side (`seamMargin`).
+    /// The one beside `chieving industria neace` had that box's 21 rows on a 48-row
+    /// line, the bottom of the x-height outside them, and painted to them Vision read
+    /// `nutside` and `nrofitahility`; padded, every word. Every other box keeps its
+    /// rows: Vision reads a crop moved a few rows differently, and padded by height
+    /// alone, `Briefer` p3's stretches of 38-44 rows on that page's 48 read `M.D.` as
+    /// `V.D.` and lost an `a`, and a footnote's on `Riesman_1942` p14, small type under
+    /// a page of body type, came back in three pieces that no longer replaced a fused box.
+    static func stretchRows(_ s: SearchableWriter.BoundingBox,
+                            crop: (left: Int, top: Int, right: Int, bottom: Int),
+                            pageHeight h: Int, lineHeight line: Int,
+                            padded: Bool) -> (top: Int, bottom: Int) {
+        let pad = padded ? seamMargin(lineHeight: line) : 0
+        let height = crop.bottom - crop.top
+        let top = Int((s.y * Double(h)).rounded(.down)) - pad - crop.top
+        let bottom = Int(((s.y + s.height) * Double(h)).rounded(.up)) + pad - crop.top
+        return (min(height, max(0, top)), max(0, min(height, bottom)))
+    }
+
+    /// Whether a box stops inside its line's type (C53): the rows just inside its top or
+    /// its bottom edge, an eighth of a line deep, hold four fifths as much ink within its
+    /// columns, row for row, as its middle half's rows do, so the edge runs through the
+    /// x-height. The band box `chieving industria neace` stopped four rows into it, at
+    /// 0.88. A box that reaches past its ink, as Vision's do, has its own line's sparse
+    /// ascenders or descenders there, or paper, whatever lies beyond: on `Riesman_1942`
+    /// p14 a footnote line's box ends a row above the next line's dense capitals, and a
+    /// test of the rows past the edge padded it, and its crop came back empty. One shown
+    /// only its x-height misreads as surely as one cut into it, which the rows past the
+    /// edge, a descender's, could not say (`ude fartore cuch ac` for `factors such as`).
+    /// Four fifths, not half: the box of `Briefer` p3's `M.D. Second Edition…` clips
+    /// three rows of its capitals' tips, 0.5 of its middle, and padded read `V.D.`.
+    static func cutsItsInk(_ s: SearchableWriter.BoundingBox, of image: CGImage, level: UInt8,
+                           lineHeight line: Int) -> Bool {
+        let w = image.width, h = image.height
+        guard s.x.isFinite, s.y.isFinite, s.width.isFinite, s.height.isFinite else { return false }
+        let x0 = max(0, Int((s.x * Double(w)).rounded(.down)))
+        let x1 = min(w, Int(((s.x + s.width) * Double(w)).rounded(.up)))
+        let top = max(0, Int((s.y * Double(h)).rounded(.down)))
+        let bottom = min(h, Int(((s.y + s.height) * Double(h)).rounded(.up)))
+        let depth = max(2, line / 8)
+        guard x1 > x0, bottom - top >= 4 else { return false }
+        /// Inked pixels per row over rows `a..<b` of the box's columns.
+        func ink(_ a: Int, _ b: Int) -> Double? {
+            let (a, b) = (max(0, a), min(h, b))
+            guard b > a, let grey = greyPixels(of: image, x0: x0, y0: a, x1: x1, y1: b) else { return nil }
+            return Double(grey.lazy.filter { $0 <= level }.count) / Double(b - a)
+        }
+        let quarter = (bottom - top) / 4
+        guard let middle = ink(top + quarter, bottom - quarter), middle > 0 else { return false }
+        func dense(_ a: Int, _ b: Int) -> Bool { 5 * (ink(a, b) ?? 0) >= 4 * middle }
+        let inside = max(1, min(depth, quarter))
+        return dense(top, top + inside) || dense(bottom - inside, bottom)
+    }
+
+    /// A stretch run out sideways over the ink on its rows, to where its line's type
+    /// ends (C53). A stretch's ends are boxes' ends, and a box Vision read as junk need
+    /// not reach its own ink's: on `Briefer` p4 the fused box over `Employee
+    /// Interchange. By Raymond W. Peters…` began 89 px into the line, so the stretch
+    /// beside the kept `By Raymond W. Peters.` began there too and `Emp` was read by
+    /// nothing. Each end moves out while there is ink past the eighth of a line that
+    /// `stretchCrop` already shows beyond it, a quarter line at a time (`hasInk`, over
+    /// the middle half of the stretch's rows). Two blank steps stop it, so paper under
+    /// half a line wide, a space between words, is always crossed, and paper three
+    /// quarters of a line wide never is. It stops at `walls`, the kept boxes and other
+    /// stretches reaching those rows beside it (a wall holding the stretch's centre is
+    /// the box it was cut from, and stops nothing), and goes no further than the lines
+    /// above and below it within a line and a half reach, where there are any: a rule,
+    /// a scan's edge or the next column across a narrow gutter is not its line. An end
+    /// moves only for half a line of ink or more, two steps: Vision reads a crop moved
+    /// by a few pixels differently, and on `Briefer` p1 a stretch moved 24 px for the
+    /// last letter of `present` came back with nothing where it had read `egroes are at
+    /// present` (so `recogniseInBands` reads a moved stretch again where it was when
+    /// it comes back with nothing at full confidence). Returns `s` itself, unmoved.
+    static func reachingInk(_ s: SearchableWriter.BoundingBox, walls: [SearchableWriter.BoundingBox],
+                            pageWidth w: Int, pageHeight h: Int, lineHeight line: Int,
+                            hasInk: (SearchableWriter.BoundingBox) -> Bool) -> SearchableWriter.BoundingBox {
+        guard w > 0, h > 0, line > 0, s.width > 0, s.height > 0 else { return s }
+        let step = Double(max(2, line / 4)) / Double(w)
+        let slack = Double(line) / 8 / Double(w)
+        let middle = middleHalf(of: s)
+        let centre = s.x + s.width / 2
+        let beside = walls.filter {
+            min($0.y + $0.height, middle.y + middle.height) > max($0.y, middle.y)
+                && !($0.x <= centre && centre <= $0.x + $0.width)
+        }
+        // The lines above and below in its column: centred off its middle rows, within a
+        // line and a half, and over some of its width. On each side, not a box whose end
+        // there is the stretch's own: the stretch took its end from that box, as from the
+        // junk box over `Employee Interchange…` whose end the `Emp` fix gets past, and
+        // that end says no more about where the line's ink ends.
+        let around = walls.filter {
+            let c = $0.y + $0.height / 2
+            return !(c >= middle.y && c <= middle.y + middle.height)
+                && abs(c - (s.y + s.height / 2)) <= 1.5 * Double(line) / Double(h)
+                && overlapsSideways($0, s)
+        }
+        let pixel = 1 / Double(w)
+        var leftmost = max(0, beside.filter { $0.x < centre }.map { min($0.x + $0.width, s.x) }.max() ?? 0)
+        var rightmost = min(1, beside.filter { $0.x > centre }.map { max($0.x, s.x + s.width) }.min() ?? 1)
+        // A step's tolerance: boxes end a few pixels either side of their ink (`How` of
+        // `How to Negotiate` began 5 px left of the junk box over its line and the next).
+        if let low = around.filter({ abs($0.x - s.x) > pixel }).map(\.x).min() {
+            leftmost = max(leftmost, min(low - step, s.x))
+        }
+        if let high = around.map({ $0.x + $0.width }).filter({ abs($0 - (s.x + s.width)) > pixel }).max() {
+            rightmost = min(rightmost, max(high + step, s.x + s.width))
+        }
+        func inked(_ from: Double) -> Bool {
+            hasInk(SearchableWriter.BoundingBox(x: from, y: middle.y, width: step, height: middle.height))
+        }
+        var left = s.x, probe = s.x - slack, blank = 0, found = 0
+        while blank < 2, probe - step >= leftmost {
+            probe -= step
+            if inked(probe) { left = probe; blank = 0; found += 1 } else { blank += 1 }
+        }
+        if found < 2 { left = s.x }
+        var right = s.x + s.width
+        probe = right + slack
+        blank = 0
+        found = 0
+        while blank < 2, probe + step <= rightmost {
+            if inked(probe) { right = probe + step; blank = 0; found += 1 } else { blank += 1 }
+            probe += step
+        }
+        if found < 2 { right = s.x + s.width }
+        if left == s.x, right == s.x + s.width { return s }
+        return SearchableWriter.BoundingBox(x: left, y: s.y, width: right - left, height: s.height)
+    }
+
+    /// The band lines kept beside a stretch on its line (C53): kept boxes that are not
+    /// the page's own (`whole`), centred on a stretch's line and within a quarter line
+    /// of one of its ends, each with whether such a stretch lies to its left, so that it
+    /// continues that stretch's line. A band that read part of a line and left the rest
+    /// unread was shown that line badly, and `recogniseInBands` reads each of these
+    /// again alone.
+    static func besideFragments(_ stretches: [SearchableWriter.BoundingBox],
+                                kept: [SearchableWriter.BoundingBox],
+                                whole: [SearchableWriter.BoundingBox],
+                                pageWidth w: Int, lineHeight line: Int)
+        -> [(box: SearchableWriter.BoundingBox, follows: Bool)] {
+        guard w > 0 else { return [] }
+        let near = Double(max(2, line / 4)) / Double(w)
+        return kept.compactMap { f in
+            guard !whole.contains(where: { same($0, f) }) else { return nil }
+            let by = stretches.filter { s in
+                abs(f.y + f.height / 2 - (s.y + s.height / 2)) < min(f.height, s.height) / 2
+                    && abs(sidewaysOverlap(f, s)) <= near
+            }
+            return by.isEmpty ? nil : (f, by.contains { $0.x < f.x })
+        }
+    }
+
+    /// Whether two boxes are the same box, edge for edge: a kept box carried from one
+    /// merge to the next is copied, never moved.
+    static func same(_ a: SearchableWriter.BoundingBox, _ b: SearchableWriter.BoundingBox) -> Bool {
+        a.x == b.x && a.y == b.y && a.width == b.width && a.height == b.height
     }
 
     /// `observations` with each line that runs across the page's column gutter

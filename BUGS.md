@@ -19444,6 +19444,71 @@ streams diffed, drags replayed through PDFKit `selection(from:to:)`, the harness
   grouping flips: `SearchableWriter` capping a run's height near its line pitch when it is over ~1.5x its
   column neighbours' (C52/C55 ground). Confining stretches to their column would change neither page above.
 
+**2026-10-02, third session (max effort) — Briefer p4's two lines traced and fixed in the stretch pass.**
+Traced at `c9fde61` on the helper's own bitmaps (a wrapper on `visionocr-recognise` copying each page as it is
+announced) [measured]:
+- *`achieving industrial peace…`*: both passes' bands read only `chieving industria neace` (21 rows on a 48-row
+  line, conf 1.0) and nothing of the rest. The stretch beside it was painted out to those 21 rows, the bottom of
+  the x-height outside them (no blank row between lines), and read `nutside`/`nrofitahility`. Now a box whose
+  edge runs through its x-height (`cutsItsInk`: the rows just inside an edge hold 4/5 of its middle's ink) is
+  shown a quarter line more each side, and a band line kept beside a stretch is read again alone and replaces
+  itself when that reading spans it (`besideFragments`, `rereadSpans`, `mergeRereading`).
+- *The heading*: a band read `Employee Interchange. By Raymond W. Peters, Harper…` whole, refused beside the page's
+  `By Raymond W. Peters.`; the stretch beside it took the junk box's end (x485), not the ink's (x396). Now each
+  stretch runs out over its line's ink (`reachingInk`), past walls never, the lines above and below at most.
+- The last merge with rereads is kept only if every full-confidence line the merge without them keeps is still
+  there or spanned by clean lines (`unspanned`); else the rereads beside the lost line go. A moved or padded
+  stretch that reads nothing at full confidence is read again as it was. A reread keeps its band line's place
+  in the page's order: it is spread over that line's rows as well as its own (`spreadOver`; read alone, `of
+  small business.` on `_1953_99 Cong_ 2` p16 came back 15 rows lower, sorted after `We know the im-`, and
+  `im-`/`portance` were no longer joined), and a band line an earlier pass kept is replaced where it stands in
+  the input (added instead, Fiedler p1's `mat-` went before `they attended` on its own row).
+- Words, on the helper's bitmaps against `c9fde61`: Briefer p4 `achieving industrial peace`, `than outside
+  factors such as the size, proftability or location of`, `Employee Interchange.`, `How to Negotiate…`, `By
+  William J. Baade, Jr.`, `…and on the`; p1, p3, Banks p101, Jensen p429 identical; Riesman p14 `ec. 36: MARYLAND`
+  -> `sec. 36; MARYLAND`. Riesman and Jensen are named in the run log, as before.
+- Rejected, each measured on these pages: padding every stretch, or those under a line or 2/3 of one (p3 `M.D.`
+  -> `V.D.` and a lost `a`; Riesman's small-type footnote then lost a line); the rows past an edge as the cut
+  test (the next line's capitals padded a stretch whose crop came back empty); a reread joined to its stretch
+  (`Jr.` -> `II.`); moving a stretch for one letter (p1's then read nothing); capping a stretch at fused boxes
+  or at none of them (`How` lost; the `Emp` junk edge kept): the cap ignores only the box whose end it took.
+- Checks: 18 new; each of 13 mutants, the change with one part reverted, turns one red. Review: two rounds,
+  every finding fixed (a fused box counted as spanning the lines it hides; the fallback only on an empty read;
+  the cap at the junk edge; a 90% bound two words wide on a long line).
+- ux-regression [measured, PDFKit line diffs of the published set]: against `c9fde61`, 1 worse, 1 better, both
+  `_1941_Fiedler's…` p1: welds 7 -> 8 and truth splits 12 -> 11. The weld: a stretch padded by `cutsItsInk` read
+  `Breen's appoi` as one box a few rows taller than `Breen's` + `appoi`, and its middle rows now take in the centre
+  of `police, a position he has held in` 11 px away across the gutter, so the merge threads it on as the rest of
+  that line (`continues`, C52's ground) and PDFKit reads the two as one. Same words, the instability the second
+  session accepted on this page; accepted. Against the committed baseline, 21 worse, 28 better: the 20 of
+  `1c50741`, which the second session traced on Fiedler and Raskin, and the rest traced now against `84f305b`,
+  the code the baseline was made with: NYSE p110 prec 0.40 -> 0.33 gains `on`, `month,` and `Imediatoly.`;
+  Cong p16 prec 0.92 -> 0.89 and truth hyph 1 -> 2 replace junk with `I am going to vote to increase the`;
+  `___ 2` p1 wer and splits 5 -> 7 gain 12 words, two lines split; Briefer p1 splits 1 -> 2 gain the two named
+  lines (+23 words); Briefer p3 find 0.90 -> 0.87 and cover 1.00 -> 0.93 gain the named tails (+22 words) in more
+  runs. None loses text; each is accepted, and the baseline is refreshed with this commit's results.
+- An instrument note: the regression set holds Briefer pp1 and 3 only, so it cannot see p4, where this
+  session's gains are.
+- The eight WORSE lines against the old baseline not named above, each stated: Fiedler p1 wer 2.44 -> 2.84, splits
+  3 -> 7, hyph 1/51 -> 4/51, truth copyErr 3.39 -> 3.61, truth splits 10 -> 11, truth hyph 5 -> 6, and Raskin p1
+  wer 2.11 -> 2.89, welds 1 -> 2. All are `1c50741`'s, the page-wide reshuffle of lines its bands added on these two
+  newspaper pages (Fiedler: +89 transcript words, 21 read differently; Raskin: `pg. 26`, `It is seldom sufficient,
+  how`, `skin.`, all correct text), which the second session traced to PDFKit's regrouping; accepted with it.
+- DONE WHEN check (separate agent, PDFKit Find and drags aimed at each line's ink, on `/tmp/c53w/pubfinal4`
+  against `c9fde61`'s output) [measured]: (a) FAIL. Every named line is found and copies its own words except
+  Briefer p3's `United States Department of Labor…`: PDFKit reads `…86 pages.` / `Women's Bureau,` / `25 cents.
+  Available`, the line above's added tail ordered between this line's pieces, so a drag copies it and `86 pages.
+  25 cents.` is not found; the same at `c9fde61`, so `1c50741`'s ordering of tails. Vision's one-word misreads stay
+  (`eflects` p1, `industria` p3, `proftability` p4, a stray `•` in the p4 heading). p1's two lines pass only at the
+  middle of their x-height: their runs sit 2.8 pt below the x-line, and a point higher `economic` copies the line
+  above (C55's). (b) PASS: Riesman p14 and Jensen p429 are named in the run log, and are still junk. (c) FAIL on the
+  letter, eight lines unstated; stated above in this commit. (d) In part: the right-hand end of `reachingInk` had no
+  check, now added (3 more mutants red); still unpinned, the wiring inside `recogniseInBands` (no check runs it on a
+  page that needs it).
+- Next: order the p3 tail (`Women's Bureau,` after the next line's `…86 pages.`: find which of `mergeBands`' order
+  rules places it, likely a tail anchored by `y` rather than after the fragment it continues), re-run the check on
+  (a); an end-to-end check of the stretch pass, perhaps with `recognise` injected so it runs without Vision.
+
 ### C54 · Pale typewriting on layered pages is published broken and faded — OPEN
 
 *(found 2026-10-01 by `truth-read`. C31 fixed the ink's colour; this is the stencil's shape.)*
