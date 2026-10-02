@@ -427,3 +427,13 @@ checker's own drags copy, 0.5-4 pt outside the boxes; the 15 changed rows are 1-
 `truth-read`: Banks p101 is green at 0.0497 with 14 words lost from the layer (the footnote's last line and a half
 cannot be copied; dragging `Columbia ...` returns the line above), just under the 0.05 threshold.
 `truth-harness` TICKED.
+
+# truth-read — 2026-10-01
+
+Read by four subagents (colour and ink, text on truth-only pages, judges' worse pages, a random green sample with
+the same-misread count); findings are `BUGS.md` C53-C56 and one line each in C28, C41, C43, C45, C47, C50, C52.
+Harness artefacts found, none changing what gets built [looked at]: `tink`'s hard 128 cut flips pencil at the
+threshold (Why p2, both copies); `tcolour` counts paper tint (Stanford pp1, 4); judges report colour changes on
+sources with zero saturation (Ibson, Gowan) and "missing" for scan-edge speckle; `visMiss` reads Vision without
+bands (Briefer 0.55); dropped annotations are scored as losses (C45, by design). The 10 old-only pages are the old
+measures' find and legibility false alarms. 12 random green pages: nothing a reader loses.

@@ -792,7 +792,7 @@ say so in the commit.
       CAMFIELD p1 and Banks 2006 p101 score what a reader's drag scores and go green; all 215 pages rescored
       (`final5`): 15 better, none worse, 121 green, 48 red, 10 old-only, 36 truth-only. The DONE WHEN check passed
       every criterion, so `truth-harness` is ticked. (context: owner request 2026-09-29)
-- [ ] **truth-read** — read `truth-harness`'s output and turn what it finds into queued work.
+- [x] **truth-read** — read `truth-harness`'s output and turn what it finds into queued work.
       (blocked-on: truth-harness)
       Start with the pages the old measures pass and the truth fails, since those hold the defects the old
       test could not see. Then look at the worst pages on each measure, and at a random sample of the whole
@@ -804,6 +804,39 @@ say so in the commit.
       in its entry. State how many words Vision misread the same way in source and output, since the old
       test could not have found any of them.
       BOUND: one session. (context: owner request 2026-09-29)
+      DONE 2026-10-01: C53-C56 entered and queued below, ranked by what a reader loses: clean lines missing
+      silently, a whole page's typing broken, drags copying the line above, heavier type. One line each in
+      C28 (unboxed marks soft or lost on layered pages), C41, C43, C45, C47 (photos halved, not queued), C50
+      and C52. Of 8,693 wrongly copied words, 467 repeat Vision's misread of the source (C50). Harness
+      artefacts are in `ops/truth/STATUS.md`.
+- [ ] **c53-skipped-lines** — get the clean lines Vision skips into the text layer, or report them.
+      THE PAGES: `1951 - Briefer Book Notes` pp1, 3, 4 (the owner's file), `Banks 2006` p101,
+      `Riesman_1942` p14, `Jensen` p429 (`BUGS.md` C53 names the lines). Start by capturing production's
+      observations and bitmaps (C51 did it with a wrapper around `visionocr-recognise`) and finding why the
+      bands do not run over these rows.
+      DONE WHEN, through PDFKit on the published files: every line C53 names can be found with Find and
+      copies its own words; a page whose lines still cannot be read reports them; `ux-regression.sh` no worse;
+      a new check goes red without the change.
+      BOUND: one code commit. (origin: BUGS.md C53)
+- [ ] **c54-pale-typing** — publish pale typewriting on layered pages as solid as the source shows it.
+      THE PAGES: `Herbert Marks papers` p12, `_1939_Former students` p9, `Atkinson_1939` p2, `Ford_1941` p2.
+      DONE WHEN, on 1x and 2x PDFKit renders of the published pages beside the source: the typed strokes are
+      unbroken wherever the source's are; dark-ink pages in `ops/ux-regression/set.tsv` are unchanged or
+      better; bytes within 10% of before; a new check goes red without the change.
+      BOUND: one code commit. (origin: BUGS.md C54)
+- [ ] **c55-low-runs** — draw each run over its own ink, so a drag over a line copies that line.
+      THE PAGES: `1951 - Briefer Book Notes` p1, `Zipkin_2000` p1, `Banks 2006` p101 (C55 gives the lines and
+      their positions).
+      DONE WHEN, through PDFKit: a drag from the first to the last glyph of each named line copies that
+      line's words and none of the line above; invariant 3's four properties re-measured and holding;
+      `ux-regression.sh` no worse; a new check goes red without the change.
+      BOUND: one code commit. (origin: BUGS.md C55)
+- [ ] **c56-heavy-type** — keep 1-bit sources' strokes as thin as they arrive.
+      THE PAGES: `Luethy_1955` p2, `Gowan and Demos` p1, `Xin Qu_2018` p1, `Ries_Marshall_1955` p54.
+      DONE WHEN, on 2x PDFKit renders beside the source: stroke weight matches the source by eye, and
+      measured as ink share within 5% of the source's on each page; bytes no larger; `ux-regression.sh` no
+      worse; a new check goes red without the change.
+      BOUND: one code commit. (origin: BUGS.md C56)
 - [ ] **c28-first-principles** — fix C28 again, starting from first principles. The owner took it off the
       parked list on 2026-09-25 and asked for a fresh attempt, not a continuation of the old campaign.
       THE DEFECT. On the layered (MRC) route, the 1-bit stencil is the page's adaptive binarisation

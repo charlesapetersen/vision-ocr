@@ -15529,6 +15529,13 @@ mechanism — the page-wide Otsu being blind to pale pencil — predicts not.
 
 *(2026-09-27, `ux-read`: more of the same loss off the layered route too. `Scott_TK` p7, a Google MRC scan on the bilevel route, loses half a signature and the grey "Digitized by Google" footer, whose ink lived in the 150/75 ppi layers; `Schaar` p1 and `Stanford 1891` p2 lose pencil notes and a pencil folio; `Casey` p1, `Stone` p1 and `Riesman` p1 lose light-grey text, a rule and shaded bands (speckle left); `_1939_Former students` p9 breaks faint typewriter strokes on a 72 ppi mask. [looked])*
 
+*(2026-10-01, `truth-read` [looked at by subagents]: more cases for `c28-first-principles` on the layered
+route, where unboxed marks live only in the 1/8 background: `Ford_1941` p2's red library stamp becomes a pale
+smudge and a pencil insertion loses its opening words; `_1939_Former students` p9's ghost typing and margin
+tick; `Riesman 1954 Individualism` p7's pencil circle and bracket; `Stanford_1891` p1's pencil insertion and
+folio; `Doermann_1967` p21's footnote rule as a grey band; `Gitlin_2000` p1's drop caps and rules,
+`_1967_Yearly` p1's halftone bar. On the 1-bit route, `1954 - Why` p3's pencil "(3)" falls to specks.)*
+
 ### C29 · A born-digital cover page is rasterised and re-OCR'd, and `hasDigitalText` never even looks at it — FIXED
 
 ✅ **FIXED 2026-09-25: the short page, and the two `pageIsAnImage` misses.** `Flattener.bornDigitalVerdict`
@@ -18729,6 +18736,10 @@ line kept beside its clean reading). Drag selection on these pages is not part o
 
 *(2026-09-27, `ux-read`: about 15 of the run's selection-red and 12 of its find-red pages are these scans (e.g. `_1928_Creative writing` p1).)*
 
+*(2026-10-01, `truth-read` [measured by subagent]: of the truth run's 8,693 wrongly copied words, 6,251 are on
+the 11 newspaper pages, most of them scrambled drag text rather than misreads; 503 are words Vision read right
+on a plain render of the source.)*
+
 ### C42 · A page whose crop box is not centred on its media box gets its text layer shifted off the ink, 81 pt on a two-page book spread — FIXED
 
 *(found 2026-09-27 by `ux-read`, from `UX-RUN-2026-09-27-pages.tsv`: Boltanski p51/p102/p153 red on
@@ -18813,6 +18824,10 @@ move to parity with the source, which they now are; `find` 0.97 -> 0.87 on Silic
 not traced word by word]. Baseline refreshed. The independent DONE WHEN check passed all three criteria
 on the final outputs, Surani and Silicon Valley pixel-identical to their sources at 2x.
 
+*(2026-10-01, `truth-read` [measured by subagent]: still passed through unread — `Davis_2005` p3's advertisement,
+an image inside a digital page, about 73 words with no layer; `Canby_1929` p2 keeps the source's old OCR, 12
+folios wrong, "110" as "no".)*
+
 ### C44 · Copied text repeats the tail of every word hyphenated at a line end: "difference ference" — FIXED
 
 *(found 2026-09-27 by `ux-read`'s random sample: 14 of 25 random pages, 12 of them green.)*
@@ -18883,6 +18898,10 @@ object per annotation and cannot see a subtype it does not surface. Routes check
 keeps a source mark on the output while this says it was left (the splice refuses pages with marks).
 Checks: the count by type on the marks fixture, the wording, and the outcome on the marks and links-only
 fixtures; the outcome check is red without the `Model.swift` change (1646/1647).
+
+*(2026-10-01, `truth-read`: the truth harness's `tink`/`tcolour` fail `Kelly_2014` pp1, 3, `Hyman_2012` p8,
+`Mitchell_1958` p6, `Moyn_2014` p13 and `Davis_2005` p3 for the dropped annotations this entry reports by
+design; not a recurrence.)*
 
 ### C46 · Vision's automatic language detection writes Arabic into English pages' text layers, and one such run traps PDFKit on a click — FIXED 2026-09-28
 
@@ -19043,6 +19062,10 @@ directly; and qpdf's `--remove-unreferenced-resources` on the splice, which woul
 pages whose forms lean on the page's resources. A pre-existing gap, unchanged: a passthrough page on an
 offset sheet takes outline destinations placed as if at the origin, and loses `/OCProperties` in the splice.
 
+*(2026-10-01, `truth-read` [looked at by subagent]: Balanced photo detail halves the background with no floor
+at the source's resolution, so `Ibson_2006`'s 144 ppi photographs become 72 ppi and `1954 - Why`'s red
+cartoons 56; softer at 2x, much the same at 1x. Judged a size trade-off, not queued.)*
+
 ### C48 · Page labels and the document title are lost — FIXED 2026-09-29
 
 *(found 2026-09-27 by `ux-read`: `labels` on 21 documents, `title` on 60, and no output has a title.)*
@@ -19168,6 +19191,16 @@ grey reading had right. There is no way to tell them apart from WSJ's `$100,000`
 taking the grey number whenever the two readings differ). `C'oellicient` and `11.(H10` in the other
 columns stay too (no grey line matches them). DONE WHEN subagent (PDFKit, final outputs): all three pass; the
 named "suall"/"Coeflicient" were already gone before this change (6281f02). Suite 1693/1693.
+
+*(2026-10-01, `truth-read` [measured by subagent, word alignment spot-checked on 10 crops]: of 8,693 wrongly
+copied words in the truth run, 467 are Vision's misread of the source repeated (thin strokes, h/n/m/r, dropped
+letters, e/o/c), which the old test could not see. 1,215 are words Vision read right on a plain render that
+the output gets wrong; besides newspapers, `Scott_TK` pp1, 7 and 10 hold 202 of them, borderline glyphs read
+differently on the rebuilt bitmap. `Gitlin_2000` p1's and Briefer's ProQuest layers read better than the
+rebuild. Worst on Find of the whole run, `New York Stock Exchange_1956` p110 (find 0.34, layerMiss 0.48): the
+published layer reads "a priae an offer to a tookbalder" where the source's own old OCR reads "offer to
+stockholders" [measured by me, PDFKit `page.string` of both]; p73 likewise (find 0.50). Vision also misses
+`1958_CiT` p1's script title and `ppf_description` p1's vertical margin heading.)*
 
 ### C51 · Lines and table cells are still missing from the text layer after C33, so they cannot be selected or found — FIXED 2026-09-28
 
@@ -19330,6 +19363,71 @@ separately. Rejected in this session: a third commit under the spent bound; clos
 before a second max-effort session, rule 8, and Riesman shows the defect is reachable). The item now sits
 after `c41-newspaper-scans`, so that c50, c49, c48, c47, c28 and c41, none of which has been attempted, come
 first. It comes back with a new bound when it reaches the head of the queue again.
+
+2026-10-01, `truth-read` [measured by subagent, from TRUTH-RUN final5]: drags that jump columns add 411 words
+to `_1967_Yearly` p1, 210 to `Berendzen_1981` p1, 100 to `Davis_2005` p3 and 45 to `Berger_2013` p18, pages the
+old measures passed.
+
+### C53 · Single lines and line tails on clean print are missing from the text layer, and nothing says so — OPEN
+
+*(found 2026-10-01 by `truth-read`; C33 and C51 are FIXED and are not reopened.)*
+
+`1951 - Briefer Book Notes` (the owner's file) p1: the clean line "and T. H. Harvey. Prentice-Hall … This
+book" and the line "economic effects of our alliances …" are not in the layer [measured by me: PDFKit
+`page.string` on the published file has the lines either side and not these]. p3 loses the rest of three
+lines after their first fragment ("1950." / "$8.50." / "treatment."), about 23 words; p4 about 35 words over
+three lines; `Banks 2006` p101 the footnote's last line. [measured by subagent: production's own
+observations, captured from the helper, lack these lines, so Vision drops them and nothing after it does.]
+A second face: two clean footnote lines come back as one box two lines tall at confidence 0.3-0.5, junk
+("Brazian nation co Peda…") in place of about 16-20 words, on `Riesman_1942` p14, `Jensen` p429 and
+Briefer p4's heading. A reader loses 15-40 words a page, silently (invariant 1). Cause [reasoned from C51,
+not traced]: `hasVoid` wants two line heights of uncovered ink or two separate runs of inked rows, and a
+one-line gap, or a row partly covered by its first fragment, is neither; a two-line junk box covers its
+rows, so no void is seen under it either. The second face is C33's fused-box pattern surviving; why its
+`hasFusedLine` trigger did not fire on these boxes was not examined. Banks p101 also appears under C55: its
+drag snaps up because the line under it is missing, so it may be one defect. Not to be confused: the truth harness's `visMiss` reads 0.55 on
+Briefer because `ops/truth/prep-page.sh` asks Vision once with no bands; production's bands recover most of
+those lines.
+
+### C54 · Pale typewriting on layered pages is published broken and faded — OPEN
+
+*(found 2026-10-01 by `truth-read`. C31 fixed the ink's colour; this is the stencil's shape.)*
+
+`Herbert Marks papers` p12: every typed line comes out paler and broken ("Associated Gas and Elec…" with
+gaps in its strokes) where the source is solid [looked at by me, 2x renders]. Also `_1939_Former students`
+p9 (typing pale and broken), `Atkinson_1939` p2 and `Ford_1941` p2 (letters lost under a handwritten
+insert). [measured by subagent on Marks p12: the extracted stencil itself is broken, so the pale parts of
+each stroke never reach the 1-bit mask and survive only in the background, stored at 1/8 resolution
+(25 ppi there) and painted pale grey.] What the reader loses is legibility of the whole page's text; Vision
+read it, so the layer is fine. Cause of the broken mask [reasoned]: the stencil's threshold is set for
+dark ink, and grey typewriter ink (68-176 grey on Marks p12) falls on both sides of it.
+
+### C55 · Some runs are drawn below their ink, so a drag over the line copies the line above — OPEN
+
+*(found 2026-10-01 by `truth-read`.)*
+
+`1951 - Briefer Book Notes` p1: the run for "members of the Department of Social Sciences …" is drawn at
+693-697 pt where its ink is 685-694, and a drag over the ink copies the line above; about 13 words.
+`Zipkin_2000` p1: a column's last run at 593-597 pt over ink at 587-594, about 5 words. `Banks 2006` p101: a
+drag ending at the footnote's end snaps up and cuts the line above. [measured by subagent: run positions
+from the layer in poppler's top-down coordinates, drags through PDFKit.] On Briefer p1 the two runs above
+are also about 3 pt low (679-685 over ink at 676-681), so this may be a page-wide shift and squash rather
+than one line. Find still finds the words; Copy gives the wrong ones. Invariant 3's
+"runs span the ink" fails here. Cause [reasoned, not traced]: the run sits in the low part of a box that is
+too tall or sits low, perhaps the per-column line-height cap from C52's fix.
+
+### C56 · Pages that arrive 1-bit, or are re-gridded, come out with heavier type than the source — OPEN
+
+*(found 2026-10-01 by `truth-read`. C37 and C47 are about bytes, not stroke weight.)*
+
+`Luethy_1955` p2: CCITT 1-bit at 300 ppi becomes JBIG2 at 300 ppi re-gridded from 2,106 to 2,232 rows, and
+body text reads near-bold. `Gowan and Demos` p1 (mask 123 ppi on a 135 ppi source): small italics heavier
+and blotchy. `Xin Qu_2018` p1: the abstract's first line comes out bold. `Ries_Marshall_1955` p54: the
+folio "5" fills in and reads like "6". [looked at by subagent; encodings from `pdfimages -list`.] The
+judges called each of these worse. Mild, except where a digit changes. Cause [reasoned]: a 1-bit source
+is resampled onto a new pixel grid and thresholded again, which fattens strokes, where it could be kept on
+its own grid. Why Luethy gains 6% of rows at an unchanged 300 ppi is not explained. A fix of C37's shape,
+passing the source's own 1-bit stream through (here CCITT), is the first thing to try.
 
 ## Robustness and correctness of reporting
 
