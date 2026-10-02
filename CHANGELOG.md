@@ -19,6 +19,8 @@ an older entry mentions "Window ▸ Vision Reader Window", the menu item is now
   garbled text are now named in the run log by page (C53).
 - On tightly set pages, lines that came out with letters garbled or missing at their ends ("chieving
   industria neace" for "achieving industrial peace", "loyee" for "Employee") now read as printed (C53).
+- On some scanned pages, the end of a line was read inside the line below it, so searching for the lower
+  line's words failed and dragging across it picked up the stray words. Both lines now read in order (C53).
 
 ## 1.15.0 — 2026-09-29
 

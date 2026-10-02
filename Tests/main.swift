@@ -9358,6 +9358,118 @@ do {
         pageHeight: 4000)
     check("C33: …while a band line across a narrow gutter stays in its own column",
           gutter.map(\.text) == ["L1", "L2", "R1", "R2"], "\(gutter.map(\.text))")
+    // C53: `Briefer` p3. The first pass kept a line's tail, `Women's Bureau,`, in a box
+    // starting 14 rows above its head's; the shifted bands then added the head, and it
+    // went in after its own tail, so PDFKit read the tail inside the next line.
+    let head = one("WOMEN IN HIGHER-LEVEL POSITIONS. Bulletin No. 236.", x: 0.19, top: 1000,
+                   width: 0.517, height: 40)
+    let bureauTail = obs("Women's Bureau,", x: 0.70, top: 986, width: 0.14, height: 51, page: 4000)
+    let headAfterTail = Recogniser.mergeBands(
+        whole: [obs("terminations of drait status", x: 0.16, top: 900, width: 0.45, height: 40, page: 4000),
+                bureauTail,
+                obs("United States Department of Labor,", x: 0.16, top: 1060, width: 0.42, height: 43,
+                    page: 4000)],
+        bands: [(observations: [head], top: 800, bottom: 1800)], pageHeight: 4000)
+    check("C53: a band line goes in before the rest of its line kept to its right, not after it",
+          headAfterTail.map(\.text) == ["terminations of drait status", head.text, "Women's Bureau,",
+                                        "United States Department of Labor,"],
+          "\(headAfterTail.map(\.text))")
+    // …and so with no line above it at all, as on a page's first row,
+    let firstRow = Recogniser.mergeBands(
+        whole: [bureauTail, obs("United States Department of Labor,", x: 0.16, top: 1060, width: 0.42, height: 43,
+                          page: 4000)],
+        bands: [(observations: [head], top: 800, bottom: 1800)], pageHeight: 4000)
+    check("C53: …and so with no line above it, as on a page's first row",
+          firstRow.map(\.text) == [head.text, "Women's Bureau,", "United States Department of Labor,"],
+          "\(firstRow.map(\.text))")
+    // …and after the whole of the row above when that row is in two pieces too, its tail
+    // starting higher than its head (the review of this change), not between them.
+    let rowAbove = Recogniser.mergeBands(
+        whole: [obs("Also reviews company military", x: 0.16, top: 940, width: 0.50, height: 40, page: 4000),
+                obs("leave Policies,", x: 0.70, top: 926, width: 0.14, height: 51, page: 4000),
+                bureauTail,
+                obs("United States Department of Labor,", x: 0.16, top: 1060, width: 0.42, height: 43,
+                    page: 4000)],
+        bands: [(observations: [head], top: 800, bottom: 1800)], pageHeight: 4000)
+    check("C53: …and after the whole of the row above, when that row's tail starts higher than its head",
+          rowAbove.map(\.text) == ["Also reviews company military", "leave Policies,", head.text,
+                                   "Women's Bureau,", "United States Department of Labor,"],
+          "\(rowAbove.map(\.text))")
+    // …but not past the next column's line on that row (the second review): a column's
+    // lines start four rows lower than the next column's, and a band adds `L3`.
+    let twoColumns = Recogniser.mergeBands(
+        whole: [obs("L1", x: 0.05, top: 1000, width: 0.40, height: 40, page: 4000),
+                obs("R1", x: 0.55, top: 996, width: 0.40, height: 40, page: 4000),
+                obs("L2", x: 0.05, top: 1050, width: 0.40, height: 40, page: 4000),
+                obs("R2", x: 0.55, top: 1046, width: 0.40, height: 40, page: 4000),
+                obs("L4", x: 0.05, top: 1150, width: 0.40, height: 40, page: 4000),
+                obs("R4", x: 0.55, top: 1146, width: 0.40, height: 40, page: 4000)],
+        bands: [(observations: [one("L3", x: 0.05, top: 1100, width: 0.40, height: 40)],
+                 top: 800, bottom: 1800)],
+        pageHeight: 4000)
+    check("C53: …nor past the next column's line on the row above",
+          twoColumns.map(\.text) == ["L1", "R1", "L2", "L3", "R2", "L4", "R4"], "\(twoColumns.map(\.text))")
+    // …nor onto the rest of the added line's own row: a middle fragment a band adds between
+    // a kept head and a kept tail that starts lower than it.
+    let middle = Recogniser.mergeBands(
+        whole: [obs("above", x: 0.10, top: 900, width: 0.80, height: 40, page: 4000),
+                obs("head", x: 0.10, top: 990, width: 0.25, height: 60, page: 4000),
+                obs("tail", x: 0.64, top: 1002, width: 0.26, height: 60, page: 4000),
+                obs("below", x: 0.10, top: 1080, width: 0.80, height: 40, page: 4000)],
+        bands: [(observations: [one("middle", x: 0.345, top: 1000, width: 0.30, height: 40)],
+                 top: 800, bottom: 1800)],
+        pageHeight: 4000)
+    check("C53: …nor onto the rest of its own row: a middle fragment goes between its head and tail",
+          middle.map(\.text) == ["above", "head", "middle", "tail", "below"], "\(middle.map(\.text))")
+    // A head with no line above it is placed before its tail even behind another waiting
+    // line that is not yet due (the second review): `R1` is added right of the kept tail.
+    let behind = Recogniser.mergeBands(
+        whole: [bureauTail, obs("United States Department of Labor,", x: 0.16, top: 1060, width: 0.42,
+                                height: 43, page: 4000)],
+        bands: [(observations: [head, one("R1", x: 0.85, top: 990, width: 0.10, height: 40)],
+                 top: 800, bottom: 1800)],
+        pageHeight: 4000)
+    check("C53: …and before its tail even behind another waiting line",
+          behind.map(\.text) == [head.text, "Women's Bureau,", "R1", "United States Department of Labor,"],
+          "\(behind.map(\.text))")
+    // A Hebrew row reads from the right: its head is the fragment on the right, and the
+    // tail a band adds on its left goes after it, as before.
+    let hebrewHead = obs("שלום עולם ומלואו", x: 0.50, top: 986, width: 0.34, height: 51, page: 4000)
+    let hebrew = Recogniser.mergeBands(
+        whole: [obs("שורה מעל", x: 0.16, top: 900, width: 0.68, height: 40, page: 4000), hebrewHead,
+                obs("שורה מתחת", x: 0.16, top: 1060, width: 0.68, height: 43, page: 4000)],
+        bands: [(observations: [one("סוף השורה", x: 0.19, top: 1000, width: 0.317, height: 40)],
+                 top: 800, bottom: 1800)],
+        pageHeight: 4000)
+    check("C53: on a Hebrew row the head is the fragment on the right, and the added tail goes after it",
+          hebrew.map(\.text) == ["שורה מעל", hebrewHead.text, "סוף השורה", "שורה מתחת"],
+          "\(hebrew.map(\.text))")
+    // …and so when the tail is a year, with no letters to say which way its row reads.
+    let hebrewYear = Recogniser.mergeBands(
+        whole: [obs("שורה מעל", x: 0.16, top: 900, width: 0.68, height: 40, page: 4000), hebrewHead,
+                obs("שורה מתחת", x: 0.16, top: 1060, width: 0.68, height: 43, page: 4000)],
+        bands: [(observations: [one("1950.", x: 0.19, top: 1000, width: 0.317, height: 40)],
+                 top: 800, bottom: 1800)],
+        pageHeight: 4000)
+    check("C53: …and so when the added tail is a year, the row's direction taken from both fragments",
+          hebrewYear.map(\.text) == ["שורה מעל", hebrewHead.text, "1950.", "שורה מתחת"],
+          "\(hebrewYear.map(\.text))")
+    // And a kept head on the left still takes the tail a band adds after it, however much
+    // higher its box starts: only a line that follows the added one is skipped.
+    let keptHead = obs("WOMEN IN HIGHER-LEVEL POSITIONS. Bulletin No. 236.", x: 0.19, top: 986,
+                       width: 0.517, height: 51, page: 4000)
+    let tailAfterHead = Recogniser.mergeBands(
+        whole: [obs("terminations of drait status", x: 0.16, top: 900, width: 0.45, height: 40, page: 4000),
+                keptHead,
+                obs("United States Department of Labor,", x: 0.16, top: 1060, width: 0.42, height: 43,
+                    page: 4000)],
+        bands: [(observations: [one("Women's Bureau,", x: 0.70, top: 1000, width: 0.14, height: 40)],
+                 top: 800, bottom: 1800)],
+        pageHeight: 4000)
+    check("C53: …while a kept head on the left still takes the tail a band adds after it",
+          tailAfterHead.map(\.text) == ["terminations of drait status", keptHead.text, "Women's Bureau,",
+                                        "United States Department of Labor,"],
+          "\(tailAfterHead.map(\.text))")
     // The crop for a stretch, and its reads lifted back: a line height clear above and
     // below, an eighth to either side, and only the reads centred on its own rows.
     let stretch = Box(x: 0.5, y: 0.25, width: 0.4, height: 0.01)
@@ -9646,6 +9758,188 @@ do {
         check("C53: a stretch is shown its own rows, and a quarter line more each side padded",
               plain.top == 40 && plain.bottom == 80 && wide.top == 30 && wide.bottom == 90,
               "\(plain) \(wide)")
+    }
+
+    // C53: a crop's side that cuts a glyph is moved past it, onto paper (`uncut`): on
+    // `Briefer` p3 the crop of `…peculiar to industrial` ended 4 px into the `l`, and Vision
+    // read `industria`. Not into a kept box beside the stretch, nor along a run of ink a line
+    // long, nor onto a vertical rule. A 400 x 200 page, 24-px lines: a glyph at x 180-189 and
+    // a run at 300-359 on rows 90-109, and a rule at x 60-64 down rows 20-179.
+    let (cutWidth, cutHeight) = (400, 200)
+    var cutPage: CGImage?
+    if let ctx = CGContext(data: nil, width: cutWidth, height: cutHeight, bitsPerComponent: 8,
+                           bytesPerRow: cutWidth, space: CGColorSpaceCreateDeviceGray(),
+                           bitmapInfo: CGImageAlphaInfo.none.rawValue) {
+        ctx.setFillColor(gray: 1, alpha: 1)
+        ctx.fill(CGRect(x: 0, y: 0, width: cutWidth, height: cutHeight))
+        ctx.setFillColor(gray: 0, alpha: 1)
+        for (x, width) in [(180, 10), (300, 60)] {      // rows 90-109, flipped for the context
+            ctx.fill(CGRect(x: x, y: cutHeight - 110, width: width, height: 20))
+        }
+        ctx.fill(CGRect(x: 60, y: cutHeight - 180, width: 5, height: 160))
+        cutPage = ctx.makeImage()
+    }
+    if let image = cutPage {
+        func stretchAt(_ x0: Int, _ x1: Int) -> Box {
+            Box(x: Double(x0) / 400, y: 85.0 / 200, width: Double(x1 - x0) / 400, height: 30.0 / 200)
+        }
+        func uncut(_ s: Box, walls: [Box] = []) -> [Int] {
+            guard let rect = Recogniser.stretchCrop(s, pageWidth: cutWidth, pageHeight: cutHeight,
+                                                    lineHeight: 24) else { return [] }
+            let moved = Recogniser.uncut(rect, of: s, walls: walls, image: image, level: 128, lineHeight: 24)
+            return [rect.left, rect.right, moved.left, moved.right]
+        }
+        let rightCut = uncut(stretchAt(100, 180))           // crop 97..<183, into the glyph
+        let walled = uncut(stretchAt(100, 180), walls: [Box(x: 186.0 / 400, y: 85.0 / 200,
+                                                            width: 0.1, height: 30.0 / 200)])
+        let longRun = uncut(stretchAt(200, 320))            // crop ..<323, into the run
+        let leftCut = uncut(stretchAt(188, 240))            // crop 185..<243, into the glyph
+        let clear = uncut(stretchAt(100, 170))              // crop ..<173, on paper
+        let ruled = uncut(stretchAt(66, 150))               // crop 63..<153, into the rule
+        check("C53: a stretch's crop moves past a glyph it cuts, onto paper, at either side",
+              rightCut == [97, 183, 97, 193] && leftCut == [185, 243, 177, 243],
+              "\(rightCut) \(leftCut)")
+        check("C53: …but not into a kept box beside it, nor along a line's length of ink, nor from paper",
+              walled == [97, 183, 97, 183] && longRun.count == 4 && longRun[3] == longRun[1]
+                  && clear.count == 4 && clear[2] == clear[0] && clear[3] == clear[1],
+              "\(walled) \(longRun) \(clear)")
+        check("C53: …nor onto a vertical rule its edge cuts",
+              ruled.count == 4 && ruled[2] == ruled[0] && ruled[0] == 63, "\(ruled)")
+    } else {
+        check("C53: the page with a cut glyph draws", false)
+    }
+
+    // C53: `recogniseInBands` end to end, with a reader standing in for Vision so the page
+    // misses what Vision missed, on cue. The page is blocks of ink, a line or a fragment
+    // each, named by their widths. Shown the whole page, the reader misses one line and
+    // the rest of another, beside its `head`; shown a band, it reads that `rest` at 0.3,
+    // as the bands read `Briefer` p3's fused tails; shown a stretch, anything narrower than
+    // the page, it reads every block the crop holds whole. So the bands must start and
+    // add the missed line, the merge must report the rest unread, and the stretch pass
+    // must read it and put it after its head. A `dot` past the rest, which the stretch's
+    // crop cuts at x 1000, is read only from the crop moved past it (`uncut`).
+    let (blockWidth, blockHeight, boxPad) = (1200, 1600, 4)
+    var blockNames: [Int: String] = [400: "head", 370: "rest", 10: "dot", 777: "missed"]
+    var blocks: [CGRect] = []                           // top-left pixel rects
+    for i in 0..<20 {
+        let top = 200 + 48 * i
+        switch i {
+        case 8: blocks += [CGRect(x: 150, y: top, width: 400, height: 30),
+                           CGRect(x: 580, y: top, width: 370, height: 30),
+                           CGRect(x: 996, y: top, width: 10, height: 30)]
+        case 13: blocks.append(CGRect(x: 150, y: top, width: 777, height: 30))
+        default:
+            blockNames[800 + 5 * i] = "line \(i)"
+            blocks.append(CGRect(x: 150, y: top, width: 800 + 5 * i, height: 30))
+        }
+    }
+    var blockPage: CGImage?
+    if let ctx = CGContext(data: nil, width: blockWidth, height: blockHeight, bitsPerComponent: 8,
+                           bytesPerRow: blockWidth, space: CGColorSpaceCreateDeviceGray(),
+                           bitmapInfo: CGImageAlphaInfo.none.rawValue) {
+        ctx.setFillColor(gray: 1, alpha: 1)
+        ctx.fill(CGRect(x: 0, y: 0, width: blockWidth, height: blockHeight))
+        ctx.setFillColor(gray: 0, alpha: 1)
+        for b in blocks {
+            ctx.fill(CGRect(x: b.minX, y: CGFloat(blockHeight) - b.maxY, width: b.width, height: b.height))
+        }
+        blockPage = ctx.makeImage()
+    }
+    /// The image's blocks of ink, as top-left pixel rects: runs of inked rows, then runs
+    /// of inked columns within each.
+    func inkBlocks(_ image: CGImage) -> [(x: Int, y: Int, width: Int, height: Int)] {
+        let (w, h) = (image.width, image.height)
+        var grey = [UInt8](repeating: 255, count: w * h)
+        let drawn = grey.withUnsafeMutableBytes { buffer -> Bool in
+            guard let ctx = CGContext(data: buffer.baseAddress, width: w, height: h, bitsPerComponent: 8,
+                                      bytesPerRow: w, space: CGColorSpaceCreateDeviceGray(),
+                                      bitmapInfo: CGImageAlphaInfo.none.rawValue) else { return false }
+            ctx.draw(image, in: CGRect(x: 0, y: 0, width: w, height: h))
+            return true
+        }
+        guard drawn else { return [] }
+        func inked(_ x: Int, _ y: Int) -> Bool { grey[y * w + x] < 128 }
+        var out: [(x: Int, y: Int, width: Int, height: Int)] = []
+        var y = 0
+        while y < h {
+            guard (0..<w).contains(where: { inked($0, y) }) else { y += 1; continue }
+            var bottom = y
+            while bottom + 1 < h, (0..<w).contains(where: { inked($0, bottom + 1) }) { bottom += 1 }
+            var x = 0
+            while x < w {
+                guard (y...bottom).contains(where: { inked(x, $0) }) else { x += 1; continue }
+                var right = x
+                while right + 1 < w, (y...bottom).contains(where: { inked(right + 1, $0) }) { right += 1 }
+                out.append((x, y, right - x + 1, bottom - y + 1))
+                x = right + 1
+            }
+            y = bottom + 1
+        }
+        return out
+    }
+    var shown = (page: 0, bands: 0, stretches: 0)
+    func standIn(_ image: CGImage, _ settings: Prefs.Snapshot) -> [Obs] {
+        let (w, h) = (image.width, image.height)
+        let page = w == blockWidth && h == blockHeight, band = w == blockWidth && h < blockHeight
+        if page { shown.page += 1 } else if band { shown.bands += 1 } else { shown.stretches += 1 }
+        return inkBlocks(image).compactMap { b in
+            // A block the crop cuts is not read, nor one of a width the page does not hold.
+            guard b.x > 0, b.y > 0, b.x + b.width < w, b.y + b.height < h,
+                  let name = blockNames[b.width], !(page && ["missed", "rest", "dot"].contains(name))
+            else { return nil }
+            return Obs(boundingBox: Box(x: Double(b.x) / Double(w), y: Double(b.y - boxPad) / Double(h),
+                                        width: Double(b.width) / Double(w),
+                                        height: Double(b.height + 2 * boxPad) / Double(h)),
+                       text: name, confidence: band && (name == "rest" || name == "dot") ? 0.3 : 1)
+        }
+    }
+    if let image = blockPage {
+        var accurate = Prefs.Snapshot.current()
+        accurate.fast = false
+        let read = (try? Recogniser.recogniseInBands(image, settings: accurate, recogniser: standIn)) ?? []
+        let expected = (0..<8).map { "line \($0)" } + ["head", "rest", "dot"] + (9..<13).map { "line \($0)" }
+            + ["missed"] + (14..<20).map { "line \($0)" }
+        check("C53: a page that misses a line and a line's rest gets both back from the bands and the stretch pass, in order",
+              read.map(\.text) == expected && shown.page == 1 && shown.bands > 0 && shown.stretches > 0,
+              "\(read.map(\.text)) shown \(shown)")
+    } else {
+        check("C53: the page of ink blocks draws", false)
+    }
+    // …and `readStretch` reads the crop `uncut` moves: shown the glyph cut by the crop's
+    // edge, the reader drops it, as Vision read `industria`; given the page's ink level, the
+    // stretch is read from the crop moved past it.
+    if let image = cutPage {
+        var accurate = Prefs.Snapshot.current()
+        accurate.fast = false
+        let s = Box(x: 100.0 / 400, y: 85.0 / 200, width: 80.0 / 400, height: 30.0 / 200)
+        func names(_ level: UInt8?, walls: [Box] = []) -> [String] {
+            let piece = Recogniser.readStretch(s, of: image, settings: accurate, lineHeight: 24,
+                                               padded: false, level: level, walls: walls,
+                                               recogniser: { crop, _ in
+                inkBlocks(crop).compactMap { b in
+                    guard b.x > 0, b.x + b.width < crop.width else { return nil }
+                    return Obs(boundingBox: Box(x: Double(b.x) / Double(crop.width),
+                                                y: Double(b.y) / Double(crop.height),
+                                                width: Double(b.width) / Double(crop.width),
+                                                height: Double(b.height) / Double(crop.height)),
+                               text: "glyph", confidence: 1)
+                }
+            })
+            return piece?.observations.map(\.text) ?? ["no crop"]
+        }
+        let wall = Box(x: 186.0 / 400, y: 85.0 / 200, width: 0.1, height: 30.0 / 200)
+        check("C53: …and a stretch is read from its crop moved past the glyph it cut, unless a wall stops it",
+              names(nil).isEmpty && names(128) == ["glyph"] && names(128, walls: [wall]).isEmpty,
+              "\(names(nil)) \(names(128)) \(names(128, walls: [wall]))")
+        // A reader that reads the moved crop worse than the crop as it was: the reading
+        // with more letters at full confidence is the one kept.
+        let fickle = Recogniser.readStretch(s, of: image, settings: accurate, lineHeight: 24, padded: false,
+                                            level: 128, recogniser: { crop, _ in
+            [Obs(boundingBox: Box(x: 0.1, y: 0.4, width: 0.8, height: 0.2),
+                 text: crop.width > 86 ? "glyph" : "as it was read", confidence: 1)]
+        })?.observations.map(\.text)
+        check("C53: …but read as it was where the moved crop reads fewer letters at full confidence",
+              fickle == ["as it was read"], "\(String(describing: fickle))")
     }
 
     // C53: a stretch's ends run out over its line's ink, to the next kept box at most,

@@ -673,6 +673,13 @@ enum Recogniser {
         }
     }
 
+    /// Whether most of a line's letters are Arabic or Hebrew, so that its row reads from
+    /// the right (C53: `mergeBands` orders the fragments of a row by it).
+    static func readsRightToLeft(_ text: String) -> Bool {
+        let letters = text.unicodeScalars.filter { $0.properties.isAlphabetic }
+        return 2 * letters.filter { isRightToLeft($0) }.count > letters.count
+    }
+
     // MARK: - A page pasted up from strips (C39)
 
     /// What `Flattener.flatten` names the file of a paste-up's regions, after the
@@ -1305,11 +1312,14 @@ enum Recogniser {
     }
 
     /// `recognisePage` before `splitAtGutter`: the whole page, the bands and the
-    /// unread stretches.
+    /// unread stretches. `recogniser` reads each image it is shown, the page and
+    /// every crop of it; Vision, unless a check stands in for it.
     static func recogniseInBands(_ image: CGImage, settings: Prefs.Snapshot,
-                                 isCancelled: () -> Bool = { false })
+                                 isCancelled: () -> Bool = { false },
+                                 recogniser: (CGImage, Prefs.Snapshot) throws -> [SearchableWriter.Observation]
+                                     = { try Recogniser.recognise($0, settings: $1) })
         throws -> [SearchableWriter.Observation] {
-        let whole = try recognise(image, settings: settings)
+        let whole = try recogniser(image, settings)
         let w = image.width, h = image.height
         let line = lineHeight(of: whole, pageHeight: h)
         guard !settings.fast, !bandPlan(height: h, lineHeight: line).isEmpty,
@@ -1348,7 +1358,7 @@ enum Recogniser {
                 // the bands existed, so it is not a reason to fail the document.
                 guard let crop = image.cropping(to: CGRect(x: 0, y: band.top,
                                                            width: w, height: bandHeight)),
-                      let read = try? recognise(crop, settings: local)
+                      let read = try? recogniser(crop, local)
                 else { continue }
                 bands.append((read, band.top, band.bottom))
             }
@@ -1376,8 +1386,10 @@ enum Recogniser {
                         pageWidth: w, pageHeight: h, lineHeight: line, hasInk: ink)
         }
         typealias Piece = (observations: [SearchableWriter.Observation], top: Int, bottom: Int)
-        func read(_ s: SearchableWriter.BoundingBox, padded: Bool) -> Piece? {
-            readStretch(s, of: image, settings: settings, lineHeight: line, padded: padded)
+        func read(_ s: SearchableWriter.BoundingBox, padded: Bool, walls: [SearchableWriter.BoundingBox])
+            -> Piece? {
+            readStretch(s, of: image, settings: settings, lineHeight: line, padded: padded,
+                        level: scan.level, walls: walls, recogniser: recogniser)
         }
         // A stretch moved or padded that reads nothing at full confidence, which is all the
         // merge admits, is read again as it was: Vision reads a crop a few pixels
@@ -1387,10 +1399,11 @@ enum Recogniser {
             if isCancelled() { return merged }
             let padded = cutsItsInk(s, of: image, level: scan.level, lineHeight: line)
             let changed = padded || !same(s, last.stretches[k])
-            let first = read(s, padded: padded)
+            let walls = kept + stretches.indices.filter { $0 != k }.map { stretches[$0] }
+            let first = read(s, padded: padded, walls: walls)
             if keepsRead(first, changed: changed), let first {
                 pieces.append(first)
-            } else if changed, let again = read(last.stretches[k], padded: false) ?? first {
+            } else if changed, let again = read(last.stretches[k], padded: false, walls: walls) ?? first {
                 // The reading as it was, or, failing that, the moved one: its boxes under
                 // full confidence are still evidence of text for `replaces`.
                 pieces.append(again)
@@ -1409,10 +1422,10 @@ enum Recogniser {
         for (f, follows) in besideFragments(stretches, kept: kept, whole: whole.map(\.boundingBox),
                                             pageWidth: w, lineHeight: line) {
             if isCancelled() { return merged }
-            let alone = reachingInk(f, walls: kept.filter { !same($0, f) } + stretches,
-                                    pageWidth: w, pageHeight: h, lineHeight: line, hasInk: ink)
+            let walls = kept.filter { !same($0, f) } + stretches
+            let alone = reachingInk(f, walls: walls, pageWidth: w, pageHeight: h, lineHeight: line, hasInk: ink)
             guard let piece = read(alone, padded: cutsItsInk(alone, of: image, level: scan.level,
-                                                              lineHeight: line)),
+                                                              lineHeight: line), walls: walls),
                   rereadSpans(piece, f, pageHeight: h, pageWidth: w, lineHeight: line)
             else { continue }
             rereads.append((spreadOver(f, piece, pageHeight: h), follows ? alone : nil, f))
@@ -1612,21 +1625,116 @@ enum Recogniser {
     /// box stops inside its line's type, `cutsItsInk`) and lifted back (`stretchPiece`).
     /// Nil when the crop or the request fails, which adds nothing.
     static func readStretch(_ s: SearchableWriter.BoundingBox, of image: CGImage,
-                            settings: Prefs.Snapshot, lineHeight line: Int, padded: Bool)
+                            settings: Prefs.Snapshot, lineHeight line: Int, padded: Bool,
+                            /// The page's ink level, to keep the crop's sides off a glyph (`uncut`),
+                            /// and the kept boxes and other stretches it does not reach into.
+                            level: UInt8? = nil, walls: [SearchableWriter.BoundingBox] = [],
+                            recogniser: (CGImage, Prefs.Snapshot) throws -> [SearchableWriter.Observation]
+                                = { try Recogniser.recognise($0, settings: $1) })
         -> (observations: [SearchableWriter.Observation], top: Int, bottom: Int)? {
         let w = image.width, h = image.height
-        guard let rect = stretchCrop(s, pageWidth: w, pageHeight: h, lineHeight: line) else { return nil }
-        var local = settings
-        local.minTextHeight = min(1, settings.minTextHeight * Double(h) / Double(rect.bottom - rect.top))
-        let (width, height) = (rect.right - rect.left, rect.bottom - rect.top)
-        let own = stretchRows(s, crop: rect, pageHeight: h, lineHeight: line, padded: padded)
-        guard let cut = image.cropping(to: CGRect(x: rect.left, y: rect.top, width: width, height: height)),
-              let crop = paintedOut([CGRect(x: 0, y: 0, width: width, height: own.top),
-                                     CGRect(x: 0, y: own.bottom, width: width, height: height - own.bottom)],
-                                    of: cut),
-              let read = try? recognise(crop, settings: local)
-        else { return nil }
-        return stretchPiece(read, of: s, crop: rect, pageWidth: w, pageHeight: h)
+        guard let plain = stretchCrop(s, pageWidth: w, pageHeight: h, lineHeight: line) else { return nil }
+        func read(_ rect: (left: Int, top: Int, right: Int, bottom: Int))
+            -> (observations: [SearchableWriter.Observation], top: Int, bottom: Int)? {
+            var local = settings
+            local.minTextHeight = min(1, settings.minTextHeight * Double(h) / Double(rect.bottom - rect.top))
+            let (width, height) = (rect.right - rect.left, rect.bottom - rect.top)
+            let own = stretchRows(s, crop: rect, pageHeight: h, lineHeight: line, padded: padded)
+            guard let cut = image.cropping(to: CGRect(x: rect.left, y: rect.top, width: width, height: height)),
+                  let crop = paintedOut([CGRect(x: 0, y: 0, width: width, height: own.top),
+                                         CGRect(x: 0, y: own.bottom, width: width, height: height - own.bottom)],
+                                        of: cut),
+                  let read = try? recogniser(crop, local)
+            else { return nil }
+            return stretchPiece(read, of: s, crop: rect, pageWidth: w, pageHeight: h)
+        }
+        guard let level else { return read(plain) }
+        let rect = uncut(plain, of: s, walls: walls, image: image, level: level, lineHeight: line)
+        guard rect != plain else { return read(plain) }
+        // Both, and the wider one where it reads as many letters at full confidence, the only
+        // lines the merge admits: Vision reads a crop a few pixels different differently, and
+        // a reread is kept only where it spans its line (the review of this change).
+        let (wider, asWas) = (read(rect), read(plain))
+        func clean(_ p: (observations: [SearchableWriter.Observation], top: Int, bottom: Int)?) -> Int {
+            p.map { $0.observations.filter { $0.confidence >= 1 }
+                .reduce(0) { $0 + $1.text.filter { $0.isLetter || $0.isNumber }.count } } ?? -1
+        }
+        return clean(wider) >= clean(asWas) ? wider : asWas
+    }
+
+    /// A stretch's crop (`stretchCrop`) with each side moved out past a glyph it cuts
+    /// (C53): where the crop's edge column and the one beyond it both hold ink on the
+    /// stretch's middle rows, out to the glyph's end, then over up to the eighth of a line
+    /// of paper the crop leaves at its sides. On `Briefer` p3 the crop of `…peculiar to
+    /// industrial` ended 4 px into its `l`, and Vision read `industria`; with paper after
+    /// the `l`, `industrial`. `reachingInk` moves a stretch's end only for half a line of
+    /// ink, and 4 px is not that. Ink running on for a line past the edge, a rule or the
+    /// line's own next words, moves nothing; nor does a column of ink two line heights tall,
+    /// a vertical rule, which the edge test cannot tell from a glyph; nor a glyph of a kept
+    /// box or another stretch beside it (`walls`, as `reachingInk` takes them): the crop of
+    /// `M.D. Second Edition. The C. V. Mosby Company,` reached 6 px into the kept `3207
+    /// Washington…`, and moved past its `3` it read `Company, 3`.
+    static func uncut(_ rect: (left: Int, top: Int, right: Int, bottom: Int),
+                      of s: SearchableWriter.BoundingBox, walls: [SearchableWriter.BoundingBox] = [],
+                      image: CGImage, level: UInt8,
+                      lineHeight line: Int) -> (left: Int, top: Int, right: Int, bottom: Int) {
+        let w = image.width, h = image.height
+        guard w > 0, h > 0, line > 0 else { return rect }
+        let middle = middleHalf(of: s)
+        /// Column `x`, probed over its own middle half-pixel so that `hasInk`'s rounding out
+        /// to whole pixels cannot take in a neighbour (the review of this change).
+        func inked(_ x: Int) -> Bool {
+            guard x >= 0, x < w else { return false }
+            return hasInk(in: SearchableWriter.BoundingBox(x: (Double(x) + 0.25) / Double(w), y: middle.y,
+                                                         width: 0.5 / Double(w), height: middle.height),
+                          of: image, level: level)
+        }
+        /// Whether column `x` is a rule: ink without a break over two line heights through the
+        /// stretch's rows, which no glyph of a line is (the review of this change).
+        func rule(_ x: Int) -> Bool {
+            let mid = Int(((middle.y + middle.height / 2) * Double(h)).rounded())
+            let (from, to) = (max(0, mid - 2 * line), min(h, mid + 2 * line))
+            guard x >= 0, x < w, mid >= from, mid < to,
+                  let grey = greyPixels(of: image, x0: x, y0: from, x1: x + 1, y1: to) else { return false }
+            var (up, down) = (mid - from, mid - from)
+            while up > 0, grey[up - 1] <= level { up -= 1 }
+            while down < grey.count, grey[down] <= level { down += 1 }
+            return down - up >= 2 * line
+        }
+        // The walls beside it on its rows, in pixels; one holding its centre is the box it was
+        // cut from, and stops nothing.
+        let centre = s.x + s.width / 2
+        let beside = walls.filter {
+            $0.x.isFinite && $0.width.isFinite
+                && min($0.y + $0.height, middle.y + middle.height) > max($0.y, middle.y)
+                && !($0.x <= centre && centre <= $0.x + $0.width)
+        }
+        func pixel(_ v: Double, _ rule: FloatingPointRoundingRule) -> Int {
+            Int((min(max(v, 0), 1) * Double(w)).rounded(rule))
+        }
+        let rightWall = beside.filter { $0.x > centre }.map { pixel($0.x, .down) }.min() ?? w
+        let leftWall = beside.filter { $0.x + $0.width < centre }.map { pixel($0.x + $0.width, .up) }.max() ?? 0
+        let margin = max(1, line / 8)
+        var (left, right) = (rect.left, rect.right)
+        if right < rightWall, inked(right - 1), inked(right), !rule(right) {
+            let limit = min(w, rect.right + line, rightWall)
+            var end = right
+            while end < limit, inked(end) { end += 1 }
+            if end < limit {
+                right = end
+                while right < min(limit, end + margin), !inked(right) { right += 1 }
+            }
+        }
+        if left > leftWall, inked(left), inked(left - 1), !rule(left - 1) {
+            let limit = max(-1, rect.left - 1 - line, leftWall - 1)
+            var start = left - 1
+            while start > limit, inked(start) { start -= 1 }
+            if start > limit {
+                left = start + 1
+                while left > max(limit + 1, start + 1 - margin), !inked(left - 1) { left -= 1 }
+            }
+        }
+        return (left, rect.top, right, rect.bottom)
     }
 
     /// The rows of a stretch's crop (`stretchCrop`) shown to Vision, as rows of the crop:
@@ -2515,10 +2623,13 @@ enum Recogniser {
     /// recognises each stretch alone and merges again with the reads as bands.
     ///
     /// **Order.** An added line goes in after the lowest line above it in its own
-    /// column — the lowest kept line above it that it overlaps sideways — so the
-    /// text layer reads down each column rather than across them. With no such
-    /// line it goes before the first whole-page line lower than itself. The rest
-    /// of a line goes straight after the fragment it continues on that line.
+    /// column — the lowest kept line above it that it overlaps sideways, and after the
+    /// rest of that line's row — so the text layer reads down each column rather than
+    /// across them. With no such line it goes before the first whole-page line lower
+    /// than itself. A line on its own row that follows it there, to its right (to its
+    /// left in Arabic or Hebrew), is never above it however high its box starts, and it
+    /// goes before that line. The rest of a line goes straight after the fragment it
+    /// continues on that line.
     static func mergeBands(
         whole: [SearchableWriter.Observation],
         bands: [(observations: [SearchableWriter.Observation], top: Int, bottom: Int)],
@@ -2767,6 +2878,14 @@ enum Recogniser {
                         && sidewaysOverlap(s, a) > a.width / 2
                 }
         }
+        /// Whether page line `o` stands on added line `a`'s row after it, in the row's reading
+        /// direction, which both their texts decide: a fragment of digits on a Hebrew row has
+        /// no letters to say so (the second review of this change).
+        func follows(_ o: SearchableWriter.Observation, _ a: SearchableWriter.Observation) -> Bool {
+            onOneRow(o.boundingBox, a.boundingBox)
+                && (readsRightToLeft(a.text + " " + o.text) ? o.boundingBox.x < a.boundingBox.x
+                                                            : o.boundingBox.x > a.boundingBox.x)
+        }
         for (n, a) in sortedAdded.enumerated() {
             let pagePrior = page.indices.filter { continues(a.boundingBox, page[$0].boundingBox) }
                 .max { page[$0].boundingBox.x < page[$1].boundingBox.x }
@@ -2779,12 +2898,30 @@ enum Recogniser {
                 continue
             }
             if let i = pagePrior { after[i, default: []].append(n); continue }
+            // A line that follows this one on its row is beside it, not above it, however
+            // much higher its box starts (C53): on `Briefer` p3 the shifted bands added
+            // `WOMEN IN HIGHER-LEVEL POSITIONS. Bulletin No. 236.` after the first pass
+            // had kept the rest of its line, `Women's Bureau,`, in a box starting 14 rows
+            // higher, and the head went in after its own tail.
             var anchor: Int?
             for (i, o) in page.enumerated()
-            where o.boundingBox.y < a.boundingBox.y && overlapsSideways(o.boundingBox, a.boundingBox) {
+            where o.boundingBox.y < a.boundingBox.y && overlapsSideways(o.boundingBox, a.boundingBox)
+                && !follows(o, a) {
                 if anchor.map({ page[$0].boundingBox.y < o.boundingBox.y }) ?? true { anchor = i }
             }
-            if let anchor { after[anchor, default: []].append(n) } else { loose.append(n) }
+            guard var anchor else { loose.append(n); continue }
+            // And after the rest of the anchor's line above it, whose own tail may start
+            // higher than the anchor (the review of this change). Not past the next column's
+            // line on that row, nor onto a box centred lower than this one's top quarter,
+            // which is on this one's row or under it (the second review).
+            while anchor + 1 < page.count,
+                  onOneRow(page[anchor + 1].boundingBox, page[anchor].boundingBox),
+                  overlapsSideways(page[anchor + 1].boundingBox, a.boundingBox),
+                  page[anchor + 1].boundingBox.y + page[anchor + 1].boundingBox.height / 2
+                      < a.boundingBox.y + a.boundingBox.height / 4 {
+                anchor += 1
+            }
+            after[anchor, default: []].append(n)
         }
         var out: [SearchableWriter.Observation] = []
         /// An added line, then whatever continues it on its line, left to right.
@@ -2794,17 +2931,32 @@ enum Recogniser {
             (follow[n] ?? []).sorted { sortedAdded[$0].boundingBox.x < sortedAdded[$1].boundingBox.x }
                 .forEach(emit)
         }
-        var pending = loose[...]
+        var pending = loose
         for (i, o) in page.enumerated() {
-            while let next = pending.first, sortedAdded[next].boundingBox.y < o.boundingBox.y {
-                emit(next)
-                pending = pending.dropFirst()
+            // Before the first page line lower than it, or before one that follows it on
+            // its row: a head with no line above it at all, a page's first (C53). Every one
+            // that is due, in order, since a later one can follow `o` when an earlier does not.
+            let due = pending.filter {
+                sortedAdded[$0].boundingBox.y < o.boundingBox.y || follows(o, sortedAdded[$0])
             }
+            due.forEach(emit)
+            pending.removeAll { due.contains($0) }
             out.append(o)
             (after[i] ?? []).forEach(emit)
         }
         pending.forEach(emit)
         return out
+    }
+
+    /// Whether two boxes stand on one row of text: each one's vertical centre falls in
+    /// the other's middle half.
+    static func onOneRow(_ a: SearchableWriter.BoundingBox, _ b: SearchableWriter.BoundingBox) -> Bool {
+        func centred(_ p: SearchableWriter.BoundingBox, in q: SearchableWriter.BoundingBox) -> Bool {
+            let centre = p.y + p.height / 2
+            let middle = middleHalf(of: q)
+            return centre >= middle.y && centre <= middle.y + middle.height
+        }
+        return centred(a, in: b) && centred(b, in: a)
     }
 
     /// Whether the boxes in `kept` read the rows of the whole-page box `fused` as

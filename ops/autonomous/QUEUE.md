@@ -809,7 +809,7 @@ say so in the commit.
       C28 (unboxed marks soft or lost on layered pages), C41, C43, C45, C47 (photos halved, not queued), C50
       and C52. Of 8,693 wrongly copied words, 467 repeat Vision's misread of the source (C50). Harness
       artefacts are in `ops/truth/STATUS.md`.
-- [ ] **c53-skipped-lines** — get the clean lines Vision skips into the text layer, or report them.
+- [x] **c53-skipped-lines** — get the clean lines Vision skips into the text layer, or report them.
       THE PAGES: `1951 - Briefer Book Notes` pp1, 3, 4 (the owner's file), `Banks 2006` p101,
       `Riesman_1942` p14, `Jensen` p429 (`BUGS.md` C53 names the lines). Start by capturing production's
       observations and bitmaps (C51 did it with a wrapper around `visionocr-recognise`) and finding why the

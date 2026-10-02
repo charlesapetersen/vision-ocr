@@ -19368,7 +19368,7 @@ first. It comes back with a new bound when it reaches the head of the queue agai
 to `_1967_Yearly` p1, 210 to `Berendzen_1981` p1, 100 to `Davis_2005` p3 and 45 to `Berger_2013` p18, pages the
 old measures passed.
 
-### C53 · Single lines and line tails on clean print are missing from the text layer, and nothing says so — OPEN
+### C53 · Single lines and line tails on clean print are missing from the text layer, and nothing says so — FIXED
 
 *(found 2026-10-01 by `truth-read`; C33 and C51 are FIXED and are not reopened.)*
 
@@ -19508,6 +19508,42 @@ announced) [measured]:
 - Next: order the p3 tail (`Women's Bureau,` after the next line's `…86 pages.`: find which of `mergeBands`' order
   rules places it, likely a tail anchored by `y` rather than after the fragment it continues), re-run the check on
   (a); an end-to-end check of the stretch pass, perhaps with `recognise` injected so it runs without Vision.
+
+**2026-10-02, fourth session (max effort) — p3's tail order fixed in the anchor rule; FIXED.** Traced on the
+helper's p3 bitmap [measured]: band pass 0 kept the tail `Women's Bureau,` (rows 1056-1108), pass 1 added its
+head `WOMEN IN HIGHER-LEVEL POSITIONS. Bulletin No. 236.` (1070-1110), and the anchor rule (after the lowest
+kept line above that overlaps sideways) took the tail as the head's anchor. Drawn tail first, PDFKit read the
+tail between `86 pages.` and `25 cents.`; swapping the two runs in the published content stream fixed it.
+- Fixed in `mergeBands`: a kept line on an added line's row (`onOneRow`) that follows it in the row's reading
+  direction (`readsRightToLeft` of both texts, for Hebrew and Arabic) is never its anchor; the anchor moves past
+  the rest of its own row where that overlaps the added line and is centred above it; a line with no anchor
+  goes before a page line that follows it on its row. The last two, the direction and its digits case came
+  from two diff reviews.
+- `industria` was the app's, not Vision's (found by the DONE WHEN agent): the stretch's crop ended 4 px into the
+  `l`. `uncut` moves a crop's side past a glyph it cuts onto paper, never a line past the edge, into a kept box
+  (else `M.D. … Company, 3`) or onto a vertical rule; `readStretch` reads both crops and keeps the one with more
+  letters at full confidence.
+- `recogniseInBands` and `readStretch` take the recogniser as a parameter. A check runs them over a drawn page
+  with a stand-in reader that misses a line, a line's rest and a dot the stretch's crop cuts, which pins the
+  bands, the unread report, the stretch pass, `uncut` and the order end to end. 15 checks; 21 mutants, one per
+  rule, guard or wiring, each turn at least one red.
+- Published files [measured, PDFKit]: Briefer p3 `…D. C., 1950. 86 pages. 25 cents. Available`, `…No. 236.
+  Women's Bureau,` and `…peculiar to industrial` are found (0 hits before) and each drag copies only its line;
+  p5's `in-`/`centives,` now join. Banks p101, Jensen p429 and Riesman p14 are text-identical; Jensen and
+  Riesman are still named in the run log. Fiedler p1 within tolerance of HEAD, copyErr 3.6133 -> 3.6106.
+- Rejected, measured on `_1941_Fiedler's…` p1, where 18 of HEAD's 29 column drags already leak: ordering added
+  lines by rows, left to right, leaked 26 and dropped prec 0.75 -> 0.63; threading a tail after its head when a
+  kept line on the next row spans their gap (one side or both) leaked 24-26. Both joined p4's `…63 pages.` /
+  `$1.00. This new case study,` and `…Deep River,` / `Conn., 1950.`, which still break across a line, so Find
+  across the break fails; C53 does not name them. Unhandled [reasoned by the review]: a tail added right of a
+  kept head whose box starts on the same row or lower; Vision's own `eflects`, `proftability` and `New • York`.
+- Instrument note: a one-document `score-gate` run recognises in-process (`helperIsWorthIt` wants two files), so
+  `VISIONOCR_HELPER` is ignored there; this session's first single-document variant runs were void for it.
+- DONE WHEN check (separate agent, before `uncut`) [measured]: (a) FAIL on `industria` alone, every other named
+  line found and copying its own words at all 12 aims; (b) PASS; (c) PASS; (d) PASS. `uncut` was then added
+  for (a) and re-checked by me, not by an agent (the window was past 85%): found, and the drag copies its line.
+  ux-regression on the final code: 0 worse, 1 better (Briefer p3 overInk 0.91 -> 0.96; truth copyErr 0.0245 ->
+  0.0168); baseline refreshed.
 
 ### C54 · Pale typewriting on layered pages is published broken and faded — OPEN
 
