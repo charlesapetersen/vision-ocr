@@ -42,9 +42,8 @@ say so in the commit.
    still open and no box ticked; a session that ticks a sub-box for a finished part is not a failed
    attempt, nor is one that opened at 85% or more of the usage window (owner, 2026-10-01). It adds the item's `(attempts: N)` marker, which records failures found later, by the
    owner or a check. From the third attempt the session runs at `max` effort instead of the default
-   `medium`, with a $70 budget cap instead of $35 and an 8-hour time limit instead of 4. `(effort: <level>)` on an item sets its effort outright. When a ticked item is found not
-   fixed, reopen it or queue its successor with `(attempts: N)` carried over. An item's BOUND does not stop a
-   max-effort session: it may make one more code commit than the bound allows.
+   `medium`, with a $140 budget cap instead of $70 and an 8-hour time limit instead of 4. `(effort: <level>)` on an item sets its effort outright. When a ticked item is found not
+   fixed, reopen it or queue its successor with `(attempts: N)` carried over.
 8. **No `WONTFIX` before two max-effort sessions (owner, 2026-09-26).** An unattended session may close an
    entry `WONTFIX` only if it runs at `max` and an earlier max-effort session has already tried the item.
    A session that concludes `WONTFIX` sooner writes its case in the entry, leaves the box open and commits
@@ -56,6 +55,16 @@ say so in the commit.
    item's `BUGS.md` entry states each regression it reports and why it is accepted. A commit that makes a
    set page better, or accepts a regression, refreshes the baseline with `--baseline` and says so. Exit 3
    (the owner's files or the corpus absent) is not a pass. It runs the pipeline: run it alone, like the suite.
+
+10. **Bounds are sessions, in two rounds (owner, 2026-10-02).** A product item may take up to four
+   sessions in its first round, with any number of code commits in each; a session counts when it works on
+   the item, whether it commits or not, and adds a dated line to the item saying which session of which
+   round it was. If the item is still open after four, it moves behind the untried items. When it comes
+   back it gets a second round of up to four sessions, all at `max` (add `(effort: max)`). If it is still
+   open after the second round it leaves the queue: the session closes it `WONTFIX` with the case in its
+   `BUGS.md` entry (rule 8 is met by then), or moves it to Parked with what was tried and what blocks it.
+   Parked items come back only by the owner's hand. Rule 4 still applies inside a round. This replaces the
+   one-code-commit bounds, which stopped a session that had a second real fix to make.
 
 ## The queue
 
@@ -818,25 +827,113 @@ say so in the commit.
       copies its own words; a page whose lines still cannot be read reports them; `ux-regression.sh` no worse;
       a new check goes red without the change.
       BOUND: one code commit. (origin: BUGS.md C53)
+- [ ] **ocr-lab-setup** — set up a guarded local environment for open OCR models and find out which ones
+      fit this Mac. (effort: medium)
+      WHY. On the truth set the app gets 2.7% of words wrong outside newspapers and 25% on newspapers, against
+      under 1% for a model's reading, and most of the gap is Vision's own misreading, which no fix queued so far
+      touches (`TRUTH-RUN-2026-09-30-pages.tsv`; 467 of 8,693 wrong words repeat Vision's misread of the
+      source). Small open OCR models may read better. The owner asked on 2026-10-02 for a measured comparison
+      ahead of the current fixes, with integration alongside Vision if it pays. Licences are set aside for now.
+      THE MACHINE. Apple M3 Pro, 18 GB of memory, on 2026-10-02 about 54 GB free by `df` and 83 GB as Finder
+      counts it (purgeable space macOS frees on demand); the daemon parks below 8 GB free by `df`, and this Mac has a wired-memory leak that grows over weeks. Whatever is built must run here.
+      THE GUARD, built first: `ops/ocrlab/run-guarded.sh` runs one model process, samples its resident memory and
+      `memory_pressure` every 2 s, and kills it (logging why) if its memory passes 12 GB (owner, 2026-10-02), pressure reaches
+      critical, or swap grows by more than 2 GB. Only one model process at any time, never while a suite,
+      `ux-harness`, `ux-regression.sh` or another PDFKit/Vision corpus job runs (check `test.lock` and
+      `pgrep -x tests`). Quantise to 4 or 8 bit wherever a checkpoint allows.
+      THE ENVIRONMENT, outside the repo: a `uv` venv and `HF_HOME` under `~/.local/share/visionocr-ocrlab/`.
+      Install with `uv pip` (MLX through `mlx-vlm`, else PyTorch on MPS) and download weights with the Hugging
+      Face CLI; sessions may not run `curl` or `wget`. The framework `python3` has no root certificates, so use
+      the venv's Python. Download one candidate at a time, prefer a 4- or 8-bit build (MLX or GGUF) to full weights, and if
+      only full weights exist quantise them and delete the originals. A candidate that does not fit is deleted
+      at once. Keep the lab under 25 GB in all. Before each download check that free disk by `df` stays above
+      20 GB afterwards; `df` leaves out
+      purgeable space, so it is the safe figure.
+      THE CANDIDATES. Refresh this list with a short web search first; small models have been arriving monthly.
+      As of 2026-10-02: PaddleOCR-VL 1.5 and 1.6 (0.9-1.2B), GLM-OCR (0.9B), LightOnOCR-2-1B (has bbox
+      variants), TeleOCR (1.2B), NaviDC-OCR (1.2B, 2026-08-17), MinerU2.5 (1.2B), HunyuanOCR, dots.ocr-1.5 and
+      dots.mocr (3B), DeepSeek-OCR-2 (about 3B), Qianfan-OCR (4B, an MLX 4-bit build exists; leads olmOCR-Bench's
+      old scans among end-to-end models), Chandra OCR 2 (5B, word boxes), Surya OCR 2 (line boxes), and the
+      general Qwen3.5 small models (2B, 4B, 9B; Qwen3.5-27B scored 0.54 on socOCRbench, near Claude 4.6, but
+      is too large here). Skip Tesseract (0.10 on socOCRbench).
+      DONE WHEN, committed as `OCR-MODELS-<date>.tsv` with the scripts in `ops/ocrlab/`: one row per candidate
+      with size, quantisation, runtime, whether it gives line or word boxes, peak memory and seconds for one
+      ordinary page and one newspaper page through the guard, and fits (peak under 12 GB, under 90 s for the
+      newspaper page) or why not. No model crashed the Mac or tripped the guard twice.
+      BOUND: rule 10. (context: owner request 2026-10-02)
+- [ ] **ocr-bakeoff** — score every candidate that fits against the truth set. (blocked-on: ocr-lab-setup)
+      (effort: medium)
+      THE SAMPLE, listed and committed first: the 45 pages of the regression set and the self-test, the 11
+      newspapers, and 20 green pages drawn at random from the truth run, spread over the routes. Each candidate
+      reads each page in its plain-text mode, from the same PDFKit render the truth set used, whole page and,
+      if that loses lines, as the truth set's crops. Vision reads the same renders, so the comparison is like
+      for like.
+      COMPRESSION. Run the top three again at both 4-bit and 8-bit (owner, 2026-10-02), and report the
+      difference in words right, seconds per page and peak memory, so the cost of each setting is known.
+      SCORE exactly as `truth-harness` scores the app: words wrong and missing against the transcripts,
+      contested words unscored, by route; plus seconds per page and peak memory. Delete a candidate's weights
+      once its rows are committed unless it is in the top three.
+      DONE WHEN, committed as `OCR-BAKEOFF-<date>.tsv`: every fitting candidate scored on every sample page or
+      a stated reason, Vision beside them, and the top three named by words right on old print and newspapers
+      at a speed this Mac can bear. BOUND: rule 10. (context: owner request 2026-10-02)
+- [ ] **ocr-hybrid** — find the best way to put a better reader's words into the app's text layer.
+      (blocked-on: ocr-bakeoff) (effort: medium)
+      Try the top three, each in the arrangements that suit it: (a) the model replacing Vision outright, its
+      own line or word boxes used directly (a first-class option: owner, 2026-10-02, Intel Macs and download
+      size are not constraints, so only accuracy, placement, speed and memory decide); (b) Vision's lines for geometry, with the model reading each line's crop and its words placed
+      in Vision's boxes (the truth set's crop-and-align method); (c) Vision as now, with the model only on lines
+      Vision skipped or read with low confidence and on newspaper bands. Build each as a prototype behind a
+      setting that is off by default, run it through the production pipeline on the bake-off sample, and score
+      it with `ux-harness --truth` (Copy, Find, order) and the ink and colour check, plus time per page and
+      peak memory. Invariant 3's four properties must hold.
+      DONE WHEN, committed as `OCR-HYBRID-<date>.tsv` with the recommendation in `BUGS.md` as a new entry: the
+      best arrangement named, with its gain in words right and its cost in time, memory and download size,
+      on this Mac, and the best model and build named for each memory limit from about 4 GB to 12 GB.
+      BOUND: rule 10. (context: owner request 2026-10-02)
+- [ ] **ocr-integrate** — build the winning arrangement into the app as an accurate mode.
+      (blocked-on: ocr-hybrid)
+      A route wins when it cuts words wrong or missing by at least a third on old print or on newspapers,
+      runs at no more than three times Vision's time per page, and stays under the guard's 12 GB on this Mac.
+      If arrangement (a) wins, the model replaces Vision as the recogniser in this mode, with Vision kept
+      only as the fallback when memory is short or the model fails. If one route clearly wins, this item builds it (owner, 2026-10-02: the winning route is to be built,
+      not left as a recommendation). If none wins, the session records that in the `ocr-hybrid` entry, ticks
+      this box with that reason, and the queue goes on as before.
+      The mode is off by default until the owner decides. SETTINGS (owner, 2026-10-02): a maximum-memory
+      setting for the accurate mode, with steps from about 4 GB up to 12 GB and a default chosen from the
+      Mac's installed memory; and, under it, a choice among the integrated models and builds that fit that
+      limit, from the `ocr-bakeoff` and `ocr-hybrid` results (for example a small model at 4-bit for low
+      limits and the best model at 8-bit for 12 GB). Integrate more than one model where the results show a
+      different best choice at different limits. Each model downloads on first use with its size stated, runs
+      under the guard's limits with the chosen maximum as its cap, and falls back to Vision with a message
+      when memory is short.
+      Done when the built app reproduces the `ocr-hybrid` figures on the bake-off sample with the mode on,
+      `ux-regression.sh` is no worse with it off, the suite passes, and nothing crashes on this Mac. No release:
+      that stays the owner's. BOUND: rule 10. (context: owner request 2026-10-02)
+- [ ] **ocr-requeue** — make the rest of the queue build on the accurate mode. (blocked-on: ocr-integrate)
+      If `ocr-integrate` built a mode: re-measure every later open item's named pages with the mode on. Close
+      an item whose DONE WHEN the mode already meets, citing the measurement, and re-scope the rest so that
+      their DONE WHEN is checked with the mode on as well as off, and their fixes are built to work with it.
+      Add the mode's rows to `ops/ux-regression/set.tsv`, so later items cannot break it. If no mode was built,
+      tick this with that reason. BOUND: one session. (context: owner request 2026-10-02)
 - [ ] **c54-pale-typing** — publish pale typewriting on layered pages as solid as the source shows it.
       THE PAGES: `Herbert Marks papers` p12, `_1939_Former students` p9, `Atkinson_1939` p2, `Ford_1941` p2.
       DONE WHEN, on 1x and 2x PDFKit renders of the published pages beside the source: the typed strokes are
       unbroken wherever the source's are; dark-ink pages in `ops/ux-regression/set.tsv` are unchanged or
       better; bytes within 10% of before; a new check goes red without the change.
-      BOUND: one code commit. (origin: BUGS.md C54)
+      BOUND: rule 10. (origin: BUGS.md C54)
 - [ ] **c55-low-runs** — draw each run over its own ink, so a drag over a line copies that line.
       THE PAGES: `1951 - Briefer Book Notes` p1, `Zipkin_2000` p1, `Banks 2006` p101 (C55 gives the lines and
       their positions).
       DONE WHEN, through PDFKit: a drag from the first to the last glyph of each named line copies that
       line's words and none of the line above; invariant 3's four properties re-measured and holding;
       `ux-regression.sh` no worse; a new check goes red without the change.
-      BOUND: one code commit. (origin: BUGS.md C55)
+      BOUND: rule 10. (origin: BUGS.md C55)
 - [ ] **c56-heavy-type** — keep 1-bit sources' strokes as thin as they arrive.
       THE PAGES: `Luethy_1955` p2, `Gowan and Demos` p1, `Xin Qu_2018` p1, `Ries_Marshall_1955` p54.
       DONE WHEN, on 2x PDFKit renders beside the source: stroke weight matches the source by eye, and
       measured as ink share within 5% of the source's on each page; bytes no larger; `ux-regression.sh` no
       worse; a new check goes red without the change.
-      BOUND: one code commit. (origin: BUGS.md C56)
+      BOUND: rule 10. (origin: BUGS.md C56)
 - [ ] **c28-first-principles** — fix C28 again, starting from first principles. The owner took it off the
       parked list on 2026-09-25 and asked for a fresh attempt, not a continuation of the old campaign.
       THE DEFECT. On the layered (MRC) route, the 1-bit stencil is the page's adaptive binarisation
@@ -869,7 +966,7 @@ say so in the commit.
       a shipped change. A sub-step finished before the park is filed at
       `$STATE/rescue/PARKED-C28-vo-20260921-080042-95562.patch.bak`. It belongs to the old campaign; you
       do not have to apply it, and leave the file where it is.
-      BOUND: one code commit, plus free docs commits for measurements. Rule 4 applies.
+      BOUND: rule 10. Rule 4 applies.
       (origin: BUGS.md C28)
 - [ ] **c41-newspaper-scans** — read whole-page scans of small-town newspapers as well as their print
       allows (`BUGS.md` C41, split from C39). Start from the band swap parked at
@@ -883,7 +980,7 @@ say so in the commit.
       dictionary. Every page that can be improved is, and each that cannot is named with what was tried;
       ordinary pages across a corpus sample are unchanged; invariant 3 holds; a new check goes red without
       the change. Drag selection is not in scope (C39 closed it).
-      BOUND: one code commit, plus free docs commits.
+      BOUND: rule 10.
       (origin: BUGS.md C41)
 - [ ] **c52-column-jumps** — make a drag down one column stay in it on the pages C34 still misses.
       Riesman p2 is fixed (ff25f3b, 4657cff); Marth p2 and Cong p16 are not. The first bound was spent
@@ -892,7 +989,9 @@ say so in the commit.
       DONE WHEN, through PDFKit: a drag down each column of Riesman_1949 p2, Marth_1982 p2 and
       `_1953_99 Cong_ 2` p16 copies that column's lines in order and nothing from its neighbour, checked
       against the source's own text layer's drag; C34's pages are no worse.
-      BOUND: one code commit. (origin: BUGS.md C52)
+      BOUND: rule 10. 
+      Round 1, sessions 1-3, were on 2026-09-28 (ff25f3b, 4657cff, e34fb92), so its next session is round 1's
+      fourth (rule 10). (origin: BUGS.md C52)
 
 ## Parked
 
