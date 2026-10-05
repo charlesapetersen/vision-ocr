@@ -913,7 +913,8 @@ say so in the commit.
          licences are set aside as in ocr-lab-setup). CHURRO-DS printed / handwritten NLS 82.3 / 70.1, against
          GLM-OCR 65.2 / 40.2, dots.mocr 81.2 / 55.0 and DeepSeek-OCR-2 56.1 / 20.0, on a test split from the
          training collections. Run `mradermacher/churro-3B-GGUF` Q8_0 with the f16 mmproj under llama.cpp
-         (`llama-mtmd-cli`), and try an MLX 8-bit conversion. System prompt "Transcribe the entirety of this
+         (`llama-mtmd-cli`); for MLX start from the ready 8-bit port `kintopp/churro-mlx` (about 4.3 GB)
+         before converting it yourself. System prompt "Transcribe the entirety of this
          historical document to XML format.", no user text, temperature 0, repetition penalty 1.05. It answers
          in XML: take the text the way the repo's `tooling/evaluation/xml_utils.py::extract_actual_text_from_xml`
          does, and strip tags instead when the XML does not parse (a truncated read). It transcribes
@@ -1001,6 +1002,10 @@ say so in the commit.
       BOUND: rule 10. (context: owner request 2026-10-02)
 - [ ] **ocr-hybrid-proto** — build the ways of putting a better reader's words into the text layer, behind a
       setting that is off by default. (blocked-on: ocr-bakeoff-bits)
+      FROM local-llm-pdf-ocr (MIT; `PRIOR-ART-2026-10-05.md` §4): for arrangement (b), align ONE whole-page model
+      reading onto Vision's lines with its monotonic dynamic-programming alignment (area-share character budget,
+      asymmetric costs) instead of one model call per line, fall back where alignment confidence is low, and use
+      its crop guards. Do not take its text placement or page images.
       ADD AN ARRANGEMENT (2026-10-05 survey): cut newspaper pages by LAYOUT REGION before reading them, with
       DocLayout-YOLO (`juliozhao/DocLayout-YOLO-DocStructBench`, ONNX on CPU or `doclayout-yolo` on MPS) instead
       of fixed crops. On NewsBench (15 dense Library of Congress pages; one author, github.com/nealcaren/newsbench)
