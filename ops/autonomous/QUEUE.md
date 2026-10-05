@@ -891,7 +891,10 @@ say so in the commit.
       fit: GLM-OCR, DeepSeek-OCR-2, HunyuanOCR, Qwen3.5-2B, -4B, LightOnOCR, Chandra 2, Surya 2. TeleOCR, NaviDC
       with stated reasons. Ticked: every candidate has fits or a reason.
 - [ ] **ocr-bakeoff-run** — read the bake-off sample with every candidate that fits, as one long unattended
-      job. (blocked-on: ocr-lab-setup)
+      job. (blocked-on: ocr-lab-setup, bakeoff-tonight-ok)
+      PAUSED 2026-10-05 08:05 (owner needs the Mac for the day): stopped with `bakeoff.sh stop` after Surya 2
+      finished, 7 of Chandra 2's reads saved; seven candidates are complete. Do NOT restart the job until the owner
+      ticks `bakeoff-tonight-ok` in HOLD. What is left: the rest of Chandra 2, then Qwen3.5-9B's last guarded try.
       THE SAMPLE, listed and committed first (`OCR-SAMPLE-<date>.tsv`): the 45 pages of the regression set and
       the self-test, the 11 newspapers, and 20 green pages drawn at random from the truth run, spread over the
       routes. Each candidate reads each page in its plain-text mode, from the same PDFKit render the truth set
@@ -910,9 +913,9 @@ say so in the commit.
       readings per model is committed. A session that finds the job dead restarts it from where it stopped.
       ESTIMATE: 1-2 sessions, plus about 10-15 hours of unattended job. Sub-boxes: the sample list, the job
       started, the job finished and counted. BOUND: rule 10. (context: owner request 2026-10-02, split 2026-10-04)
-      - [x] the sample list, 2026-10-04: `OCR-SAMPLE-2026-10-04.tsv`, 67 pages (39 regression and self-test, not
+      - [x] **bakeoff-run-sample** — the sample list, 2026-10-04: `OCR-SAMPLE-2026-10-04.tsv`, 67 pages (39 regression and self-test, not
             45: TRUTH-PAGES holds 31 + 8; 8 more newspapers; 20 green draws over seven routes), by `make-sample.py`.
-      - [x] the job started, 2026-10-04 19:55: `bakeoff.sh start` runs from copies in `$STATE/ocrlab/scripts/`; check
+      - [x] **bakeoff-run-started** — the job started, 2026-10-04 19:55: `bakeoff.sh start` runs from copies in `$STATE/ocrlab/scripts/`; check
             it with `ops/ocrlab/bakeoff.sh status` (`stop` ends it) and `tail $STATE/ocrlab/bakeoff.log`. Newspapers are read as
             crops only; other pages whole, and as crops too when the whole reading holds under 90% of the
             transcript's words. swiftc refuses (Xcode licence), so `$STATE/ocrlab/bin/` holds the truth run's
@@ -921,7 +924,7 @@ say so in the commit.
             read after the crop that follows one cut at max_tokens, which had shortened ocr-lab-setup's crop
             readings (DeepSeek's 0.541). Smoke run on two pages [measured]: LightOnOCR peaks at 11.3 GB on crops
             and tripped the swap rule once on each of two reads with this session's memory in use.
-      - [ ] the job finished and counted.
+      - [ ] **bakeoff-run-counted** — the job finished and counted. (blocked-on: bakeoff-tonight-ok)
 - [ ] **ocr-bakeoff-score** — score the saved readings against the truth set and name the top three.
       (blocked-on: ocr-bakeoff-run)
       Score exactly as `truth-harness` scores the app: words wrong and missing against the transcripts,
@@ -1101,6 +1104,9 @@ so `next-item.sh` does not read them. To queue one, move it back into the queue 
       (origin: TODO.md §"2. The Zotero library sweep")
 
 ## HOLD — owner-only, never auto-executed
+
+- [ ] **bakeoff-tonight-ok** — the owner says the Mac is free, so the bake-off may resume (rest of Chandra 2, then the
+      Qwen3.5-9B try). Owner, 2026-10-05: the daemons work through the day, the bake-off waits for tonight. [hold] needs: owner
 
 These are offered to nobody. `next-item.sh` prints them as `hold` so they stay visible.
 
