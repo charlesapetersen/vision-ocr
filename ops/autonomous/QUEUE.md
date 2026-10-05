@@ -956,6 +956,21 @@ say so in the commit.
       - [ ] **lab2-churro** — Churro, GGUF and an MLX 8-bit conversion.
       - [ ] **lab2-infinity-falcon** — Infinity-Parser2-Flash and Falcon-OCR.
       - [ ] **lab2-olmocr-qwen3vl** — olmOCR 2 and the two Qwen3-VL builds.
+- [ ] **daemon-gate-fix** — a red health gate goes to a fix session before the daemon may park, as Archive
+      Suite's daemon has done since 2026-10-05 (its `W34.gate-fix`, commit d45c7cb).
+      WHY. Owner, 2026-10-05: "Daemon parked again. Set this up so I don't need to tell you this." This daemon
+      parked at 09:25 that day on `tools-compile` — two expressions in `Tools/score-text-route.swift` at the type
+      checker's time limit, fixed in 8d71c2c — a fault a session could have repaired, while a parked daemon repairs
+      nothing.
+      WHAT. Port Archive Suite's mechanism (`ops/autonomous/archive-suite-autonomous.sh`: `GATEFIX`,
+      `_gatefix_clear`, `_gatefix_handoff`; its resume prompt's STEP 1.6; `tests/prove-gate-fix.sh`): a red that
+      survives the retry writes `$STATE/gate-fix` with the failing steps, each step's gate command and the log's
+      tail; the next session takes it as its ONE item ahead of the queue and the triage files; a GREEN gate
+      retires it; the run parks only after 3 fix sessions that committed (HEAD moved) leave it red. Fixes never
+      weaken a check. Keep this daemon's own gate shape (its `test.lock`, its suite timings).
+      DONE WHEN: a prove harness in the gate shows hand-off, retirement on green, the attempt count and the park
+      after the last attempt, and a mutant of each turns it red. ESTIMATE: 1-2 sessions. BOUND: rule 10.
+      (context: owner request 2026-10-05)
 - [ ] **ocr-bakeoff-run** — read the bake-off sample with every candidate that fits, as one long unattended
       job. (blocked-on: ocr-lab-setup, bakeoff-tonight-ok)
       PAUSED 2026-10-05 08:05 (owner needs the Mac for the day): stopped with `bakeoff.sh stop` after Surya 2
