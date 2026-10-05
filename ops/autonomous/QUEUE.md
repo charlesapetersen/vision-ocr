@@ -953,6 +953,7 @@ say so in the commit.
       crops. NEXT: when `df` is above 23 GB
       (expected from about 2026-10-06 noon), Churro GGUF, then Infinity-Parser2-Flash (2,558 MB).
       2026-10-05 12:20: `df` 19 GB, so neither could download; the session took daemon-gate-fix instead.
+      2026-10-05 14:25: `df` 19 GB again (snapshots pin the deletions); the session took c55-low-runs.
       - [x] **lab2-lighton** — the three LightOnOCR builds.
       - [ ] **lab2-churro** — Churro, GGUF and an MLX 8-bit conversion.
       - [ ] **lab2-infinity-falcon** — Infinity-Parser2-Flash and Falcon-OCR.
@@ -1119,6 +1120,9 @@ say so in the commit.
       line's words and none of the line above; invariant 3's four properties re-measured and holding;
       `ux-regression.sh` no worse; a new check goes red without the change.
       BOUND: rule 10. (origin: BUGS.md C55)
+      Session 1, 2026-10-05: squashed runs now rise toward their ink's middle; the named lines and invariant 3
+      pass, the checks go red without it. Open: `ux-regression` 7 worse (column drags on Raskin p1, Fiedler p1,
+      `___ 2` p1; C55 gives the rows and the gutter-start lead). The baseline was refreshed at this commit.
 - [ ] **c56-heavy-type** — keep 1-bit sources' strokes as thin as they arrive.
       THE PAGES: `Luethy_1955` p2, `Gowan and Demos` p1, `Xin Qu_2018` p1, `Ries_Marshall_1955` p54.
       DONE WHEN, on 2x PDFKit renders beside the source: stroke weight matches the source by eye, and

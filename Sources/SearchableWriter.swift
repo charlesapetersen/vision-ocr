@@ -331,6 +331,8 @@ enum SearchableWriter {
                                          ceiling: ceilings[position],
                                          rightLimit: rightLimit(for: position, among: lines,
                                                                 in: frame),
+                                         gapAbove: gapAbove(for: position, among: lines,
+                                                            in: frame),
                                          font: base, into: pdf) {
                         skipped.append(Unplaced(page: index + 1, text: observation.text,
                                                 reason: reason))
@@ -1502,6 +1504,40 @@ enum SearchableWriter {
         return bottom + h * baselineFraction
     }
 
+    /// The text face's ascent and descent as shares of their sum (0.770 and 0.230
+    /// for Helvetica): where a run's glyphs stand above and below its baseline.
+    static let glyphShares: (ascent: CGFloat, descent: CGFloat) = {
+        let font = CTFontCreateWithName(textFace as CFString, 1, nil)
+        let ascent = CTFontGetAscent(font), descent = CTFontGetDescent(font)
+        let total = max(ascent + descent, 0.01)
+        return (ascent / total, descent / total)
+    }()
+
+    /// How far below the nearest line above this one's baseline is: the room a
+    /// squashed run may rise into (`placement`, C55). `.greatestFiniteMagnitude` when
+    /// nothing is above. The same neighbours `headroom` counts, so the room is
+    /// measured against lines whose own runs are no taller than this gap allows.
+    static func gapAbove(for position: Int, among lines: [Observation],
+                         in box: CGRect) -> CGFloat {
+        let me = lines[position]
+        let mine = drawnBaseline(me, in: box)
+        let myLeft = me.boundingBox.x * box.width
+        let myRight = myLeft + me.boundingBox.width * box.width
+        var nearest = CGFloat.greatestFiniteMagnitude
+        for (i, other) in lines.enumerated() where i != position {
+            let left = other.boundingBox.x * box.width
+            let right = left + other.boundingBox.width * box.width
+            guard min(myRight, right) - max(myLeft, left) > 1,
+                  !isSameVisualLine(me, other, in: box) else { continue }
+            let gap = drawnBaseline(other, in: box) - mine
+            if gap > 0.5 { nearest = min(nearest, gap) }
+        }
+        return nearest
+    }
+
+    /// The share of its box a run's glyphs stand at when no neighbour is in the way.
+    static let idealShare: CGFloat = 0.86
+
     /// How far two drawn baselines may differ and still be one visual line, as a
     /// fraction of the shorter box's height.
     ///
@@ -1772,6 +1808,10 @@ enum SearchableWriter {
         let vertical: CGFloat
         /// Origin of the run in PDF user space.
         let left, bottom: CGFloat
+        /// Where the glyphs' baseline is drawn: `drawnBaseline` for a run at its
+        /// full height, higher for a squashed one, toward the middle it would have
+        /// unsquashed as far as the line above leaves room (C55).
+        let baseline: CGFloat
         /// The observation's own box, in points.
         let boxWidth, boxHeight: CGFloat
         /// The advance this text has at `reference`, from which the drawn
@@ -1807,12 +1847,14 @@ enum SearchableWriter {
     /// What `draw` will do with this observation, without a context to draw into.
     ///
     /// `draw` is this function plus four lines of CoreText, so the two cannot
-    /// disagree about what gets drawn.
+    /// disagree about what gets drawn. `gapAbove` is `gapAbove(for:among:in:)`, and
+    /// left out it lets a squashed run rise as far as its own box allows.
     static func placement(
         of observation: Observation,
         in box: CGRect,
         ceiling: CGFloat,
         rightLimit: CGFloat,
+        gapAbove: CGFloat = .greatestFiniteMagnitude,
         font: CTFont
     ) -> Placement {
         let text = observation.text
@@ -1893,7 +1935,7 @@ enum SearchableWriter {
         }
 
         // How much to squash so the glyphs stand no taller than the ink.
-        let idealHeight = height * 0.86
+        let idealHeight = height * idealShare
         let wanted = min(idealHeight, ceiling)
 
         // A sparse row — "1 24" in a table of contents, a lone page number in a
@@ -1909,8 +1951,26 @@ enum SearchableWriter {
         var size = widthSize
         if wanted / size < minimumVertical { size = wanted / minimumVertical }
         let vertical = min(max(wanted / size, minimumVertical), 3.0)
+        // C55: squashed about its baseline, a run kept to a third of its line's height
+        // sat in the bottom of the ink, and the top of the line was nearer the run
+        // above. On `1951 - Briefer Book Notes` p1 Vision's box for `members of the
+        // Department…` reaches 5 pt below the baseline, the run stood at 110.6-114.4 pt
+        // over ink at 113-123, and a drag at 119 copied the line above [measured
+        // through PDFKit]. So a squashed run is raised to keep the middle of where its
+        // glyphs would stand unsquashed, as far as the line above leaves room: that
+        // line's run is no taller than the gap over the headroom factor, so its
+        // descent takes at most that share of it, and this run's ascent stops below.
+        // A run at its full height is where it always was.
+        let drawn = size * vertical
+        let (ascent, descent) = glyphShares
+        let wantedRise = (ascent - descent) / 2 * (idealHeight - drawn)
+        let room = gapAbove < .greatestFiniteMagnitude
+            ? gapAbove * (1 - descent / max(headroomFactor, 0.1)) - ascent * drawn
+            : wantedRise
+        let baseline = bottom + height * baselineFraction + max(0, min(wantedRise, room))
 
         return .placed(Run(size: size, vertical: vertical, left: left, bottom: bottom,
+                           baseline: baseline,
                            boxWidth: width, boxHeight: height,
                            naturalAdvance: probeWidth, reference: reference,
                            idealHeight: idealHeight, limitedByNeighbour: limited))
@@ -1923,11 +1983,12 @@ enum SearchableWriter {
         in box: CGRect,
         ceiling: CGFloat,
         rightLimit: CGFloat,
+        gapAbove: CGFloat,
         font: CTFont,
         into pdf: CGContext
     ) -> String? {
         switch placement(of: observation, in: box, ceiling: ceiling,
-                         rightLimit: rightLimit, font: font) {
+                         rightLimit: rightLimit, gapAbove: gapAbove, font: font) {
         case .refused(let why):
             return why
         case .placed(let run):
@@ -1936,7 +1997,7 @@ enum SearchableWriter {
                 NSAttributedString(string: observation.text, attributes: [.font: sized]))
             var matrix = CGAffineTransform(a: 1, b: 0, c: 0, d: run.vertical, tx: 0, ty: 0)
             matrix.tx = run.left
-            matrix.ty = run.bottom + run.boxHeight * baselineFraction
+            matrix.ty = run.baseline
             pdf.textMatrix = matrix
             CTLineDraw(line, pdf)
             return nil

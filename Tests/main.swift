@@ -18484,6 +18484,88 @@ do {
     resetPrefs()
 }
 
+print("\na squashed run sits in the middle of its line's ink (C55)")
+
+do {
+    // BUGS.md C55. `1951 - Briefer Book Notes` p1, four lines as Vision boxed them on
+    // the rebuilt page, to six places. `members of the Department…`'s box reaches 5 pt
+    // below its baseline, its ceiling squashes it to about 4 pt, and squashed about the
+    // baseline the run stood at 110.6-114.4 pt under ink whose x-height runs 113.3-120.8
+    // [measured on the page]: a drag across the top of the line copied the line above.
+    let box = CGRect(x: 0, y: 0, width: 595.275, height: 807.874)
+    let font = CTFontCreateWithName("Helvetica" as CFString, 12, nil)
+    func obs(_ text: String, _ x: Double, _ y: Double, _ w: Double, _ h: Double)
+        -> SearchableWriter.Observation {
+        SearchableWriter.Observation(
+            boundingBox: SearchableWriter.BoundingBox(x: x, y: y, width: w, height: h),
+            text: text, confidence: 1.0)
+    }
+    let lines = [
+        obs("program, how the Armed Forces buy goods, principles of war finance, and economic controls",
+            0.141223, 0.820077, 0.698492, 0.020097),
+        obs("on the home front-prices, rationing, wages and manpower. The editors and contributors are",
+            0.151644, 0.834225, 0.689290, 0.015686),
+        obs("members of the Department of Social Sciences of the United States Military Academy at",
+            0.150449, 0.846259, 0.689561, 0.020263),
+        obs("West Point.", 0.151571, 0.859013, 0.087101, 0.013065),
+    ]
+    let ceilings = SearchableWriter.ceilings(for: lines, in: box)
+    let runs: [(lo: CGFloat, hi: CGFloat)] =
+        lines.indices.compactMap { i in
+            guard case .placed(let r) = SearchableWriter.placement(
+                of: lines[i], in: box, ceiling: ceilings[i],
+                rightLimit: SearchableWriter.rightLimit(for: i, among: lines, in: box),
+                gapAbove: SearchableWriter.gapAbove(for: i, among: lines, in: box),
+                font: font) else { return nil }
+            return (r.baseline - 0.23 * r.drawnHeight, r.baseline + 0.77 * r.drawnHeight)
+        }
+    check("C55 — every line of the Briefer fixture is placed", runs.count == 4, "\(runs.count)")
+    if runs.count == 4 {
+        let members = runs[2], above = runs[1]
+        check("…the squashed run's middle is inside its line's x-height",
+              (members.lo + members.hi) / 2 > 113.3 && (members.lo + members.hi) / 2 < 120.8,
+              String(format: "drawn %.1f-%.1f pt over x-height 113.3-120.8", members.lo, members.hi))
+        check("…and a point in the top of that x-height is nearer it than the run above",
+              119 - members.hi < above.lo - 119,
+              String(format: "%.1f pt to its own run, %.1f to the line above's",
+                     119 - members.hi, above.lo - 119))
+        check("…with no two runs overlapping",
+              zip(runs, runs.dropFirst()).allSatisfy { $0.lo >= $1.hi },
+              runs.map { String(format: "%.1f-%.1f", $0.lo, $0.hi) }.joined(separator: " "))
+    }
+    // A short line just above a box four times its height: raised all the way to its
+    // middle, the tall box's run would reach into the short line's (12 pt apart, each
+    // run 8 pt; and 7 pt apart with the two middles level). `gapAbove` holds it below.
+    let page = CGRect(x: 0, y: 0, width: 612, height: 792)
+    for (label, shortY, tallY) in [("12 pt", 0.458838, 0.444444), ("7 pt, middles level", 0.476263, 0.455556)] {
+        let pair = [obs("a short line", 0.1, shortY, 0.4, 0.012626),
+                    obs("a box four times as tall", 0.1, tallY, 0.4, 0.050505)]
+        let pairCeilings = SearchableWriter.ceilings(for: pair, in: page)
+        let extents: [(lo: CGFloat, hi: CGFloat)] = pair.indices.compactMap { i in
+            guard case .placed(let r) = SearchableWriter.placement(
+                of: pair[i], in: page, ceiling: pairCeilings[i],
+                rightLimit: .greatestFiniteMagnitude,
+                gapAbove: SearchableWriter.gapAbove(for: i, among: pair, in: page),
+                font: font) else { return nil }
+            return (r.baseline - 0.23 * r.drawnHeight, r.baseline + 0.77 * r.drawnHeight)
+        }
+        check("…and a short line \(label) over a much taller box does not overlap it",
+              extents.count == 2 && extents[0].lo >= extents[1].hi - 1e-9,
+              extents.map { String(format: "%.2f-%.2f", $0.lo, $0.hi) }.joined(separator: " over "))
+    }
+    // A run drawn at its full height is where it always was: on its baseline.
+    let alone = obs("a line with nothing near it", 0.1, 0.5, 0.4, 0.015)
+    if case .placed(let r) = SearchableWriter.placement(
+        of: alone, in: box, ceiling: .greatestFiniteMagnitude,
+        rightLimit: .greatestFiniteMagnitude, font: font) {
+        check("…and an unsquashed run still sits on drawnBaseline",
+              abs(r.baseline - SearchableWriter.drawnBaseline(alone, in: box)) < 1e-9,
+              "\(r.baseline) against \(SearchableWriter.drawnBaseline(alone, in: box))")
+    } else {
+        check("…and an unsquashed run still sits on drawnBaseline", false, "refused")
+    }
+}
+
 print("\na short fragment beside a tall one is one line, and keeps its space")
 
 do {

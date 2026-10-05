@@ -14,6 +14,8 @@ an older entry mentions "Window ▸ Vision Reader Window", the menu item is now
 
 ## Unreleased
 
+- On closely set scanned pages, dragging across the top half of a line no longer copies the line above it:
+  the selectable text now sits over the middle of each printed line, not along its bottom edge (C55).
 - Pale typewriting, and typing on grey or yellowed paper, is no longer published broken and faded: its
   strokes come out as solid as the scan shows them (C54).
 - Clean lines that were missing from the text layer of some scanned pages, such as a book notice's second
