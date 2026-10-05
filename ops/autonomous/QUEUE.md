@@ -890,6 +890,53 @@ say so in the commit.
       reads where the bare GGUF did not: recall 0.914 ordinary, 0.891 newspaper crops, peak 4.9 GB. Eight models
       fit: GLM-OCR, DeepSeek-OCR-2, HunyuanOCR, Qwen3.5-2B, -4B, LightOnOCR, Chandra 2, Surya 2. TeleOCR, NaviDC
       with stated reasons. Ticked: every candidate has fits or a reason.
+- [ ] **ocr-lab-round2** — fit-test the candidates the 2026-10-05 survey found, so the bake-off reads the
+      ones that fit when it resumes. (blocked-on: ocr-lab-setup)
+      WHY. Owner, 2026-10-05: "make sure we're testing the best available models ... Consider all of the
+      LightOnOCR model variants ... If we need to set up a model to be usable with this mac, and that's
+      possible, let's consider doing that. Include the Churro project." A three-part web survey that day
+      (the LightOnOCR family, Churro, the wider field). Every repo below was checked to exist on Hugging Face,
+      and each architecture is in this lab's mlx-vlm 0.7.4 (`qwen2_5_vl`, `qwen3_5`, `qwen3_vl`, `mistral3`,
+      `falcon_ocr`). Benchmark figures are the vendors' or one paper's; measure here.
+      THE CANDIDATES, best first; stop when disk reaches the lab's limits:
+      1. `lightonai/LightOnOCR-2-1B-ocr-soup` (Apache-2.0), LightOn's merge for robustness: olmOCR-Bench old
+         scans 45.4 against the tested build's 42.2, tiny text 90.3 against 91.4. No MLX build: convert at
+         8-bit (`python -m mlx_vlm.convert --hf-path lightonai/LightOnOCR-2-1B-ocr-soup -q --q-bits 8`) and
+         delete the bf16 download; noctrex's GGUF Q8_0 is the fallback.
+      2. `lightonai/LightOnOCR-2-1B-base`, the same before reinforcement learning: old scans 47.0, best of
+         the family; may loop more. Convert the same way.
+      3. `mlx-community/LightOnOCR-2-1B-8bit`, a control for the tested 4-bit build.
+         All three at `--max-side 1540`, which is LightOnOCR-2's training resolution (its config and processor
+         both say 1540), not a handicap. No prompt; allow 4096 output tokens.
+      4. Churro 3B (`stanford-oval/churro-3B`; Qwen2.5-VL-3B fine-tuned on 99k historical pages from 155
+         collections, American Stories newspapers among them; Qwen research licence, non-commercial, and
+         licences are set aside as in ocr-lab-setup). CHURRO-DS printed / handwritten NLS 82.3 / 70.1, against
+         GLM-OCR 65.2 / 40.2, dots.mocr 81.2 / 55.0 and DeepSeek-OCR-2 56.1 / 20.0, on a test split from the
+         training collections. Run `mradermacher/churro-3B-GGUF` Q8_0 with the f16 mmproj under llama.cpp
+         (`llama-mtmd-cli`), and try an MLX 8-bit conversion. System prompt "Transcribe the entirety of this
+         historical document to XML format.", no user text, temperature 0, repetition penalty 1.05. It answers
+         in XML: take the text the way the repo's `tooling/evaluation/xml_utils.py::extract_actual_text_from_xml`
+         does, and strip tags instead when the XML does not parse (a truncated read). It transcribes
+         diplomatically (keeps ſ and old spellings). Its image cap is about 4 MP, so newspapers go as crops.
+      5. `infly/Infinity-Parser2-Flash` (2B, Qwen3.5 base, Apache-2.0): vendor olmOCR-Bench 86.0; one paper
+         ranks its family first on full multi-column newspaper pages. Build: `BotResources/Infinity-Parser2-Flash-mlx-q8`.
+      6. `tiiuae/Falcon-OCR` (0.27B, Apache-2.0), loads in mlx-vlm as is: strong on multi-column, weak on
+         degraded scans by its own card.
+      7. `mlx-community/olmOCR-2-7B-1025-4bit`: strong on single-column old scans; reported to modernise
+         spelling and to collapse on whole multi-column pages.
+      8. `mlx-community/Qwen3-VL-8B-Instruct-4bit` and `mlx-community/Qwen3-VL-4B-Instruct-8bit`.
+      Same rules as ocr-lab-setup: the guard, one model at a time, its two test pages, peak under 12 GB, free
+      disk by `df` above 20 GB after each download, the lab under 50 GB (24 GB on 2026-10-05), and a build that
+      does not fit deleted at once. Fit tests are ordinary work and run while the owner uses the Mac; only the
+      bake-off itself waits for the owner (owner, 2026-10-05).
+      DONE WHEN: each candidate has a row in a new `OCR-MODELS-<date>.tsv` with fits yes or no and why, and each
+      fitting build is a `fitted` row in `ops/ocrlab/bakeoff-models.tsv` with what its reader needs (Churro's
+      prompt and XML step), so `bakeoff.sh start` copies it and the job reads it when it resumes.
+      ESTIMATE: 2 sessions. BOUND: rule 10. (context: owner request 2026-10-05)
+      - [ ] **lab2-lighton** — the three LightOnOCR builds.
+      - [ ] **lab2-churro** — Churro, GGUF and an MLX 8-bit conversion.
+      - [ ] **lab2-infinity-falcon** — Infinity-Parser2-Flash and Falcon-OCR.
+      - [ ] **lab2-olmocr-qwen3vl** — olmOCR 2 and the two Qwen3-VL builds.
 - [ ] **ocr-bakeoff-run** — read the bake-off sample with every candidate that fits, as one long unattended
       job. (blocked-on: ocr-lab-setup, bakeoff-tonight-ok)
       PAUSED 2026-10-05 08:05 (owner needs the Mac for the day): stopped with `bakeoff.sh stop` after Surya 2
@@ -954,6 +1001,12 @@ say so in the commit.
       BOUND: rule 10. (context: owner request 2026-10-02)
 - [ ] **ocr-hybrid-proto** — build the ways of putting a better reader's words into the text layer, behind a
       setting that is off by default. (blocked-on: ocr-bakeoff-bits)
+      ADD AN ARRANGEMENT (2026-10-05 survey): cut newspaper pages by LAYOUT REGION before reading them, with
+      DocLayout-YOLO (`juliozhao/DocLayout-YOLO-DocStructBench`, ONNX on CPU or `doclayout-yolo` on MPS) instead
+      of fixed crops. On NewsBench (15 dense Library of Congress pages; one author, github.com/nealcaren/newsbench)
+      DocLayout-YOLO regions read by GLM-OCR or PaddleOCR-VL score 0.970, against at most 0.82 for any model
+      reading the whole page, and its author's finding is that "the detector matters more than the recognizer".
+      The Library of Congress's 2025 Chronicling America re-OCR also cuts by layout first. Measure it here.
       Three arrangements, built for the top model first: (a) the model replacing Vision outright, its own line
       or word boxes used directly (a first-class option: owner, 2026-10-02, Intel Macs and download size are
       not constraints, so only accuracy, placement, speed and memory decide); (b) Vision's lines for geometry,
