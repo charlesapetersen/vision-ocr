@@ -153,7 +153,10 @@ read_one() {
             fi
             rm -rf "$tmp"
         else
-            local dir; dir=$("$py" -c "from huggingface_hub import snapshot_download; print(snapshot_download('$(field 4 "$label")'))") \
+            local dir repo; repo=$(field 4 "$label")
+            # local/<name> is a build converted into $OCRLAB/mlx/<name> (try-mlx.sh's third form).
+            case "$repo" in local/*) dir="$OCRLAB/mlx/${repo#local/}"; /usr/bin/grep -q '"quantization"' "$dir/config.json" 2>/dev/null ;;
+                *) dir=$("$py" -c "from huggingface_hub import snapshot_download; print(snapshot_download('$repo'))") ;; esac \
                 || { echo "weights not in the lab" > "$base.reason"; log "$label	$id	$mode	reason	weights not in the lab"; return 0; }
             if [ "$mode" = crops ]; then more="--crops $J/pages/$id/crops.tsv --max-tokens 3000 --seconds 2400"
             else more="--seconds 900"; case "$extra" in *--max-side*) ;; *) more="$more --max-side 3300" ;; esac; fi

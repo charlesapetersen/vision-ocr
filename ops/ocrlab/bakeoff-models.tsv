@@ -1,6 +1,9 @@
 # The builds bakeoff.sh reads with, cheapest first. `set` picks them: --build fitted (the default) runs the
 # builds ocr-lab-setup found to fit (OCR-MODELS-2026-10-04.tsv); ocr-bakeoff-bits adds rows with its own set.
 # chandra-ocr-2's fitted build is oQ8, because its GGUF Q4_K_M weights were deleted after ocr-lab-setup.
+# repo `local/<name>` is a build converted here by convert-mlx.py into $OCRLAB/mlx/<name> (ocr-lab-round2:
+# LightOnOCR's ocr-soup and base have no MLX build on the Hub). Their need_gb is 8: at 1540 px they peak near 11 GB,
+# and base's first crops read, waiting for only 5, tripped the swap limit (OCR-MODELS-2026-10-05.tsv).
 # qwen3.5-9b-4bit is `owed`: bakeoff.sh gives it its last guarded try first and adds it to the run if it fits.
 # need_gb is the reclaimable memory the guard waits for before each read, higher for the larger builds, so a
 # trip is less likely to measure the machine instead of the model. prompt `-` means read-mlx.py's default; `""` an empty prompt (LightOnOCR takes none). extra is passed to read-mlx.py.
@@ -14,3 +17,5 @@ qwen3.5-4b-4bit	fitted	mlx	lmstudio-community/Qwen3.5-4B-MLX-4bit	-	-	4
 surya-ocr-2-pkg	fitted	surya	datalab-to/surya-ocr-2-gguf	-	-	4
 chandra-ocr-2-oQ8	fitted	mlx	mlx-community/chandra-ocr-2-oQ8	-	-	6
 qwen3.5-9b-4bit	owed	mlx	mlx-community/Qwen3.5-9B-4bit	-	-	8
+lightonocr-2-1b-ocr-soup-8bit-1540	fitted	mlx	local/LightOnOCR-2-1B-ocr-soup-8bit	""	--max-side 1540 --max-tokens 4096	8
+lightonocr-2-1b-base-8bit-1540	fitted	mlx	local/LightOnOCR-2-1B-base-8bit	""	--max-side 1540 --max-tokens 4096	8

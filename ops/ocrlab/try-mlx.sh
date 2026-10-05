@@ -2,6 +2,8 @@
 # ops/ocrlab/try-mlx.sh <label> <hf-repo> [prompt] [extra read-mlx.py args…]
 # ops/ocrlab/try-mlx.sh <label> <hf-repo>:<model.gguf>:<mmproj.gguf> [prompt] [extra read-gguf.py args…]
 #   (the second form downloads only those two files and reads through llama.cpp)
+# ops/ocrlab/try-mlx.sh <label> local/<name> [prompt] [extra…]
+#   (the third reads a build converted into $OCRLAB/mlx/<name>; nothing is downloaded)
 #
 # Pages, made once by hand (see OCR-MODELS-*.tsv's header): pages/ordinary.png and pages/newspaper.png,
 # PDFKit renders at 300 dpi, their truth transcripts as *.truth.txt, and newspaper.crops.tsv, the truth
@@ -22,21 +24,32 @@ export HF_HOME="$OCRLAB/hf" HF_HUB_DISABLE_TELEMETRY=1
 here="$(cd "$(dirname "$0")" && pwd)"
 py="$OCRLAB/venv/bin/python"
 label="$1" repo="$2"; shift 2
-prompt="${1:-Transcribe all the text on this page, in reading order, as plain text.}"; [ $# -gt 0 ] && shift
+# `${1-…}`, not `${1:-…}`: an empty prompt is a prompt (LightOnOCR takes none, as bakeoff.sh's `""` gives it).
+prompt="${1-Transcribe all the text on this page, in reading order, as plain text.}"; [ $# -gt 0 ] && shift
 mkdir -p "$OCRLAB/out"
 
 reader="$here/read-mlx.py" files=""
-case "$repo" in *:*) reader="$here/read-gguf.py"; files="${repo#*:}"; repo="${repo%%:*}" ;; esac
+case "$repo" in
+    local/*) dir="$OCRLAB/mlx/${repo#local/}"     # a build converted here (mlx_vlm.convert --mlx-path $OCRLAB/mlx/…)
+             # a half-finished conversion has the source's config.json, without "quantization"
+             grep -q '"quantization"' "$dir/config.json" 2>/dev/null \
+                 || { echo "try-mlx: no finished conversion at $dir" >&2; exit 1; } ;;
+    *:*) reader="$here/read-gguf.py"; files="${repo#*:}"; repo="${repo%%:*}" ;;
+esac
+case "$repo" in local/*) ;; *)
+# Only what is not already in the lab's cache counts: a build downloaded earlier is in `free` and `lab` already.
 need_mb=$("$py" -c "
-from huggingface_hub import HfApi
+from huggingface_hub import HfApi, try_to_load_from_cache
 i = HfApi().model_info('$repo', files_metadata=True)
 want = '$files'.split(':') if '$files' else None
-print(sum((s.size or 0) for s in i.siblings if not want or s.rfilename in want) // 2**20)") \
+print(sum((s.size or 0) for s in i.siblings if (not want or s.rfilename in want)
+          and not isinstance(try_to_load_from_cache('$repo', s.rfilename, revision=i.sha), str)) // 2**20)") \
     || { echo "try-mlx: cannot read $repo" >&2; exit 1; }
 free_mb=$(df -m / | awk 'NR==2 {print $4}')
 lab_mb=$(du -sm "$OCRLAB" | awk '{print $1}')
 echo "try-mlx: $repo needs ${need_mb} MB; free ${free_mb} MB; lab ${lab_mb} MB" >&2
-if [ $((free_mb - need_mb)) -lt 20480 ]; then echo "try-mlx: would leave under 20 GB free; refusing" >&2; exit 75; fi
+# The 20 GB rule is about downloads: a build already here is read even when free disk has fallen below it.
+if [ "$need_mb" -gt 0 ] && [ $((free_mb - need_mb)) -lt 20480 ]; then echo "try-mlx: would leave under 20 GB free; refusing" >&2; exit 75; fi
 if [ $((lab_mb + need_mb)) -gt 51200 ]; then echo "try-mlx: lab would pass 50 GB; refusing" >&2; exit 75; fi
 if [ -n "$files" ]; then
     dir=$("$py" -c "
@@ -44,7 +57,8 @@ from huggingface_hub import hf_hub_download
 print(','.join(hf_hub_download('$repo', f) for f in '$files'.split(':')))") || exit 1
 else
     dir=$("$py" -c "from huggingface_hub import snapshot_download; print(snapshot_download('$repo'))") || exit 1
-fi
+fi ;;
+esac
 
 # The whole newspaper page is not read by default: of the first six models, three tripped the swap limit
 # on it (5-8 GB footprints) and three looped or ran out of time; none read it. PAGES=newspaper asks for it.

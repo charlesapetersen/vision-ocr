@@ -1,0 +1,14 @@
+# OCR-MODELS-2026-10-05: ocr-lab-round2, the candidates the 2026-10-05 survey found, fit-tested on this Mac (M3 Pro,
+# 18 GB) the way OCR-MODELS-2026-10-04.tsv's header describes (same two pages, guard, fit rule, columns). Rows are
+# added by each session of the item: `make-table.py $OCRLAB/results.tsv out.tsv <labels…>`.
+# lab2-lighton (2026-10-05): LightOnOCR-2-1B ocr-soup and base have no MLX build, so they were converted here at 8-bit
+# (ops/ocrlab/convert-mlx.py into $OCRLAB/mlx/, read as local/<name>) and their bf16 downloads deleted. All three
+# read with no prompt at 1540 px and 4096 output tokens. Both conversions fit; the mlx-community 8-bit control
+# was killed once by the guard on the crops (swap) and has its retry owed. At 1540 px every 8-bit LightOnOCR build
+# peaks at 10.5 GB on the crops by MLX's own count, and swap growth decides whether it passes: the machine, not the
+# model, is the margin. The guard's footprint peak reads exactly 11273 MB on every LightOnOCR crops run, 4-bit and
+# 8-bit, killed or not; treat that column as suspect for these rows (it does not change fit: both are under 12 GB).
+candidate	build	params	runtime	quant	download_MB	boxes	ordinary_peak_MB	ordinary_s	ordinary_recall	ordinary_precision	newspaper_page_peak_MB	newspaper_page_s	newspaper_page_outcome	newspaper_crops_peak_MB	newspaper_crops_s	newspaper_crops_recall	newspaper_crops_precision	fits	why
+lightonocr-2-1b-ocr-soup-8bit-1540	local/LightOnOCR-2-1B-ocr-soup-8bit	1B	MLX (mlx-vlm 0.7.4)	8bit	1400	image boxes only (bbox variants)	6062	8.4	0.907	0.971	-	-	-	11273	142.2	0.897	0.873	yes	converted here at 8-bit by convert-mlx.py (mlx-vlm reports 11.6 bits per weight); empty prompt, 1540 px, 4096 tokens; crops grew swap 1.7 GB against the guard's 2 GB
+lightonocr-2-1b-base-8bit-1540	local/LightOnOCR-2-1B-base-8bit	1B	MLX (mlx-vlm 0.7.4)	8bit	1399	image boxes only (bbox variants)	6094	9.6	0.907	0.971	-	-	-	11273	138.5	0.849	0.917	yes	converted here like ocr-soup; its ordinary read is byte-identical to ocr-soup's; the guard killed its first crops read (swap_grew_2687MB, 8.4 GB of swap in use just after); read on its one retry, needing 8 GB reclaimable
+lightonocr-2-1b-8bit-1540	mlx-community/LightOnOCR-2-1B-8bit	1B	MLX (mlx-vlm 0.7.4)	8bit	1390	image boxes only (bbox variants)	6050	8.3	0.912	0.971	-	-	-	11273	-	-	-	no	guard killed it on the newspaper crops (swap_grew_5109MB); control for the tested 4-bit build; one guarded retry owed, on a machine with 10 GB reclaimable (it waited 20 min for that on 2026-10-05 and did not get it); ocr-bakeoff-bits compares 4-bit with 8-bit anyway

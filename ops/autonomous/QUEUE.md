@@ -934,7 +934,14 @@ say so in the commit.
       fitting build is a `fitted` row in `ops/ocrlab/bakeoff-models.tsv` with what its reader needs (Churro's
       prompt and XML step), so `bakeoff.sh start` copies it and the job reads it when it resumes.
       ESTIMATE: 2 sessions. BOUND: rule 10. (context: owner request 2026-10-05)
-      - [ ] **lab2-lighton** — the three LightOnOCR builds.
+      Round 1, session 1, 2026-10-05: lab2-lighton done, rows in `OCR-MODELS-2026-10-05.tsv`. ocr-soup and base
+      converted at 8-bit (`ops/ocrlab/convert-mlx.py`, repo `local/<name>`); both fit and are `fitted` rows.
+      The mlx-community 8-bit control was killed once on the crops (swap) and is `no` with its retry owed. NEXT:
+      free disk by `df` was 18.5 GB at the end (Time Machine local snapshots hold the deleted bf16 downloads,
+      swap files grew), under the 20 GB rule, so Churro's 4.3 GB waits for snapshots to age out (hourly, about a
+      day) or for a weight the lab no longer needs to go. `pgrep -f 'tart run'` in a wait loop matches itself and
+      held off the guard for 50 minutes; the guard now matches the VM binary.
+      - [x] **lab2-lighton** — the three LightOnOCR builds.
       - [ ] **lab2-churro** — Churro, GGUF and an MLX 8-bit conversion.
       - [ ] **lab2-infinity-falcon** — Infinity-Parser2-Flash and Falcon-OCR.
       - [ ] **lab2-olmocr-qwen3vl** — olmOCR 2 and the two Qwen3-VL builds.

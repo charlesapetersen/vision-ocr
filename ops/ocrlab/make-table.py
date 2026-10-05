@@ -1,4 +1,6 @@
-"""make-table.py <results.tsv> <out.tsv> — one row per candidate for OCR-MODELS-<date>.tsv.
+"""make-table.py <results.tsv> <out.tsv> [label…] — one row per candidate for OCR-MODELS-<date>.tsv.
+
+With labels, only those candidates' rows, and none of NOT_RUN (a later round's table).
 
 Takes each candidate's LAST row per page from try-mlx.sh's results.tsv, adds what is known about the
 model from its card (CARDS below: parameters, what boxes it can give, notes), and decides `fits`:
@@ -30,6 +32,9 @@ CARDS = {
     "chandra-ocr-2-oQ8": ("5B", "block boxes with text (HTML layout)"),
     "chandra-ocr-2-q4km": ("5B", "block boxes with text (HTML layout)"),
     "surya-ocr-2-pkg": ("0.65B", "block polygons with layout labels and reading order (seen in its output)"),
+    "lightonocr-2-1b-ocr-soup-8bit-1540": ("1B", "image boxes only (bbox variants)"),
+    "lightonocr-2-1b-base-8bit-1540": ("1B", "image boxes only (bbox variants)"),
+    "lightonocr-2-1b-8bit-1540": ("1B", "image boxes only (bbox variants)"),
 }
 NOTES = {
     "lightonocr-2-1b-4bit": "superseded by its retry, lightonocr-2-1b-4bit-1540",
@@ -48,6 +53,16 @@ NOTES = {
     "surya-ocr-2-pkg": "surya-ocr 0.22.1 in $OCRLAB/venv-surya: `surya_ocr <image or dir> --output_dir D`, "
                        "text by surya-text.py; it serves the same GGUF through brew's llama-server; its seconds "
                        "are from its log, server ready to results written",
+    "lightonocr-2-1b-ocr-soup-8bit-1540": "converted here at 8-bit by convert-mlx.py (mlx-vlm reports 11.6 bits "
+                                          "per weight); empty prompt, 1540 px, 4096 tokens; crops grew swap "
+                                          "1.7 GB against the guard's 2 GB",
+    "lightonocr-2-1b-base-8bit-1540": "converted here like ocr-soup; its ordinary read is byte-identical to "
+                                      "ocr-soup's; the guard killed its first crops read (swap_grew_2687MB; "
+                                      "8.4 GB of swap in use just after); read on its one retry, needing 8 GB "
+                                      "reclaimable",
+    "lightonocr-2-1b-8bit-1540": "control for the tested 4-bit build; one guarded retry owed, on a machine with "
+                                 "10 GB reclaimable (it waited 20 min for that on 2026-10-05 and did not get it); "
+                                 "ocr-bakeoff-bits compares 4-bit with 8-bit anyway",
 }
 NOT_RUN = [
     ("teleocr", "XingChen-AGI/TeleOCR", "1.2B", "-", "-",
@@ -59,15 +74,22 @@ NOT_RUN = [
      "not run: full weights only; dots.mocr-4bit, its successor, stands in"),
 ]
 
+only = set(sys.argv[3:])
 rows = {}
 for r in csv.reader(open(sys.argv[1]), delimiter="\t"):
-    if len(r) < 14: continue
+    if len(r) < 14 or (only and r[0] not in only): continue
     label, repo, page = r[0], r[1], r[2]
     rows.setdefault(label, {"repo": repo})[page] = r
 
 def size_mb(repo):
-    """Download size of the build (only the named files for a repo:file:file GGUF build), from the Hub."""
+    """Download size of the build (only the named files for a repo:file:file GGUF build), from the Hub;
+    for a build converted here (local/<name>), its size on disk."""
+    import os
     from huggingface_hub import HfApi
+    if repo.startswith("local/"):
+        d = os.path.join(os.environ.get("OCRLAB", os.path.expanduser("~/.local/share/visionocr-ocrlab")),
+                         "mlx", repo[len("local/"):])
+        return str(sum(os.path.getsize(os.path.join(d, f)) for f in os.listdir(d)) // 2**20) if os.path.isdir(d) else "-"
     name, _, files = repo.partition(":")
     want = files.split(":") if files else None
     try:
@@ -113,5 +135,5 @@ for label, d in rows.items():
                   g(n, 9), g(n, 6), outcome(n),
                   g(c, 9), g(c, 6), g(c, 11), g(c, 12),
                   "no" if why else "yes", "; ".join(why + notes) or "-"])
-for label, repo, params, runtime, quant, why in NOT_RUN:
+for label, repo, params, runtime, quant, why in ([] if only else NOT_RUN):
     out.writerow([label, repo, params, runtime, quant, size_mb(repo), "-"] + ["-"] * 11 + ["unknown", why])

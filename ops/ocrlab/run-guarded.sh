@@ -41,8 +41,10 @@ mkdir -p "$OCRLAB"
 
 if pgrep -x tests >/dev/null; then echo "run-guarded: a test suite is running; refusing" >&2; exit 75; fi
 # A tart VM (another project's GUI runner) holds 3+ GB; one started mid-run on 2026-10-04 and tripped the
-# swap limit under a 2.5 GB model.
-if pgrep -f 'tart run' >/dev/null; then echo "run-guarded: a tart VM is running; refusing" >&2; exit 75; fi
+# swap limit under a 2.5 GB model. Match the VM's own binary: a bare 'tart run' also matches any shell whose
+# command line mentions it (a session's wait loop did, 2026-10-05, and held off every guarded run); `[ ]` keeps
+# this pattern from matching a command line that quotes it.
+if pgrep -f 'MacOS/tart[ ]run ' >/dev/null; then echo "run-guarded: a tart VM is running; refusing" >&2; exit 75; fi
 if [ -d "$STATE/test.lock" ]; then echo "run-guarded: $STATE/test.lock is held; refusing" >&2; exit 75; fi
 swap_mb() { sysctl -n vm.swapusage | sed -E 's/.*used = ([0-9.]+)M.*/\1/' | cut -d. -f1; }
 pressure() { sysctl -n kern.memorystatus_vm_pressure_level; }
