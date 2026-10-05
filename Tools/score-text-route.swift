@@ -603,13 +603,16 @@ for (production, replica, wantAllText, wantDisagrees) in layeringVerdictCases
 where layeringVerdict(production: production, replica: replica)
         != (allText: wantAllText, disagrees: wantDisagrees) {
     let got = layeringVerdict(production: production, replica: replica)
-    FileHandle.standardError.write(Data(
-        ("score-text-route: self-test failed — layeringVerdict(production: "
-         + "\(production.map(String.init(describing:)) ?? "nil"), replica: \(replica)) is "
-         + "(allText: \(got.allText), disagrees: \(got.disagrees)), wanted "
-         + "(allText: \(wantAllText), disagrees: \(wantDisagrees)); the `verdict` column "
-         + "would be this file's replica of `pageIsAllText()` rather than production's own "
-         + "answer, which has been wrong three times; measuring nothing\n").utf8))
+    // Built in typed pieces: as one `+` chain of interpolations this expression sat at the type checker's time
+    // limit and failed `tools-compile` on 2026-10-05 with no change to the file (a busy machine tips it over).
+    let productionText: String = production.map(String.init(describing:)) ?? "nil"
+    var message: String = "score-text-route: self-test failed — layeringVerdict(production: "
+    message += "\(productionText), replica: \(replica)) is "
+    message += "(allText: \(got.allText), disagrees: \(got.disagrees)), wanted "
+    message += "(allText: \(wantAllText), disagrees: \(wantDisagrees)); the `verdict` column "
+    message += "would be this file's replica of `pageIsAllText()` rather than production's own "
+    message += "answer, which has been wrong three times; measuring nothing\n"
+    FileHandle.standardError.write(Data(message.utf8))
     exit(5)
 }
 
@@ -644,12 +647,14 @@ if lineNTokenCases.count != 5 {
     exit(5)
 }
 for (answer, want) in lineNTokenCases where lineNToken(answer) != want {
-    FileHandle.standardError.write(Data(
-        ("score-text-route: self-test failed — lineNToken("
-         + "\(answer.map(String.init(describing:)) ?? "nil")) is \"\(lineNToken(answer))\", "
-         + "wanted \"\(want)\"; `lineN` and `lineNAtBar` would misreport which term of "
-         + "`pageIsAllText()` refused a page, and collapsing a refusal into `-` credits the "
-         + "bar with it; measuring nothing\n").utf8))
+    let answerText: String = answer.map(String.init(describing:)) ?? "nil"
+    let gotToken: String = lineNToken(answer)
+    var message: String = "score-text-route: self-test failed — lineNToken("
+    message += "\(answerText)) is \"\(gotToken)\", "
+    message += "wanted \"\(want)\"; `lineN` and `lineNAtBar` would misreport which term of "
+    message += "`pageIsAllText()` refused a page, and collapsing a refusal into `-` credits the "
+    message += "bar with it; measuring nothing\n"
+    FileHandle.standardError.write(Data(message.utf8))
     exit(5)
 }
 
