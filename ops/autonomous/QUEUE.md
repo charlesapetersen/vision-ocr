@@ -926,8 +926,12 @@ say so in the commit.
       (blocked-on: ocr-bakeoff-run)
       Score exactly as `truth-harness` scores the app: words wrong and missing against the transcripts,
       contested words unscored, by route; seconds per page and peak memory from the job's log.
+      VISION'S SPEED IS NOT IN THAT LOG: the job copied Vision's readings from the truth run and never timed them
+      (owner, 2026-10-05: measure it rather than call it "fast"). Time Vision on the same renders, whole and as
+      crops, with the recognition settings the app uses, on a quiet machine (the job finished, no suite running),
+      and record its seconds per page and peak memory the same way as the models'.
       DONE WHEN, committed as `OCR-BAKEOFF-<date>.tsv`: every candidate scored on every sample page or a stated
-      reason, Vision beside them, and the top three named by words right on old print and newspapers at a
+      reason, Vision beside them with its own measured speed, and the top three named by words right on old print and newspapers at a
       speed this Mac can bear. Delete the weights of candidates outside the top three only if free disk by `df` would otherwise fall below
       20 GB. ESTIMATE: 1 session.
       BOUND: rule 10. (context: owner request 2026-10-02)
