@@ -19655,7 +19655,14 @@ it read them column by column. The raise moved those lines by 0.07-1.08 pt. Othe
 both ways (x305-449 0.42 → 0.48, x158-302 0.47 → 0.53; x13-154 y225-358 0.45 → 0.35). Rejected for Briefer's
 tilted line: a run that follows the tilt needs Vision's corner points, which `Observation` does not carry (an
 axis-aligned box only), a recogniser-to-writer format change risking invariant 3 for 0.35 pt of one glyph.
-Next: find what makes PDFKit join those two columns' lines in the new layer, and whether the raise can avoid it.
+**The ad column's cause is one run** [measured by editing the text matrix in each layer, then PDFKit rect
+selections]: the 15fb588 layer with only `SCHOOL`'s run put back 1.09 pt lower (`Tm` y 178.85 → 177.76) reads
+the ad as its own block again, and the 618502b layer with only `SCHOOL` raised 1.09 pt reads it across, with the
+article. `SCHOOL` is display type, a run drawn 8.5 pt tall over two body lines of each neighbouring column; the
+raise put its middle at its ink's middle, as C55 intends, and PDFKit's grouping of the whole region flipped. Not
+the gap to the line above alone: `SCHOOL`'s top sits 0.36 pt under `Mr. Nivon…` in the old layer and 0.32 pt in the
+new. Next: find which relation of that run to its neighbours PDFKit keys on (by moving it in steps, as above, in a
+scratch copy), then keep a raised run from crossing it.
 
 ### C56 · Pages that arrive 1-bit, or are re-gridded, come out with heavier type than the source — OPEN
 
