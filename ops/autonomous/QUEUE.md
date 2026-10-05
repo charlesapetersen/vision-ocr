@@ -866,8 +866,11 @@ say so in the commit.
       is too large here). Skip Tesseract (0.10 on socOCRbench).
       DONE WHEN, committed as `OCR-MODELS-<date>.tsv` with the scripts in `ops/ocrlab/`: one row per candidate
       with size, quantisation, runtime, whether it gives line or word boxes, peak memory and seconds for one
-      ordinary page and one newspaper page through the guard, and fits (peak under 12 GB, under 90 s for the
-      newspaper page) or why not. No model crashed the Mac or tripped the guard twice.
+      ordinary page and one newspaper page through the guard, and fits (peak under 12 GB) or why not. Speed is
+      recorded but does not decide fit here: the owner dropped the 90 s rule on 2026-10-04, when no candidate
+      read a newspaper page in under 145 s, and will decide on time later. The lab folder is excluded from Time
+      Machine (owner, 2026-10-04), so deleted weights now free disk; retry the candidates the disk rule refused.
+      No model crashed the Mac or tripped the guard twice.
       ESTIMATE: 2-3 sessions. Tick a sub-box for the guard and environment, then one per four candidates.
       BOUND: rule 10. (context: owner request 2026-10-02)
       Round 1, session 1, 2026-10-04: guard, lab (`~/.local/share/visionocr-ocrlab/`, mlx-vlm 0.7.4, brew llama.cpp)
