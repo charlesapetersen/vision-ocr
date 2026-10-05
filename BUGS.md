@@ -19585,7 +19585,7 @@ Left [reasoned]: a photograph Vision boxed words over is stretched when its tone
 speckle in the stencil. Pages 2-4 declare 72 dpi for a ~227 dpi scan, so the quarter-inch window is
 0.08 inch there; the stretch fixed Former students without changing that.
 
-### C55 · Some runs are drawn below their ink, so a drag over the line copies the line above — OPEN (line drags fixed 2026-10-05; three newspaper pages' column-drag rows owed)
+### C55 · Some runs are drawn below their ink, so a drag over the line copies the line above — OPEN (line drags fixed 2026-10-05; one ad column on `___ 2` p1 owed)
 
 *(found 2026-10-01 by `truth-read`.)*
 
@@ -19631,9 +19631,31 @@ drags read better (`inside` 0.22 → 1.00, 0.28 → 1.00, 0.33 → 1.00, 0.28 �
 shift. The baseline was refreshed with this commit, so these rows are the figures to beat. **Also owed** (the DONE
 WHEN check, by a subagent, through PDFKit): Briefer's line is tilted 0.6°, baseline 116.3 at the left to 112 at the
 right, and a level run cannot follow it. A drag starting in the top 0.35 pt of the first `m` (120.6-120.9) still
-copies the line above; before the fix that began at 118.6. Next: find whether
-the Raskin/Fiedler `prec` drops are that same gutter start, which would make them the harness's, or a real
-column drag a reader makes.
+copies the line above; before the fix that began at 118.6.
+
+**The seven rows, traced 2026-10-05 (session 2)** [measured: the three pages published by 618502b and by 15fb588,
+the harness re-run verbose on both, PDFKit drags and rect selections]. Six are not a reader's drag:
+- Raskin p1 x910-1059 `inside` 0.98 → 0.17, and with it `prec` 0.80 → 0.74, `splits` 1 → 2 and `copy`. The
+  harness starts at about (917, 1020.5), in the white indent left of `Commissioner`, 5 pt below the ink of the
+  column's first line `foreman again.` (1025-1032), so PDFKit picks a line by proximity, and the 1.05 pt raise
+  of `…first one` beside it changed the pick. A drag from anywhere on the `f`'s ink (x915-918, y1025-1032)
+  starts at `foreman` in both builds. The bad start then covers the left column's misread lines (WRONG 6 → 15),
+  which is the minimum `prec` and the split; every other column's WRONG count is equal or lower (x458-638 13 → 5).
+- Raskin truth `splits` 1 → 3, `hyph` 10 → 13: all ten truth columns' best drags have equal or fewer errors
+  (1637 → 1049, 1328 → 123, 480 → 115; `copyErr` 2.14 → 1.03), and the new splits are printed line-end breaks in
+  columns now copied right (`how|ever`, `un|skilled`; `ex ecutive` was counted before too).
+- Fiedler p1 `prec` 0.75 → 0.72: one word in one column (x536-662, 30/40 → 29/40), whose copy is the same text
+  in both builds; the harness judged the moved line box against another reading. Five columns rose (x39-139
+  0.755 → 0.841, x39-274 0.784 → 0.809).
+
+One is real: `___ 2` p1 `inside` 0.25 → 0.22 is the ad column x73-120 (`SCHOOL` … `FLASHUGHTS`), 1.00 → 0.22.
+A drag from SCHOOL's ink now copies `SCHOOL|guilty of "Ircason…`: PDFKit reads the article's two columns
+beside it (x160-300, x307-447) across, line by line, around y171-192, and takes SCHOOL into that row; before,
+it read them column by column. The raise moved those lines by 0.07-1.08 pt. Other columns on the page moved
+both ways (x305-449 0.42 → 0.48, x158-302 0.47 → 0.53; x13-154 y225-358 0.45 → 0.35). Rejected for Briefer's
+tilted line: a run that follows the tilt needs Vision's corner points, which `Observation` does not carry (an
+axis-aligned box only), a recogniser-to-writer format change risking invariant 3 for 0.35 pt of one glyph.
+Next: find what makes PDFKit join those two columns' lines in the new layer, and whether the raise can avoid it.
 
 ### C56 · Pages that arrive 1-bit, or are re-gridded, come out with heavier type than the source — OPEN
 
