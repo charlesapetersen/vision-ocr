@@ -1,119 +1,119 @@
-# ux-regression results 2026-10-02, a6079c5 with the C53 fourth-session change (the commit that carries this file)
+# ux-regression results 2026-10-05, 51e6164 with the C54 pale-ink stencil (the commit that carries this file)
 kind	source	page	...
 gate	score-gate	-	exit 0
-page	owner/1954 - Why.pdf	2	10	-	-	1.00	-3	0.2358	1.00	1.00	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	7	21	-
+page	owner/1954 - Why.pdf	2	10	-	-	1.00	-3	0.2358	1.00	1.00	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	8	24	-
 truth	owner/1954 - Why.pdf	T2	13	1	8	6	2	0	0	0	1	0	-	-	-	-	3/4	-	-	12	0.23	1.00	tink
-page	owner/1954 - Why.pdf	5	538	0.98	0.91	1.16	-19	0.0135	1.00	0.97	3	1.00	1.00	1.00	0.03	0.97	0.96	0	0	0	0/6	39/54	ok	8	18	-
+page	owner/1954 - Why.pdf	5	538	0.98	0.91	1.16	-19	0.0135	1.00	0.97	3	1.00	1.00	1.00	0.03	0.97	0.96	0	0	0	0/6	39/54	ok	13	21	-
 truth	owner/1954 - Why.pdf	T5	539	0	531	528	3	0	1	0	0	0	0.0075	1.00	1/1	-	-	0.0151	0.0056	5	0.98	1.00	-
-page	owner/1954 - Why.pdf	6	442	1.00	1.03	1.12	-23	0.0192	1.00	0.83	3	1.00	1.00	1.00	0.05	0.96	0.85	0	0	0	0/8	34/50	ok	8	17	-
+page	owner/1954 - Why.pdf	6	442	1.00	1.03	1.12	-23	0.0192	1.00	0.83	3	1.00	1.00	1.00	0.05	0.96	0.85	0	0	0	0/8	34/50	ok	8	18	-
 truth	owner/1954 - Why.pdf	T6	444	0	434	433	0	1	0	0	0	0	0.0023	1.00	1/1	-	-	0.0599	0.0023	7	0.92	1.00	-
-page	owner/1954 - Why.pdf	8	481	1.00	0.97	1.18	-9	0.0179	1.00	0.80	2	1.00	1.00	1.00	0.04	0.97	0.93	0	0	0	0/8	36/50	ok	8	16	-
+page	owner/1954 - Why.pdf	8	481	1.00	0.97	1.18	-9	0.0179	1.00	0.80	2	1.00	1.00	1.00	0.04	0.97	0.93	0	0	0	0/8	36/50	ok	12	25	-
 truth	owner/1954 - Why.pdf	T8	484	0	473	470	3	0	1	0	0	0	0.0085	0.96	1/1	-	-	0.0507	0.0063	2	-	-	-
-page	owner/1954 - Why.pdf	9	441	1.00	0.85	1.11	-20	0.0170	1.00	0.83	3	0.77	1.00	1.00	0.30	0.86	0.63	0	0	0	0/10	38/55	ok	8	20	selection
+page	owner/1954 - Why.pdf	9	441	1.00	0.85	1.11	-20	0.0170	1.00	0.83	3	0.77	1.00	1.00	0.30	0.86	0.63	0	0	0	0/10	38/55	ok	10	25	selection
 truth	owner/1954 - Why.pdf	T9	448	4	440	425	9	6	279	0	0	0	0.6682	0.97	1/1	-	-	0.0659	0.0295	6	0.94	1.00	tcopy
-page	owner/1954 - Why.pdf	10	1	-	-	1.00	1	0.0034	0.00	-	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	7	18	colour
+page	owner/1954 - Why.pdf	10	1	-	-	1.00	1	0.0034	0.00	-	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	10	28	colour
 truth	owner/1954 - Why.pdf	T10	1	0	0	0	0	0	0	0	0	0	-	-	-	1/1	-	-	-	2	0.98	0.00	tcolour
-doc	owner/1954 - Why.pdf	DOC	10>10	2120107>508115	0	yes	clean	0>0	same	2>2	0>0	same	-
-page	owner/1951 - Briefer Book Notes.pdf	1	514	0.81	1.20	1.00	-2	0.0000	-	0.93	3	1.00	1.00	0.95	0.31	0.93	0.89	2	1	0	0/2	51/59	ok	153	192	-
+doc	owner/1954 - Why.pdf	DOC	10>10	2120107>508445	1	yes	clean	0>0	same	2>2	0>0	same	-
+page	owner/1951 - Briefer Book Notes.pdf	1	514	0.81	1.20	1.00	-2	0.0000	-	0.93	3	1.00	1.00	0.95	0.31	0.93	0.89	2	1	0	0/2	51/59	ok	155	186	-
 truth	owner/1951 - Briefer Book Notes.pdf	T1	623	8	615	588	11	16	2	1	1	0	0.0472	0.97	2/2	-	-	0.5789	0.0228	2	0.99	-	-
-page	owner/1951 - Briefer Book Notes.pdf	3	487	0.91	1.00	1.00	0	0.0000	-	0.87	4	1.00	0.93	0.96	0.20	0.90	0.87	1	1	0	0/5	34/45	ok	108	107	-
+page	owner/1951 - Briefer Book Notes.pdf	3	487	0.91	1.00	1.00	0	0.0000	-	0.87	4	1.00	0.93	0.96	0.20	0.90	0.87	1	1	0	0/5	34/45	ok	138	140	-
 truth	owner/1951 - Briefer Book Notes.pdf	T3	655	0	654	644	10	0	1	0	0	1	0.0168	1.00	-	-	-	0.5703	0.0168	1	-	-	-
-doc	owner/1951 - Briefer Book Notes.pdf	DOC	6>6	516633>466279	0	yes	clean	0>0	same	0>0	0>0	same	-
-page	owner/Raskin - 1956 - New Jobs Opening to Negro in North.pdf	1	2042	0.72	1.03	1.02	0	0.0000	-	0.77	12	0.17	0.50	0.66	2.89	0.80	0.65	1	2	0	0/15	397/506	ok	40	415	legibility,find,selection
+doc	owner/1951 - Briefer Book Notes.pdf	DOC	6>6	516633>466279	1	yes	clean	0>0	same	0>0	0>0	same	-
+page	owner/Raskin - 1956 - New Jobs Opening to Negro in North.pdf	1	2042	0.72	1.03	1.02	0	0.0000	-	0.77	12	0.17	0.50	0.66	2.89	0.80	0.65	1	2	0	0/15	397/506	ok	41	422	legibility,find,selection
 truth	owner/Raskin - 1956 - New Jobs Opening to Negro in North.pdf	T1	3189	46	3140	3102	37	1	6687	1	1	10	2.1417	1.00	6/8	-	-	0.7541	0.0140	11	0.94	-	tcopy
-doc	owner/Raskin - 1956 - New Jobs Opening to Negro in North.pdf	DOC	1>1	528335>445374	0	yes	clean	0>0	same	0>0	0>0	same	-
-page	owner/Hughes - The Knitting of Racial Groups in Industry (Desktop copy 2026-09-26).pdf	1	141	1.00	1.00	1.00	0	0.0050	1.00	0.87	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	5	7	-
+doc	owner/Raskin - 1956 - New Jobs Opening to Negro in North.pdf	DOC	1>1	528335>445374	1	yes	clean	0>0	same	0>0	0>0	same	-
+page	owner/Hughes - The Knitting of Racial Groups in Industry (Desktop copy 2026-09-26).pdf	1	141	1.00	1.00	1.00	0	0.0050	1.00	0.87	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	4	6	-
 truth	owner/Hughes - The Knitting of Racial Groups in Industry (Desktop copy 2026-09-26).pdf	T1	141	0	136	136	0	0	2	0	0	0	0.0147	1.00	-	1/4	-	0.0000	0.0000	5	1.00	1.00	-
-page	owner/Hughes - The Knitting of Racial Groups in Industry (Desktop copy 2026-09-26).pdf	3	763	1.00	1.01	1.00	0	0.0000	-	0.87	2	1.00	1.00	1.00	0.11	0.97	0.85	1	1	0	1/17	89/97	origin	199	198	-
+page	owner/Hughes - The Knitting of Racial Groups in Industry (Desktop copy 2026-09-26).pdf	3	763	1.00	1.01	1.00	0	0.0000	-	0.87	2	1.00	1.00	1.00	0.11	0.97	0.85	1	1	0	1/17	89/97	origin	222	205	-
 truth	owner/Hughes - The Knitting of Racial Groups in Industry (Desktop copy 2026-09-26).pdf	T3	748	5	743	738	4	1	1	1	1	0	0.0081	1.00	1/1	-	-	0.0242	0.0094	2	1.00	-	-
-page	owner/Hughes - The Knitting of Racial Groups in Industry (Desktop copy 2026-09-26).pdf	5	574	1.00	1.00	1.00	0	0.0000	-	0.93	4	1.00	1.00	1.00	0.13	0.94	0.81	0	0	0	0/13	48/53	origin	228	231	-
+page	owner/Hughes - The Knitting of Racial Groups in Industry (Desktop copy 2026-09-26).pdf	5	574	1.00	1.00	1.00	0	0.0000	-	0.93	4	1.00	1.00	1.00	0.13	0.94	0.81	0	0	0	0/13	48/53	origin	239	266	-
 truth	owner/Hughes - The Knitting of Racial Groups in Industry (Desktop copy 2026-09-26).pdf	T5	557	0	544	542	2	0	1	0	1	0	0.0055	1.00	3/3	13/13	-	0.0294	0.0074	5	1.00	-	-
-page	owner/Hughes - The Knitting of Racial Groups in Industry (Desktop copy 2026-09-26).pdf	6	320	1.01	0.99	1.00	0	0.0000	-	0.87	4	0.54	1.00	1.00	0.45	0.94	0.88	0	0	0	0/7	29/31	origin	217	213	selection
+page	owner/Hughes - The Knitting of Racial Groups in Industry (Desktop copy 2026-09-26).pdf	6	320	1.01	0.99	1.00	0	0.0000	-	0.87	4	0.54	1.00	1.00	0.45	0.94	0.88	0	0	0	0/7	29/31	origin	249	298	selection
 truth	owner/Hughes - The Knitting of Racial Groups in Industry (Desktop copy 2026-09-26).pdf	T6	315	1	302	296	6	0	129	0	0	0	0.4470	1.00	3/3	5/10	-	0.0331	0.0132	3	1.00	-	tcopy
-doc	owner/Hughes - The Knitting of Racial Groups in Industry (Desktop copy 2026-09-26).pdf	DOC	9>9	490599>461837	0	yes	clean	39>39	same	0>0	0>0	same	-
-page	owner/Bird - 1963 - More Room at the Top Company Experiences in Employing Negroes in Professional and Management Jobs.pdf	3	447	1.00	0.90	1.00	-0	0.0000	-	0.80	3	1.00	1.00	1.00	0.10	0.96	0.91	1	0	0	1/16	65/77	ok	121	111	-
+doc	owner/Hughes - The Knitting of Racial Groups in Industry (Desktop copy 2026-09-26).pdf	DOC	9>9	490599>461837	1	yes	clean	39>39	same	0>0	0>0	same	-
+page	owner/Bird - 1963 - More Room at the Top Company Experiences in Employing Negroes in Professional and Management Jobs.pdf	3	447	1.00	0.90	1.00	-0	0.0000	-	0.80	3	1.00	1.00	1.00	0.10	0.96	0.91	1	0	0	1/16	65/77	ok	139	152	-
 truth	owner/Bird - 1963 - More Room at the Top Company Experiences in Employing Negroes in Professional and Management Jobs.pdf	T3	444	0	444	442	1	1	0	0	0	2	0.0045	1.00	1/2	-	-	0.1441	0.0068	2	1.00	-	-
-page	owner/Bird - 1963 - More Room at the Top Company Experiences in Employing Negroes in Professional and Management Jobs.pdf	5	473	1.00	1.00	1.00	-0	0.0000	-	0.80	4	1.00	1.00	1.00	0.10	0.85	0.75	0	1	0	0/14	67/75	ok	135	123	-
+page	owner/Bird - 1963 - More Room at the Top Company Experiences in Employing Negroes in Professional and Management Jobs.pdf	5	473	1.00	1.00	1.00	-0	0.0000	-	0.80	4	1.00	1.00	1.00	0.10	0.85	0.75	0	1	0	0/14	67/75	ok	142	160	-
 truth	owner/Bird - 1963 - More Room at the Top Company Experiences in Employing Negroes in Professional and Management Jobs.pdf	T5	473	0	472	469	3	0	0	0	0	1	0.0064	1.00	1/1	-	-	0.0657	0.0085	2	1.00	-	-
-doc	owner/Bird - 1963 - More Room at the Top Company Experiences in Employing Negroes in Professional and Management Jobs.pdf	DOC	13>13	706196>653851	0	yes	clean	0>0	same	0>0	0>0	same	-
-page	owner/Leland - 1952 - We Believe in Employment on Merit, but.pdf	2	342	1.00	1.00	1.00	0	0.0000	-	0.97	2	1.00	1.00	1.00	0.08	0.97	0.94	0	0	0	0/2	29/34	ok	73	73	-
+doc	owner/Bird - 1963 - More Room at the Top Company Experiences in Employing Negroes in Professional and Management Jobs.pdf	DOC	13>13	706196>653851	1	yes	clean	0>0	same	0>0	0>0	same	-
+page	owner/Leland - 1952 - We Believe in Employment on Merit, but.pdf	2	342	1.00	1.00	1.00	0	0.0000	-	0.97	2	1.00	1.00	1.00	0.08	0.97	0.94	0	0	0	0/2	29/34	ok	88	93	-
 truth	owner/Leland - 1952 - We Believe in Employment on Merit, but.pdf	T2	462	1	458	447	9	2	0	0	0	0	0.0240	1.00	-	-	-	0.0699	0.0218	3	1.00	-	-
-page	owner/Leland - 1952 - We Believe in Employment on Merit, but.pdf	5	454	1.00	1.00	1.00	0	0.0000	-	0.90	1	1.00	1.00	1.00	0.05	0.98	0.93	0	0	0	0/6	38/41	ok	65	73	-
+page	owner/Leland - 1952 - We Believe in Employment on Merit, but.pdf	5	454	1.00	1.00	1.00	0	0.0000	-	0.90	1	1.00	1.00	1.00	0.05	0.98	0.93	0	0	0	0/6	38/41	ok	73	78	-
 truth	owner/Leland - 1952 - We Believe in Employment on Merit, but.pdf	T5	448	1	447	445	2	0	0	0	0	0	0.0045	1.00	-	-	-	0.1544	0.0045	2	1.00	-	-
-page	owner/Leland - 1952 - We Believe in Employment on Merit, but.pdf	6	435	1.00	1.00	1.00	0	0.0000	-	1.00	1	1.00	1.00	1.00	0.06	0.99	0.97	0	0	0	0/4	37/40	ok	74	70	-
+page	owner/Leland - 1952 - We Believe in Employment on Merit, but.pdf	6	435	1.00	1.00	1.00	0	0.0000	-	1.00	1	1.00	1.00	1.00	0.06	0.99	0.97	0	0	0	0/4	37/40	ok	71	74	-
 truth	owner/Leland - 1952 - We Believe in Employment on Merit, but.pdf	T6	447	1	444	443	1	0	0	0	0	0	0.0023	1.00	-	-	-	0.0473	0.0023	1	-	-	-
-doc	owner/Leland - 1952 - We Believe in Employment on Merit, but.pdf	DOC	23>23	999740>998343	0	yes	clean	0>0	same	2>2	0>0	same	-
-page	owner/Delton - 2007 - Before the EEOC How Management Integrated the Workplace.pdf	1	182	1.00	1.00	1.00	0	0.0038	1.00	0.93	1	1.00	1.00	1.00	0.00	1.00	0.97	0	0	0	0/0	3/6	ok	6	6	-
+doc	owner/Leland - 1952 - We Believe in Employment on Merit, but.pdf	DOC	23>23	999740>998343	19	yes	clean	0>0	same	2>2	0>0	same	-
+page	owner/Delton - 2007 - Before the EEOC How Management Integrated the Workplace.pdf	1	182	1.00	1.00	1.00	0	0.0038	1.00	0.93	1	1.00	1.00	1.00	0.00	1.00	0.97	0	0	0	0/0	3/6	ok	7	7	-
 truth	owner/Delton - 2007 - Before the EEOC How Management Integrated the Workplace.pdf	T1	182	0	180	180	0	0	0	0	0	0	0.0000	1.00	-	1/1	-	0.0056	0.0000	5	1.00	1.00	-
-page	owner/Delton - 2007 - Before the EEOC How Management Integrated the Workplace.pdf	2	367	0.96	1.00	1.00	0	0.0000	-	0.90	2	1.00	1.00	1.00	0.07	0.95	0.91	0	0	0	1/9	20/28	origin	140	155	-
+page	owner/Delton - 2007 - Before the EEOC How Management Integrated the Workplace.pdf	2	367	0.96	1.00	1.00	0	0.0000	-	0.90	2	1.00	1.00	1.00	0.07	0.95	0.91	0	0	0	1/9	20/28	origin	182	160	-
 truth	owner/Delton - 2007 - Before the EEOC How Management Integrated the Workplace.pdf	T2	358	15	342	341	1	0	0	0	0	1	0.0029	1.00	1/1	-	-	0.1082	0.0058	3	1.00	-	-
-doc	owner/Delton - 2007 - Before the EEOC How Management Integrated the Workplace.pdf	DOC	28>28	954409>922487	0	yes	clean	68>68	same	0>0	0>0	same	-
-page	owner/Dobbin_2009_Inventing equal opportunity_Princeton University Press.pdf	81	441	1.00	1.00	1.00	0	0.0000	-	0.90	1	1.00	1.00	1.00	0.00	1.00	1.00	0	0	0	12/13	26/42	ok	1	2	-
+doc	owner/Delton - 2007 - Before the EEOC How Management Integrated the Workplace.pdf	DOC	28>28	954409>922487	3	yes	clean	68>68	same	0>0	0>0	same	-
+page	owner/Dobbin_2009_Inventing equal opportunity_Princeton University Press.pdf	81	441	1.00	1.00	1.00	0	0.0000	-	0.90	1	1.00	1.00	1.00	0.00	1.00	1.00	0	0	0	12/13	26/42	ok	1	47	-
 truth	owner/Dobbin_2009_Inventing equal opportunity_Princeton University Press.pdf	T81	435	1	428	427	1	0	5	0	0	13	0.0140	0.97	-	-	-	0.0374	0.0327	2	-	-	-
-doc	owner/Dobbin_2009_Inventing equal opportunity_Princeton University Press.pdf	DOC	321>321	2568873>1495656	0	yes	clean	39>39	same	42>42	0>0	same	-
-page	book/Boltanski_2006_On justification_Princeton University Press.pdf	51	1054	1.00	1.00	1.04	-16	0.0000	-	0.90	2	1.00	1.00	1.00	0.04	0.94	0.94	0	0	0	0/19	71/82	ok	93	119	-
+doc	owner/Dobbin_2009_Inventing equal opportunity_Princeton University Press.pdf	DOC	321>321	2568873>1495656	43	yes	clean	39>39	same	42>42	0>0	same	-
+page	book/Boltanski_2006_On justification_Princeton University Press.pdf	51	1054	1.00	1.00	1.04	-16	0.0000	-	0.90	2	1.00	1.00	1.00	0.04	0.94	0.94	0	0	0	0/19	71/82	ok	140	166	-
 truth	book/Boltanski_2006_On justification_Princeton University Press.pdf	T51	1054	3	1047	1045	1	1	0	0	0	0	0.0019	1.00	1/1	-	-	0.0525	0.0019	1	-	-	-
-doc	book/Boltanski_2006_On justification_Princeton University Press.pdf	DOC	1>1	62607>99613	0	yes	clean	0>0	same	0>0	0>0	same	-
-page	thesis/Zarifa_2008_Emerging Forms of Stratification in Higher Education_.pdf	92	510	1.00	1.00	1.00	0	0.0000	-	1.00	2	1.00	1.00	1.00	0.01	1.00	0.95	0	0	0	0/0	30/35	ok	99	102	-
+doc	book/Boltanski_2006_On justification_Princeton University Press.pdf	DOC	1>1	62607>99613	62	yes	clean	0>0	same	0>0	0>0	same	-
+page	thesis/Zarifa_2008_Emerging Forms of Stratification in Higher Education_.pdf	92	510	1.00	1.00	1.00	0	0.0000	-	1.00	2	1.00	1.00	1.00	0.01	1.00	0.95	0	0	0	0/0	30/35	ok	134	124	-
 truth	thesis/Zarifa_2008_Emerging Forms of Stratification in Higher Education_.pdf	T92	512	0	510	510	0	0	0	0	0	0	0.0000	1.00	-	-	-	0.0039	0.0000	2	1.00	-	-
-doc	thesis/Zarifa_2008_Emerging Forms of Stratification in Higher Education_.pdf	DOC	1>1	64806>75755	0	yes	clean	0>0	same	1>0	0>0	same	links
-page	newspaperArticle/Berendzen_1981_The Soaring Lesson of America in Space_Newsday (1940-1990), Nassau ed.; Long Island, N.Y..pdf	1	1392	1.00	1.00	1.00	0	0.0000	-	0.83	6	1.00	0.94	1.00	0.13	0.91	0.82	0	2	0	0/32	120/148	ok	181	173	-
+doc	thesis/Zarifa_2008_Emerging Forms of Stratification in Higher Education_.pdf	DOC	1>1	64806>75755	1	yes	clean	0>0	same	1>0	0>0	same	links
+page	newspaperArticle/Berendzen_1981_The Soaring Lesson of America in Space_Newsday (1940-1990), Nassau ed.; Long Island, N.Y..pdf	1	1392	1.00	1.00	1.00	0	0.0000	-	0.83	6	1.00	0.94	1.00	0.13	0.91	0.82	0	2	0	0/32	120/148	ok	199	190	-
 truth	newspaperArticle/Berendzen_1981_The Soaring Lesson of America in Space_Newsday (1940-1990), Nassau ed.; Long Island, N.Y..pdf	T1	1353	3	1348	1322	18	8	210	4	0	6	0.1751	0.97	4/4	-	-	0.0415	0.0237	6	1.00	-	tcopy
-doc	newspaperArticle/Berendzen_1981_The Soaring Lesson of America in Space_Newsday (1940-1990), Nassau ed.; Long Island, N.Y..pdf	DOC	1>1	166716>169637	0	yes	clean	0>0	same	0>0	0>0	same	-
-page	document/2013 - Silicon Valley Program Transcript.pdf	10	381	1.00	1.00	1.00	0	0.0445	1.00	0.87	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	6	7	-
+doc	newspaperArticle/Berendzen_1981_The Soaring Lesson of America in Space_Newsday (1940-1990), Nassau ed.; Long Island, N.Y..pdf	DOC	1>1	166716>169637	1	yes	clean	0>0	same	0>0	0>0	same	-
+page	document/2013 - Silicon Valley Program Transcript.pdf	10	381	1.00	1.00	1.00	0	0.0445	1.00	0.87	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	8	17	-
 truth	document/2013 - Silicon Valley Program Transcript.pdf	T10	386	1	323	323	0	0	0	0	0	0	0.0000	1.00	-	0/57	-	0.0000	0.0000	8	1.00	1.00	-
-doc	document/2013 - Silicon Valley Program Transcript.pdf	DOC	1>1	294060>291796	0	yes	clean	0>0	same	0>0	0>0	same	-
-page	journalArticle/Surani et al. - AI for Scaling Legal Reform Mapping and Redacting Racial Covenants in Santa Clara County.pdf	10	693	1.00	1.00	1.00	0	0.0050	1.00	0.97	2	1.00	1.00	1.00	0.00	0.99	0.98	0	0	0	0/0	25/30	ok	12	20	-
+doc	document/2013 - Silicon Valley Program Transcript.pdf	DOC	1>1	294060>291796	1	yes	clean	0>0	same	0>0	0>0	same	-
+page	journalArticle/Surani et al. - AI for Scaling Legal Reform Mapping and Redacting Racial Covenants in Santa Clara County.pdf	10	693	1.00	1.00	1.00	0	0.0050	1.00	0.97	2	1.00	1.00	1.00	0.00	0.99	0.98	0	0	0	0/0	25/30	ok	17	22	-
 truth	journalArticle/Surani et al. - AI for Scaling Legal Reform Mapping and Redacting Racial Covenants in Santa Clara County.pdf	T10	690	0	643	643	0	0	0	0	0	0	0.0000	1.00	3/3	43/44	-	0.0342	0.0000	21	1.00	1.00	-
-doc	journalArticle/Surani et al. - AI for Scaling Legal Reform Mapping and Redacting Racial Covenants in Santa Clara County.pdf	DOC	1>1	1283975>1272435	0	yes	clean	0>0	same	9>9	0>0	same	-
-page	journalArticle/Xin Qu et al_2018_Executive stock option vesting conditions, corporate governance and CEO.pdf	24	265	0.93	1.03	1.13	-8	0.0000	-	0.70	15	0.78	1.00	1.00	0.34	-	-	2	1	0	0/0	133/135	ok	86	92	find,selection
+doc	journalArticle/Surani et al. - AI for Scaling Legal Reform Mapping and Redacting Racial Covenants in Santa Clara County.pdf	DOC	1>1	1283975>1272435	1	yes	clean	0>0	same	9>9	0>0	same	-
+page	journalArticle/Xin Qu et al_2018_Executive stock option vesting conditions, corporate governance and CEO.pdf	24	265	0.93	1.03	1.13	-8	0.0000	-	0.70	15	0.78	1.00	1.00	0.34	-	-	2	1	0	0/0	133/135	ok	133	88	find,selection
 truth	journalArticle/Xin Qu et al_2018_Executive stock option vesting conditions, corporate governance and CEO.pdf	T24	287	71	195	33	83	79	44	1	1	0	1.0564	0.69	-	-	-	0.1077	0.2974	10	1.00	-	tcopy,tfind
-doc	journalArticle/Xin Qu et al_2018_Executive stock option vesting conditions, corporate governance and CEO.pdf	DOC	1>1	35598>38666	0	yes	clean	0>0	same	0>0	0>0	same	-
-page	bookSection/Berger_2013_Toward a Third Industrial Divide_.pdf	18	485	1.00	1.00	1.00	0	0.0000	-	0.93	2	1.00	1.00	1.00	0.06	0.93	0.85	0	0	0	0/14	67/72	ok	62	88	-
+doc	journalArticle/Xin Qu et al_2018_Executive stock option vesting conditions, corporate governance and CEO.pdf	DOC	1>1	35598>38666	1	yes	clean	0>0	same	0>0	0>0	same	-
+page	bookSection/Berger_2013_Toward a Third Industrial Divide_.pdf	18	485	1.00	1.00	1.00	0	0.0000	-	0.93	2	1.00	1.00	1.00	0.06	0.93	0.85	0	0	0	0/14	67/72	ok	95	88	-
 truth	bookSection/Berger_2013_Toward a Third Industrial Divide_.pdf	T18	475	1	470	460	9	1	45	0	0	0	0.1170	0.97	0/1	-	-	0.0468	0.0191	1	-	-	tcopy
-doc	bookSection/Berger_2013_Toward a Third Industrial Divide_.pdf	DOC	1>1	95774>66187	0	yes	clean	0>0	same	0>0	0>0	same	-
-page	magazineArticle/Glazer_2002_Higher Ed_New Republic.pdf	1	1232	1.01	1.02	1.39	-7	0.0032	0.00	0.93	6	0.98	1.00	1.00	0.06	0.95	0.73	0	1	0	0/34	165/180	ok	14	49	colour
+doc	bookSection/Berger_2013_Toward a Third Industrial Divide_.pdf	DOC	1>1	95774>66187	2	yes	clean	0>0	same	0>0	0>0	same	-
+page	magazineArticle/Glazer_2002_Higher Ed_New Republic.pdf	1	1232	1.01	1.02	1.39	-7	0.0032	0.00	0.93	6	0.98	1.00	1.00	0.06	0.95	0.73	0	1	0	0/34	165/180	ok	30	105	colour
 truth	magazineArticle/Glazer_2002_Higher Ed_New Republic.pdf	T1	1200	0	1199	1191	7	1	1	0	1	0	0.0075	1.00	2/2	-	-	0.0392	0.0050	7	0.99	0.00	tcolour
-doc	magazineArticle/Glazer_2002_Higher Ed_New Republic.pdf	DOC	2>2	822744>282007	0	yes	clean	0>0	same	0>0	0>0	same	-
-page	newspaperArticle/___ 2.pdf	1	3068	0.92	0.95	1.03	-12	0.0000	-	0.57	19	0.25	0.92	0.97	1.10	0.53	0.63	7	3	0	0/22	593/725	ok	88	113	find,selection,copy
+doc	magazineArticle/Glazer_2002_Higher Ed_New Republic.pdf	DOC	2>2	822744>282007	1	yes	clean	0>0	same	0>0	0>0	same	-
+page	newspaperArticle/___ 2.pdf	1	3068	0.92	0.95	1.03	-12	0.0000	-	0.57	19	0.25	0.92	0.97	1.10	0.53	0.63	7	3	0	0/22	593/725	ok	155	145	find,selection,copy
 truth	newspaperArticle/___ 2.pdf	T1	3144	79	3027	2350	591	86	2577	4	2	10	1.0750	0.84	4/4	14/34	-	0.3046	0.2081	11	0.86	-	tcopy
-doc	newspaperArticle/___ 2.pdf	DOC	1>1	253275>205653	0	yes	clean	0>0	same	0>0	0>0	same	-
-page	bookSection/Hyman_2012_Rethinking the Postwar Corporation_Oxford University Press.pdf	8	936	1.00	1.00	0.97	-1	0.0600	0.00	0.70	3	1.00	1.00	1.00	0.05	0.98	0.93	0	1	0	0/21	65/78	ok	124	149	colour,find
+doc	newspaperArticle/___ 2.pdf	DOC	1>1	253275>205653	1	yes	clean	0>0	same	0>0	0>0	same	-
+page	bookSection/Hyman_2012_Rethinking the Postwar Corporation_Oxford University Press.pdf	8	936	1.00	1.00	0.97	-1	0.0600	0.00	0.70	3	1.00	1.00	1.00	0.05	0.98	0.93	0	1	0	0/21	65/78	ok	138	145	colour,find
 truth	bookSection/Hyman_2012_Rethinking the Postwar Corporation_Oxford University Press.pdf	T8	911	0	911	897	14	0	1	0	1	3	0.0165	1.00	1/1	-	-	0.0406	0.0209	33	0.00	0.00	tink,tcolour
-doc	bookSection/Hyman_2012_Rethinking the Postwar Corporation_Oxford University Press.pdf	DOC	1>1	50309>41861	0	yes	clean	0>0	same	0>0	18>0	same	annots
-page	journalArticle/Riesman_1949_Men, Women, and Marriage_Nation.pdf	2	1123	0.99	0.99	1.09	-15	0.0000	-	0.80	6	1.00	1.00	1.00	0.11	0.95	0.71	0	2	0	0/32	133/157	ok	129	136	-
+doc	bookSection/Hyman_2012_Rethinking the Postwar Corporation_Oxford University Press.pdf	DOC	1>1	50309>41861	1	yes	clean	0>0	same	0>0	18>0	same	annots
+page	journalArticle/Riesman_1949_Men, Women, and Marriage_Nation.pdf	2	1123	0.99	0.99	1.09	-15	0.0000	-	0.80	6	1.00	1.00	1.00	0.11	0.95	0.71	0	2	0	0/32	133/157	ok	275	193	-
 truth	journalArticle/Riesman_1949_Men, Women, and Marriage_Nation.pdf	T2	1099	5	1049	1038	10	1	0	1	0	7	0.0105	1.00	2/2	12/45	-	0.0419	0.0153	5	1.00	-	-
-doc	journalArticle/Riesman_1949_Men, Women, and Marriage_Nation.pdf	DOC	3>3	679401>207487	0	yes	clean	0>0	same	0>0	0>0	same	-
-page	magazineArticle/Marth_1982_Why Unions Lose At Many Companies_Nation's Business (pre-1986); Washington.pdf	2	757	1.00	1.00	1.00	0	0.0000	-	0.83	6	0.51	1.00	1.00	0.54	0.92	0.84	0	0	0	0/24	146/186	ok	101	95	selection
+doc	journalArticle/Riesman_1949_Men, Women, and Marriage_Nation.pdf	DOC	3>3	679401>207487	25	yes	clean	0>0	same	0>0	0>0	same	-
+page	magazineArticle/Marth_1982_Why Unions Lose At Many Companies_Nation's Business (pre-1986); Washington.pdf	2	757	1.00	1.00	1.00	0	0.0000	-	0.83	6	0.51	1.00	1.00	0.54	0.92	0.84	0	0	0	0/24	146/186	ok	137	171	selection
 truth	magazineArticle/Marth_1982_Why Unions Lose At Many Companies_Nation's Business (pre-1986); Washington.pdf	T2	737	8	672	668	4	0	329	0	0	1	0.4955	1.00	4/4	51/56	-	0.0387	0.0045	7	1.00	-	tcopy
-doc	magazineArticle/Marth_1982_Why Unions Lose At Many Companies_Nation's Business (pre-1986); Washington.pdf	DOC	2>2	149256>145340	0	yes	clean	0>0	same	0>0	0>0	same	-
-page	document/_1953_99 Cong_ 2.pdf	16	1536	1.00	1.00	1.00	0	0.0000	-	0.90	11	1.00	1.00	1.00	0.18	0.89	0.78	0	0	0	1/39	168/192	ok	141	218	-
+doc	magazineArticle/Marth_1982_Why Unions Lose At Many Companies_Nation's Business (pre-1986); Washington.pdf	DOC	2>2	149256>145340	2	yes	clean	0>0	same	0>0	0>0	same	-
+page	document/_1953_99 Cong_ 2.pdf	16	1536	1.00	1.00	1.00	0	0.0000	-	0.90	11	1.00	1.00	1.00	0.18	0.89	0.78	0	0	0	1/39	168/192	ok	217	308	-
 truth	document/_1953_99 Cong_ 2.pdf	T16	1540	1	1538	1509	26	3	1	0	0	2	0.0195	1.00	2/2	-	-	0.1066	0.0189	1	-	-	-
-doc	document/_1953_99 Cong_ 2.pdf	DOC	1>1	216490>190014	0	yes	clean	0>0	same	0>0	0>0	same	-
-page	thesis/Ries_Marshall_1955_web.pdf	54	221	0.78	0.86	1.10	-23	0.0000	-	1.00	3	1.00	1.00	1.00	0.13	0.98	0.71	0	0	0	0/0	15/16	ok	5	34	-
+doc	document/_1953_99 Cong_ 2.pdf	DOC	1>1	216490>190014	1	yes	clean	0>0	same	0>0	0>0	same	-
+page	thesis/Ries_Marshall_1955_web.pdf	54	221	0.78	0.86	1.10	-23	0.0000	-	1.00	3	1.00	1.00	1.00	0.13	0.98	0.71	0	0	0	0/0	15/16	ok	8	42	-
 truth	thesis/Ries_Marshall_1955_web.pdf	T54	222	0	221	211	7	3	0	1	0	0	0.0452	1.00	-	-	-	0.0136	0.0452	4	1.00	-	-
-doc	thesis/Ries_Marshall_1955_web.pdf	DOC	1>1	126658>30750	0	yes	clean	0>0	same	0>0	0>0	same	-
-page	book/New York Stock Exchange_1956_Stock ownership plans for employees.pdf	110	442	0.82	0.97	1.00	-3	0.0000	-	0.23	5	1.00	0.50	1.00	0.60	0.33	0.18	0	0	0	0/1	20/21	ok	126	93	find,selection,copy
+doc	thesis/Ries_Marshall_1955_web.pdf	DOC	1>1	126658>30750	1	yes	clean	0>0	same	0>0	0>0	same	-
+page	book/New York Stock Exchange_1956_Stock ownership plans for employees.pdf	110	442	0.82	0.97	1.00	-3	0.0000	-	0.23	5	1.00	0.50	1.00	0.60	0.33	0.18	0	0	0	0/1	20/21	ok	92	105	find,selection,copy
 truth	book/New York Stock Exchange_1956_Stock ownership plans for employees.pdf	T110	464	5	459	235	211	13	1127	0	0	0	2.9434	0.34	-	-	-	0.6013	0.4771	1	-	-	tcopy,tfind
-doc	book/New York Stock Exchange_1956_Stock ownership plans for employees.pdf	DOC	1>1	32012>43583	0	yes	clean	0>0	same	0>0	0>0	same	-
-page	magazineArticle/Kristol_1960_High, Low, and Modern_Encounter.pdf	1	473	1.00	0.97	1.14	-7	0.0030	0.00	0.90	3	1.00	1.00	1.00	0.08	0.91	0.81	0	1	0	0/14	53/57	ok	243	95	colour
+doc	book/New York Stock Exchange_1956_Stock ownership plans for employees.pdf	DOC	1>1	32012>43583	1	yes	clean	0>0	same	0>0	0>0	same	-
+page	magazineArticle/Kristol_1960_High, Low, and Modern_Encounter.pdf	1	473	1.00	0.97	1.14	-7	0.0030	0.00	0.90	3	1.00	1.00	1.00	0.08	0.91	0.81	0	1	0	0/14	53/57	ok	294	151	colour
 truth	magazineArticle/Kristol_1960_High, Low, and Modern_Encounter.pdf	T1	462	8	454	440	4	10	37	0	1	0	0.1123	0.96	4/4	-	-	0.0374	0.0088	5	1.00	0.00	tcopy,tcolour
 doc	magazineArticle/Kristol_1960_High, Low, and Modern_Encounter.pdf	DOC	1>1	778770>61553	0	yes	clean	0>0	same	0>0	0>0	same	-
-page	report/AI 2027.pdf	54	303	1.00	1.00	1.00	0	0.0016	1.00	0.87	3	0.97	1.00	1.00	0.17	1.00	0.98	0	0	0	0/0	7/12	ok	33	33	-
+page	report/AI 2027.pdf	54	303	1.00	1.00	1.00	0	0.0016	1.00	0.87	3	0.97	1.00	1.00	0.17	1.00	0.98	0	0	0	0/0	7/12	ok	45	47	-
 truth	report/AI 2027.pdf	T54	303	3	233	224	1	8	8	1	0	0	0.0730	1.00	-	0/64	-	0.0172	0.0043	11	1.00	1.00	tcopy
-doc	report/AI 2027.pdf	DOC	1>1	499115>495096	0	yes	clean	0>0	same	3>3	0>0	same	-
-page	newspaperArticle/_1941_Fiedler's hiring at UM announced_Helena Independent.pdf	1	2836	0.98	1.01	1.00	-3	0.0000	-	0.77	29	0.09	0.00	0.91	2.85	0.75	0.07	7	8	0	4/51	1128/1500	ok	146	197	find,selection,copy
+doc	report/AI 2027.pdf	DOC	1>1	499115>495096	1	yes	clean	0>0	same	3>3	0>0	same	-
+page	newspaperArticle/_1941_Fiedler's hiring at UM announced_Helena Independent.pdf	1	2836	0.98	1.01	1.00	-3	0.0000	-	0.77	29	0.09	0.00	0.91	2.85	0.75	0.07	7	8	0	4/51	1128/1500	ok	198	257	find,selection,copy
 truth	newspaperArticle/_1941_Fiedler's hiring at UM announced_Helena Independent.pdf	T1	3344	40	3251	1968	1160	123	10455	11	8	6	3.6106	0.81	8/11	5/12	-	0.6838	0.1987	62	0.73	-	tcopy
-doc	newspaperArticle/_1941_Fiedler's hiring at UM announced_Helena Independent.pdf	DOC	1>1	439171>338544	0	yes	clean	0>0	same	0>0	0>0	same	-
-page	document/_1939_Former students to Board re Merriam_.pdf	9	304	0.93	0.92	0.67	-23	0.0000	-	0.97	1	0.98	1.00	1.00	0.05	1.00	0.96	0	0	0	0/1	23/28	ok	2	77	-
-truth	document/_1939_Former students to Board re Merriam_.pdf	T9	293	1	292	282	3	7	0	0	0	0	0.0342	1.00	2/2	-	-	0.0068	0.0034	5	0.63	-	-
-doc	document/_1939_Former students to Board re Merriam_.pdf	DOC	1>1	509133>69317	0	yes	clean	0>0	same	0>0	0>0	same	-
-page	bookSection/Allen_2011_The Origins of Political Philosophy_Oxford University Press.pdf	8	608	1.00	1.00	1.04	-17	0.0000	-	1.00	1	1.00	1.00	1.00	0.00	1.00	1.00	0	0	0	0/0	40/42	ok	51	73	-
+doc	newspaperArticle/_1941_Fiedler's hiring at UM announced_Helena Independent.pdf	DOC	1>1	439171>338544	1	yes	clean	0>0	same	0>0	0>0	same	-
+page	document/_1939_Former students to Board re Merriam_.pdf	9	304	0.98	0.96	0.93	-28	0.0000	-	0.97	1	0.98	1.00	1.00	0.05	1.00	0.96	0	0	0	0/1	23/28	ok	2	97	-
+truth	document/_1939_Former students to Board re Merriam_.pdf	T9	293	1	292	282	3	7	0	0	0	0	0.0342	1.00	2/2	-	-	0.0068	0.0034	5	0.94	-	-
+doc	document/_1939_Former students to Board re Merriam_.pdf	DOC	1>1	509133>67432	5	yes	clean	0>0	same	0>0	0>0	same	-
+page	bookSection/Allen_2011_The Origins of Political Philosophy_Oxford University Press.pdf	8	608	1.00	1.00	1.04	-17	0.0000	-	1.00	1	1.00	1.00	1.00	0.00	1.00	1.00	0	0	0	0/0	40/42	ok	60	89	-
 truth	bookSection/Allen_2011_The Origins of Political Philosophy_Oxford University Press.pdf	T8	608	1	607	605	2	0	0	0	0	0	0.0033	1.00	-	-	-	0.0016	0.0033	2	1.00	-	-
-doc	bookSection/Allen_2011_The Origins of Political Philosophy_Oxford University Press.pdf	DOC	1>1	109061>87369	0	yes	clean	0>0	same	0>0	0>0	same	-
-page	newspaperArticle/Glazer_2003_Neoconservatives, Then and Now_New York Times.pdf	1	215	-	0.94	1.07	-12	0.0000	-	0.80	2	1.00	1.00	1.00	0.17	0.88	0.76	0	1	0	0/10	24/30	ok	4	23	-
+doc	bookSection/Allen_2011_The Origins of Political Philosophy_Oxford University Press.pdf	DOC	1>1	109061>87369	1	yes	clean	0>0	same	0>0	0>0	same	-
+page	newspaperArticle/Glazer_2003_Neoconservatives, Then and Now_New York Times.pdf	1	215	-	0.94	1.07	-12	0.0000	-	0.80	2	1.00	1.00	1.00	0.17	0.88	0.76	0	1	0	0/10	24/30	ok	4	29	-
 truth	newspaperArticle/Glazer_2003_Neoconservatives, Then and Now_New York Times.pdf	T1	219	0	216	207	9	0	0	0	0	2	0.0417	1.00	0/1	-	-	0.0602	0.0509	2	1.00	-	-
-doc	newspaperArticle/Glazer_2003_Neoconservatives, Then and Now_New York Times.pdf	DOC	1>1	138293>32722	0	yes	clean	0>0	same	0>0	0>0	same	-
-page	book/Ibson_2006_Picturing men.pdf	66	19	-	-	1.01	0	0.0000	-	1.00	0	-	-	-	-	-	-	0	0	0	0/0	0/0	rotation	7	19	-
+doc	newspaperArticle/Glazer_2003_Neoconservatives, Then and Now_New York Times.pdf	DOC	1>1	138293>32722	1	yes	clean	0>0	same	0>0	0>0	same	-
+page	book/Ibson_2006_Picturing men.pdf	66	19	-	-	1.01	0	0.0000	-	1.00	0	-	-	-	-	-	-	0	0	0	0/0	0/0	rotation	10	28	-
 truth	book/Ibson_2006_Picturing men.pdf	T66	19	0	18	18	0	0	0	0	0	0	-	1.00	-	1/1	-	-	-	2	1.00	-	-
-doc	book/Ibson_2006_Picturing men.pdf	DOC	1>1	225111>55857	0	yes	clean	0>0	same	0>0	0>0	same	-
+doc	book/Ibson_2006_Picturing men.pdf	DOC	1>1	225111>55857	7	yes	clean	0>0	same	0>0	0>0	same	-

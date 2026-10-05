@@ -4205,22 +4205,26 @@ enum Flattener {
     /// | `sum` `[Double]` (w+1)(h+1) | 8 |
     /// | `sq` `[Double]` (w+1)(h+1) | 8 |
     /// | `mask` `[Bool]` w·h | 1 |
-    /// | | **18** |
+    /// | `region` `[Bool]` w·h, alive at the second cut on a pale page (C54) | 1 |
+    /// | | **19** |
     ///
-    /// Corroborated independently: the review measured **19.11 B/px live** on a
-    /// real page against this 18.005 analytic, and the phases provably do not
-    /// overlap — `renderGrey + sauvolaMask` and the whole grey `mrcLayers` read
-    /// the same 1,181.8 MB live peak, to the byte.
+    /// Corroborated independently, before C54 added the second cut: the review
+    /// measured **19.11 B/px live** on a real page against the 18.005 analytic of
+    /// the first cut, and the phases provably do not overlap — `renderGrey +
+    /// sauvolaMask` and the whole grey `mrcLayers` read the same 1,181.8 MB live
+    /// peak, to the byte. The second cut adds `region`'s byte, so the live figure
+    /// on a pale page is about 20.1 [reasoned, not measured], and the bound below
+    /// still holds at it: 100 × 20.1 = 2.01 GB.
     ///
     /// **What this number does not include**, on either side of the comparison:
     /// CoreGraphics' own buffers for the render and the JPEG encode. The bound
     /// below is therefore a statement about *this file's* allocations, which is
     /// what it can honestly be.
-    static let analyticMRCBytesPerPixel = 18.0
+    static let analyticMRCBytesPerPixel = 19.0
 
     /// Whether layering's worst case stays inside the render's.
     ///
-    /// 100 × 18.0 = 1.8 GB against 400 × 5.5 = 2.2 GB. It held at the old 8.0 and
+    /// 100 × 19.0 = 1.9 GB against 400 × 5.5 = 2.2 GB. It held at the old 8.0 and
     /// it still holds at the real number, which is the useful thing to be able to
     /// say after correcting a constant by 2.25x.
     static var mrcBoundIsWithinTheRenderOne: Bool {
@@ -4426,16 +4430,21 @@ enum Flattener {
     /// cutting text out of one: on a page that is half photograph the photograph
     /// drags the global threshold until the text either bloats or vanishes.
     /// Integral images, so the window size costs nothing.
+    ///
+    /// `levels` maps each grey to the one thresholded (C54, `paleInkLevels`); nil reads
+    /// the render as it is. A table rather than a remapped copy of the page, so the
+    /// second cut costs no buffer the first did not.
     static func sauvolaMask(_ grey: [UInt8], width w: Int, height h: Int,
-                            window: Int) -> [Bool] {
+                            window: Int, levels: [UInt8]? = nil) -> [Bool] {
         guard w > 0, h > 0, grey.count >= w * h else { return [] }
+        let level = levels?.count == 256 ? levels! : (0...255).map { UInt8($0) }
         let stride1 = w + 1
         var sum = [Double](repeating: 0, count: stride1 * (h + 1))
         var sq = [Double](repeating: 0, count: stride1 * (h + 1))
         for y in 0..<h {
             var rs = 0.0, rq = 0.0
             for x in 0..<w {
-                let v = Double(grey[y * w + x])
+                let v = Double(level[Int(grey[y * w + x])])
                 rs += v; rq += v * v
                 sum[(y + 1) * stride1 + x + 1] = sum[y * stride1 + x + 1] + rs
                 sq[(y + 1) * stride1 + x + 1] = sq[y * stride1 + x + 1] + rq
@@ -4458,12 +4467,86 @@ enum Flattener {
                       - sq[y1 * stride1 + x0] + sq[y0 * stride1 + x0]
                 let mean = s / area
                 let sd = max(q / area - mean * mean, 0).squareRoot()
-                if Double(grey[y * w + x]) < mean * (1 + sauvolaK * (sd / 128.0 - 1)) {
+                if Double(level[Int(grey[y * w + x])]) < mean * (1 + sauvolaK * (sd / 128.0 - 1)) {
                     mask[y * w + x] = true
                 }
             }
         }
         return mask
+    }
+
+    /// C54. Below this many grey levels between a page's paper and its ink, the stencil
+    /// is cut again from the page stretched so its ink reads black and its paper white.
+    ///
+    /// Sauvola's constants assume black type on white paper: where the local spread is
+    /// small its threshold sits a third below the local mean, and pale typewriting on
+    /// grey or yellowed paper is not a third darker than anything. The strokes then
+    /// fall on both sides of the threshold, and the parts that miss the stencil survive
+    /// only in the background, at an eighth of the resolution on a page of text.
+    /// Measured over each page's whole first stencil, not only its words (2026-10-05): the
+    /// four C54 pages read 118 (`Herbert Marks papers` p12, ink core 137 on paper 255),
+    /// 100 (`_1939_Former students` p9, 62 on 162), 155 (`Atkinson_1939` p2) and 144
+    /// (`Ford_1941` p2). Every page of dark type on white in the regression set reads 204
+    /// or more and keeps the stencil it had, byte for byte. In between, `1954 - Why`'s
+    /// yellowed pages read 106-177, and `Ibson_2006` p66 and `Xin Qu_2018` p24 178 and
+    /// 183; the low contrast alone is not enough, see `paleInkMissedShare`.
+    static let paleInkContrast = 160
+
+    /// C54. The least gap between paper and ink that is stretched: below it the "ink" is
+    /// grain or a picture's texture, and the stretch would multiply it (the review's
+    /// simulation: noise in a box went 0.096 -> 0.282 of the stencil).
+    static let paleInkMinimumContrast = 40
+
+    /// C54. The share of the words' dark pixels, darker than halfway from paper to ink,
+    /// that the first stencil must miss before it is cut again. The low contrast alone
+    /// also takes in `1954 - Why`'s yellowed pages, whose first stencil misses none of
+    /// their ink (0.000-0.056 of it over each whole page), and stretching those only
+    /// thickened their type: the regression set's `inkRatio` rose 0.09-0.11 on four of
+    /// them. The broken pages miss 0.17 (`Ford_1941` p2), 0.23 (`_1939_Former students`
+    /// p9) and 0.31 (`Herbert Marks papers` p12); `Atkinson_1939` p2 misses 0.03 and is
+    /// left as it was.
+    static let paleInkMissedShare = 0.10
+
+    /// The level table that stretches a pale page's ink to black and its paper to white,
+    /// or nil when the page's ink already stands `paleInkContrast` or more from its paper,
+    /// stands less than `paleInkMinimumContrast` from it, or is already held by the
+    /// stencil (`paleInkMissedShare`).
+    ///
+    /// Both levels are read inside the words, from the first stencil: the ink is the
+    /// darkest quarter of the stencil, the strokes' core, and the paper is the median of
+    /// the rest of the word boxes. Rejected: a percentile of the whole page (Marks p12 is
+    /// 98% paper, so its first percentile is paper); a lower Sauvola k for pale pages
+    /// (it moves the threshold by a fraction of a mean that grey paper has already
+    /// lowered); a wider window (on `_1939_Former students` it closed few of the gaps).
+    /// Left as it was: a photograph Vision boxed words over is stretched like pale ink
+    /// when its tones are close, and gains speckle in the stencil.
+    static func paleInkLevels(_ grey: [UInt8], stencil: [Bool], region: [Bool]) -> [UInt8]? {
+        guard grey.count == stencil.count, grey.count == region.count else { return nil }
+        var ink = [Int](repeating: 0, count: 256), paper = [Int](repeating: 0, count: 256)
+        for i in 0..<grey.count where region[i] {
+            if stencil[i] { ink[Int(grey[i])] += 1 } else { paper[Int(grey[i])] += 1 }
+        }
+        func level(_ histogram: [Int], _ share: Double) -> Int? {
+            let total = histogram.reduce(0, +)
+            guard total > 0 else { return nil }
+            var seen = 0
+            for v in 0..<256 {
+                seen += histogram[v]
+                if Double(seen) >= share * Double(total) { return v }
+            }
+            return 255
+        }
+        guard let inkLevel = level(ink, 0.25), let paperLevel = level(paper, 0.5),
+              paperLevel - inkLevel >= paleInkMinimumContrast,
+              paperLevel - inkLevel < paleInkContrast else { return nil }
+        let halfway = (inkLevel + paperLevel) / 2
+        let held = ink[0..<halfway].reduce(0, +), missed = paper[0..<halfway].reduce(0, +)
+        guard held + missed > 0,
+              Double(missed) / Double(held + missed) >= paleInkMissedShare else { return nil }
+        let span = Double(paperLevel - inkLevel)
+        return (0...255).map { v in
+            UInt8(max(0, min(255, (Double(v - inkLevel) / span * 255).rounded())))
+        }
     }
 
     /// Where the stencil is allowed to look, from Vision's word boxes.
@@ -4771,6 +4854,17 @@ enum Flattener {
         guard mask.count == w * h else { return nil }
         let region = textRegionMask(boxes, width: w, height: h)
         for i in 0..<(w * h) where !region[i] { mask[i] = false }
+        // C54. Pale ink is cut again with the page's levels stretched. The first mask is
+        // released before the second cut, so the peak is one byte a pixel over the
+        // first's: `region`, which the first cut did not have.
+        if let levels = paleInkLevels(grey, stencil: mask, region: region) {
+            mask = []
+            mask = sauvolaMask(grey, width: w, height: h,
+                               window: sauvolaWindow(dpi: dpi, width: w, height: h),
+                               levels: levels)
+            guard mask.count == w * h else { return nil }
+            for i in 0..<(w * h) where !region[i] { mask[i] = false }
+        }
         // A stencil with nothing in it is not a layering, it is a downsampled
         // page. Refuse it the same way an empty box list is refused.
         guard mask.contains(true) else { return nil }
@@ -4984,10 +5078,18 @@ enum Flattener {
         let w = max(Int(wide), 1), h = max(Int(high), 1)
         guard let grey = renderGrey(page, box: box, scale: scale,
                                     width: w, height: h, from: .mediaBox) else { return nil }
-        let mask = sauvolaMask(grey, width: w, height: h,
+        var mask = sauvolaMask(grey, width: w, height: h,
                                window: sauvolaWindow(dpi: dpi, width: w, height: h))
         let region = textRegionMask(boxes, width: w, height: h)
         guard mask.count == w * h, region.count == w * h else { return nil }
+        // C54, as in `mrcLayers`, decided at this resolution from this render.
+        if let levels = paleInkLevels(grey, stencil: mask, region: region) {
+            mask = []
+            mask = sauvolaMask(grey, width: w, height: h,
+                               window: sauvolaWindow(dpi: dpi, width: w, height: h),
+                               levels: levels)
+            guard mask.count == w * h else { return nil }
+        }
         var pixels = [UInt8](repeating: 255, count: w * h)
         var inked = false
         for i in 0..<(w * h) where mask[i] && region[i] {

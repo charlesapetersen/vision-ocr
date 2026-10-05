@@ -14,6 +14,8 @@ an older entry mentions "Window ▸ Vision Reader Window", the menu item is now
 
 ## Unreleased
 
+- Pale typewriting, and typing on grey or yellowed paper, is no longer published broken and faded: its
+  strokes come out as solid as the scan shows them (C54).
 - Clean lines that were missing from the text layer of some scanned pages, such as a book notice's second
   line or the last line of a footnote, can now be found and copied. Lines the recogniser can read only as
   garbled text are now named in the run log by page (C53).

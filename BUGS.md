@@ -19545,7 +19545,7 @@ tail between `86 pages.` and `25 cents.`; swapping the two runs in the published
   ux-regression on the final code: 0 worse, 1 better (Briefer p3 overInk 0.91 -> 0.96; truth copyErr 0.0245 ->
   0.0168); baseline refreshed.
 
-### C54 · Pale typewriting on layered pages is published broken and faded — OPEN
+### C54 · Pale typewriting on layered pages is published broken and faded — FIXED
 
 *(found 2026-10-01 by `truth-read`. C31 fixed the ink's colour; this is the stencil's shape.)*
 
@@ -19557,6 +19557,33 @@ each stroke never reach the 1-bit mask and survive only in the background, store
 (25 ppi there) and painted pale grey.] What the reader loses is legibility of the whole page's text; Vision
 read it, so the layer is fine. Cause of the broken mask [reasoned]: the stencil's threshold is set for
 dark ink, and grey typewriter ink (68-176 grey on Marks p12) falls on both sides of it.
+
+**FIXED 2026-10-05** (`c54-pale-typing`, round 1 session 1). Reproduced first through the production gate
+and PDFKit renders [looked at]: Marks p12 and Former students p9 broken and pale, as reported. Cause
+[measured]: Sauvola (k 0.34, R 128) puts its threshold about a third below the local mean where the spread
+is small, and pale ink, or dark ink on grey paper (Former students: core 62 on paper 162), is not a third
+darker. Fix (`Flattener.paleInkLevels`): inside the word boxes, read the ink core (darkest quarter of the
+first stencil) and the paper (median of the rest). When they are 40-159 levels apart AND the first stencil
+misses at least 10% of the pixels darker than halfway, cut the stencil again with the page stretched,
+ink to black and paper to white. Both `mrcLayers` and `mrcStencil` do this. In-box missed share
+[measured]: Marks 0.31, Former students 0.18, Atkinson 0.026, Ford 0.012. So only the first two are
+re-cut. Before and after on those two: stroke-complete renders; bytes 46,857 -> 46,458 and
+69,317 -> 67,432. `ux-regression`: 0 worse, 6 better (Former students p9 inkRatio 0.67 -> 0.93, truth
+elInk 0.63 -> 0.94); baseline refreshed. Every dark-on-white set page sits 204+ levels apart, so its
+stencil is byte-identical.
+
+Without the missed-share term, the contrast bar alone took in `1954 - Why` p5/p6/p8/p10 (dark ink on
+yellowed paper, already held) and thickened them: `inkRatio` rose 0.09-0.11, four WORSE. Rejected: a
+lower k (it scales a mean that grey paper has already lowered); a wider window (it closed few gaps on
+Former students); a whole-page percentile for the ink (Marks is 98% paper).
+
+Atkinson p2 and Ford p2: their typed strokes are unbroken before and after. What they lose is the
+handwritten insert itself ("and" of "and especially the young folks", "those" over a strikeout). Vision
+did not box that ink, so it is C28's mechanism, not this threshold.
+
+Left [reasoned]: a photograph Vision boxed words over is stretched when its tones are close, and gains
+speckle in the stencil. Pages 2-4 declare 72 dpi for a ~227 dpi scan, so the quarter-inch window is
+0.08 inch there; the stretch fixed Former students without changing that.
 
 ### C55 · Some runs are drawn below their ink, so a drag over the line copies the line above — OPEN
 

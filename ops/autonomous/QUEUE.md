@@ -990,7 +990,8 @@ say so in the commit.
       on as well as off and their fixes work with it. Add the mode's rows to `ops/ux-regression/set.tsv`. Give
       each re-scoped item an ESTIMATE under rule 11. ESTIMATE: 1 session. BOUND: rule 10.
       (context: owner request 2026-10-02)
-- [ ] **c54-pale-typing** — publish pale typewriting on layered pages as solid as the source shows it.
+- [x] **c54-pale-typing** — publish pale typewriting on layered pages as solid as the source shows it.
+      2026-10-05: round 1, session 1, FIXED (pale-ink stencil re-cut, `Flattener.paleInkLevels`).
       THE PAGES: `Herbert Marks papers` p12, `_1939_Former students` p9, `Atkinson_1939` p2, `Ford_1941` p2.
       DONE WHEN, on 1x and 2x PDFKit renders of the published pages beside the source: the typed strokes are
       unbroken wherever the source's are; dark-ink pages in `ops/ux-regression/set.tsv` are unchanged or

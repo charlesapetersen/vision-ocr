@@ -1663,7 +1663,7 @@ do {
     //
     // Checked as a decision rather than by allocating the page each describes. R24
     // bounded one allocation and left its sibling unbounded (R29); layering is that
-    // sibling for `flatten`'s render, holding 18 bytes a pixel against 5.5 — and
+    // sibling for `flatten`'s render, holding 19 bytes a pixel against 5.5 — and
     // 25 in colour, which is why the colour route has a bound of its own (A3.1).
     check("layering's worst case stays inside the render's",
           Flattener.mrcBoundIsWithinTheRenderOne,
@@ -4342,6 +4342,87 @@ func makeGreyValuePDF(at url: URL, inkFraction: Double,
     var box = CGRect(x: 0, y: 0, width: 612, height: 792)
     guard let pdf = CGContext(url as CFURL, mediaBox: &box, nil) else { return }
     pdf.beginPDFPage(nil); pdf.draw(cg, in: box); pdf.endPDFPage(); pdf.closePDF()
+}
+
+// C54 · pale typewriting on grey paper reaches the stencil whole. Ten lines of stems,
+// 4 px wide and 36 tall, inked unevenly at 100-149 on paper at 168: the stencil before
+// the fix held 26% of the stroke pixels, so the rest survived only in the background at
+// an eighth of the page's resolution. The same stems at 10-59 on paper at 250 are the
+// dark-ink control, which the stretch must leave alone.
+do {
+    resetPrefs()
+    let dir = tmp.appendingPathComponent("c54-\(UUID().uuidString)")
+    try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: dir) }
+    let w = 1224, h = 1584
+    let boxes = (0..<10).map { r in
+        SearchableWriter.BoundingBox(x: 120.0 / 1224, y: Double(200 + r * 110) / 1584,
+                                     width: 980.0 / 1224, height: 36.0 / 1584)
+    }
+    /// The share of the stems' pixels the published stencil holds, and whether the
+    /// page was read as pale.
+    func stencilCover(paper: UInt8, inkFrom base: Int, _ stem: String) -> (Double, Bool)? {
+        var grey = [UInt8](repeating: paper, count: w * h)
+        var stroke = [Bool](repeating: false, count: w * h)
+        for row in 0..<10 {
+            let top = 200 + row * 110
+            for s in 0..<60 {
+                let x0 = 130 + s * 16
+                for y in top..<(top + 36) {
+                    for x in x0..<(x0 + 4) {
+                        grey[y * w + x] = UInt8(base + ((y - top + s) * 7) % 50)
+                        stroke[y * w + x] = true
+                    }
+                }
+            }
+        }
+        let url = dir.appendingPathComponent(stem + ".pdf")
+        guard let provider = CGDataProvider(data: Data(grey) as CFData),
+              let cg = CGImage(width: w, height: h, bitsPerComponent: 8, bitsPerPixel: 8,
+                               bytesPerRow: w, space: CGColorSpaceCreateDeviceGray(),
+                               bitmapInfo: CGBitmapInfo(rawValue: 0), provider: provider,
+                               decode: nil, shouldInterpolate: false, intent: .defaultIntent)
+        else { return nil }
+        var box = CGRect(x: 0, y: 0, width: 612, height: 792)
+        guard let pdf = CGContext(url as CFURL, mediaBox: &box, nil) else { return nil }
+        pdf.beginPDFPage(nil); pdf.draw(cg, in: box); pdf.endPDFPage(); pdf.closePDF()
+        guard let page = PDFDocument(url: url)?.page(at: 0),
+              let layers = Flattener.mrcLayers(for: page, boxes: boxes, into: dir, stem: stem),
+              layers.maskWidth == w, layers.maskHeight == h,
+              let rep = NSBitmapImageRep(data: (try? Data(contentsOf: layers.mask)) ?? Data())
+        else { return nil }
+        var held = 0, total = 0
+        for y in 0..<h {
+            for x in 0..<w where stroke[y * w + x] {
+                total += 1
+                if (rep.colorAt(x: x, y: y)?.whiteComponent ?? 1) < 0.5 { held += 1 }
+            }
+        }
+        let region = Flattener.textRegionMask(boxes, width: w, height: h)
+        var first = Flattener.sauvolaMask(grey, width: w, height: h,
+                                          window: Flattener.sauvolaWindow(dpi: 144, width: w,
+                                                                          height: h))
+        for i in 0..<(w * h) where !region[i] { first[i] = false }
+        let pale = Flattener.paleInkLevels(grey, stencil: first, region: region) != nil
+        return (Double(held) / Double(max(total, 1)), pale)
+    }
+    let pale = stencilCover(paper: 168, inkFrom: 100, "pale")
+    check("C54 — pale typewriting on grey paper is held whole by the stencil",
+          (pale?.0 ?? 0) > 0.95 && pale?.1 == true,
+          pale.map { String(format: "%.3f of the stroke pixels, read as pale: %@", $0.0,
+                            $0.1 ? "yes" : "no") } ?? "the fixture did not layer")
+    let dark = stencilCover(paper: 250, inkFrom: 10, "dark")
+    check("…and dark type on white is not stretched, and is held whole as before",
+          (dark?.0 ?? 0) > 0.95 && dark?.1 == false,
+          dark.map { String(format: "%.3f of the stroke pixels, read as pale: %@", $0.0,
+                            $0.1 ? "yes" : "no") } ?? "the fixture did not layer")
+    // `1954 - Why`'s case: dark type on yellowed paper is as close to its paper as pale
+    // ink is, and its first stencil already holds it, so it must not be stretched.
+    let yellowed = stencilCover(paper: 200, inkFrom: 30, "yellowed")
+    check("…and dark type on yellowed paper, already held, is not stretched either",
+          (yellowed?.0 ?? 0) > 0.95 && yellowed?.1 == false,
+          yellowed.map { String(format: "%.3f of the stroke pixels, read as pale: %@", $0.0,
+                                $0.1 ? "yes" : "no") } ?? "the fixture did not layer")
 }
 
 do {
