@@ -854,7 +854,9 @@ say so in the commit.
       Face CLI; sessions may not run `curl` or `wget`. The framework `python3` has no root certificates, so use
       the venv's Python. Download one candidate at a time, prefer a 4- or 8-bit build (MLX or GGUF) to full weights, and if
       only full weights exist quantise them and delete the originals. A candidate that does not fit is deleted
-      at once. Keep the lab under 25 GB in all. Before each download check that free disk by `df` stays above
+      at once. Keep every candidate that fits and reads correctly through the bake-off and the 4-bit/8-bit runs, so nothing is
+      downloaded twice (owner, 2026-10-04); delete only those that fail to run or do not fit. Keep the lab under
+      50 GB in all. Before each download check that free disk by `df` stays above
       20 GB afterwards; `df` leaves out
       purgeable space, so it is the safe figure.
       THE CANDIDATES. Refresh this list with a short web search first; small models have been arriving monthly.
@@ -900,8 +902,8 @@ say so in the commit.
       (`nohup`, explicit PATH) and check it is alive before the session ends. While it runs it touches
       `$STATE/engine.lock` every 20 s, so the daemon starts no session and no suite runs beside the models; it
       removes the lock when it ends, and a killed job leaves a lock the daemon takes over after 30 minutes. It
-      never starts while `test.lock` is held or a suite runs. Delete a candidate's weights once its readings
-      are saved. Qwen3.5-9B is owed its last guarded try, when more memory is free (after a reboot; it tripped
+      never starts while `test.lock` is held or a suite runs. Keep each candidate's weights for `ocr-bakeoff-bits` and
+      `ocr-hybrid-run`. Qwen3.5-9B is owed its last guarded try, when more memory is free (after a reboot; it tripped
       once with 5.9 GB reclaimable); measure it first and add it if it fits. Surya 2 runs through `surya_ocr` in
       `$OCRLAB/venv-surya`, not `try-mlx.sh` (see its row's note in `OCR-MODELS-2026-10-04.tsv`).
       DONE WHEN: every fitting candidate has a reading of every sample page or a logged reason, and a count of
@@ -914,7 +916,8 @@ say so in the commit.
       contested words unscored, by route; seconds per page and peak memory from the job's log.
       DONE WHEN, committed as `OCR-BAKEOFF-<date>.tsv`: every candidate scored on every sample page or a stated
       reason, Vision beside them, and the top three named by words right on old print and newspapers at a
-      speed this Mac can bear. Keep only the top three's weights. ESTIMATE: 1 session.
+      speed this Mac can bear. Delete the weights of candidates outside the top three only if free disk by `df` would otherwise fall below
+      20 GB. ESTIMATE: 1 session.
       BOUND: rule 10. (context: owner request 2026-10-02)
 - [ ] **ocr-bakeoff-bits** — run the top three at 4-bit and at 8-bit and compare.
       (blocked-on: ocr-bakeoff-score)
