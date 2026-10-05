@@ -288,6 +288,11 @@ step_warn queue-coherence "$OPS/check-queue-coherence.sh"
 # script's own documented bargain and it still catches the whole C25/T16 class.
 step tools-compile Tools/check-tools-compile.sh
 
+# ~60 s, sandboxed (own HOME/STATE/repo, stub gate and claude). A red gate goes to a fix session before the
+# daemon may park (owner, 2026-10-05). Its sandbox daemons share the real one's process name, so a
+# `daemon.sh stop` during this step also stops them and the step reads red; re-run it before believing that.
+step gate-fix-proof bash "$OPS/tests/prove-gate-fix.sh"
+
 if [ "$QUICK" = 1 ]; then
   # VISIONOCR_GATE_QUICK=1 — WIRING CHECKS ONLY. Both expensive lanes are announced as SKIPPED and named
   # in NOT VERIFIED, because a quick run that merely printed GREEN would be a gate claiming coverage it

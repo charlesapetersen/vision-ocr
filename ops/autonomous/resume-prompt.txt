@@ -22,6 +22,22 @@ STEP 1 — STATE.
   order), `## HOLD (owner-only)` (off limits), and the newest two `## SESSION LOG` entries.
   If RUN.md's "RUN STATUS:" line reads COMPLETE, stop.
 
+STEP 1.4 — A RED HEALTH GATE COMES BEFORE EVERYTHING ELSE.
+    cat ~/.local/state/visionocr-autonomous/gate-fix 2>/dev/null
+  Absent is the normal case: go to STEP 1.5. If it exists, the daemon's health gate failed twice in a row
+  and making it pass is your ONE item, ahead of triage and the queue; the daemon stopped parking on a red
+  gate on 2026-10-05 so that a session could fix it, and parks only after three committed attempts. The file
+  names the failing steps, the gate's command for each, and the log's tail.
+  * Reproduce each failing step alone with its command, in your worktree (the suite step under
+    test-lock.sh, as STEP 3 says), never the whole gate.
+  * Find the cause and fix it. A flaky or order-dependent check is a real defect: make it deterministic, or
+    fix the race it exposes in the app. NEVER make the gate pass by weakening, skipping or deleting a
+    check, raising a timeout to hide a race, or removing a step from the gate.
+  * Commit and push with the test that proves it, record it in the SESSION LOG under the tag `gate-fix`,
+    and stop. Do NOT delete the file: the daemon retires it when the next gate is green, and counts another
+    attempt if it is not.
+  * If the cause needs the owner's authority, write it under RUN.md's `## NEEDS OWNER` and stop.
+
 STEP 1.5 — TRIAGE COMES FIRST.
     ls ~/.local/state/visionocr-autonomous/triage/*.md 2>/dev/null
   Each file is a worktree a previous session left dirty. The daemon wrote the file, and it carries the

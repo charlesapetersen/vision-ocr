@@ -243,6 +243,16 @@ GATE_MAXRUN="${VISIONOCR_GATE_MAXRUN:-14400}"  # 4 h = one full gate (~100 min) 
                                                # + margin. A cap below true runtime is what false-parks a
                                                # healthy run, and that had become one bad minute away.
 GATE_MAX_TIMEOUTS="${VISIONOCR_GATE_MAX_TIMEOUTS:-2}"
+# GATE FIX (owner, 2026-10-05: "Daemon parked again. Set this up so I don't need to tell you this."). A red
+# that survived the retry used to park at once — that day on `tools-compile`, two expressions a session fixed
+# in minutes once the owner noticed. Now it is handed to the next SESSION as its ONE item through $GATEFIX
+# (resume prompt STEP 1.4): the failing steps, the gate's command for each, the log's tail. A GREEN gate
+# retires it. The run parks only after $GATEFIX_MAX fix sessions that COMMITTED (the work tip moved) still
+# leave it red. Ported from Archive Suite's W34.gate-fix (d45c7cb). 0 = the old park-at-once.
+GATEFIX="$STATE/gate-fix"; GATEFIX_TRIES="$STATE/gate-fix-tries"; GATEFIX_HEAD="$STATE/gate-fix-head"
+GATEFIX_MAX="${VISIONOCR_GATEFIX_MAX:-3}"
+# Consecutive fix sessions that commit nothing before the run parks anyway (see health_gate).
+GATEFIX_IDLE="$STATE/gate-fix-idle"; GATEFIX_IDLE_MAX="${VISIONOCR_GATEFIX_IDLE_MAX:-3}"
 
 STATUS_CMD="${VISIONOCR_STATUS_CMD:-$REPO/ops/autonomous/status-digest.sh}"
 
@@ -660,11 +670,100 @@ _classify_red() {
   return 0
 }
 
+# The work tip a fix attempt is counted against: the primary checkout's HEAD AND origin/main, because a
+# session pushes from its own worktree and leaves the primary HEAD behind (prove-daemon.sh §[4b]).
+_gatefix_tip() {
+  printf '%s %s\n' "$(git -C "$REPO" rev-parse HEAD 2>/dev/null || echo no-head)" \
+    "$(git -C "$REPO" rev-parse --verify --quiet refs/remotes/origin/main 2>/dev/null || echo no-remote-tip)"
+}
+
+# A GREEN gate retires any pending gate-fix request and its attempt count.
+_gatefix_clear() {
+  if [ -f "$GATEFIX" ] || [ -f "$GATEFIX_TRIES" ]; then
+    log "gate fix: the gate is GREEN — the fix request is retired."
+    rm -f "$GATEFIX" "$GATEFIX_TRIES" "$GATEFIX_HEAD" "$GATEFIX_IDLE" 2>/dev/null || true
+  fi
+}
+
+# Hand a red to the next session (see $GATEFIX). Returns 11 when handed over, 1 when the attempts are spent
+# (the caller parks). An attempt counts only when the work tip moved since the last count: a session killed
+# by a lid close or the usage window has not had its chance. Reads the caller's $steps.
+_gatefix_handoff() {
+  [ "$GATEFIX_MAX" -gt 0 ] || return 1
+  local tip_now tip_last n st cmd
+  tip_now="$(_gatefix_tip)"; tip_last="$(cat "$GATEFIX_HEAD" 2>/dev/null || true)"
+  n="$(cat "$GATEFIX_TRIES" 2>/dev/null)"; case "$n" in ''|*[!0-9]*) n=0 ;; esac
+  if [ -z "$tip_last" ] || [ "$tip_last" != "$tip_now" ]; then
+    n=$(( n + 1 )); echo "$n" > "$GATEFIX_TRIES" 2>/dev/null || true
+    echo "$tip_now" > "$GATEFIX_HEAD" 2>/dev/null || true
+    rm -f "$GATEFIX_IDLE" 2>/dev/null || true
+  else
+    log "gate fix: no commit since the last fix attempt — not counting it. Still at $n/$GATEFIX_MAX."
+  fi
+  [ "$n" -gt "$GATEFIX_MAX" ] && return 1
+  {
+    echo "GATE FIX — written by the daemon at $(date '+%F %T'). The health gate failed twice in a row."
+    echo "ATTEMPT: $n of $GATEFIX_MAX (the run parks if a committed fix still leaves the gate red after the last)."
+    echo "FAILED STEPS: ${steps:-(unknown — read the log)}"
+    local IFS=' '
+    for st in $steps; do
+      cmd="$(grep -E "^[[:space:]]*step(_skippable|_warn)? $st( |\$)" "$GATE_CMD" 2>/dev/null | head -1 | sed 's/^[[:space:]]*//')"
+      echo "  $st: ${cmd:-(command not found in $GATE_CMD)}"
+    done
+    echo "FULL LOG: $glog"
+    echo "---- the log's tail ----"
+    tail -60 "$glog" 2>/dev/null
+  } > "$GATEFIX.tmp" 2>/dev/null && mv -f "$GATEFIX.tmp" "$GATEFIX" 2>/dev/null || { rm -f "$GATEFIX.tmp"; return 1; }
+  log "gate fix: handed the failing gate step(s) (${steps:-unknown}) to the next session as its ONE item (attempt $n/$GATEFIX_MAX) — not parking."
+  return 11
+}
+
 # Returns: 9 = RED/park (caller stops the loop) · 10 = ran GREEN (that WAS this cycle's work) ·
+# 11 = RED handed to a fix session ($GATEFIX; the caller launches it now) ·
 # 0 = not due, or an inconclusive timeout-skip (caller continues to a normal session).
 # Must be called only when no other engine is active.
 health_gate() {
+  # With gating or gate-fix switched off nothing can ever retire a request left by an earlier run, and every
+  # session would be sent to fix a gate that no longer runs.
+  if [ "$GATE_EVERY" -le 0 ] || [ "$GATEFIX_MAX" -le 0 ]; then
+    rm -f "$GATEFIX" "$GATEFIX_TRIES" "$GATEFIX_HEAD" "$GATEFIX_IDLE" 2>/dev/null || true
+  fi
   [ "$GATE_EVERY" -gt 0 ] || return 0
+  if [ -f "$GATEFIX" ]; then
+    # A fix request is pending and nothing has been committed since it was written: re-running the gate over
+    # the same tree can only say red again, so go straight to the fix session. But not forever: a session that
+    # cannot reproduce the failure, or that wrote NEEDS OWNER (RUN.md lives in $STATE, so that commits
+    # nothing), would otherwise be relaunched at full budget every backoff for days. One cut off by the usage
+    # window has not had its chance and is not counted.
+    if [ "$(cat "$GATEFIX_HEAD" 2>/dev/null)" = "$(_gatefix_tip)" ]; then
+      local idle w_cut=""; idle="$(cat "$GATEFIX_IDLE" 2>/dev/null)"; case "$idle" in ''|*[!0-9]*) idle=0 ;; esac
+      read -r _ _ w_cut < "$WINDOW_LAST" 2>/dev/null || true
+      [ "${w_cut:-}" = cut ] || { idle=$(( idle + 1 )); echo "$idle" > "$GATEFIX_IDLE" 2>/dev/null || true; }
+      if [ "$idle" -ge "$GATEFIX_IDLE_MAX" ]; then
+        rm -f "$GATEFIX" "$GATEFIX_TRIES" "$GATEFIX_HEAD" "$GATEFIX_IDLE" 2>/dev/null || true
+        park_run "health gate RED — $GATEFIX_IDLE_MAX fix sessions committed nothing" \
+          "Vision OCR autonomous run PARKED — the health gate is red, and $GATEFIX_IDLE_MAX fix sessions in a row
+committed nothing towards it. Read RUN.md's NEEDS OWNER and the newest SESSION LOG entries for why.
+Reproduce: ./ops/autonomous/health-gate.sh   ·   last gate output: $glog
+Then restart it: ./ops/autonomous/daemon.sh start"
+        return 9
+      fi
+      log "gate fix: request pending and no commit since it was written — launching the fix session without re-running the gate ($idle/$GATEFIX_IDLE_MAX without a commit)."
+      return 11
+    fi
+    # Something was committed. Sessions push from their own worktrees and nothing else moves the primary
+    # checkout, which is the tree the gate tests, so without this it would judge the fix on the tree before it.
+    # Only a clean `main` strictly behind origin/main is moved; anything else is left alone and said so.
+    if [ "$(git -C "$REPO" symbolic-ref --short -q HEAD 2>/dev/null)" = main ] \
+       && [ -z "$(git -C "$REPO" status --porcelain --untracked-files=no 2>/dev/null)" ] \
+       && [ "$(git -C "$REPO" rev-parse HEAD 2>/dev/null)" != "$(git -C "$REPO" rev-parse --verify --quiet refs/remotes/origin/main 2>/dev/null)" ] \
+       && git -C "$REPO" merge-base --is-ancestor HEAD refs/remotes/origin/main 2>/dev/null; then
+      git -C "$REPO" merge --ff-only -q refs/remotes/origin/main >/dev/null 2>&1 \
+        && log "gate fix: fast-forwarded the primary checkout to origin/main ($(git -C "$REPO" rev-parse --short HEAD 2>/dev/null)) so the gate tests the fix."
+    elif [ "$(git -C "$REPO" rev-parse HEAD 2>/dev/null)" != "$(git -C "$REPO" rev-parse --verify --quiet refs/remotes/origin/main 2>/dev/null)" ]; then
+      log "gate fix: the primary checkout is not a clean main behind origin/main — gating it as it stands."
+    fi
+  fi
   local last cnt
   last="$(cat "$GATE_STATE" 2>/dev/null)"
   if [ -n "$last" ] && git -C "$REPO" cat-file -e "$last^{commit}" 2>/dev/null; then
@@ -702,6 +801,7 @@ $(printf '%s' "$(cat "$glog" 2>/dev/null)" | tail -20)"
   if [ "$GATE_RC" -eq 0 ]; then
     git -C "$REPO" rev-parse HEAD > "$GATE_STATE" 2>/dev/null || true
     log "health gate GREEN @ $(git -C "$REPO" rev-parse --short HEAD 2>/dev/null)."
+    _gatefix_clear
     return 10
   fi
 
@@ -714,6 +814,7 @@ $(printf '%s' "$(cat "$glog" 2>/dev/null)" | tail -20)"
   if [ "$GATE_RC" -eq 0 ]; then
     git -C "$REPO" rev-parse HEAD > "$GATE_STATE" 2>/dev/null || true
     log "health gate GREEN on retry — the first failure was transient (not parking)."
+    _gatefix_clear
     return 10
   fi
   if [ "$GATE_RC" -eq 2 ]; then log "health gate timed out on retry — SKIPPING (inconclusive, not parking)."; return 0; fi
@@ -722,8 +823,23 @@ $(printf '%s' "$(cat "$glog" 2>/dev/null)" | tail -20)"
   # park note must quote rather than guess at. In the sibling project a park whose only failing step was a
   # DOCUMENT size check reached the owner as "a reproducible build/test regression" on "a broken tree", and
   # cost him a morning hunting a bug that did not exist. Name the step; assert no cause the gate did not.
-  local vline steps has_code=0 doc_list="" diag
+  local vline steps has_code=0 doc_list="" diag gf_note=""
   _classify_red
+  # Every red, code or document, goes to a fix session before it may park: a document red is a session's
+  # edit, and this daemon has no compactor of its own to try first.
+  _gatefix_handoff; local gf=$?
+  [ "$gf" = 11 ] && return 11
+  if [ "$GATEFIX_MAX" -gt 0 ]; then
+    if [ "$(cat "$GATEFIX_TRIES" 2>/dev/null)" -gt "$GATEFIX_MAX" ] 2>/dev/null; then
+      gf_note="
+  $GATEFIX_MAX fix sessions committed changes and the gate is still red."
+    else
+      gf_note="
+  The daemon could not write the gate-fix request ($GATEFIX), so it parked instead."
+    fi
+  fi
+  # Unconditional, so a request left by an earlier run cannot outlive a park under VISIONOCR_GATEFIX_MAX=0.
+  rm -f "$GATEFIX" "$GATEFIX_TRIES" "$GATEFIX_HEAD" "$GATEFIX_IDLE" 2>/dev/null || true
   if [ "$has_code" = 1 ]; then
     # A mixed RED counts as CODE (the conservative reading), but still say the doc step failed too.
     diag="FAILED STEP(S): $steps — a reproducible build/suite regression. The daemon stopped so it does not
@@ -739,7 +855,7 @@ $(printf '%s' "$(cat "$glog" 2>/dev/null)" | tail -20)"
   fi
   park_run "health gate RED (x2)${steps:+ — $steps}" \
     "Vision OCR autonomous run PARKED — the periodic HEALTH GATE failed TWICE in a row.
-$diag
+$diag$gf_note
 Reproduce: ./ops/autonomous/health-gate.sh   ·   full output: $glog
 Then restart it: ./ops/autonomous/daemon.sh start
 Gate verdict + tail:
@@ -869,7 +985,11 @@ mkdir -p "$STATE"
 # belong to anything. Its readers re-verify before signalling, but a fresh run should not start out holding a
 # pid it can no longer vouch for: this daemon's `ppid == $$` test would reject it anyway, and a pointer that
 # is guaranteed to fail its own guard is just a thing to misread in `ls $STATE`.
-rm -f "$IDLE_SINCE" "$NOCOMPLETE" "$STATE/gate-timeouts" "$ORPHSEEN" "$SESSPID" 2>/dev/null || true
+# The gate-fix attempt count and its tip (literal paths, as with gate-timeouts) are forgiven the same way; the
+# request itself is NOT, because the gate is still red and the next session should still fix it.
+rm -f "$IDLE_SINCE" "$NOCOMPLETE" "$STATE/gate-timeouts" "$STATE/gate-fix-tries" "$STATE/gate-fix-head" \
+      "$STATE/gate-fix-idle" \
+      "$ORPHSEEN" "$SESSPID" 2>/dev/null || true
 
 # ---- WHY a daemon used to vanish without a trace -----------------------------------------------------
 # Only the NORMAL loop exit logged a "daemon down" line. `trap 'exit 0' TERM INT` exited immediately, so a
@@ -1643,6 +1763,7 @@ culprits are per-worktree build/ directories and Tools/mutation-out/. Free some 
   health_gate; local hg=$?
   [ "$hg" = 9 ] && return 9
   if [ "$hg" = 10 ]; then note_progress; return 0; fi
+  # 11 = the red was handed to a fix session ($GATEFIX): fall through and launch it now.
 
   # 3d-. Usage window (owner, 2026-09-27). If the last session left the five-hour window at or over
   #      $WINDOW_WAIT_AT%, or was cut off by it, wait for the reset rather than launching into it. The wait is
@@ -1676,6 +1797,14 @@ culprits are per-worktree build/ directories and Tools/mutation-out/. Free some 
     [ "$head_attempts" -ge 2 ] && eff=max
     eff_set="$(printf '%s\n' "$head_span" | grep -oE '\(effort: (low|medium|high|xhigh|max)\)' | head -1 | sed -E 's/.*: ([a-z]+)\)/\1/')"
     [ -n "$eff_set" ] && eff="$eff_set"
+  fi
+  # A pending gate fix is the session's item (resume prompt STEP 1.4), so it is what the attempt is counted
+  # against, and its third try gets max effort the same way.
+  if [ -f "$GATEFIX" ]; then
+    head_tag=gate-fix; eff="$EFFORT"
+    head_attempts="$(cat "$GATEFIX_TRIES" 2>/dev/null)"; case "$head_attempts" in ''|*[!0-9]*) head_attempts=1 ;; esac
+    head_attempts=$(( head_attempts - 1 ))
+    [ "$head_attempts" -ge 2 ] && eff=max
   fi
   local budget="$BUDGET" maxrun="$MAXRUN"
   [ "$eff" = max ] && { budget="$BUDGET_MAX"; maxrun="$MAXRUN_MAX"; }

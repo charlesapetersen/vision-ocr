@@ -321,8 +321,22 @@ explicit "try again" — into a single retry.
 ## The health gate
 
 Every `VISIONOCR_GATE_EVERY` (10) commits the daemon runs `health-gate.sh` itself — deterministic build and
-test, so no session and no LLM. A reproducible RED **parks** the run; a timeout is a third, *inconclusive*
-state that skips rather than parks, escalating to a park only after two consecutive hangs.
+test, so no session and no LLM. A reproducible RED goes to a **fix session** first (below); a timeout is a
+third, *inconclusive* state that skips rather than parks, escalating to a park only after two consecutive hangs.
+
+**A red gate goes to a fix session before it may park** (owner, 2026-10-05: "Daemon parked again. Set this up
+so I don't need to tell you this."). That morning's park was `tools-compile` — two expressions at the type
+checker's limit, which a session fixed once the owner noticed. Now a red that survives the retry writes
+`$STATE/gate-fix` (failing steps, the gate's command for each, the log's tail) and the next session takes it as
+its one item (resume prompt STEP 1.4). A GREEN gate retires it. While it is pending and nothing has been
+committed, the gate is not re-run; once something has, the daemon fast-forwards the primary checkout to
+`origin/main` first (only a clean `main` strictly behind it), because the gate tests the primary and sessions
+push from worktrees, so it would otherwise judge each fix on the tree before it. The run parks after
+`VISIONOCR_GATEFIX_MAX` (3) fix sessions that committed still leave it red, or after
+`VISIONOCR_GATEFIX_IDLE_MAX` (3) in a row that committed nothing (a session cut off by the usage window is not
+counted). A restart forgives both counts but keeps the request; `VISIONOCR_GATEFIX_MAX=0` restores
+park-at-once. Ported from Archive Suite's W34.gate-fix, plus the fast-forward and the idle cap, which a review
+found it needed here. Proof: `tests/prove-gate-fix.sh` (a gate step, ~80 s).
 
 **Why this gate's job is different here.** In the sibling project nothing gated a commit but the session's own
 discipline, so its gate was the only regression backstop and ran every 30 commits. Here `.githooks/pre-commit`

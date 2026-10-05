@@ -952,11 +952,12 @@ say so in the commit.
       every image to a 1,024 px longest side, so its whole-page reads of dense pages will be weak; judge it on
       crops. NEXT: when `df` is above 23 GB
       (expected from about 2026-10-06 noon), Churro GGUF, then Infinity-Parser2-Flash (2,558 MB).
+      2026-10-05 12:20: `df` 19 GB, so neither could download; the session took daemon-gate-fix instead.
       - [x] **lab2-lighton** — the three LightOnOCR builds.
       - [ ] **lab2-churro** — Churro, GGUF and an MLX 8-bit conversion.
       - [ ] **lab2-infinity-falcon** — Infinity-Parser2-Flash and Falcon-OCR.
       - [ ] **lab2-olmocr-qwen3vl** — olmOCR 2 and the two Qwen3-VL builds.
-- [ ] **daemon-gate-fix** — a red health gate goes to a fix session before the daemon may park, as Archive
+- [x] **daemon-gate-fix** — a red health gate goes to a fix session before the daemon may park, as Archive
       Suite's daemon has done since 2026-10-05 (its `W34.gate-fix`, commit d45c7cb).
       WHY. Owner, 2026-10-05: "Daemon parked again. Set this up so I don't need to tell you this." This daemon
       parked at 09:25 that day on `tools-compile` — two expressions in `Tools/score-text-route.swift` at the type
@@ -971,6 +972,16 @@ say so in the commit.
       DONE WHEN: a prove harness in the gate shows hand-off, retirement on green, the attempt count and the park
       after the last attempt, and a mutant of each turns it red. ESTIMATE: 1-2 sessions. BOUND: rule 10.
       (context: owner request 2026-10-05)
+      DONE 2026-10-05: `tests/prove-gate-fix.sh`, gate step `gate-fix-proof`, 25/0; seven mutants (hand-off,
+      retirement, count, park, re-run shortcut, fast-forward, idle cap) each turn it red. Beyond the port, two
+      fixes the review found: the gate tests the primary checkout, which sessions never move, so the daemon
+      fast-forwards a clean main to origin/main before re-gating; and sessions that commit nothing are capped at
+      3 in a row. Every red, document steps included, goes to a session (no compactor here). Prompt STEP 1.4.
+      Landed by the triage session that adopted the stranded worktree. Its review fixed the idle cap (it ran one
+      session too many), clears a request when gating or gate-fix is switched off, and made [5] able to fail (a
+      mutant deleting the request at startup now turns it red). Untested: the usage-window `cut` exemption. Known:
+      a park after attempts on an un-fast-forwardable primary says "fix sessions committed" of fixes never gated.
+      `prove-daemon.sh` [5] (queue edit wakes backoff) fails 125/1 on the base commit too, so it was red before this.
 - [ ] **ocr-bakeoff-run** — read the bake-off sample with every candidate that fits, as one long unattended
       job. (blocked-on: ocr-lab-setup, bakeoff-tonight-ok)
       PAUSED 2026-10-05 08:05 (owner needs the Mac for the day): stopped with `bakeoff.sh stop` after Surya 2
