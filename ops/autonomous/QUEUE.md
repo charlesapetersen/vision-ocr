@@ -941,6 +941,17 @@ say so in the commit.
       swap files grew), under the 20 GB rule, so Churro's 4.3 GB waits for snapshots to age out (hourly, about a
       day) or for a weight the lab no longer needs to go. `pgrep -f 'tart run'` in a wait loop matches itself and
       held off the guard for 50 minutes; the guard now matches the VM binary.
+      Round 1, session 2, 2026-10-05: free disk 21.6 GB, so Churro still could not download (smallest pair,
+      GGUF Q4_K_M + mmproj-Q8_0, is 2,648 MB; Q8_0 + mmproj-f16 is 4,409 MB). Deleting does not help the same
+      day: the hourly Time Machine local snapshots pin anything deleted for about 24 h (6 GB of day-old
+      `/private/tmp` test scratch was removed and `df` did not move); they were left alone, as they may be the
+      only copy of recent hours. `kintopp/churro-mlx` is not on the Hub (404), so Churro's MLX route is a
+      conversion of `stanford-oval/churro-3B`. Falcon-OCR (1,042 MB) fitted inside the rule and was tested out of
+      order: fits, ordinary recall 0.914 / precision 0.964, crops 0.892 / 0.897 at a 4.1 GB peak, the cheapest
+      reader yet at LightOnOCR's level; `fitted` row added (prompt `plain`). mlx-vlm's Falcon processor shrinks
+      every image to a 1,024 px longest side, so its whole-page reads of dense pages will be weak; judge it on
+      crops. NEXT: when `df` is above 23 GB
+      (expected from about 2026-10-06 noon), Churro GGUF, then Infinity-Parser2-Flash (2,558 MB).
       - [x] **lab2-lighton** — the three LightOnOCR builds.
       - [ ] **lab2-churro** — Churro, GGUF and an MLX 8-bit conversion.
       - [ ] **lab2-infinity-falcon** — Infinity-Parser2-Flash and Falcon-OCR.

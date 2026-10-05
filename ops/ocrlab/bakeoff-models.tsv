@@ -19,3 +19,4 @@ chandra-ocr-2-oQ8	fitted	mlx	mlx-community/chandra-ocr-2-oQ8	-	-	6
 qwen3.5-9b-4bit	owed	mlx	mlx-community/Qwen3.5-9B-4bit	-	-	8
 lightonocr-2-1b-ocr-soup-8bit-1540	fitted	mlx	local/LightOnOCR-2-1B-ocr-soup-8bit	""	--max-side 1540 --max-tokens 4096	8
 lightonocr-2-1b-base-8bit-1540	fitted	mlx	local/LightOnOCR-2-1B-base-8bit	""	--max-side 1540 --max-tokens 4096	8
+falcon-ocr-bf16	fitted	mlx	tiiuae/Falcon-OCR	plain	-	4

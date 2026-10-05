@@ -35,6 +35,7 @@ CARDS = {
     "lightonocr-2-1b-ocr-soup-8bit-1540": ("1B", "image boxes only (bbox variants)"),
     "lightonocr-2-1b-base-8bit-1540": ("1B", "image boxes only (bbox variants)"),
     "lightonocr-2-1b-8bit-1540": ("1B", "image boxes only (bbox variants)"),
+    "falcon-ocr-bf16": ("0.27B", "none from the VLM; blocks from its PP-DocLayoutV3 two-stage pipeline"),
 }
 NOTES = {
     "lightonocr-2-1b-4bit": "superseded by its retry, lightonocr-2-1b-4bit-1540",
@@ -63,6 +64,9 @@ NOTES = {
     "lightonocr-2-1b-8bit-1540": "control for the tested 4-bit build; one guarded retry owed, on a machine with "
                                  "10 GB reclaimable (it waited 20 min for that on 2026-10-05 and did not get it); "
                                  "ocr-bakeoff-bits compares 4-bit with 8-bit anyway",
+    "falcon-ocr-bf16": "the Hub build as is (bf16, 1 GB; no quantised build needed at 0.27B); prompt `plain`, "
+                       "which mlx-vlm's processor turns into its OCR_PLAIN category prompt; output was clean "
+                       "Markdown-ish text with no loops",
 }
 NOT_RUN = [
     ("teleocr", "XingChen-AGI/TeleOCR", "1.2B", "-", "-",
