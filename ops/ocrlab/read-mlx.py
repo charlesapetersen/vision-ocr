@@ -53,13 +53,15 @@ if a.max_side:
 text, last, cut, gen = [], None, "-", 0
 first = None
 for img in images:
+    last = None   # a crop that yields nothing must not count the previous crop's tokens again
     for r in stream_generate(model, processor, prompt, image=[img], max_tokens=a.max_tokens, temperature=0.0):
         if first is None: first = time.time()
         text.append(r.text); last = r
         if time.time() - t1 > a.seconds:
             cut = "seconds"; break
     gen += getattr(last, "generation_tokens", 0)
-    if cut != "-": break
+    if cut == "seconds": break
+    # One crop that runs to max_tokens (usually a loop) marks the read cut but does not stop the next crops.
     if last is not None and last.generation_tokens >= a.max_tokens: cut = "max_tokens"
     text.append("\n")
 t2 = time.time()

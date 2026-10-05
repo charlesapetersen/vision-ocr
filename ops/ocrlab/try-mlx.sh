@@ -7,7 +7,7 @@
 # PDFKit renders at 300 dpi, their truth transcripts as *.truth.txt, and newspaper.crops.tsv, the truth
 # set's crop boxes for the newspaper page.
 # Downloads one MLX build (refusing if free disk by `df` would fall below 20 GB, or the lab would pass
-# 25 GB), reads the ordinary and the newspaper page under run-guarded.sh, and appends one row per page to
+# 50 GB, the queue's limit), reads the ordinary and the newspaper page under run-guarded.sh, and appends one row per page to
 # $OCRLAB/results.tsv (pages: ordinary, newspaper whole, newspaper as 13 crops):
 #   label repo page exit seconds_total load_s read_s gen_tokens cut guard_peak_mb mlx_peak_gb
 #   recall precision killed
@@ -37,7 +37,7 @@ free_mb=$(df -m / | awk 'NR==2 {print $4}')
 lab_mb=$(du -sm "$OCRLAB" | awk '{print $1}')
 echo "try-mlx: $repo needs ${need_mb} MB; free ${free_mb} MB; lab ${lab_mb} MB" >&2
 if [ $((free_mb - need_mb)) -lt 20480 ]; then echo "try-mlx: would leave under 20 GB free; refusing" >&2; exit 75; fi
-if [ $((lab_mb + need_mb)) -gt 25600 ]; then echo "try-mlx: lab would pass 25 GB; refusing" >&2; exit 75; fi
+if [ $((lab_mb + need_mb)) -gt 51200 ]; then echo "try-mlx: lab would pass 50 GB; refusing" >&2; exit 75; fi
 if [ -n "$files" ]; then
     dir=$("$py" -c "
 from huggingface_hub import hf_hub_download

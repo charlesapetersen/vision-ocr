@@ -910,6 +910,18 @@ say so in the commit.
       readings per model is committed. A session that finds the job dead restarts it from where it stopped.
       ESTIMATE: 1-2 sessions, plus about 10-15 hours of unattended job. Sub-boxes: the sample list, the job
       started, the job finished and counted. BOUND: rule 10. (context: owner request 2026-10-02, split 2026-10-04)
+      - [x] the sample list, 2026-10-04: `OCR-SAMPLE-2026-10-04.tsv`, 67 pages (39 regression and self-test, not
+            45: TRUTH-PAGES holds 31 + 8; 8 more newspapers; 20 green draws over seven routes), by `make-sample.py`.
+      - [x] the job started, 2026-10-04 19:55: `bakeoff.sh start` runs from copies in `$STATE/ocrlab/scripts/`; check
+            it with `ops/ocrlab/bakeoff.sh status` (`stop` ends it) and `tail $STATE/ocrlab/bakeoff.log`. Newspapers are read as
+            crops only; other pages whole, and as crops too when the whole reading holds under 90% of the
+            transcript's words. swiftc refuses (Xcode licence), so `$STATE/ocrlab/bin/` holds the truth run's
+            own `render-page`/`cut-crops` builds (2026-09-30); cut-crops changed after some owner pages were cut,
+            so their crops differ from the truth set's (logged per page). read-mlx.py no longer stops a crop
+            read after the crop that follows one cut at max_tokens, which had shortened ocr-lab-setup's crop
+            readings (DeepSeek's 0.541). Smoke run on two pages [measured]: LightOnOCR peaks at 11.3 GB on crops
+            and tripped the swap rule once on each of two reads with this session's memory in use.
+      - [ ] the job finished and counted.
 - [ ] **ocr-bakeoff-score** — score the saved readings against the truth set and name the top three.
       (blocked-on: ocr-bakeoff-run)
       Score exactly as `truth-harness` scores the app: words wrong and missing against the transcripts,

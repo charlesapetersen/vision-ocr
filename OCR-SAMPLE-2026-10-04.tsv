@@ -1,0 +1,71 @@
+# OCR-SAMPLE: the ocr-bakeoff sample, made by ops/ocrlab/make-sample.py from TRUTH-PAGES-2026-09-29.tsv and
+# TRUTH-RUN-2026-09-30-pages.tsv (green draw: seed 20261004, round-robin over routes). The queue item
+# counted 45 regression and self-test pages; TRUTH-PAGES holds 39 (31 + 8), and three newspapers are among them.
+id	document	page	route	why	class
+s01	owner/1954 - Why.pdf	2	layered	ux-regression set	truth-only
+s02	owner/1954 - Why.pdf	6	layered	ux-regression set	truth-only
+s03	owner/1954 - Why.pdf	8	layered	ux-regression set	green
+s04	owner/1954 - Why.pdf	9	layered	ux-regression set	red
+s05	owner/1954 - Why.pdf	10	layered	ux-regression set	red
+s06	owner/1951 - Briefer Book Notes.pdf	1	jbig2	ux-regression set	truth-only
+s07	owner/1951 - Briefer Book Notes.pdf	3	jbig2	ux-regression set	truth-only
+s08	owner/Hughes - The Knitting of Racial Groups in Industry (Desktop copy 2026-09-26).pdf	1	unknown	ux-regression set	green
+s09	owner/Hughes - The Knitting of Racial Groups in Industry (Desktop copy 2026-09-26).pdf	6	unknown	ux-regression set	red
+s10	owner/Bird - 1963 - More Room at the Top Company Experiences in Employing Negroes in Professional and Management Jobs.pdf	3	jbig2	ux-regression set	green
+s11	owner/Bird - 1963 - More Room at the Top Company Experiences in Employing Negroes in Professional and Management Jobs.pdf	5	jbig2	ux-regression set	green
+s12	owner/Leland - 1952 - We Believe in Employment on Merit, but.pdf	2	jbig2	ux-regression set	green
+s13	owner/Leland - 1952 - We Believe in Employment on Merit, but.pdf	5	jbig2	ux-regression set	green
+s14	owner/Leland - 1952 - We Believe in Employment on Merit, but.pdf	6	jbig2	ux-regression set	green
+s15	owner/Delton - 2007 - Before the EEOC How Management Integrated the Workplace.pdf	2	jbig2	ux-regression set	green
+s16	thesis/Zarifa_2008_Emerging Forms of Stratification in Higher Education_.pdf	92	jbig2	ux-regression set	green
+s17	newspaperArticle/Berendzen_1981_The Soaring Lesson of America in Space_Newsday (1940-1990), Nassau ed.; Long Island, N.Y..pdf	1	newspaper	ux-regression set	truth-only
+s18	document/2013 - Silicon Valley Program Transcript.pdf	10	jbig2	ux-regression set	green
+s19	journalArticle/Surani et al. - AI for Scaling Legal Reform Mapping and Redacting Racial Covenants in Santa Clara County.pdf	10	jbig2	ux-regression set	green
+s20	bookSection/Berger_2013_Toward a Third Industrial Divide_.pdf	18	jbig2	ux-regression set	truth-only
+s21	magazineArticle/Glazer_2002_Higher Ed_New Republic.pdf	1	layered	ux-regression set	red
+s22	newspaperArticle/___ 2.pdf	1	newspaper	ux-regression set	red
+s23	bookSection/Hyman_2012_Rethinking the Postwar Corporation_Oxford University Press.pdf	8	jbig2	ux-regression set	red
+s24	journalArticle/Riesman_1949_Men, Women, and Marriage_Nation.pdf	2	jbig2	ux-regression set	green
+s25	magazineArticle/Marth_1982_Why Unions Lose At Many Companies_Nation's Business (pre-1986); Washington.pdf	2	layered	ux-regression set	red
+s26	document/_1953_99 Cong_ 2.pdf	16	jbig2	ux-regression set	red
+s27	thesis/Ries_Marshall_1955_web.pdf	54	jbig2	ux-regression set	truth-only
+s28	magazineArticle/Kristol_1960_High, Low, and Modern_Encounter.pdf	1	jbig2	ux-regression set	red
+s29	report/AI 2027.pdf	54	jbig2	ux-regression set	truth-only
+s30	newspaperArticle/_1941_Fiedler's hiring at UM announced_Helena Independent.pdf	1	newspaper	ux-regression set	red
+s31	bookSection/Allen_2011_The Origins of Political Philosophy_Oxford University Press.pdf	8	jbig2	ux-regression set	green
+s32	owner/1954 - Why.pdf	3	jbig2	ux-harness selftest	truth-only
+s33	owner/1954 - Why.pdf	4	layered	ux-harness selftest	truth-only
+s34	owner/1954 - Why.pdf	7	layered	ux-harness selftest	truth-only
+s35	owner/1951 - Briefer Book Notes.pdf	2	jbig2	ux-harness selftest	green
+s36	owner/1951 - Briefer Book Notes.pdf	5	jbig2	ux-harness selftest	green
+s37	owner/1951 - Briefer Book Notes.pdf	6	jbig2	ux-harness selftest	green
+s38	owner/Hughes - The Knitting of Racial Groups in Industry (Desktop copy 2026-09-26).pdf	2	unknown	ux-harness selftest	green
+s39	owner/Hughes - The Knitting of Racial Groups in Industry (Desktop copy 2026-09-26).pdf	8	unknown	ux-harness selftest	green
+s40	newspaperArticle/Glazer_2003_Neoconservatives, Then and Now_New York Times.pdf	1	newspaper	newspaper	green
+s41	newspaperArticle/Gitlin_2000_How Our Crowd Got Lonely_New York Times.pdf	1	newspaper	newspaper	truth-only
+s42	newspaperArticle/Zipkin_2000_Management.pdf	1	newspaper	newspaper	truth-only
+s43	newspaperArticle/_1926_Cox resigns, following most severe public criticism that ever has been_Anaconda Standard.pdf	1	newspaper	newspaper	red
+s44	newspaperArticle/Williams_1958_DEMOCRACY OR MERITOCRACY_The Manchester Guardian (1901-1959); Manchester (UK).pdf	1	newspaper	newspaper	red
+s45	newspaperArticle/___.pdf	1	newspaper	newspaper	red
+s46	newspaperArticle/_1931_Again, press most excited about Frontier's history section_Helena Daily Independent.pdf	1	newspaper	newspaper	red
+s47	newspaperArticle/___ 4.pdf	1	newspaper	newspaper	red
+s48	book/Morgan_1975_American Slavery, American Freedom_Norton.pdf	1	dct	green draw	green
+s49	thesis/NAYLOR_Arthur E.pdf	67	jbig2	green draw	green
+s50	report/AI 2027.pdf	1	layered	green draw	green
+s51	thesis/Schwaller - 2026 - Silicon Valley Landscapes Architecture and the Soft Power of Big Tech.pdf	75	no-image	green draw	green
+s52	journalArticle/Burke - The Expansion of American Higher Education.pdf	1	other	green draw	green
+s53	owner/Sewell - 1999 - Contracting racial equality Affirmative action policy and practice in the United States, 1945-1970.pdf	244	unknown	green draw	green
+s54	journalArticle/Wilson_1975_Review of The Welfare State and Equality_Journal of Economic Literature.pdf	1	dct	green draw	green
+s55	thesis/Drumright - 2005 - A river for war, a watershed to change The Tennessee Valley Authority during World War II.pdf	60	jbig2	green draw	green
+s56	bookSection/Krippner__The political economy of financial exuberance_Emerald Group Publishing Limited.pdf	30	layered	green draw	green
+s57	journalArticle/Batzell - Free Labor, Capitalism and the Antislavery Origins of Chinese Labor Exclusion in 1870s California.pdf	14	no-image	green draw	green
+s58	book/Westad_2005_The Global Cold War_Cambridge University Press.pdf	1	other	green draw	green
+s59	owner/Hughes - The Knitting of Racial Groups in Industry (Desktop copy 2026-09-26).pdf	3	unknown	green draw	green
+s60	owner/Hughes - The Knitting of Racial Groups in Industry.pdf	1	dct	green draw	green
+s61	document/_1979_Ideology of American Neo-Conservatism_.pdf	4	jbig2	green draw	green
+s62	book/Riesman - 1954 - Individualism reconsidered, and other essays.pdf	16	layered	green draw	green
+s63	journalArticle/Batzell - Free Labor, Capitalism and the Antislavery Origins of Chinese Labor Exclusion in 1870s California.pdf	1	no-image	green draw	green
+s64	owner/1954 - Why.pdf	1	other	green draw	green
+s65	owner/1957 - Employment on Merit The Continuing Challenge to Business (Joseph J. Morrow).pdf	2	unknown	green draw	green
+s66	book/Cohen_1990_Making a New Deal_Cambridge University Press.pdf	1	dct	green draw	green
+s67	thesis/Koh - 2008 - Essays on stock options expensing and stock option.pdf	1	jbig2	green draw	green
