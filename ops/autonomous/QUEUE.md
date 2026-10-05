@@ -861,6 +861,13 @@ say so in the commit.
       ordinary page and one newspaper page through the guard, and fits (peak under 12 GB, under 90 s for the
       newspaper page) or why not. No model crashed the Mac or tripped the guard twice.
       BOUND: rule 10. (context: owner request 2026-10-02)
+      Round 1, session 1, 2026-10-04: guard, lab (`~/.local/share/visionocr-ocrlab/`, mlx-vlm 0.7.4, brew llama.cpp)
+      and 13 builds measured, in a PARTIAL `OCR-MODELS-2026-10-04.tsv`. Read both pages to the end under 12 GB: GLM-OCR,
+      HunyuanOCR, Qwen3.5-2B and -4B (rough newspaper-crop recall 0.86-0.92 against Vision's 0.77); none under 90 s
+      on the newspaper (145-302 s). LEFT: chandra-ocr-2-oQ8 and Qwen3.5-9B (refused by the disk rule; deleted weights
+      stay held by Time Machine local snapshots for up to a day, so delete early); Surya 2 through `surya-ocr`
+      (layout then block OCR); TeleOCR (teleocr-rs) and NaviDC (patched llama.cpp), or a stated reason;
+      DeepSeek-OCR-2's processor fails to load in mlx-vlm 0.7.4; LightOnOCR has one guarded try left.
 - [ ] **ocr-bakeoff** — score every candidate that fits against the truth set. (blocked-on: ocr-lab-setup)
       (effort: medium)
       THE SAMPLE, listed and committed first: the 45 pages of the regression set and the self-test, the 11
