@@ -930,6 +930,12 @@ say so in the commit.
       (owner, 2026-10-05: measure it rather than call it "fast"). Time Vision on the same renders, whole and as
       crops, with the recognition settings the app uses, on a quiet machine (the job finished, no suite running),
       and record its seconds per page and peak memory the same way as the models'.
+      TWO CANDIDATES WERE TIMED ON A BUSY MACHINE (owner, 2026-10-05, from the job's log): DeepSeek-OCR-2 (20:45-22:37)
+      and LightOnOCR (22:37-23:37) read while the owner, an interactive Codex session running VM tests (about 21:18
+      and 22:02-22:05) and an interactive Claude session running test harnesses were all on the Mac; all nine of the
+      night's memory-guard interruptions fell in that window. Every candidate from GLM (23:37) on read after the owner
+      quit everything, with none. Re-time DeepSeek and LightOnOCR on a quiet machine before their speed counts; their
+      words are not affected.
       DONE WHEN, committed as `OCR-BAKEOFF-<date>.tsv`: every candidate scored on every sample page or a stated
       reason, Vision beside them with its own measured speed, and the top three named by words right on old print and newspapers at a
       speed this Mac can bear. Delete the weights of candidates outside the top three only if free disk by `df` would otherwise fall below
