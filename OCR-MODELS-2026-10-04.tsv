@@ -1,33 +1,44 @@
-# OCR-MODELS-2026-10-04: open OCR models on this Mac (M3 Pro, 18 GB), ocr-lab-setup round 1 session 1. PARTIAL:
-# chandra-ocr-2-oQ8 and qwen3.5-9b-4bit were refused by the disk rule (deleted weights stay held by hourly
-# Time Machine local snapshots, so df did not recover), and teleocr, navidc-ocr, surya-2 need runtimes not yet built.
-# Every run went through ops/ocrlab/run-guarded.sh (12 GB, critical pressure, swap +2 GB) via try-mlx.sh, MLX through
-# mlx-vlm 0.7.4, greedy decoding. Pages, PDFKit renders at 300 dpi: "ordinary" = Noble_1977 America by design p104
-# (602-word transcript), "newspaper" = 1931 Helena Daily Independent p1 (about 5,500 words), whole page and as the
-# truth set's 13 overlapping crops (each about 1850x1960 px, sized for Gemini: above several models' input caps,
-# e.g. PaddleOCR-VL's 1.0 MP, which is why it reads them badly; ocr-bakeoff should cut smaller crops).
+# OCR-MODELS-2026-10-04: open OCR models on this Mac (M3 Pro, 18 GB), ocr-lab-setup round 1 sessions 1-2.
+# EIGHT MODELS FIT, nine builds (peak under 12 GB, exit 0, recall >= 0.5 on both pages; some reads stopped at a cap,
+# see `why`): glm-ocr, deepseek-ocr-2 (--no-remote-code), hunyuanocr, qwen3.5-2b, qwen3.5-4b, lightonocr-2-1b at
+# --max-side 1540, chandra-ocr-2 (oQ8 MLX and GGUF Q4_K_M), surya-ocr-2 through its own package (surya-ocr-2-pkg).
+# qwen3.5-9b tripped the guard once (swap) while the guard's refusals were reporting about 5.9 GB reclaimable; one try
+# left. Not run, reasons in `why`: teleocr, navidc-ocr, dots.ocr-1.5.
+# Every run went through ops/ocrlab/run-guarded.sh (12 GB, critical pressure, swap +2 GB) via try-mlx.sh (surya-ocr-2-pkg by hand, see its note), MLX through
+# mlx-vlm 0.7.4 or llama.cpp for GGUF, greedy decoding. Pages, PDFKit renders at 300 dpi: "ordinary" = Noble_1977
+# America by design p104 (602-word transcript), "newspaper" = 1931 Helena Daily Independent p1 (about 5,500 words),
+# whole page and as the truth set's 13 overlapping crops (each about 1850x1960 px, sized for Gemini: above several
+# models' input caps, e.g. PaddleOCR-VL's 1.0 MP, which is why it reads them badly; ocr-bakeoff should cut smaller crops).
 # Peaks are MB, the larger of summed RSS and `footprint` (RSS alone saw 30 MB of a 3 GB MLX array). Seconds are the
-# model's read time after load. recall/precision are ROUGH bag-of-words figures against the truth transcript
-# (ops/ocrlab/rough-recall.py), a sanity check that a model read the page, NOT ocr-bakeoff's score. Vision on the same
-# inputs, from the truth set's own readings: ordinary 0.948/0.979; newspaper whole page 0.223/0.667, crops 0.774/0.720.
-# fits = peak under 12 GB, both read to the end, newspaper under 90 s (no candidate meets the 90 s: reading ~5,500 words
-# is bound by tokens per second). fits_memory drops the 90 s limit. Three whole-page newspaper runs tripped the swap
-# limit with 5-8 GB footprints and the rest looped, so later candidates read only the crops; no model tripped twice
-# and nothing crashed. Weights kept: paddleocr-vl-1.6, glm-ocr, hunyuanocr, qwen3.5-2b and -4b, lightonocr (one try left).
-candidate	build	params	runtime	quant	download_MB	boxes	ordinary_peak_MB	ordinary_s	ordinary_recall	ordinary_precision	newspaper_page_peak_MB	newspaper_page_s	newspaper_page_outcome	newspaper_crops_peak_MB	newspaper_crops_s	newspaper_crops_recall	newspaper_crops_precision	fits	fits_memory	why
-paddleocr-vl-1.6-4bit	mlx-community/PaddleOCR-VL-1.6-4bit	0.9B	MLX (mlx-vlm 0.7.4)	4bit	681	none from the VLM; blocks from its PP-DocLayout pipeline	2164	4.0	0.910	0.969	2405	72.1	cut:max_tokens	2463	81.6	0.203	0.172	no	no	newspaper crops cut off (max_tokens)
-paddleocr-vl-1.5-4bit	mlx-community/PaddleOCR-VL-1.5-4bit	0.9B	MLX (mlx-vlm 0.7.4)	4bit	681	none from the VLM; blocks from its PP-DocLayout pipeline	2115	4.0	0.907	0.966	2389	71.1	cut:max_tokens	2356	25.1	0.197	0.747	no	no	newspaper crops cut off (max_tokens)
-glm-ocr-4bit	mlx-community/GLM-OCR-4bit	0.9B	MLX (mlx-vlm 0.7.4)	4bit	1196	none from the VLM; blocks from its layout pipeline	4058	36.1	0.903	0.971	5069	-	guard:swap_grew_2366MB	3120	202.9	0.878	0.926	no	yes	newspaper crops took 203 s (> 90 s)
-lightonocr-2-1b-4bit	mlx-community/LightOnOCR-2-1B-4bit	1B	MLX (mlx-vlm 0.7.4)	4bit	1103	image boxes only (bbox variants)	5702	-	-	-	-	-	-	-	-	-	-	no	no	guard killed it on the ordinary (swap_grew_3385MB); newspaper crops not read
-deepseek-ocr-2-4bit	mlx-community/DeepSeek-OCR-2-4bit	3B	MLX (mlx-vlm 0.7.4)	4bit	2450	block boxes in grounding mode	33	-	-	-	-	-	-	36	-	-	-	no	no	ordinary: exit 1; newspaper crops: exit 1
-mineru2.5-pro-2604-4bit	carlesonielfa/MinerU2.5-Pro-2604-1.2B-mlx-4bit	1.2B	MLX (mlx-vlm 0.7.4)	4bit	1541	block boxes (two-stage layout)	80	-	-	-	34	-	exit 1	37	-	-	-	no	no	ordinary: exit 1; newspaper crops: exit 1
-hunyuanocr-4bit	hadeseus/HunyuanOCR-mlx-4bit	1B	MLX (mlx-vlm 0.7.4)	4bit	1170	line boxes in its spotting mode	3033	30.1	0.959	0.995	4161	120.0	cut:seconds	4009	230.0	0.858	0.679	no	yes	newspaper crops cut off (max_tokens); newspaper crops took 230 s (> 90 s)
-qwen3.5-2b-4bit	mlx-community/Qwen3.5-2B-4bit	2B	MLX (mlx-vlm 0.7.4)	4bit	1668	boxes by prompting (grounding), unmeasured	4240	23.8	0.914	0.967	5587	-	guard:swap_grew_2667MB	4231	144.9	0.873	0.879	no	yes	newspaper crops took 145 s (> 90 s)
-surya-ocr-2-gguf	datalab-to/surya-ocr-2-gguf:surya-2.gguf:surya-2-mmproj.gguf	0.65B	llama.cpp (GGUF)	gguf	1403	line/block boxes (layout stage)	2131	32.4	0.002	0.022	2258	37.5	read	2159	161.5	0.135	0.296	no	no	ordinary not read (recall 0.002); newspaper crops not read (recall 0.135); newspaper crops took 162 s (> 90 s)
-dots.mocr-4bit	mlx-community/dots.mocr-4bit	3B	MLX (mlx-vlm 0.7.4)	4bit	3374	block boxes (layout JSON)	6421	75.2	0.903	0.971	8358	-	guard:swap_grew_2651MB	-	-	-	-	no	no	newspaper crops not read
-qianfan-ocr-4bit	jason1966/Qianfan-OCR-MLX-4bit	4B	MLX (mlx-vlm 0.7.4)	4bit	2975	block boxes (layout mode)	4477	18.9	0.912	0.826	-	-	-	4695	325.9	0.464	0.665	no	no	newspaper crops not read (recall 0.464); newspaper crops took 326 s (> 90 s)
-mineru2.5-2509-bf16	mlx-community/MinerU2.5-2509-1.2B-bf16	1.2B	MLX (mlx-vlm 0.7.4)	bf16	2220	block boxes (two-stage layout)	3864	9.5	0.801	0.973	-	-	-	4233	84.6	0.302	0.563	no	no	newspaper crops cut off (max_tokens)
-qwen3.5-4b-4bit	lmstudio-community/Qwen3.5-4B-MLX-4bit	4B	MLX (mlx-vlm 0.7.4)	4bit	2919	boxes by prompting (grounding), unmeasured	5784	33.9	0.905	0.969	-	-	-	5793	302.4	0.916	0.851	no	yes	newspaper crops took 302 s (> 90 s)
-teleocr	XingChen-AGI/TeleOCR	1.2B	-	-	2716	-	-	-	-	-	-	-	-	-	-	-	-	unknown	unknown	not run: its only GGUF is for teleocr-rs (Rust/Candle), not llama.cpp, and mlx-vlm has no loader for its Qwen3-style decoder; needs teleocr-rs built with Metal
-navidc-ocr	nandraj/NaviDC-OCR-GGUF	1.2B	-	-	8338	-	-	-	-	-	-	-	-	-	-	-	-	unknown	unknown	not run: the GGUF needs a patched llama.cpp (stock build fails check_tensor_dims, per its card)
-dots.ocr-1.5	kristaller486/dots.ocr-1.5	3B	-	-	5807	-	-	-	-	-	-	-	-	-	-	-	-	unknown	unknown	not run: full weights only; dots.mocr-4bit, its successor, stands in
+# model's read time after load for MLX; for GGUF they include a model load per crop. read-mlx.py and read-gguf.py stop
+# a read at 600 s, so both chandra builds' crop figures are of a partial read. recall/precision are ROUGH bag-of-words
+# figures against the truth transcript (ops/ocrlab/rough-recall.py), a sanity check that a model read the page, NOT
+# ocr-bakeoff's score. Vision on the same inputs, from the truth set's own readings: ordinary 0.948/0.979; newspaper
+# whole page 0.223/0.667, crops 0.774/0.720.
+# fits = peak under 12 GB, exit 0 and recall >= 0.5 on the ordinary page and the newspaper crops; precision and speed do
+# not decide it (the owner dropped the 90 s rule on 2026-10-04; of the fitting builds only deepseek-ocr-2, cut at max_tokens, read the crops
+# in under 130 s). Three whole-page newspaper runs tripped the swap limit with 5-8 GB footprints and the rest looped, so
+# later candidates read only the crops. The guard tripped six times, once each on glm-ocr, lightonocr, deepseek-ocr-2,
+# qwen3.5-2b, dots.mocr and qwen3.5-9b; no model tripped twice and nothing crashed.
+candidate	build	params	runtime	quant	download_MB	boxes	ordinary_peak_MB	ordinary_s	ordinary_recall	ordinary_precision	newspaper_page_peak_MB	newspaper_page_s	newspaper_page_outcome	newspaper_crops_peak_MB	newspaper_crops_s	newspaper_crops_recall	newspaper_crops_precision	fits	why
+paddleocr-vl-1.6-4bit	mlx-community/PaddleOCR-VL-1.6-4bit	0.9B	MLX (mlx-vlm 0.7.4)	4bit	681	none from the VLM; blocks from its PP-DocLayout pipeline	2164	4.0	0.910	0.969	2405	72.1	cut:max_tokens	2463	81.6	0.203	0.172	no	newspaper crops not read (recall 0.203); newspaper crops cut off (max_tokens)
+paddleocr-vl-1.5-4bit	mlx-community/PaddleOCR-VL-1.5-4bit	0.9B	MLX (mlx-vlm 0.7.4)	4bit	681	none from the VLM; blocks from its PP-DocLayout pipeline	2115	4.0	0.907	0.966	2389	71.1	cut:max_tokens	2356	25.1	0.197	0.747	no	newspaper crops not read (recall 0.197); newspaper crops cut off (max_tokens)
+glm-ocr-4bit	mlx-community/GLM-OCR-4bit	0.9B	MLX (mlx-vlm 0.7.4)	4bit	1196	none from the VLM; blocks from its layout pipeline	4058	36.1	0.903	0.971	5069	-	guard:swap_grew_2366MB	3120	202.9	0.878	0.926	yes	-
+lightonocr-2-1b-4bit	mlx-community/LightOnOCR-2-1B-4bit	1B	MLX (mlx-vlm 0.7.4)	4bit	1103	image boxes only (bbox variants)	5702	-	-	-	-	-	-	-	-	-	-	no	guard killed it on the ordinary (swap_grew_3385MB); newspaper crops not read; superseded by its retry, lightonocr-2-1b-4bit-1540
+deepseek-ocr-2-4bit	mlx-community/DeepSeek-OCR-2-4bit	3B	MLX (mlx-vlm 0.7.4)	4bit	2450	block boxes in grounding mode	3283	7.0	0.962	0.998	-	-	-	4474	51.0	0.541	0.632	yes	newspaper crops cut off (max_tokens); loads only with --no-remote-code (the guard killed its first try, swap_grew_2095MB); newspaper crops precision 0.63, lowest of those that fit
+mineru2.5-pro-2604-4bit	carlesonielfa/MinerU2.5-Pro-2604-1.2B-mlx-4bit	1.2B	MLX (mlx-vlm 0.7.4)	4bit	1541	block boxes (two-stage layout)	80	-	-	-	34	-	exit 1	37	-	-	-	no	ordinary: exit 1; newspaper crops: exit 1
+hunyuanocr-4bit	hadeseus/HunyuanOCR-mlx-4bit	1B	MLX (mlx-vlm 0.7.4)	4bit	1170	line boxes in its spotting mode	3033	30.1	0.959	0.995	4161	120.0	cut:seconds	4009	230.0	0.858	0.679	yes	newspaper crops cut off (max_tokens)
+qwen3.5-2b-4bit	mlx-community/Qwen3.5-2B-4bit	2B	MLX (mlx-vlm 0.7.4)	4bit	1668	boxes by prompting (grounding), unmeasured	4240	23.8	0.914	0.967	5587	-	guard:swap_grew_2667MB	4231	144.9	0.873	0.879	yes	-
+surya-ocr-2-gguf	datalab-to/surya-ocr-2-gguf:surya-2.gguf:surya-2-mmproj.gguf	0.65B	llama.cpp (GGUF)	gguf	1403	line/block boxes (layout stage)	2131	32.4	0.002	0.022	2258	37.5	read	2159	161.5	0.135	0.296	no	ordinary not read (recall 0.002); newspaper crops not read (recall 0.135); the GGUF under a plain prompt; superseded by surya-ocr-2-pkg
+dots.mocr-4bit	mlx-community/dots.mocr-4bit	3B	MLX (mlx-vlm 0.7.4)	4bit	3374	block boxes (layout JSON)	6421	75.2	0.903	0.971	8358	-	guard:swap_grew_2651MB	-	-	-	-	no	newspaper crops not read
+qianfan-ocr-4bit	jason1966/Qianfan-OCR-MLX-4bit	4B	MLX (mlx-vlm 0.7.4)	4bit	2975	block boxes (layout mode)	4477	18.9	0.912	0.826	-	-	-	4695	325.9	0.464	0.665	no	newspaper crops not read (recall 0.464)
+mineru2.5-2509-bf16	mlx-community/MinerU2.5-2509-1.2B-bf16	1.2B	MLX (mlx-vlm 0.7.4)	bf16	2220	block boxes (two-stage layout)	3864	9.5	0.801	0.973	-	-	-	4233	84.6	0.302	0.563	no	newspaper crops not read (recall 0.302); newspaper crops cut off (max_tokens)
+qwen3.5-4b-4bit	lmstudio-community/Qwen3.5-4B-MLX-4bit	4B	MLX (mlx-vlm 0.7.4)	4bit	2919	boxes by prompting (grounding), unmeasured	5784	33.9	0.905	0.969	-	-	-	5793	302.4	0.916	0.851	yes	-
+lightonocr-2-1b-4bit-1540	mlx-community/LightOnOCR-2-1B-4bit	1B	MLX (mlx-vlm 0.7.4)	4bit	1103	image boxes only (bbox variants)	5770	8.4	0.903	0.971	-	-	-	11273	130.8	0.899	0.856	yes	retry of lightonocr-2-1b-4bit with each image shrunk to 1540 px (--max-side); crops peak 11.0 GB and swap +1.6 GB, both close to the guard's limits
+chandra-ocr-2-q4km	mradermacher/chandra-ocr-2-GGUF:chandra-ocr-2.Q4_K_M.gguf:chandra-ocr-2.mmproj-Q8_0.gguf	5B	llama.cpp (GGUF)	q4km	3274	block boxes with text (HTML layout)	4307	47.9	0.916	0.964	-	-	-	4433	600.0	0.833	0.916	yes	newspaper crops cut off (seconds); GGUF Q4_K_M; newspaper crops stopped at read-gguf.py's 600 s limit after an unrecorded number of the 13 crops, so its crops recall is of a partial read; GGUF seconds include a model load per crop
+qwen3.5-9b-4bit	mlx-community/Qwen3.5-9B-4bit	9B	MLX (mlx-vlm 0.7.4)	4bit	5700	boxes by prompting (grounding), unmeasured	6854	-	-	-	-	-	-	-	-	-	-	no	guard killed it on the ordinary (swap_grew_2335MB); newspaper crops not read; tripped once with 5.9 GB reclaimable (a 6.9 GB footprint); one try left, on a machine with more memory free
+chandra-ocr-2-oQ8	mlx-community/chandra-ocr-2-oQ8	5B	MLX (mlx-vlm 0.7.4)	oQ8	4917	block boxes with text (HTML layout)	7797	52.1	0.914	0.967	-	-	-	7542	600.1	0.727	0.923	yes	newspaper crops cut off (seconds); newspaper crops stopped at read-mlx.py's 600 s limit (24 tokens/s), so its crops recall is of a partial read
+surya-ocr-2-pkg	datalab-to/surya-ocr-2-gguf:surya-2.gguf:surya-2-mmproj.gguf	0.65B	llama.cpp (GGUF)	gguf	1403	block polygons with layout labels and reading order (seen in its output)	3314	49	0.914	0.964	-	-	-	4920	381	0.891	0.872	yes	surya-ocr 0.22.1 in $OCRLAB/venv-surya: `surya_ocr <image or dir> --output_dir D`, text by surya-text.py; it serves the same GGUF through brew's llama-server; its seconds are from its log, server ready to results written
+teleocr	XingChen-AGI/TeleOCR	1.2B	-	-	2716	-	-	-	-	-	-	-	-	-	-	-	-	unknown	not run: its only GGUF is for teleocr-rs (Rust/Candle), not llama.cpp, and mlx-vlm has no loader for its Qwen3-style decoder; needs teleocr-rs built with Metal
+navidc-ocr	nandraj/NaviDC-OCR-GGUF	1.2B	-	-	8338	-	-	-	-	-	-	-	-	-	-	-	-	unknown	not run: the GGUF needs a patched llama.cpp (stock build fails check_tensor_dims, per its card)
+dots.ocr-1.5	kristaller486/dots.ocr-1.5	3B	-	-	5807	-	-	-	-	-	-	-	-	-	-	-	-	unknown	not run: full weights only; dots.mocr-4bit, its successor, stands in

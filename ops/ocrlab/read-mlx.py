@@ -1,6 +1,7 @@
 """read-mlx.py — read one page image with one MLX vision model, plain text out.
 
     python read-mlx.py <model-dir-or-repo> <image.png> <out.txt> [--prompt P] [--max-tokens N] [--seconds S]
+                       [--crops crops.tsv] [--max-side PX]
 
 Run it under run-guarded.sh. Prints one JSON line of statistics on stdout: load and read seconds,
 prompt and generated tokens, MLX's own peak memory, and whether the read was cut off by --seconds
@@ -15,6 +16,9 @@ ap.add_argument("--max-tokens", type=int, default=12000)
 ap.add_argument("--seconds", type=float, default=600)
 ap.add_argument("--crops", help="a truth set crops.tsv: read each crop of the image in turn, joined")
 ap.add_argument("--no-template", action="store_true", help="pass the prompt raw, without the chat template")
+ap.add_argument("--no-remote-code", action="store_true",
+                help="load without the repo's own Python (DeepSeek-OCR-2's needs an older transformers)")
+ap.add_argument("--max-side", type=int, help="shrink each image (or crop) so its longer side is at most this")
 a = ap.parse_args()
 
 import mlx.core as mx
@@ -25,7 +29,7 @@ from mlx_vlm.prompt_utils import apply_chat_template
 # reads; a small cache keeps the footprint near what the model actually holds.
 mx.set_cache_limit(256 * 2**20)
 t0 = time.time()
-model, processor = load(a.model, trust_remote_code=True)
+model, processor = load(a.model, trust_remote_code=not a.no_remote_code)
 t1 = time.time()
 prompt = a.prompt if a.no_template else apply_chat_template(processor, model.config, a.prompt, num_images=1)
 images = [a.image]
@@ -37,6 +41,15 @@ if a.crops:
         name, x, y, w, h = line.split("\t")[:5]
         x, y, w, h = int(x), int(y), int(w), int(h)
         images.append(os.path.join(tmp, name)); page.crop((x, y, x + w, y + h)).save(images[-1])
+if a.max_side:
+    # A model trained at a fixed resolution can spend its memory on vision tokens for a 300 dpi page.
+    import os, tempfile
+    from PIL import Image
+    tmp, shrunk = tempfile.mkdtemp(prefix="ocrlab-shrunk-"), []
+    for i, path in enumerate(images):
+        im = Image.open(path); im.thumbnail((a.max_side, a.max_side), Image.LANCZOS)
+        shrunk.append(os.path.join(tmp, f"{i}.png")); im.save(shrunk[-1])
+    images = shrunk
 text, last, cut, gen = [], None, "-", 0
 first = None
 for img in images:

@@ -835,7 +835,7 @@ say so in the commit.
       copies its own words; a page whose lines still cannot be read reports them; `ux-regression.sh` no worse;
       a new check goes red without the change.
       BOUND: one code commit. (origin: BUGS.md C53)
-- [ ] **ocr-lab-setup** — set up a guarded local environment for open OCR models and find out which ones
+- [x] **ocr-lab-setup** — set up a guarded local environment for open OCR models and find out which ones
       fit this Mac.
       WHY. On the truth set the app gets 2.7% of words wrong outside newspapers and 25% on newspapers, against
       under 1% for a model's reading, and most of the gap is Vision's own misreading, which no fix queued so far
@@ -880,6 +880,14 @@ say so in the commit.
       stay held by Time Machine local snapshots for up to a day, so delete early); Surya 2 through `surya-ocr`
       (layout then block OCR); TeleOCR (teleocr-rs) and NaviDC (patched llama.cpp), or a stated reason;
       DeepSeek-OCR-2's processor fails to load in mlx-vlm 0.7.4; LightOnOCR has one guarded try left.
+      Round 1, session 2, 2026-10-04: a session killed by a daemon restart had run LightOnOCR at `--max-side 1540`,
+      Chandra 2 as GGUF Q4_K_M and DeepSeek-OCR-2 with `--no-remote-code`; all three read both pages under 12 GB.
+      `fits` no longer counts speed. The Time Machine snapshots aged out mid-session (`df` 22 -> 77 GB), so the
+      disk-refused two were retried: Chandra 2 oQ8 fits (7.8 GB); Qwen3.5-9B tripped the guard once on swap with
+      only 5.9 GB reclaimable. Surya 2 through `surya-ocr` 0.22.1 (`$OCRLAB/venv-surya`, text by `surya-text.py`)
+      reads where the bare GGUF did not: recall 0.914 ordinary, 0.891 newspaper crops, peak 4.9 GB. Eight models
+      fit: GLM-OCR, DeepSeek-OCR-2, HunyuanOCR, Qwen3.5-2B, -4B, LightOnOCR, Chandra 2, Surya 2. TeleOCR, NaviDC
+      with stated reasons. Ticked: every candidate has fits or a reason.
 - [ ] **ocr-bakeoff-run** — read the bake-off sample with every candidate that fits, as one long unattended
       job. (blocked-on: ocr-lab-setup)
       THE SAMPLE, listed and committed first (`OCR-SAMPLE-<date>.tsv`): the 45 pages of the regression set and
@@ -893,7 +901,9 @@ say so in the commit.
       `$STATE/engine.lock` every 20 s, so the daemon starts no session and no suite runs beside the models; it
       removes the lock when it ends, and a killed job leaves a lock the daemon takes over after 30 minutes. It
       never starts while `test.lock` is held or a suite runs. Delete a candidate's weights once its readings
-      are saved.
+      are saved. Qwen3.5-9B is owed its last guarded try, when more memory is free (after a reboot; it tripped
+      once with 5.9 GB reclaimable); measure it first and add it if it fits. Surya 2 runs through `surya_ocr` in
+      `$OCRLAB/venv-surya`, not `try-mlx.sh` (see its row's note in `OCR-MODELS-2026-10-04.tsv`).
       DONE WHEN: every fitting candidate has a reading of every sample page or a logged reason, and a count of
       readings per model is committed. A session that finds the job dead restarts it from where it stopped.
       ESTIMATE: 1-2 sessions, plus about 10-15 hours of unattended job. Sub-boxes: the sample list, the job
