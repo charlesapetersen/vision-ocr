@@ -65,6 +65,14 @@ say so in the commit.
    `BUGS.md` entry (rule 8 is met by then), or moves it to Parked with what was tried and what blocks it.
    Parked items come back only by the owner's hand. Rule 4 still applies inside a round. This replaces the
    one-code-commit bounds, which stopped a session that had a second real fix to make.
+11. **Size an item before queuing it (owner, 2026-10-04).** Every new item states an ESTIMATE in sessions.
+   One estimated at more than four sessions is split until each piece fits a round, and each piece is cut
+   into sub-boxes (rule 5) small enough that one medium session can finish one and tick it. Long unattended
+   computing (a model over a sample, a corpus run) goes into a detached, resumable job that holds
+   `$STATE/engine.lock` while it runs, so the daemon starts no session to wait on it. Max effort is for work
+   medium cannot do: the daemon raises an item after two counted attempts (rule 7), and with parts sized
+   this way a counted attempt means a medium session that finished nothing. Outside rule 10's second round,
+   do not mark an item `(effort: max)`, and use `(effort: medium)` only where escalation cannot help.
 
 ## The queue
 
@@ -828,7 +836,7 @@ say so in the commit.
       a new check goes red without the change.
       BOUND: one code commit. (origin: BUGS.md C53)
 - [ ] **ocr-lab-setup** — set up a guarded local environment for open OCR models and find out which ones
-      fit this Mac. (effort: medium)
+      fit this Mac.
       WHY. On the truth set the app gets 2.7% of words wrong outside newspapers and 25% on newspapers, against
       under 1% for a model's reading, and most of the gap is Vision's own misreading, which no fix queued so far
       touches (`TRUTH-RUN-2026-09-30-pages.tsv`; 467 of 8,693 wrong words repeat Vision's misread of the
@@ -860,6 +868,7 @@ say so in the commit.
       with size, quantisation, runtime, whether it gives line or word boxes, peak memory and seconds for one
       ordinary page and one newspaper page through the guard, and fits (peak under 12 GB, under 90 s for the
       newspaper page) or why not. No model crashed the Mac or tripped the guard twice.
+      ESTIMATE: 2-3 sessions. Tick a sub-box for the guard and environment, then one per four candidates.
       BOUND: rule 10. (context: owner request 2026-10-02)
       Round 1, session 1, 2026-10-04: guard, lab (`~/.local/share/visionocr-ocrlab/`, mlx-vlm 0.7.4, brew llama.cpp)
       and 13 builds measured, in a PARTIAL `OCR-MODELS-2026-10-04.tsv`. Read both pages to the end under 12 GB: GLM-OCR,
@@ -868,60 +877,91 @@ say so in the commit.
       stay held by Time Machine local snapshots for up to a day, so delete early); Surya 2 through `surya-ocr`
       (layout then block OCR); TeleOCR (teleocr-rs) and NaviDC (patched llama.cpp), or a stated reason;
       DeepSeek-OCR-2's processor fails to load in mlx-vlm 0.7.4; LightOnOCR has one guarded try left.
-- [ ] **ocr-bakeoff** — score every candidate that fits against the truth set. (blocked-on: ocr-lab-setup)
-      (effort: medium)
-      THE SAMPLE, listed and committed first: the 45 pages of the regression set and the self-test, the 11
-      newspapers, and 20 green pages drawn at random from the truth run, spread over the routes. Each candidate
-      reads each page in its plain-text mode, from the same PDFKit render the truth set used, whole page and,
-      if that loses lines, as the truth set's crops. Vision reads the same renders, so the comparison is like
-      for like.
-      COMPRESSION. Run the top three again at both 4-bit and 8-bit (owner, 2026-10-02), and report the
-      difference in words right, seconds per page and peak memory, so the cost of each setting is known.
-      SCORE exactly as `truth-harness` scores the app: words wrong and missing against the transcripts,
-      contested words unscored, by route; plus seconds per page and peak memory. Delete a candidate's weights
-      once its rows are committed unless it is in the top three.
-      DONE WHEN, committed as `OCR-BAKEOFF-<date>.tsv`: every fitting candidate scored on every sample page or
-      a stated reason, Vision beside them, and the top three named by words right on old print and newspapers
-      at a speed this Mac can bear. BOUND: rule 10. (context: owner request 2026-10-02)
-- [ ] **ocr-hybrid** — find the best way to put a better reader's words into the app's text layer.
-      (blocked-on: ocr-bakeoff) (effort: medium)
-      Try the top three, each in the arrangements that suit it: (a) the model replacing Vision outright, its
-      own line or word boxes used directly (a first-class option: owner, 2026-10-02, Intel Macs and download
-      size are not constraints, so only accuracy, placement, speed and memory decide); (b) Vision's lines for geometry, with the model reading each line's crop and its words placed
-      in Vision's boxes (the truth set's crop-and-align method); (c) Vision as now, with the model only on lines
-      Vision skipped or read with low confidence and on newspaper bands. Build each as a prototype behind a
-      setting that is off by default, run it through the production pipeline on the bake-off sample, and score
-      it with `ux-harness --truth` (Copy, Find, order) and the ink and colour check, plus time per page and
-      peak memory. Invariant 3's four properties must hold.
-      DONE WHEN, committed as `OCR-HYBRID-<date>.tsv` with the recommendation in `BUGS.md` as a new entry: the
-      best arrangement named, with its gain in words right and its cost in time, memory and download size,
-      on this Mac, and the best model and build named for each memory limit from about 4 GB to 12 GB.
+- [ ] **ocr-bakeoff-run** — read the bake-off sample with every candidate that fits, as one long unattended
+      job. (blocked-on: ocr-lab-setup)
+      THE SAMPLE, listed and committed first (`OCR-SAMPLE-<date>.tsv`): the 45 pages of the regression set and
+      the self-test, the 11 newspapers, and 20 green pages drawn at random from the truth run, spread over the
+      routes. Each candidate reads each page in its plain-text mode, from the same PDFKit render the truth set
+      used, whole page and, if that loses lines, as the truth set's crops. Vision reads the same renders.
+      THE JOB. `ops/ocrlab/bakeoff.sh`: one model at a time under `run-guarded.sh`, each reading saved to
+      `$STATE/ocrlab/readings/<model>/<page>.txt` as it is made, resumable from what is saved, one progress line
+      per page in `$STATE/ocrlab/bakeoff.log`, the build (4-bit, 8-bit) a parameter. Start it detached
+      (`nohup`, explicit PATH) and check it is alive before the session ends. While it runs it touches
+      `$STATE/engine.lock` every 20 s, so the daemon starts no session and no suite runs beside the models; it
+      removes the lock when it ends, and a killed job leaves a lock the daemon takes over after 30 minutes. It
+      never starts while `test.lock` is held or a suite runs. Delete a candidate's weights once its readings
+      are saved.
+      DONE WHEN: every fitting candidate has a reading of every sample page or a logged reason, and a count of
+      readings per model is committed. A session that finds the job dead restarts it from where it stopped.
+      ESTIMATE: 1-2 sessions, plus about 10-15 hours of unattended job. Sub-boxes: the sample list, the job
+      started, the job finished and counted. BOUND: rule 10. (context: owner request 2026-10-02, split 2026-10-04)
+- [ ] **ocr-bakeoff-score** — score the saved readings against the truth set and name the top three.
+      (blocked-on: ocr-bakeoff-run)
+      Score exactly as `truth-harness` scores the app: words wrong and missing against the transcripts,
+      contested words unscored, by route; seconds per page and peak memory from the job's log.
+      DONE WHEN, committed as `OCR-BAKEOFF-<date>.tsv`: every candidate scored on every sample page or a stated
+      reason, Vision beside them, and the top three named by words right on old print and newspapers at a
+      speed this Mac can bear. Keep only the top three's weights. ESTIMATE: 1 session.
       BOUND: rule 10. (context: owner request 2026-10-02)
-- [ ] **ocr-integrate** — build the winning arrangement into the app as an accurate mode.
-      (blocked-on: ocr-hybrid)
-      A route wins when it cuts words wrong or missing by at least a third on old print or on newspapers,
-      runs at no more than three times Vision's time per page, and stays under the guard's 12 GB on this Mac.
-      If arrangement (a) wins, the model replaces Vision as the recogniser in this mode, with Vision kept
-      only as the fallback when memory is short or the model fails. If one route clearly wins, this item builds it (owner, 2026-10-02: the winning route is to be built,
-      not left as a recommendation). If none wins, the session records that in the `ocr-hybrid` entry, ticks
-      this box with that reason, and the queue goes on as before.
-      The mode is off by default until the owner decides. SETTINGS (owner, 2026-10-02): a maximum-memory
-      setting for the accurate mode, with steps from about 4 GB up to 12 GB and a default chosen from the
-      Mac's installed memory; and, under it, a choice among the integrated models and builds that fit that
-      limit, from the `ocr-bakeoff` and `ocr-hybrid` results (for example a small model at 4-bit for low
-      limits and the best model at 8-bit for 12 GB). Integrate more than one model where the results show a
-      different best choice at different limits. Each model downloads on first use with its size stated, runs
-      under the guard's limits with the chosen maximum as its cap, and falls back to Vision with a message
-      when memory is short.
-      Done when the built app reproduces the `ocr-hybrid` figures on the bake-off sample with the mode on,
-      `ux-regression.sh` is no worse with it off, the suite passes, and nothing crashes on this Mac. No release:
-      that stays the owner's. BOUND: rule 10. (context: owner request 2026-10-02)
-- [ ] **ocr-requeue** — make the rest of the queue build on the accurate mode. (blocked-on: ocr-integrate)
-      If `ocr-integrate` built a mode: re-measure every later open item's named pages with the mode on. Close
-      an item whose DONE WHEN the mode already meets, citing the measurement, and re-scope the rest so that
-      their DONE WHEN is checked with the mode on as well as off, and their fixes are built to work with it.
-      Add the mode's rows to `ops/ux-regression/set.tsv`, so later items cannot break it. If no mode was built,
-      tick this with that reason. BOUND: one session. (context: owner request 2026-10-02)
+- [ ] **ocr-bakeoff-bits** — run the top three at 4-bit and at 8-bit and compare.
+      (blocked-on: ocr-bakeoff-score)
+      The owner's 2026-10-02 request: the same sample through `bakeoff.sh` with the build as the parameter,
+      holding the engine lock, scored as `ocr-bakeoff-score` scores. DONE WHEN, committed as
+      `OCR-BITS-<date>.tsv`: for each of the three, the difference between 4-bit and 8-bit in words right,
+      seconds per page and peak memory, and the build each memory limit from 4 GB to 12 GB should use.
+      ESTIMATE: 1-2 sessions, plus about 4-6 hours of unattended job. Sub-boxes: job started, scored.
+      BOUND: rule 10. (context: owner request 2026-10-02)
+- [ ] **ocr-hybrid-proto** — build the ways of putting a better reader's words into the text layer, behind a
+      setting that is off by default. (blocked-on: ocr-bakeoff-bits)
+      Three arrangements, built for the top model first: (a) the model replacing Vision outright, its own line
+      or word boxes used directly (a first-class option: owner, 2026-10-02, Intel Macs and download size are
+      not constraints, so only accuracy, placement, speed and memory decide); (b) Vision's lines for geometry,
+      the model reading each line's crop and its words placed in Vision's boxes (the truth set's crop-and-align
+      method); (c) Vision as now, the model only on lines Vision skipped or read with low confidence and on
+      newspaper bands. Each needs a check that goes red without it, and invariant 3's four properties hold.
+      DONE WHEN each arrangement runs on two sample pages through the production pipeline and its check is in
+      the suite. ESTIMATE: 2-3 sessions. Sub-boxes: one per arrangement. BOUND: rule 10.
+      (context: owner request 2026-10-02, split 2026-10-04)
+- [ ] **ocr-hybrid-run** — run every arrangement with each of the top three over the sample, as one job.
+      (blocked-on: ocr-hybrid-proto)
+      A detached, resumable job like `bakeoff.sh`, holding the engine lock: the production pipeline on the
+      sample for each model and arrangement that suits it, scored with `ux-harness --truth` (Copy, Find, order)
+      and the ink and colour check, with time per page and peak memory. DONE WHEN, committed as
+      `OCR-HYBRID-<date>.tsv`: every combination scored or a logged reason. ESTIMATE: 1-2 sessions, plus about
+      6-10 hours of unattended job. Sub-boxes: job started, finished and scored. BOUND: rule 10.
+      (context: owner request 2026-10-02, split 2026-10-04)
+- [ ] **ocr-hybrid-pick** — choose the arrangement, model and build for each memory limit.
+      (blocked-on: ocr-hybrid-run) (effort: medium)
+      A route wins when it cuts words wrong or missing by at least a third on old print or on newspapers, runs
+      at no more than three times Vision's time per page, and stays under the guard's 12 GB on this Mac.
+      DONE WHEN a new `BUGS.md` entry names the winning arrangement with its gain in words right and its cost in
+      time, memory and download size, and the model and build for each memory limit from about 4 GB to 12 GB;
+      or says that none wins, in which case the three `ocr-integrate-*` items and `ocr-requeue` are ticked
+      with that reason and the queue goes on as before. ESTIMATE: 1 session. BOUND: rule 10.
+      (context: owner request 2026-10-02, split 2026-10-04)
+- [ ] **ocr-integrate-engine** — run the winning arrangement inside the app. (blocked-on: ocr-hybrid-pick)
+      Built, not left as a recommendation (owner, 2026-10-02). The model runs from the app's helper under the
+      guard's limits with the chosen maximum as its cap, and falls back to Vision with a message when memory is
+      short or the model fails. If arrangement (a) won, the model replaces Vision as the recogniser in this mode,
+      Vision kept only as that fallback. Integrate each model `ocr-hybrid-pick` named for a memory limit.
+      DONE WHEN the helper produces `ocr-hybrid-run`'s figures for the winner on the sample, the suite passes,
+      and nothing crashes on this Mac. ESTIMATE: 2-4 sessions. Sub-boxes: the runtime in the helper, the guard
+      and fallback, one per model wired in. BOUND: rule 10. (context: owner request 2026-10-02, split 2026-10-04)
+- [ ] **ocr-integrate-settings** — give the accurate mode its settings and downloads.
+      (blocked-on: ocr-integrate-engine)
+      Off by default until the owner decides. A maximum-memory setting with steps from about 4 GB to 12 GB and a
+      default chosen from the Mac's installed memory, and under it a choice among the integrated models and
+      builds that fit that limit (owner, 2026-10-02). Each model downloads on first use with its size stated.
+      DONE WHEN the settings and downloads work in the built app, `ux-regression.sh` is no worse with the mode
+      off, and the suite passes. No release: that stays the owner's. ESTIMATE: 1-2 sessions. Sub-boxes: the
+      settings, the downloads. BOUND: rule 10. (context: owner request 2026-10-02, split 2026-10-04)
+- [ ] **ocr-requeue** — make the rest of the queue build on the accurate mode.
+      (blocked-on: ocr-integrate-settings) (effort: medium)
+      Re-measure every later open item's named pages with the mode on. Close an item whose DONE WHEN the mode
+      already meets, citing the measurement, and re-scope the rest so their DONE WHEN is checked with the mode
+      on as well as off and their fixes work with it. Add the mode's rows to `ops/ux-regression/set.tsv`. Give
+      each re-scoped item an ESTIMATE under rule 11. ESTIMATE: 1 session. BOUND: rule 10.
+      (context: owner request 2026-10-02)
 - [ ] **c54-pale-typing** — publish pale typewriting on layered pages as solid as the source shows it.
       THE PAGES: `Herbert Marks papers` p12, `_1939_Former students` p9, `Atkinson_1939` p2, `Ford_1941` p2.
       DONE WHEN, on 1x and 2x PDFKit renders of the published pages beside the source: the typed strokes are
