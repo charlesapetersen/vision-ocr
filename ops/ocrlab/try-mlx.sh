@@ -8,7 +8,7 @@
 # Pages, made once by hand (see OCR-MODELS-*.tsv's header): pages/ordinary.png and pages/newspaper.png,
 # PDFKit renders at 300 dpi, their truth transcripts as *.truth.txt, and newspaper.crops.tsv, the truth
 # set's crop boxes for the newspaper page.
-# Downloads one MLX build (refusing if free disk by `df` would fall below 20 GB, or the lab would pass
+# Downloads one MLX build (refusing if the space available, as free-mb.sh counts it, would fall below 20 GB, or the lab would pass
 # 50 GB, the queue's limit), reads the ordinary and the newspaper page under run-guarded.sh, and appends one row per page to
 # $OCRLAB/results.tsv (pages: ordinary, newspaper whole, newspaper as 13 crops):
 #   label repo page exit seconds_total load_s read_s gen_tokens cut guard_peak_mb mlx_peak_gb
@@ -45,7 +45,7 @@ want = '$files'.split(':') if '$files' else None
 print(sum((s.size or 0) for s in i.siblings if (not want or s.rfilename in want)
           and not isinstance(try_to_load_from_cache('$repo', s.rfilename, revision=i.sha), str)) // 2**20)") \
     || { echo "try-mlx: cannot read $repo" >&2; exit 1; }
-free_mb=$(df -m / | awk 'NR==2 {print $4}')
+free_mb=$("$here/free-mb.sh" /)   # purgeable space counts (owner, 2026-10-05)
 lab_mb=$(du -sm "$OCRLAB" | awk '{print $1}')
 echo "try-mlx: $repo needs ${need_mb} MB; free ${free_mb} MB; lab ${lab_mb} MB" >&2
 # The 20 GB rule is about downloads: a build already here is read even when free disk has fallen below it.

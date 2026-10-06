@@ -856,9 +856,11 @@ say so in the commit.
       only full weights exist quantise them and delete the originals. A candidate that does not fit is deleted
       at once. Keep every candidate that fits and reads correctly through the bake-off and the 4-bit/8-bit runs, so nothing is
       downloaded twice (owner, 2026-10-04); delete only those that fail to run or do not fit. Keep the lab under
-      50 GB in all. Before each download check that free disk by `df` stays above
-      20 GB afterwards; `df` leaves out
-      purgeable space, so it is the safe figure.
+      50 GB in all. Before each download check that the space available stays above
+      20 GB afterwards, counted as Finder counts it (`ops/ocrlab/free-mb.sh`: macOS's available capacity for
+      important use, which includes purgeable space such as Time Machine's local snapshots, freed on demand).
+      Owner, 2026-10-05: Finder showed 70 GB available while `df` showed 17 GB, and the `df` rule had held the
+      fit tests back all day.
       THE CANDIDATES. Refresh this list with a short web search first; small models have been arriving monthly.
       As of 2026-10-02: PaddleOCR-VL 1.5 and 1.6 (0.9-1.2B), GLM-OCR (0.9B), LightOnOCR-2-1B (has bbox
       variants), TeleOCR (1.2B), NaviDC-OCR (1.2B, 2026-08-17), MinerU2.5 (1.2B), HunyuanOCR, dots.ocr-1.5 and
@@ -891,7 +893,9 @@ say so in the commit.
       fit: GLM-OCR, DeepSeek-OCR-2, HunyuanOCR, Qwen3.5-2B, -4B, LightOnOCR, Chandra 2, Surya 2. TeleOCR, NaviDC
       with stated reasons. Ticked: every candidate has fits or a reason.
 - [ ] **ocr-lab-round2** — fit-test the candidates the 2026-10-05 survey found, so the bake-off reads the
-      ones that fit when it resumes. (blocked-on: ocr-lab-setup)
+      ones that fit when it resumes. (blocked-on: ocr-lab-setup) (effort: medium) — owner, 2026-10-05: its
+      attempts were sessions the disk rule turned to other items, not failures of a hard item, so they must not
+      raise it to max.
       WHY. Owner, 2026-10-05: "make sure we're testing the best available models ... Consider all of the
       LightOnOCR model variants ... If we need to set up a model to be usable with this mac, and that's
       possible, let's consider doing that. Include the Churro project." A three-part web survey that day
@@ -926,8 +930,8 @@ say so in the commit.
       7. `mlx-community/olmOCR-2-7B-1025-4bit`: strong on single-column old scans; reported to modernise
          spelling and to collapse on whole multi-column pages.
       8. `mlx-community/Qwen3-VL-8B-Instruct-4bit` and `mlx-community/Qwen3-VL-4B-Instruct-8bit`.
-      Same rules as ocr-lab-setup: the guard, one model at a time, its two test pages, peak under 12 GB, free
-      disk by `df` above 20 GB after each download, the lab under 50 GB (24 GB on 2026-10-05), and a build that
+      Same rules as ocr-lab-setup: the guard, one model at a time, its two test pages, peak under 12 GB, available
+      space above 20 GB after each download, as `ops/ocrlab/free-mb.sh` counts it (owner, 2026-10-05), the lab under 50 GB (24 GB on 2026-10-05), and a build that
       does not fit deleted at once. Fit tests are ordinary work and run while the owner uses the Mac; only the
       bake-off itself waits for the owner (owner, 2026-10-05).
       DONE WHEN: each candidate has a row in a new `OCR-MODELS-<date>.tsv` with fits yes or no and why, and each
@@ -955,6 +959,8 @@ say so in the commit.
       2026-10-05 12:20: `df` 19 GB, so neither could download; the session took daemon-gate-fix instead.
       2026-10-05 14:25: `df` 19 GB again (snapshots pin the deletions); the session took c55-low-runs.
       2026-10-05 16:31: `df` 13 GB; the session took c55-low-runs again.
+      2026-10-05 20:40: the rule now counts purgeable space (77 GB available against `df`'s 17 GB), so Churro and
+      the rest can download; deleted weights count as free at once. NEXT: lab2-churro.
       - [x] **lab2-lighton** — the three LightOnOCR builds.
       - [ ] **lab2-churro** — Churro, GGUF and an MLX 8-bit conversion.
       - [ ] **lab2-infinity-falcon** — Infinity-Parser2-Flash and Falcon-OCR.
@@ -1035,8 +1041,8 @@ say so in the commit.
       words are not affected.
       DONE WHEN, committed as `OCR-BAKEOFF-<date>.tsv`: every candidate scored on every sample page or a stated
       reason, Vision beside them with its own measured speed, and the top three named by words right on old print and newspapers at a
-      speed this Mac can bear. Delete the weights of candidates outside the top three only if free disk by `df` would otherwise fall below
-      20 GB. ESTIMATE: 1 session.
+      speed this Mac can bear. Delete the weights of candidates outside the top three only if the available space (`ops/ocrlab/free-mb.sh`) would otherwise
+      fall below 20 GB. ESTIMATE: 1 session.
       BOUND: rule 10. (context: owner request 2026-10-02)
 - [ ] **ocr-bakeoff-bits** — run the top three at 4-bit and at 8-bit and compare.
       (blocked-on: ocr-bakeoff-score)
@@ -1190,6 +1196,18 @@ say so in the commit.
       BOUND: rule 10. 
       Round 1, sessions 1-3, were on 2026-09-28 (ff25f3b, 4657cff, e34fb92), so its next session is round 1's
       fourth (rule 10). (origin: BUGS.md C52)
+
+- [ ] **attempt-on-worked-item** — count a session's attempt against the item it worked, not the queue head.
+      WHY. Owner, 2026-10-05, asking why a model fit test needed a max session: four sessions found
+      ocr-lab-round2 unable to proceed (the disk rule), each took another item, and 3e counted every one against
+      the head item, so it rose to max ($140 cap, 8 h) for work that was never hard. The same happens to a head
+      item whenever a session adopts a rescue (3e's comment already notes that case).
+      WHAT. In `vision-ocr-autonomous.sh` 3e and wherever `attempts.tsv` is written, record the item the session
+      actually worked (from its commits' trailer or the item it ticked or noted), and count the head item only
+      when it was that item. Keep `(attempts: N)` and `(effort: …)` as they are.
+      DONE WHEN: a prove-daemon case where a session works item B while A heads the queue leaves A's count
+      unchanged and adds to B's, and a mutant restoring head-counting turns it red. ESTIMATE: 1 session.
+      BOUND: rule 10. (context: owner request 2026-10-05)
 
 ## Parked
 
