@@ -1199,7 +1199,8 @@ say so in the commit.
       worse; a new check goes red without the change.
       BOUND: rule 10. (origin: BUGS.md C56)
       2026-10-06: round 1, session 1 (strand, not committed) and session 2 (adopted it; plain 1-bit
-      route fixed; Gowan's layered page and Xin Qu at 1.06 remain).
+      route fixed; Gowan's layered page and Xin Qu at 1.06 remain). Session 3: layered route fixed
+      (Gowan 1.03); Xin Qu's 1.06 is PDFKit's drawing of a stencil source, see C56's case for closing.
 - [ ] **c28-first-principles** — fix C28 again, starting from first principles. The owner took it off the
       parked list on 2026-09-25 and asked for a fresh attempt, not a continuation of the old campaign.
       THE DEFECT. On the layered (MRC) route, the 1-bit stencil is the page's adaptive binarisation

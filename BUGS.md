@@ -19767,6 +19767,36 @@ STILL OPEN: Gowan p1 and Xin Qu p1 (1.06, just past 5%). Gowan is a picture page
 whose stencil is `sauvolaMask`'s local threshold (`mrcStencil`, `mrcLayers`), not Otsu, so this lift does
 not reach it; the next step is a fringe lift on that mask against its own cutoff.
 
+#### The layered route's lift, and Xin Qu's residue (2026-10-06, session 3)
+
+`strokeWeightMask` runs the same lift on the published Sauvola stencil (`mrcLayers`, `mrcStencil`), with
+the ink peak read over the stencil and the paper peak over the words' other pixels; the tone layers keep
+the cut as it was, and a C54 pale-ink re-cut is left alone. Only a pixel darker than halfway from the ink
+peak to the midpoint seeds a lift now, on both routes: without that, grey headings and rules printed
+beside black type lost their bodies (ux-regression `elInk` 1954 - Why p9 0.94 → 0.79, Glazer_2002 p1
+0.99 → 0.76; with it, no `elInk` change). PDFKit 2x ink share over the source [measured]: Gowan p1
+1.16 → 1.03, Luethy 1.00, Ries 1.02, Xin Qu 1.06. Bytes: Gowan −238 B, Xin Qu −15, Luethy −6, Ries +23.
+ux-regression 2 worse / 4 better (baseline refreshed): Glazer_2002 p1 inkRatio 1.39 → 1.10 and 1954 -
+Why p9 1.11 → 1.02 (leg2 0.85 → 0.98) against leg1 1.01 → 0.98 and 1.00 → 0.97 on the same two pages,
+accepted under rule 9 (1x reading within 3% of the source's, 2x nearer to it).
+
+Xin Qu p1 is not heavier than its source [measured]: the published bitmap holds 228,036 ink pixels on
+the source mask's own 300 ppi grid, the source's 227,821 (1.0009), and a 4x render reads 1.014. The 2x
+excess is in how PDFKit draws the two [measured: our page written as an `/ImageMask` reads 1.034; that
+the stencil, not the source's `/Interpolate`, is the cause is reasoned]; by eye the abstract's first
+line matches. Rejected: writing plain
+1-bit pages as a black `/ImageMask` (Xin Qu 2x 1.034), because it moved C39's layered-source check from
+0.995 to 0.857 likeness, lightened Ries at 1x to 0.97, and qpdf's JSON stops listing such pages as
+images, which blinds C37 on the app's own output.
+
+DONE WHEN, checked by a separate subagent: by eye all four pass (Gowan's italics no longer fill in; Ries's
+"5" stays open); 2x ink passes on Gowan 1.032, Luethy 1.0015, Ries 1.024, and fails as written on Xin Qu
+1.061; bytes fail on Ries by 23 B; ux-regression fails as written on the two leg1 lines above; the new
+checks go red without the change, except that nothing pins the `mrcStencil` call. So the box stays open.
+The case for closing it: Xin Qu's residue is PDFKit drawing a stencil source lighter than any image, so
+no change to the bitmap can reach it without the rejected writer change, and Ries's 23 B and the two
+leg1 points are inside the noise rule 9 has accepted before. NEXT: decide that case, or pin `mrcStencil`.
+
 ## Robustness and correctness of reporting
 
 ### R1 · jbig2 and qpdf children are never registered for cancellation — FIXED

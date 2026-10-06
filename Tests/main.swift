@@ -5988,6 +5988,66 @@ do {
         x < 3 ? 0 : x == 9 && y == 3 ? 60 : (8...11).contains(x) && (2...5).contains(y) ? 140 : 255 }
     let dot = Flattener.strokeWeightGrey(dotted, width: 14, height: 8, threshold: 150)
     check("C56: a faint dot with a single dark pixel is kept whole", dot == dotted, "\(dot)")
+    // The layered route's stencil is Sauvola's cut, not one threshold (`Gowan and Demos`
+    // p1, 1.16 of the source's ink): the same lift, on the mask, against its own peaks.
+    let sauvolaCut = stroke.map { $0 < 200 }
+    let everywhere = [Bool](repeating: true, count: stroke.count)
+    let thinnedMask = Flattener.strokeWeightMask(stroke, mask: sauvolaCut, region: everywhere,
+                                                 width: 12, height: 5)
+    check("C56: the layered stencil loses its strokes' fringe and keeps a faint line clear of them",
+          thinnedMask == paint(12, 5) { x, _ in x < 3 || x == 8 ? 0 : 255 }.map { $0 == 0 },
+          "\(thinnedMask.map { $0 ? 1 : 0 })")
+    // A stroke printed in grey ink beside the black type (`1954 - Why` p9's headings) has
+    // no pixel dark enough to seed the lift, so its edge at 150 stays.
+    let greyInk = paint(12, 5) { x, _ in
+        x < 3 ? 0 : x == 3 ? 140 : x == 6 || x == 7 ? 110 : x == 8 ? 150 : 255 }
+    let greyKept = Flattener.strokeWeightMask(greyInk, mask: greyInk.map { $0 < 200 },
+                                              region: everywhere, width: 12, height: 5)
+    check("C56: a stroke in grey ink keeps its whole width beside thinned black type",
+          greyKept == paint(12, 5) { x, _ in x < 3 || (6...8).contains(x) ? 0 : 255 }.map { $0 == 0 },
+          "\(greyKept.map { $0 ? 1 : 0 })")
+    // …and that is the stencil `mrcLayers` publishes for the type above, laid out as
+    // words. (`mrcStencil`, the cut at a finer type resolution, makes the same call.)
+    let layered = dir.appendingPathComponent("layered")
+    try? FileManager.default.createDirectory(at: layered, withIntermediateDirectories: true)
+    let words = [SearchableWriter.BoundingBox(x: 0.05, y: 0.05, width: 0.9, height: 0.9)]
+    if let doc = PDFDocument(url: src), let page = doc.page(at: 0),
+       let layers = Flattener.mrcLayers(for: page, boxes: words, into: layered, stem: "l") {
+        let (typeDPI, imageDPI) = Flattener.resolutions(of: page)
+        let cutDPI = max(typeDPI, imageDPI)
+        let cutBox = Flattener.fullBox(of: page)
+        let cw = Int((cutBox.width * cutDPI / 72).rounded())
+        let ch = Int((cutBox.height * cutDPI / 72).rounded())
+        if let grey = Flattener.renderGrey(page, box: cutBox, scale: cutDPI / 72,
+                                           width: cw, height: ch, from: .mediaBox),
+           let s = CGImageSourceCreateWithURL(layers.mask as CFURL, nil),
+           let bits = CGImageSourceCreateImageAtIndex(s, 0, nil),
+           bits.width == cw, bits.height == ch,
+           let g = CGContext(data: nil, width: cw, height: ch, bitsPerComponent: 8,
+                             bytesPerRow: cw, space: CGColorSpaceCreateDeviceGray(),
+                             bitmapInfo: 0) {
+            g.draw(bits, in: CGRect(x: 0, y: 0, width: cw, height: ch))
+            let p = g.data!.bindMemory(to: UInt8.self, capacity: cw * ch)
+            let stencil = (0..<(cw * ch)).map { p[$0] < 128 }
+            let region = Flattener.textRegionMask(words, width: cw, height: ch)
+            var cut = Flattener.sauvolaMask(grey, width: cw, height: ch,
+                                            window: Flattener.sauvolaWindow(dpi: cutDPI,
+                                                                            width: cw, height: ch))
+            for i in 0..<(cw * ch) where !region[i] { cut[i] = false }
+            let thin = Flattener.strokeWeightMask(grey, mask: cut, region: region,
+                                                  width: cw, height: ch)
+            check("C56: a layered page publishes its stencil with the strokes' fringe taken out",
+                  stencil == thin && thin != cut,
+                  "\(stencil.filter { $0 }.count) published, \(thin.filter { $0 }.count) "
+                    + "thinned, \(cut.filter { $0 }.count) cut")
+        } else {
+            check("C56: a layered page publishes its stencil with the strokes' fringe taken out",
+                  false, "the stencil is not at \(cutDPI) DPI")
+        }
+    } else {
+        check("C56: a layered page publishes its stencil with the strokes' fringe taken out",
+              false, "no layers")
+    }
 }
 
 // MARK: - C37: a scan that is already 1-bit JBIG2 keeps its own stream

@@ -2044,15 +2044,59 @@ enum Flattener {
         let paper = (t..<256).max { histogram[$0] < histogram[$1] } ?? 255
         let middle = (ink + paper + 1) / 2
         guard middle < t else { return grey }
+        let cleared = strokeFringe(grey, width: width, height: height, ink: ink, middle: middle) {
+            Int(grey[$0]) < t
+        }
+        var out = grey
+        for i in 0..<(width * height) where cleared[i] { out[i] = 255 }
+        return out
+    }
+
+    /// C56. `strokeWeightGrey` for the layered route's stencil, which is Sauvola's local
+    /// cut rather than one threshold (`Gowan and Demos` p1, ink share 1.16 of the
+    /// source's). The ink peak is read over the stencil and the paper peak over the
+    /// words' other pixels, so the midpoint is the page's own; `mask` comes back with
+    /// its strokes' fringe taken out. The tone layers keep the mask as it was cut.
+    static func strokeWeightMask(_ grey: [UInt8], mask: [Bool], region: [Bool],
+                                 width: Int, height: Int) -> [Bool] {
+        let n = width * height
+        guard width > 0, height > 0, grey.count >= n, mask.count == n, region.count == n
+        else { return mask }
+        var inkHistogram = [Int](repeating: 0, count: 256)
+        var paperHistogram = [Int](repeating: 0, count: 256)
+        for i in 0..<n where region[i] {
+            if mask[i] { inkHistogram[Int(grey[i])] += 1 } else { paperHistogram[Int(grey[i])] += 1 }
+        }
+        let ink = (0..<256).max { inkHistogram[$0] < inkHistogram[$1] } ?? 0
+        let paper = (0..<256).max { paperHistogram[$0] < paperHistogram[$1] } ?? 255
+        guard inkHistogram[ink] > 0, paperHistogram[paper] > 0, paper > ink else { return mask }
+        let middle = (ink + paper + 1) / 2
+        let cleared = strokeFringe(grey, width: width, height: height, ink: ink, middle: middle) {
+            mask[$0]
+        }
+        var out = mask
+        for i in 0..<n where cleared[i] { out[i] = false }
+        return out
+    }
+
+    /// The pixels `strokeWeightGrey` and `strokeWeightMask` take out of the ink: `isInk`
+    /// is the cut as drawn, and a pixel of it at or over `middle` is fringe.
+    private static func strokeFringe(_ grey: [UInt8], width: Int, height: Int, ink: Int,
+                                     middle: Int, isInk: (Int) -> Bool) -> [Bool] {
+        // A seed is darker than halfway from the ink peak to the midpoint. Grey ink, a
+        // heading or a rule printed grey beside black type, sits near the midpoint, and
+        // seeded from its own body the lift ate into it rather than its fringe:
+        // `1954 - Why` p9's grey headings and `Glazer_2002` p1's grey masthead kept
+        // 0.79 and 0.76 of their ink (ux-regression `elInk`). It is kept whole.
+        let deep = (ink + middle) / 2
         // 0 untouched, 1 lifted, 2 a lifted notch filled again, 3 a speck cleared.
         var state = [UInt8](repeating: 0, count: width * height)
         func at(_ x: Int, _ y: Int) -> Int? {
             x >= 0 && x < width && y >= 0 && y < height ? y * width + x : nil
         }
+        func isCore(_ i: Int) -> Bool { Int(grey[i]) < middle && isInk(i) }
         func visitFringe(_ i: Int) -> Bool {
-            guard state[i] == 0 else { return false }
-            let value = Int(grey[i])
-            guard value >= middle, value < t else { return false }
+            guard state[i] == 0, Int(grey[i]) >= middle, isInk(i) else { return false }
             state[i] = 1
             return true
         }
@@ -2063,7 +2107,7 @@ enum Flattener {
             var core = 0
             for dy in -1...1 {
                 for dx in -1...1 where dx != 0 || dy != 0 {
-                    if let j = at(x + dx, y + dy), Int(grey[j]) < middle { core += 1 }
+                    if let j = at(x + dx, y + dy), isCore(j) { core += 1 }
                 }
             }
             return core >= 4
@@ -2072,7 +2116,7 @@ enum Flattener {
         var ring: [Int32] = []
         for y in 0..<height {
             let row = y * width
-            for x in 0..<width where Int(grey[row + x]) < middle && isSeed(x, y) {
+            for x in 0..<width where Int(grey[row + x]) < deep && isCore(row + x) && isSeed(x, y) {
                 for dy in -1...1 {
                     for dx in -1...1 {
                         if let i = at(x + dx, y + dy), visitFringe(i) { ring.append(Int32(i)) }
@@ -2100,7 +2144,7 @@ enum Flattener {
         // type is never one.
         func inkAfterLift(_ x: Int, _ y: Int) -> Bool {
             guard let i = at(x, y) else { return false }
-            return Int(grey[i]) < t && state[i] == 0
+            return isInk(i) && state[i] == 0
         }
         for i in 0..<(width * height) where state[i] == 1 {
             let x = i % width, y = i / width
@@ -2111,7 +2155,7 @@ enum Flattener {
         }
         func inkAfterFill(_ x: Int, _ y: Int) -> Bool {
             guard let i = at(x, y) else { return false }
-            return Int(grey[i]) < t && state[i] != 1
+            return isInk(i) && state[i] != 1
         }
         for i in 0..<(width * height) where state[i] == 1 {
             let x = i % width, y = i / width
@@ -2129,9 +2173,7 @@ enum Flattener {
                 }
             }
         }
-        var out = grey
-        for i in 0..<(width * height) where state[i] == 1 || state[i] == 3 { out[i] = 255 }
-        return out
+        return state.map { $0 == 1 || $0 == 3 }
     }
 
     /// How many pixels of fringe `strokeWeightGrey` lifts outward from a stroke's core.
@@ -4992,7 +5034,8 @@ enum Flattener {
         // C54. Pale ink is cut again with the page's levels stretched. The first mask is
         // released before the second cut, so the peak is one byte a pixel over the
         // first's: `region`, which the first cut did not have.
-        if let levels = paleInkLevels(grey, stencil: mask, region: region) {
+        let paleInk = paleInkLevels(grey, stencil: mask, region: region)
+        if let levels = paleInk {
             mask = []
             mask = sauvolaMask(grey, width: w, height: h,
                                window: sauvolaWindow(dpi: dpi, width: w, height: h),
@@ -5106,8 +5149,12 @@ enum Flattener {
         if let fine {
             stencil = fine
         } else {
+            // C56. The published stencil with its strokes' fringe taken out, except on
+            // pale ink, whose re-cut exists because its strokes came out too thin (C54).
+            let published = paleInk == nil
+                ? strokeWeightMask(grey, mask: mask, region: region, width: w, height: h) : mask
             var maskPixels = [UInt8](repeating: 255, count: w * h)
-            for i in 0..<(w * h) where mask[i] { maskPixels[i] = 0 }
+            for i in 0..<(w * h) where published[i] { maskPixels[i] = 0 }
             guard let png = greyPNG(maskPixels, width: w, height: h) else { return nil }
             stencil = (png, w, h)
         }
@@ -5224,6 +5271,11 @@ enum Flattener {
                                window: sauvolaWindow(dpi: dpi, width: w, height: h),
                                levels: levels)
             guard mask.count == w * h else { return nil }
+        } else {
+            // C56, as in `mrcLayers`. Confined to the words first, which is all the
+            // stencil keeps, so the peaks are read where it is published.
+            for i in 0..<(w * h) where !region[i] { mask[i] = false }
+            mask = strokeWeightMask(grey, mask: mask, region: region, width: w, height: h)
         }
         var pixels = [UInt8](repeating: 255, count: w * h)
         var inked = false

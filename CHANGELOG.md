@@ -17,6 +17,8 @@ an older entry mentions "Window ▸ Vision Reader Window", the menu item is now
 - Black type on scanned pages that publish in black and white no longer comes out near-bold: its strokes
   keep the weight the scan shows, and faint pencil and faded type are still kept whole away from the print
   (C56).
+- The same holds on scanned pages that carry a picture beside their text: the type keeps the scan's weight,
+  and headings or rules printed in grey ink keep theirs (C56).
 - On closely set scanned pages, dragging across the top half of a line no longer copies the line above it:
   the selectable text now sits over the middle of each printed line, not along its bottom edge (C55).
 - Pale typewriting, and typing on grey or yellowed paper, is no longer published broken and faded: its
