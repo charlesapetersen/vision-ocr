@@ -1017,7 +1017,15 @@ say so in the commit.
       mutant deleting the request at startup now turns it red). Untested: the usage-window `cut` exemption. Known:
       a park after attempts on an un-fast-forwardable primary says "fix sessions committed" of fixes never gated.
       `prove-daemon.sh` [5] (queue edit wakes backoff) fails 125/1 on the base commit too, so it was red before this.
-- [ ] **mac-heavy-lock** — one heavy job at a time on the Mac, shared with Archive Suite. (effort: medium)
+- [x] **mac-heavy-lock** — one heavy job at a time on the Mac, shared with Archive Suite. (effort: medium)
+      DONE 2026-10-06. `ops/autonomous/mac-heavy-lock.sh`; its header is the protocol, for Archive Suite to match
+      (wait files are `mac-heavy.lock.waiting/<pid>`, and a recycled pid is told apart by `start=`). Taken by
+      `test-lock.sh run` (both forms, so the hook too), the gate's build, the hook's UI build, and
+      `run-guarded.sh` (bakeoff.sh copies the helper beside its script copies). The daemon stops a gate's or
+      session's clocks while it is queued, up to 4 h (`VISIONOCR_HEAVY_PAUSE_MAX`). Proven by
+      `tests/prove-mac-heavy-lock.sh` (27 checks, with a built-in take-always-succeeds mutant) and
+      `prove-gate-fix.sh` [8]; both are in the gate. Hand-run mutants removing the daemon's pause, the watchdog
+      spare, test-lock's take and run-guarded's take each turn a check red.
       WHY. Owner, 2026-10-06, after the Mac froze about 13:30-14:05: "Queue a shared lock, top priority." Measured
       then: 15-minute load average about 28, swap 6.6 of 8 GB, no reboot or panic. Running at once: this daemon's
       full suite (its health gate, two `visionocr-recognise` at 130-150% CPU), Archive Suite's builds and Tart VM

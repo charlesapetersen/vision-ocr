@@ -67,7 +67,9 @@ start)
     sample=$(ls "$here"/../../OCR-SAMPLE-*.tsv | tail -1)
     # The job runs from copies, so removing the worktree it was started from cannot pull its script away.
     rm -rf "$J/scripts"; mkdir -p "$J/scripts" "$J/bin"
-    cp "$here"/*.sh "$here"/*.py "$here"/*.tsv "$J/scripts/" && cp "$sample" "$J/sample.tsv" || exit 1
+    # mac-heavy-lock.sh goes beside run-guarded.sh, which looks for it there (the machine-wide heavy lock).
+    cp "$here"/*.sh "$here"/*.py "$here"/*.tsv "$here/../autonomous/mac-heavy-lock.sh" "$J/scripts/" \
+        && cp "$sample" "$J/sample.tsv" || exit 1
     for t in render-page cut-crops; do
         [ -x "$J/bin/$t" ] || swiftc -O -o "$J/bin/$t" "$here/../truth/$t.swift" || exit 1
     done

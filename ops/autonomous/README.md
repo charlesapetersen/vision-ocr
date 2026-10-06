@@ -116,6 +116,14 @@ the daemon loop; and the owner keeps working interactively in the primary checko
   careless party, and now neither party can be one. It degrades exactly to the old behaviour when
   `ops/autonomous/test-lock.sh` is absent, so an older checkout is unaffected.
 
+**Inside test.lock sits a second, machine-wide lock: `mac-heavy-lock.sh`** (2026-10-06, after the Mac froze
+with this suite, Archive Suite's builds and VMs, and CrashPlan running at once). `~/.local/state/mac-heavy.lock`
+is shared with Archive Suite, which carries its own copy of the same protocol; the helper's header is the
+specification. The suite (through `test-lock.sh run`, both forms), the gate's build, the hook's UI build and every
+`ops/ocrlab/run-guarded.sh` model run take it, waiting without a limit. The daemon does not charge a gate's or a
+session's time queued there (up to `VISIONOCR_HEAVY_PAUSE_MAX`, 4 h). `tests/prove-mac-heavy-lock.sh` and
+`prove-gate-fix.sh` [8] prove it, and both run in the gate.
+
 The lock is a `mkdir`-atomic directory recording the **caller's** pid, so a holder killed mid-run (a closed
 lid, a watchdog TERM) is reclaimable the instant its pid is gone rather than after a timeout. It also
 consults `pgrep -x tests`, which catches a suite started by something that never heard of the lock — and it

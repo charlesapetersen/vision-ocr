@@ -307,8 +307,16 @@ fi
 # terminal instead of $log), which means it does NOT get `run`'s automatic timing — and the hook is the most
 # frequent suite runner there is, so a ledger without it would under-report the common case. `record` keeps
 # the row format in test-lock.sh, the one place that owns it.
+# The suite also takes the machine-wide heavy lock (ops/autonomous/mac-heavy-lock.sh), through test-lock.sh's
+# reentrant `run`, which wraps it and keeps test.lock fresh while it waits. The redirect is INSIDE the command
+# so a "waiting for the machine lock" notice reaches your terminal, not $log.
 suite_t0=$(date +%s)
-./run_tests.sh >"$log" 2>&1; suite_rc=$?
+if [ -x "$LOCK_SH" ]; then
+  VISIONOCR_TEST_LOCK_HELD=1 "$LOCK_SH" run --label "pre-commit $$" -- /bin/bash -c './run_tests.sh >"$0" 2>&1' "$log"
+else
+  ./run_tests.sh >"$log" 2>&1
+fi
+suite_rc=$?
 [ -x "$LOCK_SH" ] && "$LOCK_SH" record --label "pre-commit $$" \
   --seconds "$(( $(date +%s) - suite_t0 ))" --rc "$suite_rc" 2>/dev/null || true
 if [ "$suite_rc" -ne 0 ]; then
@@ -327,7 +335,7 @@ rm -f "$log"
 # the real build too.
 if echo "$staged" | grep -qE '^Sources/(App|ContentView|SettingsView)\.swift$'; then
   echo "pre-commit: UI changed, building the app…"
-  if ! ./build.sh >/dev/null 2>&1; then
+  if ! ops/autonomous/mac-heavy-lock.sh run --label "pre-commit build $$" -- /bin/bash -c './build.sh >/dev/null 2>&1'; then
     echo "pre-commit: ./build.sh FAILED — commit refused." >&2
     exit 1
   fi

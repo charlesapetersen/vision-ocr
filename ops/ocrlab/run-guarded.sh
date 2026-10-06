@@ -21,6 +21,21 @@
 # Exit status is the command's, or 137 when the guard killed it, or 75 when it refused to start.
 set -u
 PATH="/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:$PATH"
+# A model run is heavy work: take the machine-wide lock shared with Archive Suite first, WAITING for it, and
+# only then make the checks below, which refuse rather than wait. (QUEUE `mac-heavy-lock`, 2026-10-06.)
+# Beside this script first: bakeoff.sh runs a COPY of ops/ocrlab from $STATE/ocrlab/scripts and copies the
+# helper there too. Then the repo's own.
+heavy="${VISIONOCR_MAC_HEAVY:-}"
+if [ -z "$heavy" ]; then
+    here_d="$(cd "$(dirname "$0")" && pwd)"
+    for c in "$here_d/mac-heavy-lock.sh" "$here_d/../autonomous/mac-heavy-lock.sh"; do [ -x "$c" ] && { heavy="$c"; break; }; done
+fi
+if [ "${MAC_HEAVY_HELD:-}" != 1 ]; then
+    [ -x "$heavy" ] || { echo "run-guarded: mac-heavy-lock.sh not found beside $0 or in ../autonomous; refusing" >&2; exit 75; }
+    hl="run-guarded"; prev=""
+    for a in "$@"; do [ "$prev" = --label ] && hl="run-guarded $a"; [ "$a" = -- ] && break; prev="$a"; done
+    exec "$heavy" run --label "$hl" -- "$0" "$@"
+fi
 OCRLAB="${OCRLAB:-$HOME/.local/share/visionocr-ocrlab}"
 STATE="${VISIONOCR_STATE:-$HOME/.local/state/visionocr-autonomous}"
 label="-" rss_gb=12 swap_gb=2 every=2 need_gb=4

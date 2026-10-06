@@ -293,6 +293,11 @@ step tools-compile Tools/check-tools-compile.sh
 # `daemon.sh stop` during this step also stops them and the step reads red; re-run it before believing that.
 step gate-fix-proof bash "$OPS/tests/prove-gate-fix.sh"
 
+# ~40 s, sandboxed (own lock directory). One heavy job at a time across this project and Archive Suite: two
+# takers never overlap, a dead holder is reclaimed, the suite and the guarded model runs take it, and a wait
+# for it neither times out the gate nor gets a session killed as wedged.
+step mac-heavy-proof bash "$OPS/tests/prove-mac-heavy-lock.sh"
+
 if [ "$QUICK" = 1 ]; then
   # VISIONOCR_GATE_QUICK=1 — WIRING CHECKS ONLY. Both expensive lanes are announced as SKIPPED and named
   # in NOT VERIFIED, because a quick run that merely printed GREEN would be a gate claiming coverage it
@@ -311,7 +316,9 @@ else
   # successful build. So with jbig2/qpdf off the PATH this step passes over a bundle missing its own
   # tools. The gate would be green and the shipped app would silently fall back to Homebrew copies that
   # a user's machine may not have.
-  step build ./build.sh
+  # The machine-wide heavy lock (mac-heavy-lock.sh), as the suite takes it through test-lock.sh. The daemon
+  # stops the gate's clock while it waits there, so a long hold by Archive Suite is not a TIMEOUT.
+  step build "$OPS/mac-heavy-lock.sh" run --label health-gate-build -- ./build.sh
 fi
 
 # ── gui-vm: the interface checks only a running app can answer (U13, U15, U17) ────────────────────────

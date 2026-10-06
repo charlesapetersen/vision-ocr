@@ -361,6 +361,29 @@ note_timing() {
   return 0
 }
 
+# THE MACHINE LOCK, taken AFTER test.lock, around the command itself (QUEUE `mac-heavy-lock`, owner
+# 2026-10-06, after the Mac froze with this suite, Archive Suite's builds and VMs, and CrashPlan all running).
+# test.lock keeps two of OUR suites apart; mac-heavy-lock.sh keeps a suite apart from the other project's heavy
+# jobs. Its wait is unbounded and is not charged to --wait, and while it waits it touches test.lock so that
+# MAXAGE does not break a suite lock whose holder is only queued. The ledger row includes that wait.
+# A copy of this file run from elsewhere (mutate-test-lock.sh does that) finds no helper and says so loudly.
+HEAVY="${VISIONOCR_MAC_HEAVY:-$(cd "$(dirname "$0")" && pwd)/mac-heavy-lock.sh}"
+_heavy() {
+  if [ -x "$HEAVY" ]; then
+    MAC_HEAVY_TOUCH="$LOCKDIR" "$HEAVY" run --label "${LABEL:-suite}" -- "$@"
+  else
+    echo "test-lock: $HEAVY is missing — running WITHOUT the machine-wide heavy lock." >&2
+    "$@"
+  fi
+}
+_heavy_exec() {
+  if [ -x "$HEAVY" ]; then
+    MAC_HEAVY_TOUCH="$LOCKDIR" exec "$HEAVY" run --label "${LABEL:-suite}" -- "$@"
+  fi
+  echo "test-lock: $HEAVY is missing — running WITHOUT the machine-wide heavy lock." >&2
+  exec "$@"
+}
+
 # ---- dispatch ----
 LABEL="${VISIONOCR_TEST_LOCK_LABEL:-$(basename "${0##*/}")-$$}"
 WAIT="$WAIT_DEFAULT"
@@ -401,7 +424,7 @@ case "$CMD" in
     # deadlock against itself for the whole --wait. The env var is only visible to children of the
     # holder, so it answers "am I inside my own critical section?" exactly, with no pid archaeology.
     if [ "${VISIONOCR_TEST_LOCK_HELD:-}" = 1 ]; then
-      exec "$@"
+      _heavy_exec "$@"
     fi
     acquire "$LABEL" "$WAIT" || {
       echo "test-lock: could not get the suite lock within ${WAIT}s — NOT running '$1'." >&2
@@ -427,7 +450,7 @@ case "$CMD" in
     # the health gate, `.githooks/pre-commit`, and every session — which is why it lives here and not in
     # any one caller. Append-only, one line per run, and a failure to write it must never fail the suite.
     _tl_t0="$(date +%s)"
-    VISIONOCR_TEST_LOCK_HELD=1 "$@"
+    VISIONOCR_TEST_LOCK_HELD=1 _heavy "$@"
     _tl_rc=$?
     note_timing "$LABEL" "$(( $(date +%s) - _tl_t0 ))" "$_tl_rc"
     exit "$_tl_rc"

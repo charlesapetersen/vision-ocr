@@ -11,6 +11,8 @@
 #   [4] a fix session that commits nothing does not burn an attempt, and the gate is not re-run over an
 #       unchanged tree;
 #   [5] a restart forgives the attempt count but keeps the request.
+#   [8] a gate or a session queued on the machine-wide heavy lock (mac-heavy-lock.sh, shared with Archive Suite)
+#       is neither timed out nor killed as wedged while another project holds it.
 # Sandboxed like prove-daemon.sh (own HOME, STATE and git repo; host commands stubbed through BASH_ENV, because
 # the daemon puts the system directories ahead of PATH). It never runs the suite, ./build.sh or the real gate.
 # USAGE:  ops/autonomous/tests/prove-gate-fix.sh [path/to/vision-ocr-autonomous.sh]
@@ -66,10 +68,14 @@ printf '#!/bin/sh\necho STATUS-OK\n' > "$T/status-stub.sh"; chmod +x "$T/status-
 
 # The stub gate: $GATECTL holds "red" or "green"; every run is counted in $GATERUNS. Its red names a step whose
 # `step` line is in this very file, so the request can quote the step's command the way it does the real gate's.
+HEAVYH="$HERE/../mac-heavy-lock.sh"; export MAC_HEAVY_POLL=1     # the real helper; its lock is under the sandbox HOME
+unset MAC_HEAVY_HELD MAC_HEAVY_LOCK    # inherited, either would let the stubs below skip the lock and [8] pass vacuously
+HEAVYLOG="$HOME/.local/state/mac-heavy.log"; mkdir -p "$HOME/.local/state"
 GATECTL="$T/gatectl"; GATERUNS="$T/gate.runs"; GATE="$T/health-gate.sh"
 cat > "$GATE" <<STUB
 #!/bin/bash
 git -C "$REPO" rev-parse HEAD >> "$GATERUNS"     # which tree this gate run would have tested
+[ "\$(cat "$GATECTL")" = heavy ] && { "$HEAVYH" run --label gate-suite -- true; echo "HEALTH GATE: GREEN"; exit 0; }
 if [ "\$(cat "$GATECTL")" = red ]; then echo "── tools-compile ──"; echo "  ✗ tools-compile (rc=1)"; echo "HEALTH GATE: RED $EM tools-compile"; exit 1; fi
 echo "HEALTH GATE: GREEN"; exit 0
 step tools-compile Tools/check-tools-compile.sh
@@ -82,6 +88,7 @@ SESSCTL="$T/sessctl"; SEEN="$T/seen"
 cat > "$T/claude" <<STUB
 #!/usr/bin/env bash
 [ -f "$STATE/gate-fix" ] && { echo "saw \$VISIONOCR_HEAD_ITEM" >> "$SEEN"; cp "$STATE/gate-fix" "$T/request.copy"; }
+[ "\$(cat "$SESSCTL")" = heavy ] && { echo start >> "$T/session.heavy.starts"; "$HEAVYH" run --label session-suite -- touch "$T/session.heavy.ran"; echo none > "$SESSCTL"; }
 if [ "\$(cat "$SESSCTL")" = commit ]; then
   _c=\$(git -C "$REPO" commit-tree "\$(git -C "$REPO" rev-parse 'HEAD^{tree}')" -p "\$(git -C "$REPO" rev-parse refs/remotes/origin/main)" -m "fix \$\$.\$RANDOM")
   git -C "$REPO" update-ref refs/remotes/origin/main "\$_c"
@@ -94,8 +101,9 @@ launch() {
   VISIONOCR_LABEL=provegatefix VISIONOCR_REPO="$REPO" VISIONOCR_STATE="$STATE" \
   VISIONOCR_RUN="$RUN" VISIONOCR_QUEUE="$QUEUE" VISIONOCR_CLAUDE="$T/claude" \
   VISIONOCR_INTERVAL=1 VISIONOCR_MAXBACKOFF=2 VISIONOCR_IDLE_STOP=0 VISIONOCR_HB_POLL=1 \
-  VISIONOCR_MAXRUN=60 VISIONOCR_BUDGET=1 VISIONOCR_MINFREE_MB=10 VISIONOCR_MAX_NOCOMPLETE=0 \
-  VISIONOCR_GATE_EVERY=1 VISIONOCR_GATE_CMD="$GATE" VISIONOCR_GATE_MAXRUN=30 \
+  VISIONOCR_HB_STALL="${HBSTALL:-600}" VISIONOCR_MAC_HEAVY="$HEAVYH" \
+  VISIONOCR_MAXRUN="${SMAX:-60}" VISIONOCR_BUDGET=1 VISIONOCR_MINFREE_MB=10 VISIONOCR_MAX_NOCOMPLETE=0 \
+  VISIONOCR_GATE_EVERY=1 VISIONOCR_GATE_CMD="$GATE" VISIONOCR_GATE_MAXRUN="${GMAX:-30}" \
   VISIONOCR_GATEFIX_MAX="${GFMAX:-3}" VISIONOCR_GATEFIX_IDLE_MAX="${GFIDLE:-99}" \
   VISIONOCR_STATUS_CMD="$T/status-stub.sh" \
   VISIONOCR_COMPACTOR="$T/none" VISIONOCR_TEST_LOCK="$STATE/test.lock" BASH_ENV="$T/preload.sh" \
@@ -177,6 +185,35 @@ grep -q 'not a clean main behind origin/main' "$L" && ok "it said it was gating 
 [ "$(cat "$REPO/f")" = "owner's edit" ] && ok "the uncommitted edit is untouched" || bad "the edit was lost: $(cat "$REPO/f")"
 [ "$(git -C "$REPO" rev-parse HEAD)" != "$(git -C "$REPO" rev-parse refs/remotes/origin/main)" ] && ok "HEAD was not moved" || bad "HEAD was fast-forwarded over a dirty tree"
 git -C "$REPO" checkout -q -- f
+
+echo "[8] a gate or session queued on the machine-wide heavy lock is not timed out or killed"
+[ -x "$HEAVYH" ] || bad "no mac-heavy-lock.sh at $HEAVYH — this section is vacuous"
+reset; echo heavy > "$GATECTL"; echo none > "$SESSCTL"; : > "$HEAVYLOG"
+MAC_HEAVY_PROJECT=archive-suite "$HEAVYH" run --label other-project -- sleep 12 & hp=$!
+waitfor '[ -s "$HOME/.local/state/mac-heavy.lock/owner" ]' 5 || bad "the other project's holder never took the lock"
+P=$(GMAX=4 launch); waitfor 'grep -qE "health gate (GREEN|TIMED OUT)" "$L"' 40; stop "$P"; wait "$hp" 2>/dev/null
+grep -q "'gate-suite' (pid [0-9]*) waiting for 'other-project'" "$HEAVYLOG" && ok "the gate really queued behind the other project" \
+  || bad "the gate never queued — the next check is vacuous: $(cat "$HEAVYLOG")"
+grep -q 'health gate GREEN' "$L" && ok "a gate that waited ~12 s on the lock under a 4 s cap came back GREEN" \
+  || bad "the wait was charged to the gate: $(grep 'health gate' "$L" | tail -2)"
+# Twice: once under a short backstop with a long stall, once under a short stall with a long backstop, so each
+# of the two killers is shown to spare a queued session on its own.
+for cfg in "4 600 backstop" "60 2 health watchdog"; do
+  set -- $cfg; smax=$1; stall=$2; shift 2; who="$*"
+  : > "$L"; : > "$HEAVYLOG"; git -C "$REPO" rev-parse HEAD > "$STATE/last-gate"
+  rm -f "$T/session.heavy.ran" "$T/session.heavy.starts"; echo heavy > "$SESSCTL"
+  MAC_HEAVY_PROJECT=archive-suite "$HEAVYH" run --label other-project -- sleep 12 & hp=$!
+  waitfor '[ -s "$HOME/.local/state/mac-heavy.lock/owner" ]' 5 || bad "the other project's holder never took the lock"
+  P=$(SMAX=$smax HBSTALL=$stall launch); waitfor '[ -f "$T/session.heavy.ran" ]' 40; stop "$P"; wait "$hp" 2>/dev/null
+  grep -q "'session-suite' (pid [0-9]*) waiting for 'other-project'" "$HEAVYLOG" \
+    || bad "the session never queued — the next check is vacuous: $(cat "$HEAVYLOG")"
+  # One start means the first session waited ~12 s and ran; a killed one is relaunched, and that second start is
+  # what a missing pause looks like.
+  [ -f "$T/session.heavy.ran" ] && [ "$(wc -l < "$T/session.heavy.starts" | tr -d ' ')" = 1 ] \
+    && ok "the $who (${smax}s backstop, ${stall}s stall) spared a session queued ~12 s on the lock" \
+    || bad "the $who killed a queued session ($(wc -l < "$T/session.heavy.starts" 2>/dev/null | tr -d ' ') starts)"
+done
+rm -f "$STATE/last-gate"
 
 echo ""
 echo "=================== $PASS passed, $FAIL failed ==================="

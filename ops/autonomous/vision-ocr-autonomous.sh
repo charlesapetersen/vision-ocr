@@ -61,6 +61,13 @@ if [ -n "$REPO" ] && [ ! -d "$REPO/.git" ] && [ ! -f "$REPO/.git" ]; then
 fi
 STATE="${VISIONOCR_STATE:-$HOME/.local/state/visionocr-autonomous}"
 CLAUDE="${VISIONOCR_CLAUDE:-$HOME/.local/bin/claude}"
+# The machine-wide heavy lock shared with Archive Suite (QUEUE `mac-heavy-lock`, 2026-10-06). A gate or session
+# queued on it is waiting, not wedged: its clocks below stop while `waiting-under` says so.
+HEAVY="${VISIONOCR_MAC_HEAVY:-$REPO/ops/autonomous/mac-heavy-lock.sh}"
+_heavy_waiting() { [ -x "$HEAVY" ] && "$HEAVY" waiting-under "$1" >/dev/null 2>&1; }
+# The uncharged time has a ceiling, so a holder that wedges (a hung VM, a stuck suite elsewhere) cannot stall
+# the daemon loop for ever: past it, the wait counts against the clock like anything else.
+HEAVY_PAUSE_MAX="${VISIONOCR_HEAVY_PAUSE_MAX:-14400}"
 # =======================================================================================================
 RUN="${VISIONOCR_RUN:-$STATE/RUN.md}"          # run state: RUN STATUS + FOCUS + HOLD + SESSION LOG
 QUEUE="${VISIONOCR_QUEUE:-$REPO/ops/autonomous/QUEUE.md}"
@@ -630,9 +637,14 @@ then restart it with:  ./ops/autonomous/daemon.sh start"
 GATE_STATE="$STATE/last-gate"; GATE_TO="$STATE/gate-timeouts"; glog="$STATE/last-gate.log"
 _run_gate_once() {
   "$GATE_CMD" >"$glog" 2>&1 &
-  local gpid=$! waited=0
+  local gpid=$! waited=0 queued=0
   # 2 s granularity so a finished gate is noticed promptly; still cheap for a minutes-long real gate.
-  while kill -0 "$gpid" 2>/dev/null && [ "$waited" -lt "$GATE_MAXRUN" ]; do sleep 2; waited=$(( waited + 2 )); done
+  # Time spent queued on the machine-wide heavy lock is not charged: Archive Suite holding it is not a hung gate.
+  while kill -0 "$gpid" 2>/dev/null && [ "$waited" -lt "$GATE_MAXRUN" ]; do
+    sleep 2
+    if [ "$queued" -lt "$HEAVY_PAUSE_MAX" ] && _heavy_waiting "$gpid"; then queued=$(( queued + 2 )); else waited=$(( waited + 2 )); fi
+  done
+  [ "$queued" -gt 0 ] && log "health gate spent ${queued}s queued on the machine-wide heavy lock (not charged to its ${GATE_MAXRUN}s cap)."
   if kill -0 "$gpid" 2>/dev/null; then
     _terminate_tree "$gpid"; wait "$gpid" 2>/dev/null || true   # reap so no zombie lingers
     GATE_RC=2; return 0
@@ -1246,6 +1258,9 @@ health_watchdog() {
       idle_streak=0
       continue
     fi
+    # The same for a session queued on the machine-wide heavy lock behind Archive Suite: no `tests` runs, the
+    # tree is idle, and it is doing what the lock told it to.
+    if _heavy_waiting "$cpid"; then idle_streak=0; continue; fi
     # Idle tree, no subagent, no suite anywhere. Require HB_IDLE_N consecutive idle polls so a brief
     # low-CPU dip (linking, I/O wait) inside a real tool does not false-kill.
     idle_streak=$(( idle_streak + 1 ))
@@ -1869,10 +1884,12 @@ culprits are per-worktree build/ directories and Tools/mutation-out/. Free some 
   # Watchdog A — OUTER wall-clock backstop. POLLS cpid liveness rather than one long unconditional sleep, so
   # it self-exits promptly when the session ends AND never fires _terminate_tree against a stale/reused pid
   # if the daemon dies uncleanly.
-  ( waited=0
+  ( waited=0 queued=0
     while [ "$waited" -lt "$maxrun" ]; do
       kill -0 "$cpid" 2>/dev/null || exit 0
-      sleep "$HB_POLL"; waited=$(( waited + HB_POLL ))
+      sleep "$HB_POLL"
+      # A wait on the machine-wide heavy lock is not charged, up to HEAVY_PAUSE_MAX.
+      if [ "$queued" -lt "$HEAVY_PAUSE_MAX" ] && _heavy_waiting "$cpid"; then queued=$(( queued + HB_POLL )); else waited=$(( waited + HB_POLL )); fi
     done
     _terminate_tree "$cpid" ) &
   local wpid=$!
