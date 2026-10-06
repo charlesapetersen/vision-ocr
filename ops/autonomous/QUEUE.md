@@ -1040,6 +1040,10 @@ say so in the commit.
             and tripped the swap rule once on each of two reads with this session's memory in use.
       - [ ] **bakeoff-run-counted** — the job finished and counted. (blocked-on: bakeoff-tonight-ok)
 - [ ] **ocr-bakeoff-score** — score the saved readings against the truth set and name the top three.
+      OVERNIGHT OPTION (owner, 2026-10-05: "we may want to include an option for models that can basically only be
+      used overnight when the computer is in limited use otherwise"): when naming the top three, also name any
+      reader too slow or too memory-hungry for daytime use that reads clearly better, with its time per 100 pages
+      and peak memory, as a candidate "overnight" engine for the owner's review; do not rule it out on speed alone.
       (blocked-on: ocr-bakeoff-run)
       Score exactly as `truth-harness` scores the app: words wrong and missing against the transcripts,
       contested words unscored, by route; seconds per page and peak memory from the job's log.
@@ -1246,8 +1250,10 @@ so `next-item.sh` does not read them. To queue one, move it back into the queue 
 
 ## HOLD — owner-only, never auto-executed
 
-- [ ] **bakeoff-tonight-ok** — the owner says the Mac is free, so the bake-off may resume (rest of Chandra 2, then the
+- [x] **bakeoff-tonight-ok** — the owner says the Mac is free, so the bake-off may resume (rest of Chandra 2, then the
       Qwen3.5-9B try). Owner, 2026-10-05: the daemons work through the day, the bake-off waits for tonight. [hold] needs: owner
+      TICKED 2026-10-05 about 22:00: owner, "I'm done with the computer for the night." The bake-off was restarted
+      with `bakeoff.sh start` by an interactive session after Archive Suite's on-device segmentation runs.
 
 These are offered to nobody. `next-item.sh` prints them as `hold` so they stay visible.
 
