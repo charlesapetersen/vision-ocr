@@ -36,6 +36,8 @@ CARDS = {
     "lightonocr-2-1b-base-8bit-1540": ("1B", "image boxes only (bbox variants)"),
     "lightonocr-2-1b-8bit-1540": ("1B", "image boxes only (bbox variants)"),
     "falcon-ocr-bf16": ("0.27B", "none from the VLM; blocks from its PP-DocLayoutV3 two-stage pipeline"),
+    "churro-3b-q8-gguf": ("3B", "none (HistoricalDocument XML of lines, no coordinates)"),
+    "churro-3b-8bit": ("3B", "none (HistoricalDocument XML of lines, no coordinates)"),
 }
 NOTES = {
     "lightonocr-2-1b-4bit": "superseded by its retry, lightonocr-2-1b-4bit-1540",
@@ -67,6 +69,15 @@ NOTES = {
     "falcon-ocr-bf16": "the Hub build as is (bf16, 1 GB; no quantised build needed at 0.27B); prompt `plain`, "
                        "which mlx-vlm's processor turns into its OCR_PLAIN category prompt; output was clean "
                        "Markdown-ish text with no loops",
+    "churro-3b-q8-gguf": "mradermacher Q8_0 + mmproj-f16 under llama-mtmd-cli with Churro's system prompt and "
+                         "repeat penalty; out after two guard kills on the ordinary page: swap_grew_2369MB at "
+                         "4 MP (--max-side 2240, 545 s), then a 15.3 GB footprint at 2 MP (--max-side 1600, "
+                         "612 s); weights deleted. The same model fits under MLX (churro-3b-8bit)",
+    "churro-3b-8bit": "stanford-oval/churro-3B converted here at 8-bit by convert-mlx.py (9.8 bits per weight, "
+                      "bf16 download deleted); read-mlx.py --churro (its system prompt, no user text, repetition "
+                      "penalty 1.05, text from its XML by churro_xml.py) at --max-side 1600; newspaper crops "
+                      "stopped at try-mlx's 600 s limit with 12 of 13 crops done (XML costs ~2x the tokens), "
+                      "so its crops recall is of a partial read; no loops",
 }
 NOT_RUN = [
     ("teleocr", "XingChen-AGI/TeleOCR", "1.2B", "-", "-",

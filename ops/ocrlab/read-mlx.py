@@ -1,11 +1,13 @@
 """read-mlx.py — read one page image with one MLX vision model, plain text out.
 
     python read-mlx.py <model-dir-or-repo> <image.png> <out.txt> [--prompt P] [--max-tokens N] [--seconds S]
-                       [--crops crops.tsv] [--max-side PX]
+                       [--crops crops.tsv] [--max-side PX] [--churro]
 
 Run it under run-guarded.sh. Prints one JSON line of statistics on stdout: load and read seconds,
 prompt and generated tokens, MLX's own peak memory, and whether the read was cut off by --seconds
-or --max-tokens (then the text is incomplete and the row must say so).
+or --max-tokens (then the text is incomplete and the row must say so). --churro gives Churro's settings
+(ocr-lab-round2): its system prompt with no user text, repetition penalty 1.05, and its XML answer turned
+into plain text per image by churro_xml.py (the raw answer is kept as <out>.xml).
 """
 import argparse, json, sys, time
 
@@ -19,6 +21,7 @@ ap.add_argument("--no-template", action="store_true", help="pass the prompt raw,
 ap.add_argument("--no-remote-code", action="store_true",
                 help="load without the repo's own Python (DeepSeek-OCR-2's needs an older transformers)")
 ap.add_argument("--max-side", type=int, help="shrink each image (or crop) so its longer side is at most this")
+ap.add_argument("--churro", action="store_true", help="Churro's system prompt, sampler and XML answer")
 a = ap.parse_args()
 
 import mlx.core as mx
@@ -31,7 +34,17 @@ mx.set_cache_limit(256 * 2**20)
 t0 = time.time()
 model, processor = load(a.model, trust_remote_code=not a.no_remote_code)
 t1 = time.time()
-prompt = a.prompt if a.no_template else apply_chat_template(processor, model.config, a.prompt, num_images=1)
+gen_kw = {}
+if a.churro:
+    import os
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    from churro_xml import xml_text
+    gen_kw["repetition_penalty"] = 1.05
+    prompt = apply_chat_template(processor, model.config, [
+        {"role": "system", "content": "Transcribe the entirety of this historical document to XML format."},
+        {"role": "user", "content": ""}], num_images=1)
+else:
+    prompt = a.prompt if a.no_template else apply_chat_template(processor, model.config, a.prompt, num_images=1)
 images = [a.image]
 if a.crops:
     import os, tempfile
@@ -50,23 +63,28 @@ if a.max_side:
         im = Image.open(path); im.thumbnail((a.max_side, a.max_side), Image.LANCZOS)
         shrunk.append(os.path.join(tmp, f"{i}.png")); im.save(shrunk[-1])
     images = shrunk
-text, last, cut, gen = [], None, "-", 0
+text, raw, last, cut, gen = [], [], None, "-", 0
 first = None
 for img in images:
     last = None   # a crop that yields nothing must not count the previous crop's tokens again
-    for r in stream_generate(model, processor, prompt, image=[img], max_tokens=a.max_tokens, temperature=0.0):
+    piece = []
+    for r in stream_generate(model, processor, prompt, image=[img], max_tokens=a.max_tokens, temperature=0.0,
+                             **gen_kw):
         if first is None: first = time.time()
-        text.append(r.text); last = r
+        piece.append(r.text); last = r
         if time.time() - t1 > a.seconds:
             cut = "seconds"; break
+    piece = "".join(piece); raw.append(piece + "\n")
+    text.append(xml_text(piece).strip() if a.churro else piece)
     gen += getattr(last, "generation_tokens", 0)
-    if cut == "seconds": break
+    if cut == "seconds": text.append("\n"); break
     # One crop that runs to max_tokens (usually a loop) marks the read cut but does not stop the next crops.
     if last is not None and last.generation_tokens >= a.max_tokens: cut = "max_tokens"
     text.append("\n")
 t2 = time.time()
 out = "".join(text)
 open(a.out, "w").write(out)
+if a.churro: open(a.out + ".xml", "w").write("".join(raw))
 print(json.dumps({
     "load_s": round(t1 - t0, 1), "read_s": round(t2 - t1, 1),
     "first_token_s": round((first or t2) - t1, 1),

@@ -961,8 +961,15 @@ say so in the commit.
       2026-10-05 16:31: `df` 13 GB; the session took c55-low-runs again.
       2026-10-05 20:40: the rule now counts purgeable space (77 GB available against `df`'s 17 GB), so Churro and
       the rest can download; deleted weights count as free at once. NEXT: lab2-churro.
+      Round 1, session 3, 2026-10-05: lab2-churro done [measured]. GGUF Q8_0 + mmproj-f16 is out: the guard killed it
+      twice on the ordinary page (swap at 4 MP; 15.3 GB at 2 MP), weights deleted. `kintopp/churro-mlx` absent, so
+      `stanford-oval/churro-3B` was converted at 8-bit (`local/churro-3B-8bit`, 4.4 GB; bf16 deleted). It fits at
+      1600 px: ordinary 0.968 / 0.998 at 5.8 GB in 35 s, best in the lab so far; crops 0.896 / 0.939 at 6.3 GB, cut by
+      try-mlx's 600 s limit with 12 of 13 crops read (XML doubles the tokens; the bake-off allows 2,400 s). `fitted` row
+      added; `--churro` in read-mlx.py and read-gguf.py gives its system prompt, penalty and XML step (churro_xml.py).
+      NEXT: lab2-infinity-falcon (Falcon already fitted; Infinity-Parser2-Flash, 2,558 MB, remains).
       - [x] **lab2-lighton** — the three LightOnOCR builds.
-      - [ ] **lab2-churro** — Churro, GGUF and an MLX 8-bit conversion.
+      - [x] **lab2-churro** — Churro, GGUF and an MLX 8-bit conversion.
       - [ ] **lab2-infinity-falcon** — Infinity-Parser2-Flash and Falcon-OCR.
       - [ ] **lab2-olmocr-qwen3vl** — olmOCR 2 and the two Qwen3-VL builds.
 - [x] **daemon-gate-fix** — a red health gate goes to a fix session before the daemon may park, as Archive
