@@ -1152,7 +1152,7 @@ say so in the commit.
       unbroken wherever the source's are; dark-ink pages in `ops/ux-regression/set.tsv` are unchanged or
       better; bytes within 10% of before; a new check goes red without the change.
       BOUND: rule 10. (origin: BUGS.md C54)
-- [ ] **c55-low-runs** — draw each run over its own ink, so a drag over a line copies that line.
+- [x] **c55-low-runs** — draw each run over its own ink, so a drag over a line copies that line.
       THE PAGES: `1951 - Briefer Book Notes` p1, `Zipkin_2000` p1, `Banks 2006` p101 (C55 gives the lines and
       their positions).
       DONE WHEN, through PDFKit: a drag from the first to the last glyph of each named line copies that
@@ -1164,6 +1164,9 @@ say so in the commit.
       `___ 2` p1; C55 gives the rows and the gutter-start lead). The baseline was refreshed at this commit.
       Session 2, 2026-10-05 (round 1): six of the seven rows are the harness's start point or better copies;
       one is real, `___ 2`'s ad column now read across with the article beside it (C55). Not yet fixed.
+      Session 3, 2026-10-05 (round 1, max): ink-measured tilts; parked by triage (c6cec50), 14 rows worse.
+      Session 4, 2026-10-06 (round 1): DONE WHEN checked on unchanged code, ux-regression 0 worse; the ad
+      column accepted as PDFKit grouping on a 0.06 pt margin (C55). Closed.
 - [ ] **c56-heavy-type** — keep 1-bit sources' strokes as thin as they arrive.
       THE PAGES: `Luethy_1955` p2, `Gowan and Demos` p1, `Xin Qu_2018` p1, `Ries_Marshall_1955` p54.
       DONE WHEN, on 2x PDFKit renders beside the source: stroke weight matches the source by eye, and
