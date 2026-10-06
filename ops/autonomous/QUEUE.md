@@ -1011,7 +1011,8 @@ say so in the commit.
       `prove-daemon.sh` [5] (queue edit wakes backoff) fails 125/1 on the base commit too, so it was red before this.
 - [ ] **ocr-bakeoff-run** — read the bake-off sample with every candidate that fits, as one long unattended
       job. (blocked-on: ocr-lab-setup, bakeoff-tonight-ok)
-      PAUSED 2026-10-05 08:05 (owner needs the Mac for the day): stopped with `bakeoff.sh stop` after Surya 2
+      PAUSED AGAIN 2026-10-06 07:55 (owner needs the Mac): `bakeoff.sh stop` during Churro 3B; see the hold.
+            PAUSED 2026-10-05 08:05 (owner needs the Mac for the day): stopped with `bakeoff.sh stop` after Surya 2
       finished, 7 of Chandra 2's reads saved; seven candidates are complete. Do NOT restart the job until the owner
       ticks `bakeoff-tonight-ok` in HOLD. What is left: the rest of Chandra 2, then Qwen3.5-9B's last guarded try.
       THE SAMPLE, listed and committed first (`OCR-SAMPLE-<date>.tsv`): the 45 pages of the regression set and
@@ -1255,10 +1256,13 @@ so `next-item.sh` does not read them. To queue one, move it back into the queue 
 
 ## HOLD — owner-only, never auto-executed
 
-- [x] **bakeoff-tonight-ok** — the owner says the Mac is free, so the bake-off may resume (rest of Chandra 2, then the
+- [ ] **bakeoff-tonight-ok** — the owner says the Mac is free, so the bake-off may resume (rest of Chandra 2, then the
       Qwen3.5-9B try). Owner, 2026-10-05: the daemons work through the day, the bake-off waits for tonight. [hold] needs: owner
       TICKED 2026-10-05 about 22:00: owner, "I'm done with the computer for the night." The bake-off was restarted
       with `bakeoff.sh start` by an interactive session after Archive Suite's on-device segmentation runs.
+      UNTICKED 2026-10-06 07:55: owner, "I need the mac for the day." Night 2 ran 23:59-07:55: Chandra 2 finished,
+      LightOnOCR-2 base and ocr-soup, Falcon-OCR, and Churro 3B to 36 of 56 whole pages. Tick again when the owner
+      next frees the Mac; left: the rest of Churro, then Qwen3.5-9B's last guarded try.
 
 These are offered to nobody. `next-item.sh` prints them as `hold` so they stay visible.
 
