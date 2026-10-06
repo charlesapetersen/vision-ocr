@@ -975,6 +975,11 @@ say so in the commit.
       waits got at most 5.4 GB reclaimable); weights kept, lab 48.2 GB, so olmOCR 2 (~5 GB) needs Infinity or another
       build deleted first or the retry done. bakeoff.sh's `owed` path is hard-wired to qwen3.5-9b, so no bake-off row.
       NEXT: lab2-olmocr-qwen3vl.
+      2026-10-06 00:03: not started. The resumed bake-off (pid 47316, from 23:59) holds `engine.lock` and the guard,
+      reading Qwen3.5-9B's last try (ordinary page fits: 8.9 GB, 0.901 / 0.959), so no fit test may run beside it
+      until it ends. Disk is also owed: lab 48.2 GB, and olmOCR 2 plus both Qwen3-VL builds need about 16 GB more
+      against the 50 GB limit; delete the out LightOnOCR-8bit control's or Infinity's weights first, once their
+      retries are settled. NEXT: lab2-olmocr-qwen3vl after the job ends.
       - [x] **lab2-lighton** — the three LightOnOCR builds.
       - [x] **lab2-churro** — Churro, GGUF and an MLX 8-bit conversion.
       - [x] **lab2-infinity-falcon** — Infinity-Parser2-Flash and Falcon-OCR.
