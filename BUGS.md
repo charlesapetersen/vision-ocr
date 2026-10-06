@@ -19664,6 +19664,32 @@ the gap to the line above alone: `SCHOOL`'s top sits 0.36 pt under `Mr. Nivon…
 new. Next: find which relation of that run to its neighbours PDFKit keys on (by moving it in steps, as above, in a
 scratch copy), then keep a raised run from crossing it.
 
+**CHECKPOINT 2026-10-05 20:20 (session 3, round 1, max effort; usage window 80%).** Worktree
+`/private/tmp/vo-20261005-190706-6931`, branch `auto/20261005-190706-6931`, NOT committed. Done there [measured]:
+- `___ 2` key found: `SCHOOL` reads as its own block only while its ink middle (PDFKit character bounds, baseline +
+  0.358 d) is below `Hinuse…`'s, a line two columns over (181.00); sweeps of SCHOOL's baseline at five heights and of
+  Hinuse's baseline agree within 0.02 pt. The old layer held by 0.06 pt. Plan: accept, with that reason (C52's class).
+- Briefer's tilted line: the page is curved (book notes 0.56°, its two columns 0.1-0.9°); Vision's quads say nothing
+  (51 of 85 exactly level). Code in the worktree: `Recogniser.withInkTilts`/`inkSlope` (left/right quarter profile
+  alignment, median over the column within 3 heights) sets `Observation.tilt`; `SearchableWriter.turnedTogether`
+  (one angle per visual line in a column, >= 0.15° and >= 1 pt fall), `levelled` (box less the fall), `Run.turn`
+  (context turned about the box middle; a turned text matrix does NOT work, CoreText re-levels the glyphs).
+- Briefer through the gate (helper): named line passes, starts 112.8-122.8 and ends 106-118.8 all copy it; PDFKit
+  lines identical on all 6 pages; reader-drag sweep (scratch `linedrag`) p1 7 -> 2, p3 3 -> 2, p5 1 -> 1 wrong, one
+  new miss (`and T. H. Harvey…` right-end top under the heading; runs sit 1.8 pt under the ink there, as level).
+Next: tests (synthetic tilted page, red on main), suite, invariant 3 on Briefer, ux-regression, review, verifier.
+
+**2026-10-05, triage of that strand: the tilt code is PARKED, not landed.** Its tests were written (11 checks); on
+`dfdf386` the suite passed 1774/1774 [measured], but `Tools/ux-regression.sh` read **14 worse, 13 better** against
+the baseline [measured]: Raskin p1 truth copyErr 1.03 -> 4.16, wer 2.36 -> 5.02, midBreaks 322/424 -> 622/791,
+overInk 0.80 -> 0.62; `___ 2` p1 copyErr 1.06 -> 2.60; Merriam p9 find 0.97 -> 0.90; 99 Cong p16 one weld; Hyman
++2% bytes. Better rows were on recall/cover/hyph (Fiedler recall 0.07 -> 0.44, Raskin hyph 13 -> 2). Not
+diagnosed. Likely cause, reasoned only: on the newsprint columns `turnedTogether` turns runs that PDFKit then
+splits across lines (midBreaks doubled). Rejected: landing it and accepting the regression on the owner's pages.
+The code is at `$STATE/rescue/PARKED-c55-ink-tilts-vo-20261005-190706-6931.patch` (base `010e292`, applies cleanly
+to `dfdf386`). To resume it: apply, then find which Raskin p1 lines gain midBreaks, and restrict turning to lines
+whose neighbours are turned too, or to measured falls well above `minimumFall`.
+
 ### C56 · Pages that arrive 1-bit, or are re-gridded, come out with heavier type than the source — OPEN
 
 *(found 2026-10-01 by `truth-read`. C37 and C47 are about bytes, not stroke weight.)*
