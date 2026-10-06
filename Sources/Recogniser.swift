@@ -695,6 +695,18 @@ enum Recogniser {
     /// from, on the grid it is read at (C50): `p00001.png` has it in `p00001.grey.jpg`.
     static let greySuffix = ".grey.jpg"
 
+    /// What `Flattener.flatten` names a 1-bit page as Otsu's threshold drew it, when
+    /// the published bitmap has had its strokes' fringe lifted (C56): the recogniser
+    /// reads this one, so the thinner type changes what is seen and not what is read.
+    /// `p00001.png` has it in `p00001.read.png`.
+    static let readSuffix = ".read.png"
+
+    /// The page bitmap the recogniser reads in place of the published one at `image`.
+    static func readingImage(besides image: URL) -> URL {
+        let read = image.deletingPathExtension().appendingPathExtension("read.png")
+        return FileManager.default.fileExists(atPath: read.path) ? read : image
+    }
+
     /// `lines`, with the text of each line that `grey`, a reading of the page's grey
     /// render, reads as the same line (`finerReading`) and with more dictionary words
     /// (`dictionaryWords`). The 1-bit page keeps its lines, boxes and order; the grey
@@ -872,7 +884,8 @@ enum Recogniser {
     /// and the page itself only their words (`recognisePage(at:)`, `BUGS.md` C39).
     static func recognitionImage(besides image: URL) -> URL {
         let coarse = image.deletingPathExtension().appendingPathExtension("coarse.png")
-        return FileManager.default.fileExists(atPath: coarse.path) ? coarse : image
+        return FileManager.default.fileExists(atPath: coarse.path)
+            ? coarse : readingImage(besides: image)
     }
 
     /// The page `flatten` wrote at `image`, recognised as the app publishes it: strip by
@@ -894,6 +907,7 @@ enum Recogniser {
                               isCancelled: () -> Bool = { false })
         throws -> [SearchableWriter.Observation]? {
         let coarse = recognitionImage(besides: image)
+        let pageURL = readingImage(besides: image)
         guard let first = loadImage(at: coarse) else { return nil }
         let regions = try regions(besides: image)
         func read(_ bitmap: CGImage) throws -> [SearchableWriter.Observation] {
@@ -907,7 +921,7 @@ enum Recogniser {
         }
         let lines = try read(first)
         var merged = lines, fitOn = first
-        if coarse != image, !isCancelled(), let page = loadImage(at: image), page.width > 0,
+        if coarse != pageURL, !isCancelled(), let page = loadImage(at: pageURL), page.width > 0,
            let finer = try? read(page), !isCancelled() {
             // Each reading was judged on its own letters; the page is judged on what it keeps.
             merged = withoutStrayScript(

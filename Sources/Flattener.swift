@@ -1526,8 +1526,19 @@ enum Flattener {
             var jpegBytes: Data?
             var isColour = false
             let image: CGImage?
+            // C56. The page as Otsu drew it, for the recogniser, when the published
+            // one has had its strokes' fringe lifted: read thinner, Briefer p1's copy
+            // errors rose 0.023 -> 0.062 (ux-regression).
+            var reading: CGImage?
             if useBilevel {
-                image = bilevelImage(from: grey, width: width, height: height,
+                let thinned = sourceDigest == nil
+                    ? strokeWeightGrey(grey, width: width, height: height, threshold: threshold)
+                    : grey
+                if pngDirectory != nil, thinned != grey {
+                    reading = bilevelImage(from: grey, width: width, height: height,
+                                           threshold: threshold)
+                }
+                image = bilevelImage(from: thinned, width: width, height: height,
                                      threshold: threshold)
             } else if wantColour,
                       let rgba = renderRGB(page, box: box, scale: scale,
@@ -1602,6 +1613,14 @@ enum Flattener {
                         // 3x larger route with no explanation, on what is really
                         // a disk-full or permissions fault.
                         throw Failure.pageFailed(page: index + 1, of: count)
+                    }
+                    // Without it the page would be read thinner than before, so a copy
+                    // that cannot be written fails the page as the bitmap does.
+                    if let reading {
+                        guard writePNG(reading, to: pngDirectory.appendingPathComponent(
+                            stem + Recogniser.readSuffix)) else {
+                            throw Failure.pageFailed(page: index + 1, of: count)
+                        }
                     }
                     // C39. Without it the page would be read at its type's resolution,
                     // so a copy that cannot be written fails the page as the bitmap does.
@@ -2001,6 +2020,122 @@ enum Flattener {
         // Keep it in a sane band: a page of solid tone has no meaningful split.
         return UInt8(min(max(chosen, 90), 230))
     }
+
+    /// C56. The page with the fringe of its dark strokes lifted to paper, for a 1-bit
+    /// image that keeps the source's stroke weight.
+    ///
+    /// Otsu splits paper from ink, and on a white page with black type it lands at
+    /// 135-154, well above the half-tone of a stroke's edge: the edge pixels between
+    /// the two are drawn as ink and the type comes out near-bold (`Luethy_1955` p2,
+    /// `Ries_Marshall_1955` p54). An edge is half covered at the midpoint of the ink
+    /// and paper peaks, so a pixel at or above that midpoint (the fringe) is paper
+    /// when a chain of fringe pixels, `strokeFringeReach` long at most, joins it to a
+    /// pixel below. A pixel under the threshold further from any core is kept:
+    /// that is a faint mark, pencil or faded type, and thinning it would lose it; one
+    /// crossing the type loses only the reach on either side of the stroke.
+    static func strokeWeightGrey(_ grey: [UInt8], width: Int, height: Int,
+                                 threshold: UInt8) -> [UInt8] {
+        guard width > 0, height > 0, grey.count >= width * height else { return grey }
+        var histogram = [Int](repeating: 0, count: 256)
+        for value in grey { histogram[Int(value)] += 1 }
+        let t = Int(threshold)
+        guard t > 0, t < 256 else { return grey }
+        let ink = (0..<t).max { histogram[$0] < histogram[$1] } ?? 0
+        let paper = (t..<256).max { histogram[$0] < histogram[$1] } ?? 255
+        let middle = (ink + paper + 1) / 2
+        guard middle < t else { return grey }
+        // 0 untouched, 1 lifted, 2 a lifted notch filled again, 3 a speck cleared.
+        var state = [UInt8](repeating: 0, count: width * height)
+        func at(_ x: Int, _ y: Int) -> Int? {
+            x >= 0 && x < width && y >= 0 && y < height ? y * width + x : nil
+        }
+        func visitFringe(_ i: Int) -> Bool {
+            guard state[i] == 0 else { return false }
+            let value = Int(grey[i])
+            guard value >= middle, value < t else { return false }
+            state[i] = 1
+            return true
+        }
+        // A seed is inside a stroke's body, with four or more core pixels beside it. A
+        // dark pixel alone, in a pencil line or a faint dot, seeds nothing, so the mark
+        // it sits in is kept whole rather than cut back around it.
+        func isSeed(_ x: Int, _ y: Int) -> Bool {
+            var core = 0
+            for dy in -1...1 {
+                for dx in -1...1 where dx != 0 || dy != 0 {
+                    if let j = at(x + dx, y + dy), Int(grey[j]) < middle { core += 1 }
+                }
+            }
+            return core >= 4
+        }
+        // Breadth first from the seeds, one ring of fringe per step.
+        var ring: [Int32] = []
+        for y in 0..<height {
+            let row = y * width
+            for x in 0..<width where Int(grey[row + x]) < middle && isSeed(x, y) {
+                for dy in -1...1 {
+                    for dx in -1...1 {
+                        if let i = at(x + dx, y + dy), visitFringe(i) { ring.append(Int32(i)) }
+                    }
+                }
+            }
+        }
+        for _ in 1..<max(strokeFringeReach, 1) where !ring.isEmpty {
+            var next: [Int32] = []
+            for i in ring {
+                let y = Int(i) / width, x = Int(i) % width
+                for dy in -1...1 {
+                    for dx in -1...1 {
+                        if let j = at(x + dx, y + dy), visitFringe(j) { next.append(Int32(j)) }
+                    }
+                }
+            }
+            ring = next
+        }
+        // Judged pixel by pixel, a crisp scan's edges fall in its noise: the lift
+        // notched them and left dark noise pixels standing alone, which cost Kristol p1
+        // 7 KB of JBIG2. A lifted pixel with ink on two opposite sides is a notch and
+        // is ink again; an ink pixel the lift left with none beside it is a speck. A
+        // speck lies within the reach of a stroke's body, so a faint dot clear of the
+        // type is never one.
+        func inkAfterLift(_ x: Int, _ y: Int) -> Bool {
+            guard let i = at(x, y) else { return false }
+            return Int(grey[i]) < t && state[i] == 0
+        }
+        for i in 0..<(width * height) where state[i] == 1 {
+            let x = i % width, y = i / width
+            if (inkAfterLift(x - 1, y) && inkAfterLift(x + 1, y))
+                || (inkAfterLift(x, y - 1) && inkAfterLift(x, y + 1)) {
+                state[i] = 2
+            }
+        }
+        func inkAfterFill(_ x: Int, _ y: Int) -> Bool {
+            guard let i = at(x, y) else { return false }
+            return Int(grey[i]) < t && state[i] != 1
+        }
+        for i in 0..<(width * height) where state[i] == 1 {
+            let x = i % width, y = i / width
+            for dy in -1...1 {
+                for dx in -1...1 where dx != 0 || dy != 0 {
+                    let sx = x + dx, sy = y + dy
+                    guard let s = at(sx, sy), state[s] == 0, inkAfterFill(sx, sy) else { continue }
+                    var beside = false
+                    for ey in -1...1 where !beside {
+                        for ex in -1...1 where (ex != 0 || ey != 0) && inkAfterFill(sx + ex, sy + ey) {
+                            beside = true; break
+                        }
+                    }
+                    if !beside { state[s] = 3 }
+                }
+            }
+        }
+        var out = grey
+        for i in 0..<(width * height) where state[i] == 1 || state[i] == 3 { out[i] = 255 }
+        return out
+    }
+
+    /// How many pixels of fringe `strokeWeightGrey` lifts outward from a stroke's core.
+    static let strokeFringeReach = 3
 
     /// Threshold to 1 bit, packed MSB-first, 1 = white.
     private static func bilevelImage(

@@ -5876,6 +5876,120 @@ do {
     resetPrefs()
 }
 
+// MARK: - C56: a 1-bit page keeps its source's stroke weight
+
+print("\na 1-bit page keeps the source's stroke weight, and its faint marks (C56)")
+do {
+    // Antialiased small type on white, as a scan's grey edges arrive, and a square
+    // at 140 with no dark core: under Otsu's threshold, over the strokes' midpoint.
+    let w = 1224, h = 1584
+    let rep = NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: w, pixelsHigh: h,
+                               bitsPerSample: 8, samplesPerPixel: 1, hasAlpha: false,
+                               isPlanar: false, colorSpaceName: .deviceWhite,
+                               bytesPerRow: w, bitsPerPixel: 8)!
+    NSGraphicsContext.saveGraphicsState()
+    NSGraphicsContext.current = NSGraphicsContext(bitmapImageRep: rep)
+    NSColor.white.setFill(); NSRect(x: 0, y: 0, width: w, height: h).fill()
+    let attrs: [NSAttributedString.Key: Any] = [
+        .font: NSFont(name: "Times-Roman", size: 22) ?? NSFont.systemFont(ofSize: 22),
+        .foregroundColor: NSColor.black]
+    for i in 0..<30 {
+        ("The quick brown fox jumps over the lazy dog \(i)" as NSString)
+            .draw(at: NSPoint(x: 100, y: 1400 - i * 40), withAttributes: attrs)
+    }
+    NSColor(white: 140.0 / 255, alpha: 1).setFill()
+    NSRect(x: 1000, y: 100, width: 40, height: 40).fill()
+    NSGraphicsContext.current?.flushGraphics()
+    NSGraphicsContext.restoreGraphicsState()
+    let source = Array(UnsafeBufferPointer(start: rep.bitmapData!, count: w * h))
+    let src = tmp.appendingPathComponent("c56-type.pdf")
+    var box = CGRect(x: 0, y: 0, width: 612, height: 792)
+    if let cg = rep.cgImage, let pdf = CGContext(src as CFURL, mediaBox: &box, nil) {
+        pdf.beginPDFPage(nil); pdf.draw(cg, in: box); pdf.endPDFPage(); pdf.closePDF()
+    }
+    let dir = tmp.appendingPathComponent("c56")
+    let pngs = dir.appendingPathComponent("pages")
+    try? FileManager.default.createDirectory(at: pngs, withIntermediateDirectories: true)
+    let pages = (try? Flattener.flatten(src, to: dir.appendingPathComponent("r.pdf"),
+                                        mode: .blackAndWhite, pngDirectory: pngs)) ?? []
+    var published: [UInt8] = []
+    var pw = 0, ph = 0
+    if let page = pages.first, case .bilevel(let png) = page.content,
+       let s = CGImageSourceCreateWithURL(png as CFURL, nil),
+       let image = CGImageSourceCreateImageAtIndex(s, 0, nil),
+       let g = CGContext(data: nil, width: image.width, height: image.height,
+                         bitsPerComponent: 8, bytesPerRow: image.width,
+                         space: CGColorSpaceCreateDeviceGray(), bitmapInfo: 0) {
+        pw = image.width; ph = image.height
+        g.draw(image, in: CGRect(x: 0, y: 0, width: pw, height: ph))
+        published = Array(UnsafeBufferPointer(
+            start: g.data!.bindMemory(to: UInt8.self, capacity: pw * ph), count: pw * ph))
+    }
+    // Both buffers run top-down; the square is rows h-140 ..< h-100.
+    func inks(_ px: [UInt8], _ width: Int) -> (type: Int, faint: Int) {
+        var type = 0, faint = 0
+        for (i, v) in px.enumerated() where v < 128 {
+            let x = i % width, y = i / width
+            if x >= 1000, x < 1040, y >= h - 140, y < h - 100 { faint += 1 } else { type += 1 }
+        }
+        return (type, faint)
+    }
+    let before = inks(source, w)
+    let after = pw == w && ph == h ? inks(published, pw) : (type: 0, faint: 0)
+    let ratio = Double(after.type) / Double(max(before.type, 1))
+    check("C56: the published type is within 2% of the source's ink, not thickened by Otsu's split",
+          pw == w && ph == h && abs(ratio - 1) <= 0.02,
+          "\(pw)x\(ph), ink \(after.type) vs \(before.type) (\(String(format: "%.3f", ratio))x)")
+    check("C56: …and a faint mark with no dark core is kept whole",
+          after.faint >= 1_600 * 95 / 100, "\(after.faint) of 1600")
+    // The recogniser reads the page as Otsu drew it, so what is read does not move.
+    if let page = pages.first, case .bilevel(let png) = page.content {
+        let read = Recogniser.readingImage(besides: png)
+        let unthinned = (CGImageSourceCreateWithURL(read as CFURL, nil)
+            .flatMap { CGImageSourceCreateImageAtIndex($0, 0, nil) })
+            .flatMap { image -> Int? in
+                guard let g = CGContext(data: nil, width: image.width, height: image.height,
+                                        bitsPerComponent: 8, bytesPerRow: image.width,
+                                        space: CGColorSpaceCreateDeviceGray(),
+                                        bitmapInfo: 0) else { return nil }
+                g.draw(image, in: CGRect(x: 0, y: 0, width: image.width, height: image.height))
+                let p = g.data!.bindMemory(to: UInt8.self, capacity: image.width * image.height)
+                return (0..<(image.width * image.height)).filter { p[$0] < 128 }.count
+            } ?? 0
+        let cut = Flattener.otsuThreshold(of: source)
+        let otsu = source.filter { $0 < cut }.count
+        check("C56: the recogniser reads the page as Otsu's threshold drew it, beside the thinner one",
+              read != png && Recogniser.recognitionImage(besides: png) == read
+                  && abs(unthinned - otsu) <= otsu / 100,
+              "\(read.lastPathComponent): \(unthinned) ink vs Otsu's \(otsu)")
+    } else {
+        check("C56: the recogniser reads the page as Otsu's threshold drew it, beside the thinner one",
+              false, "no bilevel page")
+    }
+    func paint(_ w: Int, _ h: Int, _ f: (Int, Int) -> UInt8) -> [UInt8] {
+        (0..<(w * h)).map { f($0 % w, $0 / w) }
+    }
+    // A stroke 3 wide with a fringe column, and a faint line well clear of it.
+    let stroke = paint(12, 5) { x, _ in x < 3 ? 0 : x == 3 || x == 8 ? 140 : 255 }
+    let lifted = Flattener.strokeWeightGrey(stroke, width: 12, height: 5, threshold: 150)
+    check("C56: a stroke's fringe is lifted to paper, a faint line clear of it is not",
+          lifted == paint(12, 5) { x, _ in x < 3 ? 0 : x == 8 ? 140 : 255 }, "\(lifted)")
+    // Noise on a crisp edge (Kristol p1): a fringe pixel inside the stroke is a notch
+    // and stays ink; a dark noise pixel the lift leaves standing beside it is a speck.
+    let noisy = paint(16, 5) { x, y in
+        x == 2 && y == 2 ? 140 : x < 5 ? 0 : x == 7 && y == 2 ? 100 : x < 7 ? 140 : 255 }
+    let cleaned = Flattener.strokeWeightGrey(noisy, width: 16, height: 5, threshold: 150)
+    check("C56: the lift neither notches a stroke nor leaves a speck beside it",
+          cleaned == paint(16, 5) { x, y in x == 2 && y == 2 ? 140 : x < 5 ? 0 : 255 },
+          "\(cleaned)")
+    // A faint dot with one dark pixel at its heart, as a soft scan draws a period: no
+    // stroke body seeds a lift, so none of it is cut back (invariant 1).
+    let dotted = paint(14, 8) { x, y in
+        x < 3 ? 0 : x == 9 && y == 3 ? 60 : (8...11).contains(x) && (2...5).contains(y) ? 140 : 255 }
+    let dot = Flattener.strokeWeightGrey(dotted, width: 14, height: 8, threshold: 150)
+    check("C56: a faint dot with a single dark pixel is kept whole", dot == dotted, "\(dot)")
+}
+
 // MARK: - C37: a scan that is already 1-bit JBIG2 keeps its own stream
 
 print("\na 1-bit JBIG2 source page keeps its own stream (C37)")

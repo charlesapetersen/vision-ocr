@@ -19721,6 +19721,52 @@ is resampled onto a new pixel grid and thresholded again, which fattens strokes,
 its own grid. Why Luethy gains 6% of rows at an unchanged 300 ppi is not explained. A fix of C37's shape,
 passing the source's own 1-bit stream through (here CCITT), is the first thing to try.
 
+#### The cause, and the plain 1-bit route's fix (2026-10-06, two sessions)
+
+Reproduced through the gate (single pages cut with `qpdf --pages`), ink share (lum < 128) of a PDFKit
+2x render, source → output [measured]: Luethy p2 14.85 → 15.48% (+4%), Gowan p1 4.00 → 4.66% (+16%),
+Xin Qu p1 6.32 → 6.98% (+10%), Ries p54 4.62 → 5.16% (+12%). Only Luethy and Gowan's sources are 1-bit or
+re-gridded: Gowan and Ries are grey JPEG, Xin Qu a JBIG2 mask over JPX. The common cause is the threshold,
+not the grid [measured, a debug print]: Otsu picks 135-154 on pages whose paper peaks at 255 and ink near
+0, so edge pixels darker than the stroke's half-tone are drawn as ink. Next: threshold the published
+1-bit image at the midpoint of the ink and paper peaks, keeping whole any Otsu component that has no pixel
+below that midpoint (faint marks must not be lost, invariant 1). Gowan p1 is a picture page whose mask
+comes from another path; look at it after.
+
+Done in the worktree: `Flattener.strokeWeightGrey` lifts a pixel at or over the midpoint that touches one
+under it. Published alone, ink ratio Luethy 1.000, Ries 1.007, Xin Qu 1.058, Gowan 1.16 (unchanged); but
+recognition read the thinner page and ux-regression went 26 worse / 34 better (Briefer p1 copyErr 0.023 ->
+0.062). So the page as Otsu drew it is now written beside it as `.read.png`, and the recogniser reads that
+(`Recogniser.readingImage`). That left ux-regression 7 worse / 12 better, and that session's commit hung
+in the hook: its new check called `otsuThreshold` once per pixel inside `filter` (O(n²); found still
+running at 44 minutes and killed by the session that adopted the strand).
+
+Second session [measured, gate + the same 2x PDFKit ink share]: the lift judged pixel by pixel notched a
+crisp scan's edges and left dark noise pixels standing alone (`Kristol_1960` p1, looked at 8x), which cost
+JBIG2 7 KB. Now the lift reaches `strokeFringeReach` (3) fringe pixels out from the core, then refills a
+lifted pixel with ink on two opposite sides and clears an ink pixel left with none beside it. The diff
+review found that any dark pixel seeded the lift, so a faint dot with a one-pixel heart, or a pencil line
+with scattered dark pixels, was cut back or erased: only a core pixel with four or more core neighbours
+(a stroke's body) seeds it now, at no measurable cost. Ink share, output over source: Luethy p2 1.04 →
+1.00, Xin Qu p1 1.10 → 1.06, Ries p54 1.12 → 1.02, Gowan p1 1.16 unchanged. Bytes on all four ≤ main.
+Rejected: deciding each fringe pixel on a 1-2-1 smoothed grey (clean edges, but Xin Qu 1.087 and Ries
+1.042: the blend keeps fringe in counters). Known cost: pencil crossing type loses up to 3 px each side.
+
+ux-regression 6 worse / 11 better (baseline refreshed). Accepted under rule 9: Kristol 61.6 → 64.4 KB
+(+4.6%; finer glyph edges, against Riesman −4.2 KB, Ries −0.6); Raskin p1 leg1 0.72 → 0.66 (leg2 1.03 →
+1.06; 1x ink share source 17.80% / main 18.26% / now 17.95%; looked at, as legible as main); Ries p54
+leg1 0.78 → 0.74, which crosses the 0.75 legibility flag (129 pixels of 1.9M separate a 0.76 run from
+this one, so this is the instrument's 1x noise; the 1x render looked at beside the source and main reads
+the same, at the source's weight); Briefer p1 leg2 1.20 → 1.17 (still above the source); Ries p54 truth
+elInk 1.00 → 0.97 (inkRatio 1.01).
+
+DONE WHEN, checked by a separate subagent on 2x PDFKit crops: Luethy and Ries pass (the "5" of Ries's
+folio stays open); bytes pass; Gowan fails (0 pixels changed), Xin Qu fails narrowly (1.061, close to
+the source by eye); ux-regression has the six lines above. So the box stays open.
+STILL OPEN: Gowan p1 and Xin Qu p1 (1.06, just past 5%). Gowan is a picture page on the layered route,
+whose stencil is `sauvolaMask`'s local threshold (`mrcStencil`, `mrcLayers`), not Otsu, so this lift does
+not reach it; the next step is a fringe lift on that mask against its own cutoff.
+
 ## Robustness and correctness of reporting
 
 ### R1 · jbig2 and qpdf children are never registered for cancellation — FIXED

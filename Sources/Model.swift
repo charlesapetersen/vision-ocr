@@ -2253,6 +2253,8 @@ final class OCRModel: ObservableObject {
             try? FileManager.default.removeItem(at: png)
             try? FileManager.default.removeItem(at: png.deletingPathExtension()
                 .appendingPathExtension(String(Recogniser.greySuffix.dropFirst())))
+            try? FileManager.default.removeItem(at: png.deletingPathExtension()
+                .appendingPathExtension(String(Recogniser.readSuffix.dropFirst())))
         }
 
         // 3. Write the PDF. The destination was reserved up front, so two inputs
