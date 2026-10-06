@@ -1017,6 +1017,23 @@ say so in the commit.
       mutant deleting the request at startup now turns it red). Untested: the usage-window `cut` exemption. Known:
       a park after attempts on an un-fast-forwardable primary says "fix sessions committed" of fixes never gated.
       `prove-daemon.sh` [5] (queue edit wakes backoff) fails 125/1 on the base commit too, so it was red before this.
+- [ ] **mac-heavy-lock** — one heavy job at a time on the Mac, shared with Archive Suite. (effort: medium)
+      WHY. Owner, 2026-10-06, after the Mac froze about 13:30-14:05: "Queue a shared lock, top priority." Measured
+      then: 15-minute load average about 28, swap 6.6 of 8 GB, no reboot or panic. Running at once: this daemon's
+      full suite (its health gate, two `visionocr-recognise` at 130-150% CPU), Archive Suite's builds and Tart VM
+      runs, and CrashPlan. `test.lock` and the engine lock serialise only this project; Archive Suite's
+      `heavy.lock` only that one.
+      WHAT. The protocol Archive Suite's `W35.machine-lock` uses, identical, with this repo's own copy of a small
+      helper (neither repo depends on the other): `~/.local/state/mac-heavy.lock`, a directory taken with `mkdir`,
+      holding `owner` (pid, project, label, start time); released by the holder on exit (trap); stale when its pid
+      is dead (the next taker removes it and logs that); a taker WAITS, logged once, rather than failing, and the
+      wait is not charged to a time limit or counted as a failure. Wrap the suite (`test-lock.sh`, after
+      test.lock), the health gate's build-and-suite steps, and guarded model runs (`ops/ocrlab/run-guarded.sh`,
+      so the bake-off and fit tests too). Light work (one-page OCR checks, scripts) does not take it.
+      DONE WHEN a prove harness shows two takers from different projects never hold it at once, a dead holder is
+      reclaimed, a waiting suite does not RED the gate or burn a session's time, and a mutant removing the take
+      turns it red; the harness runs in the health gate. ESTIMATE: 1 session. BOUND: rule 10.
+      (context: owner request 2026-10-06)
 - [ ] **ocr-bakeoff-run** — read the bake-off sample with every candidate that fits, as one long unattended
       job. (blocked-on: ocr-lab-setup, bakeoff-tonight-ok)
       PAUSED AGAIN 2026-10-06 07:55 (owner needs the Mac): `bakeoff.sh stop` during Churro 3B; see the hold.
