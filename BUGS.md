@@ -19797,6 +19797,16 @@ The case for closing it: Xin Qu's residue is PDFKit drawing a stencil source lig
 no change to the bitmap can reach it without the rejected writer change, and Ries's 23 B and the two
 leg1 points are inside the noise rule 9 has accepted before. NEXT: decide that case, or pin `mrcStencil`.
 
+#### Session 4 (2026-10-06): the last gap pinned; round 1 spent
+
+A check now calls `mrcStencil` on the layered fixture and requires its stencil to equal the thinned cut; with
+the `strokeWeightMask` call in `mrcStencil` removed it goes red [measured, suite]. No other code change. The
+case above is the session's recommendation: Xin Qu's bitmap already equals its source's (1.0009), and reaching
+1.05 at 2x would mean drawing it thinner than the source to suit PDFKit, which is rejected; Ries's +23 B
+and the two leg1 points also still fail as written. Closing on that case is a `WONTFIX` for those criteria,
+which rule 8 allows only at max after an earlier max attempt, so the box stays open and the item moved
+behind the untried ones with `(effort: max)` for its second round.
+
 ## Robustness and correctness of reporting
 
 ### R1 · jbig2 and qpdf children are never registered for cancellation — FIXED

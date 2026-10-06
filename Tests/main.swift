@@ -6007,7 +6007,7 @@ do {
           greyKept == paint(12, 5) { x, _ in x < 3 || (6...8).contains(x) ? 0 : 255 }.map { $0 == 0 },
           "\(greyKept.map { $0 ? 1 : 0 })")
     // …and that is the stencil `mrcLayers` publishes for the type above, laid out as
-    // words. (`mrcStencil`, the cut at a finer type resolution, makes the same call.)
+    // words.
     let layered = dir.appendingPathComponent("layered")
     try? FileManager.default.createDirectory(at: layered, withIntermediateDirectories: true)
     let words = [SearchableWriter.BoundingBox(x: 0.05, y: 0.05, width: 0.9, height: 0.9)]
@@ -6040,6 +6040,19 @@ do {
                   stencil == thin && thin != cut,
                   "\(stencil.filter { $0 }.count) published, \(thin.filter { $0 }.count) "
                     + "thinned, \(cut.filter { $0 }.count) cut")
+            // `mrcStencil`, the cut a finer type resolution takes, makes the same call.
+            var fine: [Bool] = []
+            if let made = Flattener.mrcStencil(page, box: cutBox, boxes: words, dpi: cutDPI),
+               made.width == cw, made.height == ch,
+               let fs = CGImageSourceCreateWithData(made.png as CFData, nil),
+               let fbits = CGImageSourceCreateImageAtIndex(fs, 0, nil) {
+                g.clear(CGRect(x: 0, y: 0, width: cw, height: ch))
+                g.draw(fbits, in: CGRect(x: 0, y: 0, width: cw, height: ch))
+                fine = (0..<(cw * ch)).map { p[$0] < 128 }
+            }
+            check("C56: the finer-resolution stencil takes the strokes' fringe out too",
+                  fine == thin, "\(fine.filter { $0 }.count) cut finer, "
+                    + "\(thin.filter { $0 }.count) thinned")
         } else {
             check("C56: a layered page publishes its stencil with the strokes' fringe taken out",
                   false, "the stencil is not at \(cutDPI) DPI")

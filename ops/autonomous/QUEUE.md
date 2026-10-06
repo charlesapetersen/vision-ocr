@@ -1192,15 +1192,6 @@ say so in the commit.
       Session 3, 2026-10-05 (round 1, max): ink-measured tilts; parked by triage (c6cec50), 14 rows worse.
       Session 4, 2026-10-06 (round 1): DONE WHEN checked on unchanged code, ux-regression 0 worse; the ad
       column accepted as PDFKit grouping on a 0.06 pt margin (C55). Closed.
-- [ ] **c56-heavy-type** — keep 1-bit sources' strokes as thin as they arrive.
-      THE PAGES: `Luethy_1955` p2, `Gowan and Demos` p1, `Xin Qu_2018` p1, `Ries_Marshall_1955` p54.
-      DONE WHEN, on 2x PDFKit renders beside the source: stroke weight matches the source by eye, and
-      measured as ink share within 5% of the source's on each page; bytes no larger; `ux-regression.sh` no
-      worse; a new check goes red without the change.
-      BOUND: rule 10. (origin: BUGS.md C56)
-      2026-10-06: round 1, session 1 (strand, not committed) and session 2 (adopted it; plain 1-bit
-      route fixed; Gowan's layered page and Xin Qu at 1.06 remain). Session 3: layered route fixed
-      (Gowan 1.03); Xin Qu's 1.06 is PDFKit's drawing of a stencil source, see C56's case for closing.
 - [ ] **c28-first-principles** — fix C28 again, starting from first principles. The owner took it off the
       parked list on 2026-09-25 and asked for a fresh attempt, not a continuation of the old campaign.
       THE DEFECT. On the layered (MRC) route, the 1-bit stencil is the page's adaptive binarisation
@@ -1271,6 +1262,18 @@ say so in the commit.
       DONE WHEN: a prove-daemon case where a session works item B while A heads the queue leaves A's count
       unchanged and adds to B's, and a mutant restoring head-counting turns it red. ESTIMATE: 1 session.
       BOUND: rule 10. (context: owner request 2026-10-05)
+
+- [ ] **c56-heavy-type** — keep 1-bit sources' strokes as thin as they arrive.
+      THE PAGES: `Luethy_1955` p2, `Gowan and Demos` p1, `Xin Qu_2018` p1, `Ries_Marshall_1955` p54.
+      DONE WHEN, on 2x PDFKit renders beside the source: stroke weight matches the source by eye, and
+      measured as ink share within 5% of the source's on each page; bytes no larger; `ux-regression.sh` no
+      worse; a new check goes red without the change.
+      BOUND: rule 10. (effort: max) (origin: BUGS.md C56)
+      2026-10-06: round 1, session 1 (strand, not committed) and session 2 (adopted it; plain 1-bit
+      route fixed; Gowan's layered page and Xin Qu at 1.06 remain). Session 3: layered route fixed
+      (Gowan 1.03); Xin Qu's 1.06 is PDFKit's drawing of a stencil source, see C56's case for closing.
+      Session 4: `mrcStencil`'s lift pinned by a check; round 1 spent, so moved behind the untried
+      items. Round 2 is at max: judge C56's case for closing (Xin Qu's 2x 1.06 is PDFKit's stencil draw).
 
 ## Parked
 
