@@ -38,6 +38,7 @@ CARDS = {
     "falcon-ocr-bf16": ("0.27B", "none from the VLM; blocks from its PP-DocLayoutV3 two-stage pipeline"),
     "churro-3b-q8-gguf": ("3B", "none (HistoricalDocument XML of lines, no coordinates)"),
     "churro-3b-8bit": ("3B", "none (HistoricalDocument XML of lines, no coordinates)"),
+    "infinity-parser2-flash-8bit": ("2B", "block boxes (its layout JSON)"),
 }
 NOTES = {
     "lightonocr-2-1b-4bit": "superseded by its retry, lightonocr-2-1b-4bit-1540",
@@ -78,6 +79,11 @@ NOTES = {
                       "penalty 1.05, text from its XML by churro_xml.py) at --max-side 1600; newspaper crops "
                       "stopped at try-mlx's 600 s limit with 12 of 13 crops done (XML costs ~2x the tokens), "
                       "so its crops recall is of a partial read; no loops",
+    "infinity-parser2-flash-8bit": "BotResources' 8-bit MLX build of infly/Infinity-Parser2-Flash; read-mlx.py "
+                                   "--infinity (its layout prompt, text from its JSON by infinity_json.py), "
+                                   "--max-tokens 6000; one guarded retry owed on the crops: two waits of 20 min "
+                                   "for 8 GB reclaimable got at most 5.4 GB on 2026-10-05 (another lab job was "
+                                   "running); weights kept for it (2.5 GB)",
 }
 NOT_RUN = [
     ("teleocr", "XingChen-AGI/TeleOCR", "1.2B", "-", "-",

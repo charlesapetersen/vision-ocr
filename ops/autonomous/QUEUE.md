@@ -968,9 +968,16 @@ say so in the commit.
       try-mlx's 600 s limit with 12 of 13 crops read (XML doubles the tokens; the bake-off allows 2,400 s). `fitted` row
       added; `--churro` in read-mlx.py and read-gguf.py gives its system prompt, penalty and XML step (churro_xml.py).
       NEXT: lab2-infinity-falcon (Falcon already fitted; Infinity-Parser2-Flash, 2,558 MB, remains).
+      Round 1, session 4, 2026-10-05: lab2-infinity-falcon done [measured]. Infinity-Parser2-Flash (BotResources 8-bit,
+      read-mlx.py --infinity: its layout prompt, JSON to text by infinity_json.py) reads the ordinary page at 0.914 / 0.964,
+      5.1 GB, 29 s; the guard killed it on the crops (swap grew 2.2 GB at a 4.9 GB footprint, 5.2 GB swap already in use,
+      another lab job `method_local.py collect gemma4-12b` running). Row `no`, one retry owed with NEED_GB=8 (two 20-min
+      waits got at most 5.4 GB reclaimable); weights kept, lab 48.2 GB, so olmOCR 2 (~5 GB) needs Infinity or another
+      build deleted first or the retry done. bakeoff.sh's `owed` path is hard-wired to qwen3.5-9b, so no bake-off row.
+      NEXT: lab2-olmocr-qwen3vl.
       - [x] **lab2-lighton** — the three LightOnOCR builds.
       - [x] **lab2-churro** — Churro, GGUF and an MLX 8-bit conversion.
-      - [ ] **lab2-infinity-falcon** — Infinity-Parser2-Flash and Falcon-OCR.
+      - [x] **lab2-infinity-falcon** — Infinity-Parser2-Flash and Falcon-OCR.
       - [ ] **lab2-olmocr-qwen3vl** — olmOCR 2 and the two Qwen3-VL builds.
 - [x] **daemon-gate-fix** — a red health gate goes to a fix session before the daemon may park, as Archive
       Suite's daemon has done since 2026-10-05 (its `W34.gate-fix`, commit d45c7cb).
