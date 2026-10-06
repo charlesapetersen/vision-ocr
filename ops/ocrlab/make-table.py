@@ -39,6 +39,8 @@ CARDS = {
     "churro-3b-q8-gguf": ("3B", "none (HistoricalDocument XML of lines, no coordinates)"),
     "churro-3b-8bit": ("3B", "none (HistoricalDocument XML of lines, no coordinates)"),
     "infinity-parser2-flash-8bit": ("2B", "block boxes (its layout JSON)"),
+    "qwen3-vl-8b-4bit": ("8B", "boxes by prompting (grounding), unmeasured"),
+    "olmocr-2-7b-4bit": ("7B", "none (Markdown text, no coordinates)"),
 }
 NOTES = {
     "lightonocr-2-1b-4bit": "superseded by its retry, lightonocr-2-1b-4bit-1540",
@@ -66,7 +68,8 @@ NOTES = {
                                       "reclaimable",
     "lightonocr-2-1b-8bit-1540": "control for the tested 4-bit build; one guarded retry owed, on a machine with "
                                  "10 GB reclaimable (it waited 20 min for that on 2026-10-05 and did not get it); "
-                                 "ocr-bakeoff-bits compares 4-bit with 8-bit anyway",
+                                 "ocr-bakeoff-bits compares 4-bit with 8-bit anyway; weights deleted 2026-10-06 "
+                                 "to make room for olmOCR 2 under the 50 GB lab limit, retry dropped",
     "falcon-ocr-bf16": "the Hub build as is (bf16, 1 GB; no quantised build needed at 0.27B); prompt `plain`, "
                        "which mlx-vlm's processor turns into its OCR_PLAIN category prompt; output was clean "
                        "Markdown-ish text with no loops",
@@ -83,7 +86,16 @@ NOTES = {
                                    "--infinity (its layout prompt, text from its JSON by infinity_json.py), "
                                    "--max-tokens 6000; one guarded retry owed on the crops: two waits of 20 min "
                                    "for 8 GB reclaimable got at most 5.4 GB on 2026-10-05 (another lab job was "
-                                   "running); weights kept for it (2.5 GB)",
+                                   "running), and a third on 2026-10-06 got at most 5.9 GB, so its last row is "
+                                   "that refusal (exit 75), not a read; weights deleted that day for olmOCR 2's "
+                                   "room under the 50 GB lab limit, so the retry first re-downloads 2.5 GB",
+    "qwen3-vl-8b-4bit": "default plain-text prompt; at least one newspaper crop ran to its 3,000-token cap, "
+                        "likely the low crops precision (not checked crop by crop); the weights are shared with Archive Suite's "
+                        "segbench, which downloaded them into this lab's cache",
+    "olmocr-2-7b-4bit": "default plain-text prompt (not olmOCR's own YAML-front-matter prompt); the guard killed "
+                        "its first ordinary read (swap_grew_2740MB at 7.4 GB, waiting for only 6 GB, as another "
+                        "project's VM started); read on its one retry, needing 8 GB reclaimable; newspaper crops "
+                        "had at least one crop run to its 3,000-token cap, and precision 0.54, weakest of those that fit",
 }
 NOT_RUN = [
     ("teleocr", "XingChen-AGI/TeleOCR", "1.2B", "-", "-",

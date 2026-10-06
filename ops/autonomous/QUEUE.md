@@ -892,7 +892,7 @@ say so in the commit.
       reads where the bare GGUF did not: recall 0.914 ordinary, 0.891 newspaper crops, peak 4.9 GB. Eight models
       fit: GLM-OCR, DeepSeek-OCR-2, HunyuanOCR, Qwen3.5-2B, -4B, LightOnOCR, Chandra 2, Surya 2. TeleOCR, NaviDC
       with stated reasons. Ticked: every candidate has fits or a reason.
-- [ ] **ocr-lab-round2** — fit-test the candidates the 2026-10-05 survey found, so the bake-off reads the
+- [x] **ocr-lab-round2** — fit-test the candidates the 2026-10-05 survey found, so the bake-off reads the
       ones that fit when it resumes. (blocked-on: ocr-lab-setup) (effort: medium) — owner, 2026-10-05: its
       attempts were sessions the disk rule turned to other items, not failures of a hard item, so they must not
       raise it to max.
@@ -983,7 +983,15 @@ say so in the commit.
       - [x] **lab2-lighton** — the three LightOnOCR builds.
       - [x] **lab2-churro** — Churro, GGUF and an MLX 8-bit conversion.
       - [x] **lab2-infinity-falcon** — Infinity-Parser2-Flash and Falcon-OCR.
-      - [ ] **lab2-olmocr-qwen3vl** — olmOCR 2 and the two Qwen3-VL builds.
+      Round 1, session 5, 2026-10-06: lab2-olmocr-qwen3vl done [measured], bake-off stopped. Qwen3-VL-8B-4bit (already
+      in the cache, fetched by Archive Suite's segbench) fits: ordinary 0.914 / 0.967 at 8.4 GB, crops 0.916 / 0.702.
+      The LightOnOCR-8bit control and Infinity weights were deleted for room (Infinity's third 20-min wait for 8 GB
+      got 5.9 GB; both stay `no`, retries unrun, re-downloadable). olmOCR 2 7B-4bit: killed once (swap +2.7 GB at
+      NEED_GB=6 as a VM started), then fits on its retry at 8: ordinary 0.905 / 0.969 at 7.5 GB, crops 0.752 / 0.544.
+      Both `fitted` rows, need_gb 8; both ran at least one crop to its token cap. Qwen3-VL-4B-8bit not run: 4.9 GB
+      would pass the 50 GB limit (lab 49,715 of try-mlx.sh's 51,200 MB), the item's stop rule; the 8B stands in. Rejected: deleting a fitted
+      bake-off build (LightOnOCR base, whose ordinary read equals ocr-soup's) to fit a lower-ranked candidate.
+      - [x] **lab2-olmocr-qwen3vl** — olmOCR 2 and the two Qwen3-VL builds.
 - [x] **daemon-gate-fix** — a red health gate goes to a fix session before the daemon may park, as Archive
       Suite's daemon has done since 2026-10-05 (its `W34.gate-fix`, commit d45c7cb).
       WHY. Owner, 2026-10-05: "Daemon parked again. Set this up so I don't need to tell you this." This daemon

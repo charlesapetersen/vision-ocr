@@ -7,6 +7,8 @@
 # churro-3b-8bit's `--churro` gives
 # read-mlx.py Churro's system prompt, repetition penalty and XML-to-text step (ocr-lab-round2, lab2-churro); the raw XML stays beside each
 # reading as <id>[.crops].txt.part.xml.
+# qwen3-vl-8b-4bit and olmocr-2-7b-4bit (lab2-olmocr-qwen3vl) peak near 8 GB, hence need_gb 8; olmOCR 2's first read
+# waiting for only 6 tripped the swap limit. Qwen3-VL-8B's weights are shared with Archive Suite's segbench in the same cache.
 # qwen3.5-9b-4bit is `owed`: bakeoff.sh gives it its last guarded try first and adds it to the run if it fits.
 # need_gb is the reclaimable memory the guard waits for before each read, higher for the larger builds, so a
 # trip is less likely to measure the machine instead of the model. prompt `-` means read-mlx.py's default; `""` an empty prompt (LightOnOCR takes none). extra is passed to read-mlx.py.
@@ -24,3 +26,5 @@ lightonocr-2-1b-ocr-soup-8bit-1540	fitted	mlx	local/LightOnOCR-2-1B-ocr-soup-8bi
 lightonocr-2-1b-base-8bit-1540	fitted	mlx	local/LightOnOCR-2-1B-base-8bit	""	--max-side 1540 --max-tokens 4096	8
 falcon-ocr-bf16	fitted	mlx	tiiuae/Falcon-OCR	plain	-	4
 churro-3b-8bit	fitted	mlx	local/churro-3B-8bit	""	--churro --max-side 1600	6
+qwen3-vl-8b-4bit	fitted	mlx	mlx-community/Qwen3-VL-8B-Instruct-4bit	-	-	8
+olmocr-2-7b-4bit	fitted	mlx	mlx-community/olmOCR-2-7B-1025-4bit	-	-	8
