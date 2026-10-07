@@ -1321,13 +1321,17 @@ so `next-item.sh` does not read them. To queue one, move it back into the queue 
 
 ## HOLD — owner-only, never auto-executed
 
-- [ ] **bakeoff-tonight-ok** — the owner says the Mac is free, so the bake-off may resume (rest of Chandra 2, then the
+- [x] **bakeoff-tonight-ok** — the owner says the Mac is free, so the bake-off may resume (rest of Chandra 2, then the
       Qwen3.5-9B try). Owner, 2026-10-05: the daemons work through the day, the bake-off waits for tonight. [hold] needs: owner
       TICKED 2026-10-05 about 22:00: owner, "I'm done with the computer for the night." The bake-off was restarted
       with `bakeoff.sh start` by an interactive session after Archive Suite's on-device segmentation runs.
       UNTICKED 2026-10-06 07:55: owner, "I need the mac for the day." Night 2 ran 23:59-07:55: Chandra 2 finished,
       LightOnOCR-2 base and ocr-soup, Falcon-OCR, and Churro 3B to 36 of 56 whole pages. Tick again when the owner
       next frees the Mac; left: the rest of Churro, then Qwen3.5-9B's last guarded try.
+      TICKED AGAIN 2026-10-06 23:35: owner, "I'm done with the computer for the night." `bakeoff.sh start` by an
+      interactive session; left: the rest of Churro 3B, Qwen3.5-9B's last guarded try, then olmOCR-2-7B and
+      Qwen3-VL-8B (fitted 2026-10-06). Its guarded reads now take the shared mac-heavy.lock. Untick when the owner
+      next needs the Mac.
 
 These are offered to nobody. `next-item.sh` prints them as `hold` so they stay visible.
 
