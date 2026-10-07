@@ -15536,6 +15536,40 @@ tick; `Riesman 1954 Individualism` p7's pencil circle and bracket; `Stanford_189
 folio; `Doermann_1967` p21's footnote rule as a grey band; `Gitlin_2000` p1's drop caps and rules,
 `_1967_Yearly` p1's halftone bar. On the 1-bit route, `1954 - Why` p3's pencil "(3)" falls to specks.)*
 
+#### `c28-first-principles`, session 1 — 2026-10-06: dark unboxed ink goes into the stencil; pencil cannot
+
+**What a correct stencil holds.** On a page `pageIsAllText()` accepts there is, by its three terms, no
+picture, so confining the stencil to the words protects nothing and costs whatever Vision missed. Now
+`mrcLayers` cuts Sauvola again on such a page without the confinement (the pale re-cut's peak), and
+`mrcStencil` takes `outsideWords:` for the finer stencil. The tone layers still shrink 8x/16x. Measured
+through the production pipeline, PDFKit at 1:1: `Doermann_1967` p21's footnote rule and gutter shadow, a
+grey band before, are drawn from the stencil (+104,492 stencil px, 128,848 -> 130,703 B); `Ford_1941` p1
++5,209 px, 266,827 -> 269,384 B; `_1939_Former students` p2 341,626 -> 341,666 B.
+
+**⛔ Pencil does not reach the stencil, and no 1-bit cut can put it there.** Ford p1's pencilled insertion
+("…of our freight rates if we were…", "during the") is unchanged and still illegible: measured on the
+source render, the pencil band's darkest 0.1% is grey **190** against paper's median **204**, and the
+paper between type lines reaches **189-194** at the same percentiles. The pencil is legible by its shape,
+not its level, so it needs tone at more than an eighth. The three marks the shape term misses (Ford p1,
+Former students p2, Doermann p21) are all pencil or pencil-like; Former p2 reads `inkOut` 0.0000.
+
+**Next step.** Store pale marks as tone. Candidates, in order: (a) on all-text pages, keep the background
+at the resolution where the 1/8 reconstruction differs from the 1/2 one outside the words (an inset
+image, paid only where a mark is); (b) a gentler all-text factor (1/3 lost one page of sixteen,
+`#### The same loss at 1/3`), priced over the corpus. Rejected: a paper-relative threshold for the
+stencil (pencil and paper overlap, above); Sauvola with a smaller `k` outside the words (same overlap).
+
+**Session 2, 2026-10-06: adopted, and kept out of the margins.** Session 1 died before committing; its
+patch is applied as written, plus one guard from the diff review. All three all-text terms read only
+`interiorWindow` (1/16 inset), so a halftone logo in a margin passed them unseen and would have been
+speckled into the stencil (R57). `keepWordsAndInterior` now confines the added ink to that window, and a
+check pins it (red without: margin rule 540/540 px in the stencil). Published one page each, production
+pipeline: Doermann p21 128,848 -> 129,651 B (session 1's 130,703 included margin shadow), Ford p1
+64,529 -> 64,865 B, Former p2 70,052 -> 70,052 B. Rejected: no guard (R57 risk the tests could not see).
+Suite 1775/1775; `ux-regression.sh` 0 worse, 2 better (`1954 - Why` p5, p8 leg2). DONE WHEN verifier, by
+eye at 1:1: Doermann's rule crisp (was a grey band), Ford's pencil and Former p2's pencil address still
+broken specks, text identical: criterion 1 FAILS, corpus bytes not yet priced. Box open; next step above.
+
 ### C29 · A born-digital cover page is rasterised and re-OCR'd, and `hasDigitalText` never even looks at it — FIXED
 
 ✅ **FIXED 2026-09-25: the short page, and the two `pageIsAnImage` misses.** `Flattener.bornDigitalVerdict`

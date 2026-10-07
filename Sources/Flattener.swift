@@ -3382,6 +3382,21 @@ enum Flattener {
         return (mx, my, min(x1, w), min(y1, h))
     }
 
+    /// C28. Clears `mask` outside both the words and `interiorWindow`: on a page read as
+    /// all text, the ink the stencil may hold beyond the words is the ink the all-text
+    /// terms measured, and no more.
+    static func keepWordsAndInterior(_ mask: inout [Bool], region: [Bool],
+                                     width w: Int, height h: Int) {
+        guard mask.count >= w * h, region.count >= w * h else { return }
+        let win = interiorWindow(width: w, height: h)
+        for y in 0..<h {
+            let row = y * w, inside = y >= win.y0 && y < win.y1
+            for x in 0..<w where !region[row + x] && !(inside && x >= win.x0 && x < win.x1) {
+                mask[row + x] = false
+            }
+        }
+    }
+
     // MARK: - C28: is the ink outside the recognised words SHAPED like text?
 
     /// A map component shorter than this many median glyph heights is not a glyph.
@@ -5011,7 +5026,7 @@ enum Flattener {
         // its Sauvola peak is the only one alive: `analyticMRCBytesPerPixel` at no more
         // than `maximumMRCPageMegapixels`, the grey bound's own terms. It comes back as
         // a PNG, and the recursion below is handed it rather than cutting it again.
-        let fine = cut ?? (typeDPI > dpi ? mrcStencil(page, box: box, boxes: boxes, dpi: typeDPI) : nil)
+        var fine = cut ?? (typeDPI > dpi ? mrcStencil(page, box: box, boxes: boxes, dpi: typeDPI) : nil)
         let w = max(Int(wide), 1), h = max(Int(high), 1)
         guard let grey = renderGrey(page, box: box, scale: scale,
                                     width: w, height: h, from: .mediaBox) else { return nil }
@@ -5136,6 +5151,30 @@ enum Flattener {
             return groups == 0
         }
         let allText = !keepEveryPixel && pageIsAllText()
+        // C28. On a page read as all text, the ink outside the recognised words goes into
+        // the stencil too. Confined to the words, ink Vision did not box (a signature,
+        // pencil, a word or a column of figures it missed) was in neither the stencil nor
+        // the text layer, only in a background shrunk to an eighth, and illegible there.
+        // Only inside `interiorWindow`, because that is all the terms above looked at: a
+        // halftone logo in the margin passes them unseen, and Sauvola would speckle it
+        // (R57). Cut again rather than kept from the first cut, so the peak is the pale
+        // re-cut's.
+        if allText {
+            mask = []
+            // The finer stencil the same, cut before the mask comes back so that only the
+            // render and `region` are alive beside its peak, at under 0.7 of its pixels
+            // (`minimumMaskRaise`). `cut` was handed down by a caller that has already
+            // done this. The finer stencil is cut twice on such a page; the first is
+            // needed before `pageIsAllText` can be asked.
+            if fine != nil, cut == nil {
+                fine = mrcStencil(page, box: box, boxes: boxes, dpi: typeDPI, outsideWords: true)
+            }
+            mask = sauvolaMask(grey, width: w, height: h,
+                               window: sauvolaWindow(dpi: dpi, width: w, height: h),
+                               levels: paleInk)
+            guard mask.count == w * h else { return nil }
+            keepWordsAndInterior(&mask, region: region, width: w, height: h)
+        }
         let bgFactor = allText
             ? max(backgroundDownsample, textPageBackgroundDownsample) : backgroundDownsample
         let fgFactor = allText
@@ -5251,8 +5290,12 @@ enum Flattener {
     ///
     /// On ProQuest's layered pages the type is a 300 DPI mask over 150 DPI images, so
     /// this is the source's own type, where the stencil at 150 was a resampling of it.
+    ///
+    /// `outsideWords` keeps the ink outside the words too, for a page read as all text
+    /// (C28, in `mrcLayers`), as far as `keepWordsAndInterior` allows.
     static func mrcStencil(_ page: PDFPage, box: CGRect, boxes: [SearchableWriter.BoundingBox],
-                           dpi: Double) -> (png: Data, width: Int, height: Int)? {
+                           dpi: Double,
+                           outsideWords: Bool = false) -> (png: Data, width: Int, height: Int)? {
         let scale = dpi / 72.0
         let wide = (box.width * scale).rounded(), high = (box.height * scale).rounded()
         guard wide.isFinite, high.isFinite, wide >= 1, high >= 1,
@@ -5274,12 +5317,13 @@ enum Flattener {
         } else {
             // C56, as in `mrcLayers`. Confined to the words first, which is all the
             // stencil keeps, so the peaks are read where it is published.
-            for i in 0..<(w * h) where !region[i] { mask[i] = false }
+            if !outsideWords { for i in 0..<(w * h) where !region[i] { mask[i] = false } }
             mask = strokeWeightMask(grey, mask: mask, region: region, width: w, height: h)
         }
+        if outsideWords { keepWordsAndInterior(&mask, region: region, width: w, height: h) }
         var pixels = [UInt8](repeating: 255, count: w * h)
         var inked = false
-        for i in 0..<(w * h) where mask[i] && region[i] {
+        for i in 0..<(w * h) where mask[i] && (outsideWords || region[i]) {
             pixels[i] = 0
             inked = true
         }

@@ -14,6 +14,9 @@ an older entry mentions "Window ▸ Vision Reader Window", the menu item is now
 
 ## Unreleased
 
+- On scanned pages that hold only text, dark marks the recogniser did not read as words (a rule, a stamp,
+  ink handwriting, a missed word) stay sharp instead of being blurred into the background, except in the
+  page's outer margins. Faint pencil is not reached yet (C28).
 - Black type on scanned pages that publish in black and white no longer comes out near-bold: its strokes
   keep the weight the scan shows, and faint pencil and faded type are still kept whole away from the print
   (C56).

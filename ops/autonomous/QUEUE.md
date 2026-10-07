@@ -1225,6 +1225,8 @@ say so in the commit.
       `$STATE/rescue/PARKED-C28-vo-20260921-080042-95562.patch.bak`. It belongs to the old campaign; you
       do not have to apply it, and leave the file where it is.
       BOUND: rule 10. Rule 4 applies.
+      2026-10-06: round 1, sessions 1 and 2. Session 1's uncommitted strand (dark unboxed ink into the
+      stencil on all-text pages) was adopted by session 2, which kept it out of the margins. Pencil left.
       (origin: BUGS.md C28)
 - [ ] **c41-newspaper-scans** — read whole-page scans of small-town newspapers as well as their print
       allows (`BUGS.md` C41, split from C39). Start from the band swap parked at

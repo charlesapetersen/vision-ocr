@@ -3292,6 +3292,48 @@ do {
           "groups \(c28GroupsBar as Any), inkOut "
             + String(format: "%.4f vs the word's %.4f", c28BarInk, c28MissedInk))
 
+    // C28, 2026-10-06. A short dark rule outside the words, which no box covers and the
+    // shape term does not read as type: the page is still all text, and the rule has to
+    // be in the published stencil, not only in a background at an eighth.
+    // `Doermann_1967` p21's footnote rule was a grey band before this.
+    let c28Rule = tmp.appendingPathComponent("c28-short-rule.pdf")
+    makeScannedPDF(at: c28Rule, lines: c28Dense,
+                   bars: [NSRect(x: 300, y: 120, width: 200, height: 6),
+                          NSRect(x: 300, y: 30, width: 200, height: 6)])
+    if let layers = c28Layers(c28Rule, boxes: c28Boxes(14), stem: "c28-rule"),
+       let s = CGImageSourceCreateWithURL(layers.mask as CFURL, nil),
+       let bits = CGImageSourceCreateImageAtIndex(s, 0, nil),
+       let g = CGContext(data: nil, width: bits.width, height: bits.height,
+                         bitsPerComponent: 8, bytesPerRow: bits.width,
+                         space: CGColorSpaceCreateDeviceGray(), bitmapInfo: 0) {
+        let mw = bits.width, mh = bits.height
+        g.draw(bits, in: CGRect(x: 0, y: 0, width: mw, height: mh))
+        let p = g.data!.bindMemory(to: UInt8.self, capacity: mw * mh)
+        // The rule's rows top-down, in the mask's own scale (the fixture is 1224x1584).
+        let sx = Double(mw) / 1224, sy = Double(mh) / 1584
+        func ruleInk(_ top: Double) -> (inked: Int, total: Int) {
+            var inked = 0, total = 0
+            for y in Int(top * sy)..<Int((top + 2) * sy) + 1 {
+                for x in Int(310 * sx)..<Int(490 * sx) { total += 1; if p[y * mw + x] < 128 { inked += 1 } }
+            }
+            return (inked, total)
+        }
+        let inner = ruleInk(1460), margin = ruleInk(1550)
+        check("C28: ink outside the words on a page read as all text is in the stencil",
+              layers.shrunkAsAllText && inner.inked * 10 >= inner.total * 9,
+              "shrunk \(layers.shrunkAsAllText), rule \(inner.inked)/\(inner.total) px in the stencil")
+        // …but not in the margin, which none of the all-text terms looks at: a halftone
+        // there would pass them unseen and be speckled by the 1-bit cut (R57).
+        check("…and ink in the margin, outside every term's window, stays out of it",
+              margin.total > 0 && margin.inked == 0,
+              "margin rule \(margin.inked)/\(margin.total) px in the stencil")
+    } else {
+        check("C28: ink outside the words on a page read as all text is in the stencil",
+              false, "no layers")
+        check("…and ink in the margin, outside every term's window, stays out of it",
+              false, "no layers")
+    }
+
     // …and the C26 fixture forty lines above reads 0 too, which is what keeps THOSE
     // checks measuring C26. Its 30x30 ink figure is one component whose median run is
     // 6x the page's own glyph run, so `shapeRunHigh` refuses it — measured, and worth
@@ -4017,12 +4059,28 @@ do {
     // 0.045 became the shipped bar and the pair became the same configuration twice —
     // a check that cannot fail, over a property the tool's arithmetic rests on. 0.08 is
     // the bar that shrinks this page now, so the pair is unshrunk-vs-shrunk again.
+    // ⛔ C28, 2026-10-06: no longer the same bytes. A page read as all text now keeps the
+    // ink outside the words in its stencil too, so the shrunk run's stencil is the
+    // unshrunk one's plus that ink, and the tool's per-page `STENCIL-MOVED` fires there.
+    func inkOf(_ url: URL) -> [Bool]? {
+        guard let s = CGImageSourceCreateWithURL(url as CFURL, nil),
+              let bits = CGImageSourceCreateImageAtIndex(s, 0, nil),
+              let g = CGContext(data: nil, width: bits.width, height: bits.height,
+                                bitsPerComponent: 8, bytesPerRow: bits.width,
+                                space: CGColorSpaceCreateDeviceGray(), bitmapInfo: 0)
+        else { return nil }
+        g.draw(bits, in: CGRect(x: 0, y: 0, width: bits.width, height: bits.height))
+        let p = g.data!.bindMemory(to: UInt8.self, capacity: bits.width * bits.height)
+        return (0..<(bits.width * bits.height)).map { p[$0] < 128 }
+    }
     if let a = c26Layers(c26Small, bar: nil, stem: "c26maskA"),
-       let b = c26Layers(c26Small, bar: 0.08, stem: "c26maskB") {
-        let da = try? Data(contentsOf: a.mask), db = try? Data(contentsOf: b.mask)
-        check("the stencil is the same bytes whatever the tone layers are shrunk by",
-              da != nil && da == db,
-              "\(da?.count ?? -1) B vs \(db?.count ?? -1) B")
+       let b = c26Layers(c26Small, bar: 0.08, stem: "c26maskB"),
+       let ia = inkOf(a.mask), let ib = inkOf(b.mask), ia.count == ib.count {
+        let kept = zip(ia, ib).filter { $0.0 && $0.1 }.count
+        let inA = ia.filter { $0 }.count, inB = ib.filter { $0 }.count
+        check("the shrunk page's stencil keeps the unshrunk one's ink and adds what is outside the words",
+              !a.shrunkAsAllText && b.shrunkAsAllText && kept * 100 >= inA * 99 && inB > inA,
+              "kept \(kept)/\(inA), \(inA) -> \(inB) px")
     } else {
         check("the two-bar mask comparison", false, "mrcLayers returned nil")
     }
