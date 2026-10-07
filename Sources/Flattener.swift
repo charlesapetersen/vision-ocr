@@ -3340,6 +3340,11 @@ enum Flattener {
     /// neighbourhood rather than a number pushed until it hurt. Rendered at 100
     /// DPI beside the 2x/4x version, the text page is indistinguishable.
     static let textPageBackgroundDownsample = 8
+    /// C28. The resolution an all-text page keeps its pale marks at, in its mark layer
+    /// (`MRCLayers.marks`); its paper stays at `textPageBackgroundDownsample`. At 4,
+    /// `Ford_1941` p1's pencilled insertion was a blur; at 3 and 2 it reads, and 3 cost
+    /// that document +47 KB where 2 cost +92 KB.
+    static let textPageMarkDownsample = 3
     static let textPageForegroundDownsample = 16
 
     /// The fraction of the page's ink that falls outside `region`.
@@ -4508,6 +4513,26 @@ enum Flattener {
         /// cuts a stencil at the page's type resolution, which on a layered scan is
         /// finer than the images the page and its tone layers are rebuilt at.
         var maskWidth: Int? = nil, maskHeight: Int? = nil
+        /// C28. The marks too pale for the stencil on a page read as all text, at
+        /// finer than its background (`mrcLayers`), or `nil` when it has none.
+        var marks: Marks? = nil
+
+        /// Every file these layers wrote, so a caller that prices or removes them
+        /// cannot miss the mark layer's two.
+        var files: [URL] {
+            [mask, background, foreground] + (marks.map { [$0.tone, $0.mask] } ?? [])
+        }
+
+        /// A fourth layer: `tone`, a JPEG in the tone layers' colour space, drawn over
+        /// the background where `mask` (a PNG in the stencil's polarity, 0 where the
+        /// mark is, `width`×`height` like `tone`) says, on `rect`: the box around the
+        /// marks as a share of the page, from its bottom left, as PDF draws.
+        struct Marks {
+            let tone: URL
+            let mask: URL
+            let width: Int, height: Int
+            let rect: CGRect
+        }
     }
 
     /// C28. `pageIsAllText()`'s third term's answer, carried out on `MRCLayers`.
@@ -4891,6 +4916,220 @@ enum Flattener {
         return (out, nw, nh)
     }
 
+    /// C28. How much darker than its paper a background pixel must be to be a mark.
+    /// Pencil on `Ford_1941` p1 sits 14 levels under its paper at its darkest, and
+    /// the paper between type lines wanders by 10-15 levels across a page, which
+    /// is why the comparison is with the paper around the pixel and not one level.
+    static let paleMarkDepth = 8
+
+    /// `src` (w×h) box-averaged by `f` and read back at every pixel, bilinear between
+    /// the cell centres: the paper an eighth-resolution background shows, without
+    /// the cell edges a nearest read would draw.
+    static func smoothedPaper(_ src: [UInt8], width w: Int, height h: Int, by f: Int)
+        -> (pixels: [UInt8], width: Int, height: Int, factor: Int) {
+        let (small, sw, sh) = downsample(src, width: w, height: h, by: f)
+        return (small, sw, sh, max(f, 1))
+    }
+
+    /// The value of `smoothedPaper` at (x, y).
+    @inline(__always)
+    static func paperAt(_ p: (pixels: [UInt8], width: Int, height: Int, factor: Int),
+                        _ x: Int, _ y: Int) -> Int {
+        let f = Double(p.factor)
+        let fx = min(max((Double(x) + 0.5) / f - 0.5, 0), Double(p.width - 1))
+        let fy = min(max((Double(y) + 0.5) / f - 0.5, 0), Double(p.height - 1))
+        let x0 = Int(fx), y0 = Int(fy)
+        let x1 = min(x0 + 1, p.width - 1), y1 = min(y0 + 1, p.height - 1)
+        let ax = fx - Double(x0), ay = fy - Double(y0)
+        let a = Double(p.pixels[y0 * p.width + x0]), b = Double(p.pixels[y0 * p.width + x1])
+        let c = Double(p.pixels[y1 * p.width + x0]), d = Double(p.pixels[y1 * p.width + x1])
+        return Int(((a * (1 - ax) + b * ax) * (1 - ay) + (c * (1 - ax) + d * ax) * ay).rounded())
+    }
+
+    /// C28. The marks a page read as all text keeps in its mark layer: pixels of the
+    /// filled background `filled` outside `stencil`, darker than their `paper` by
+    /// `paleMarkDepth`, not within `2 * halo` of type (`core`, the stencil's dark core:
+    /// type's anti-aliased edge, which the stencil already draws), with at least four
+    /// such pixels in the 5×5 around them, in groups large enough or near enough to a
+    /// large one (below), grown by `2 * halo` so a stroke keeps its edge. Only inside
+    /// `interiorWindow`, the area the all-text terms read: the scanner's edge is not a
+    /// mark.
+    ///
+    /// Pencil is the case: too pale for any 1-bit cut (pencil and paper overlap in
+    /// level), so it is in neither the stencil nor the text layer, and at the eighth an
+    /// all-text background is stored at its strokes average into the paper.
+    ///
+    /// About 11 bytes a pixel of its own at the peak (`near` 4, four flag arrays, the
+    /// stack at worst 4), which with `mrcLayers`' render, masks, `filled` and `core`
+    /// stays under the Sauvola phase's 19 (`analyticMRCBytesPerPixel`) [counted, not
+    /// measured].
+    static func paleMarks(_ filled: [UInt8], stencil: [Bool], core: [Bool],
+                          width w: Int, height h: Int,
+                          paper: (pixels: [UInt8], width: Int, height: Int, factor: Int),
+                          halo: Int, reach: Int, minimumPixels: Int) -> [Bool] {
+        guard w > 0, h > 0, filled.count >= w * h, stencil.count >= w * h,
+              core.count >= w * h else { return [] }
+        let r = max(halo, 1)
+        // Integral of the stencil's dark core, so "within `halo` of type" is one lookup a
+        // pixel. The core and not the whole stencil, because the halo to stay clear of
+        // is type's, and on an all-text page the stencil also holds specks of the pencil
+        // itself (`outsideWords`), which clearing around would cut out of the mark layer.
+        let iw = w + 1
+        var near = [Int32](repeating: 0, count: iw * (h + 1))
+        func build(_ on: (Int) -> Bool) {
+            for y in 0..<h {
+                var run: Int32 = 0
+                for x in 0..<w {
+                    if on(y * w + x) { run += 1 }
+                    near[(y + 1) * iw + x + 1] = near[y * iw + x + 1] + run
+                }
+            }
+        }
+        func count(_ x0: Int, _ y0: Int, _ x1: Int, _ y1: Int) -> Int32 {
+            let a = max(x0, 0), b = max(y0, 0), c = min(x1, w - 1) + 1, d = min(y1, h - 1) + 1
+            return near[d * iw + c] - near[b * iw + c] - near[d * iw + a] + near[b * iw + a]
+        }
+        let win = interiorWindow(width: w, height: h)
+        let clear = 2 * r
+        build { core[$0] }
+        var dark = [Bool](repeating: false, count: w * h)
+        var touching = [Bool](repeating: false, count: w * h)
+        for y in win.y0..<win.y1 {
+            for x in win.x0..<win.x1 {
+                if count(x - 1, y - 1, x + 1, y + 1) > 0 { touching[y * w + x] = true }
+                guard !stencil[y * w + x],
+                      paperAt(paper, x, y) - Int(filled[y * w + x]) >= paleMarkDepth else { continue }
+                if count(x - clear, y - clear, x + clear, y + clear) == 0 { dark[y * w + x] = true }
+            }
+        }
+        build { dark[$0] }
+        var seed = [Bool](repeating: false, count: w * h)
+        for y in win.y0..<win.y1 {
+            for x in win.x0..<win.x1 where dark[y * w + x] && count(x - 2, y - 2, x + 2, y + 2) >= 4 {
+                seed[y * w + x] = true
+            }
+        }
+        dark = []
+        // A mark is a stroke, and grain is specks: on `Ford_1941` p3, a page with no
+        // pencil on it, the seeds were dots of under 40 pixels, and they put a mark
+        // layer in every JPEG block. So seeds are grouped, 8-connected once each is
+        // grown by `2 * halo` (a pencil stroke's seeds are broken, and grouped bare they
+        // fell under the floor one piece at a time), and a group stays when it holds at
+        // least `minimumPixels` seeds. Two floods from each start, the first counting and
+        // the second keeping, so the only buffer is the stack. `state`: 0 not grown, 1
+        // grown and not yet reached, 2 counted, 3 kept.
+        build { seed[$0] }
+        var state = [UInt8](repeating: 0, count: w * h)
+        for y in win.y0..<win.y1 {
+            for x in win.x0..<win.x1 where count(x - clear, y - clear, x + clear, y + clear) > 0 {
+                state[y * w + x] = 1
+            }
+        }
+        var stack: [Int32] = []
+        func flood(_ start: Int, from: UInt8, to: UInt8,
+                   touches zone: ((Int, Int) -> Bool)? = nil) -> (seeds: Int, inZone: Bool) {
+            var n = 0, inZone = false
+            state[start] = to; stack.append(Int32(start))
+            while let p = stack.popLast().map(Int.init) {
+                if seed[p] { n += 1 }
+                let px = p % w, py = p / w
+                if let zone, !inZone, zone(px, py) { inZone = true }
+                for qy in max(py - 1, 0)...min(py + 1, h - 1) {
+                    for qx in max(px - 1, 0)...min(px + 1, w - 1) where state[qy * w + qx] == from {
+                        state[qy * w + qx] = to; stack.append(Int32(qy * w + qx))
+                    }
+                }
+            }
+            return (n, inZone)
+        }
+        for s in 0..<(w * h) where state[s] == 1 {
+            if flood(s, from: 1, to: 2).seeds >= minimumPixels { _ = flood(s, from: 2, to: 3) }
+        }
+        // A pencilled line breaks into groups, and the faint ones fall under the floor
+        // ("be a", "of our" in `Ford_1941` p1's insertion) while their neighbours pass.
+        // So a smaller group, of an eighth of the floor or more, stays when it lies
+        // within `reach` of a group that passed: specks of grain lie far apart, and the
+        // words of a pencilled line beside each other. Joining every group across
+        // `reach` instead joined the grain too, and cost Ford's six pages 250 KB.
+        // `zone` is on cells of `cell` pixels, so it costs a byte for every `cell²`.
+        let cell = max(reach / 4, 4), zw = (w + cell - 1) / cell, zh = (h + cell - 1) / cell
+        var strong = [Bool](repeating: false, count: zw * zh)
+        for i in 0..<(w * h) where state[i] == 3 { strong[(i / w / cell) * zw + (i % w) / cell] = true }
+        var zone = [Bool](repeating: false, count: zw * zh)
+        let k = max(reach / cell, 1)
+        for zy in 0..<zh {
+            for zx in 0..<zw where strong[zy * zw + zx] {
+                for y in max(zy - k, 0)...min(zy + k, zh - 1) {
+                    for x in max(zx - k, 0)...min(zx + k, zw - 1) { zone[y * zw + x] = true }
+                }
+            }
+        }
+        strong = []
+        let weakFloor = max(minimumPixels / 8, 1)
+        for s in 0..<(w * h) where state[s] == 2 {
+            let found = flood(s, from: 2, to: 4) { x, y in zone[(y / cell) * zw + x / cell] }
+            if found.inZone && found.seeds >= weakFloor { _ = flood(s, from: 4, to: 3) }
+        }
+        stack = []
+        seed = []
+        // A kept group's seeds grown by `2 * halo`, not only the seeds: the faint
+        // stretches of a stroke between them are the stroke too, and the layer is the
+        // scan's own tone there.
+        var marks = [Bool](repeating: false, count: w * h)
+        for y in win.y0..<win.y1 {
+            for x in win.x0..<win.x1 where state[y * w + x] == 3 && !touching[y * w + x]
+                && count(x - clear, y - clear, x + clear, y + clear) > 0 { marks[y * w + x] = true }
+        }
+        return marks
+    }
+
+    /// C28. `marks` (w×h) on `downsample`'s grid at factor `f`: a cell is a mark when
+    /// any of its pixels is.
+    static func markCellMask(_ marks: [Bool], width w: Int, height h: Int, by f: Int)
+        -> (mask: [Bool], width: Int, height: Int) {
+        let f = max(f, 1), cw = max(w / f, 1), ch = max(h / f, 1)
+        var cells = [Bool](repeating: false, count: cw * ch)
+        guard marks.count >= w * h else { return (cells, cw, ch) }
+        for y in 0..<min(ch * f, h) {
+            for x in 0..<min(cw * f, w) where marks[y * w + x] { cells[(y / f) * cw + x / f] = true }
+        }
+        return (cells, cw, ch)
+    }
+
+    /// C28. The mark layer's tones for one plane: `plane` (w×h) box-averaged onto the
+    /// cells, and every cell outside the marks made flat, so the JPEG pays for the
+    /// marks and almost nothing else. A JPEG block with no mark in it takes the mean
+    /// of all the marks; within a block that has one, the mean of that block's marks.
+    /// Neither shows: the mask hides them. A smooth paper field here instead cost
+    /// 61 KB a page on `Ford_1941`, where the marks alone are 8.
+    static func markTone(_ plane: [UInt8], cells: (mask: [Bool], width: Int, height: Int),
+                         width w: Int, height h: Int, by f: Int) -> [UInt8] {
+        var (tone, cw, ch) = downsample(plane, width: w, height: h, by: f)
+        guard cw == cells.width, ch == cells.height else {
+            return [UInt8](repeating: 255, count: cells.width * cells.height)
+        }
+        var all = 0, allN = 0
+        for i in 0..<(cw * ch) where cells.mask[i] { all += Int(tone[i]); allN += 1 }
+        let everywhere = UInt8(allN > 0 ? all / allN : 255)
+        for by in stride(from: 0, to: ch, by: 8) {
+            for bx in stride(from: 0, to: cw, by: 8) {
+                var sum = 0, n = 0
+                for y in by..<min(by + 8, ch) {
+                    for x in bx..<min(bx + 8, cw) where cells.mask[y * cw + x] {
+                        sum += Int(tone[y * cw + x]); n += 1
+                    }
+                }
+                let fill = n > 0 ? UInt8(sum / n) : everywhere
+                for y in by..<min(by + 8, ch) {
+                    for x in bx..<min(bx + 8, cw) where !cells.mask[y * cw + x] {
+                        tone[y * cw + x] = fill
+                    }
+                }
+            }
+        }
+        return tone
+    }
+
     /// An 8-bit grey PNG from a raw buffer, for the layers that have to reach an
     /// external encoder as a file.
     static func greyPNG(_ pixels: [UInt8], width w: Int, height h: Int) -> Data? {
@@ -5198,6 +5437,38 @@ enum Flattener {
             stencil = (png, w, h)
         }
         let maskPNG = stencil.png
+        // C28. Pencil, and any mark too pale for the stencil, is in the background
+        // alone, and the eighth an all-text background is stored at averages its
+        // strokes into the paper. So such a page gets a fourth layer: those marks at
+        // `textPageMarkDownsample`, drawn over the background through a mask of their
+        // own, and nothing else (`paleMarks`, `markTone`). Storing the whole background
+        // finer instead cost 6x its bytes on `Ford_1941`, nearly all of it paper.
+        var filledGrey: [UInt8]?
+        var markCells: (mask: [Bool], width: Int, height: Int)?
+        let markFactor = max(backgroundDownsample, textPageMarkDownsample)
+        if allText {
+            let filled = fillHoles(grey, holes: mask, width: w, height: h, radius: 10)
+            // A thirty-second of the square of the page's median line height: a pencilled
+            // word is hundreds of seed pixels, a speck of grain a few. A box's shorter
+            // side, because on a page turned sideways the height is the line's length
+            // (`_1939_Former students` p2 read 909 px, and its floor 25,800 seeds).
+            let heights = boxes.map {
+                min(Double($0.height) * Double(h), Double($0.width) * Double(w))
+            }.sorted()
+            let line = heights[heights.count / 2]
+            let ink = otsuThreshold(of: grey)
+            var core = [Bool](repeating: false, count: w * h)
+            for i in 0..<(w * h) where mask[i] && grey[i] < ink { core[i] = true }
+            let found = paleMarks(filled, stencil: mask, core: core, width: w, height: h,
+                                  paper: smoothedPaper(filled, width: w, height: h,
+                                                       by: bgFactor),
+                                  halo: 2, reach: safeInt(line),
+                                  minimumPixels: max(safeInt(line * line / 32), 16))
+            let cells = markCellMask(found, width: w, height: h, by: markFactor)
+            if cells.mask.contains(true) { markCells = cells }
+            if !inColour { filledGrey = filled }
+        }
+        var markTones: [UInt8] = []
 
         let bw: Int, bh: Int, fw: Int, fh: Int
         let bgData: Data, fgData: Data
@@ -5224,6 +5495,13 @@ enum Flattener {
                 var plane = [UInt8](repeating: 0, count: w * h)
                 for i in 0..<(w * h) { plane[i] = rgba[i * 4 + channel] }
                 let filledBG = fillHoles(plane, holes: mask, width: w, height: h, radius: 10)
+                if let cells = markCells {
+                    let tone = markTone(filledBG, cells: cells, width: w, height: h, by: markFactor)
+                    if channel == 0 {
+                        markTones = [UInt8](repeating: 255, count: cells.width * cells.height * 4)
+                    }
+                    for i in 0..<tone.count { markTones[i * 4 + channel] = tone[i] }
+                }
                 let (bgPlane, pbw, pbh) = downsample(filledBG, width: w, height: h,
                                                      by: max(bgFactor, 1))
                 let filledFG = fillHoles(plane, holes: fgHoles, width: w, height: h, radius: 3)
@@ -5249,7 +5527,11 @@ enum Flattener {
             else { return nil }
             bgData = bg; fgData = fg
         } else {
-            let bgFull = fillHoles(grey, holes: mask, width: w, height: h, radius: 10)
+            let bgFull = filledGrey ?? fillHoles(grey, holes: mask, width: w, height: h, radius: 10)
+            filledGrey = nil
+            if let cells = markCells {
+                markTones = markTone(bgFull, cells: cells, width: w, height: h, by: markFactor)
+            }
             let (bg, gbw, gbh) = downsample(bgFull, width: w, height: h,
                                             by: max(bgFactor, 1))
             let fgHoles = foregroundHoles(grey, stencil: mask, width: w, height: h)
@@ -5272,6 +5554,53 @@ enum Flattener {
             for u in [maskURL, bgURL, fgURL] { try? FileManager.default.removeItem(at: u) }
             return nil
         }
+        // C28. The mark layer, when there is one: its tones as a JPEG and where they
+        // show as a stencil PNG in `maskPNG`'s polarity, 0 where the mark is. A page
+        // whose marks cannot be written is refused, not published without them.
+        var markLayer: MRCLayers.Marks?
+        if let cells = markCells {
+            let toneURL = directory.appendingPathComponent(stem + ".marks.jpg")
+            let cellURL = directory.appendingPathComponent(stem + ".marks.png")
+            // Cropped to the box around the marks. A JPEG pays a few bits for every
+            // block however flat, and over a whole page at the half that floor was
+            // 16 KB of a 17 KB layer on `Ford_1941` pages with one pencilled word.
+            var x0 = cells.width, y0 = cells.height, x1 = 0, y1 = 0
+            for y in 0..<cells.height {
+                for x in 0..<cells.width where cells.mask[y * cells.width + x] {
+                    x0 = min(x0, x); x1 = max(x1, x + 1); y0 = min(y0, y); y1 = max(y1, y + 1)
+                }
+            }
+            // From a multiple of 16, a colour JPEG's block, so the blocks `markTone`
+            // made flat are still the encoder's blocks after the crop.
+            x0 -= x0 % 16; y0 -= y0 % 16
+            let cw = x1 - x0, ch = y1 - y0, channels = inColour ? 4 : 1
+            var cellPixels = [UInt8](repeating: 255, count: cw * ch)
+            var cropped = [UInt8](repeating: 255, count: cw * ch * channels)
+            for y in 0..<ch {
+                for x in 0..<cw {
+                    let from = (y + y0) * cells.width + x + x0
+                    if cells.mask[from] { cellPixels[y * cw + x] = 0 }
+                    for k in 0..<channels {
+                        cropped[(y * cw + x) * channels + k] = markTones[from * channels + k]
+                    }
+                }
+            }
+            let tone = inColour
+                ? jpegRGB(from: cropped, width: cw, height: ch, quality: pictureJPEGQuality)?.data
+                : jpegData(from: cropped, width: cw, height: ch, quality: pictureJPEGQuality)
+            let gw = Double(cells.width), gh = Double(cells.height)
+            let rect = CGRect(x: Double(x0) / gw, y: Double(cells.height - y1) / gh,
+                              width: Double(cw) / gw, height: Double(ch) / gh)
+            guard let tone, let png = greyPNG(cellPixels, width: cw, height: ch),
+                  (try? tone.write(to: toneURL)) != nil, (try? png.write(to: cellURL)) != nil else {
+                for u in [maskURL, bgURL, fgURL, toneURL, cellURL] {
+                    try? FileManager.default.removeItem(at: u)
+                }
+                return nil
+            }
+            markLayer = MRCLayers.Marks(tone: toneURL, mask: cellURL, width: cw, height: ch,
+                                        rect: rect)
+        }
         return MRCLayers(mask: maskURL, background: bgURL, foreground: fgURL,
                          backgroundWidth: bw, backgroundHeight: bh,
                          foregroundWidth: fw, foregroundHeight: fh,
@@ -5279,7 +5608,8 @@ enum Flattener {
                          shrunkAsAllText: allText,
                          inkOutsideText: measuredInkOutside,
                          shapeTermAnswer: measuredShapeTerm,
-                         maskWidth: stencil.width, maskHeight: stencil.height)
+                         maskWidth: stencil.width, maskHeight: stencil.height,
+                         marks: markLayer)
     }
 
     /// `mrcLayers`' stencil cut at `dpi`, the page's type resolution, from the same

@@ -973,6 +973,12 @@ for index in pages {
         if (try? JBIG2.encode(png: layers.mask, to: stencil, using: jbig2)) != nil {
             stencilBytes = bytes(stencil)
             layered = stencilBytes + bytes(layers.background) + bytes(layers.foreground)
+            // C28. The mark layer ships too, when there is one: its tones and its stencil.
+            if let marks = layers.marks {
+                let markStencil = work.appendingPathComponent("k\(index).jbig2")
+                _ = try? JBIG2.encode(png: marks.mask, to: markStencil, using: jbig2)
+                layered += bytes(marks.tone) + bytes(markStencil)
+            }
             shippedMask = try? Data(contentsOf: layers.mask)
             shippedBackgroundWidth = layers.backgroundWidth
         }

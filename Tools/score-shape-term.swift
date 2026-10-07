@@ -1914,7 +1914,14 @@ for index in pages {
             // A zero-byte stream is a jbig2 that ran and produced nothing, which would
             // otherwise be summed into a total that looks like a cheap page.
             guard sten > 0 else { return nil }
-            return (sten, sten + bytes(layers.background) + bytes(layers.foreground),
+            // C28. The mark layer ships too, when there is one: its tones and its stencil.
+            var marked = 0
+            if let marks = layers.marks {
+                let markStencil = work.appendingPathComponent("\(stem)-k.jbig2")
+                _ = try? JBIG2.encode(png: marks.mask, to: markStencil, using: jbig2)
+                marked = bytes(marks.tone) + bytes(markStencil)
+            }
+            return (sten, sten + bytes(layers.background) + bytes(layers.foreground) + marked,
                     "\(layers.backgroundWidth)x\(layers.backgroundHeight)", layers.mask)
         }
         let ship = price(boxes, "ms\(index)")

@@ -2518,29 +2518,36 @@ final class OCRModel: ObservableObject {
                         else { continue }
                         let stencil = pngDir.appendingPathComponent(
                             String(format: "m%05d.jbig2", index + 1))
+                        // C28. The mark layer's stencil, encoded like the page's.
+                        let markStencil = layers.marks.map { _ in
+                            pngDir.appendingPathComponent(String(format: "k%05d.jbig2", index + 1))
+                        }
+                        let pngs = [layers.mask] + (layers.marks.map { [$0.mask] } ?? [])
+                        let layered = [stencil, layers.background, layers.foreground]
+                            + (layers.marks.map { [$0.tone] } ?? []) + (markStencil.map { [$0] } ?? [])
                         do {
                             try control.adopting { register in
                                 try JBIG2.encode(png: layers.mask, to: stencil,
                                                  using: jb, register: register)
                             }
-                        } catch {
-                            for u in [layers.mask, layers.background, layers.foreground,
-                                      stencil] {
-                                try? FileManager.default.removeItem(at: u)
+                            if let marks = layers.marks, let markStencil {
+                                try control.adopting { register in
+                                    try JBIG2.encode(png: marks.mask, to: markStencil,
+                                                     using: jb, register: register)
+                                }
                             }
+                        } catch {
+                            for u in pngs + layered { try? FileManager.default.removeItem(at: u) }
                             continue
                         }
-                        try? FileManager.default.removeItem(at: layers.mask)
-                        let after = [stencil, layers.background, layers.foreground]
-                            .reduce(0) { $0 + fileSize($1) }
+                        for u in pngs { try? FileManager.default.removeItem(at: u) }
+                        let after = layered.reduce(0) { $0 + fileSize($1) }
                         // Three layers are not always cheaper than one image —
                         // a page of dense halftone with a caption under it can
                         // come out larger. Keep whichever is smaller rather than
                         // assuming, and say so in the log.
                         guard after < before else {
-                            for u in [stencil, layers.background, layers.foreground] {
-                                try? FileManager.default.removeItem(at: u)
-                            }
+                            for u in layered { try? FileManager.default.removeItem(at: u) }
                             continue
                         }
                         encoded[index] = JBIG2.Page(
@@ -2557,7 +2564,15 @@ final class OCRModel: ObservableObject {
                                 isColour: layers.isColour,
                                 // Finer than the page on a layered scan (C39).
                                 maskWidth: layers.maskWidth,
-                                maskHeight: layers.maskHeight)),
+                                maskHeight: layers.maskHeight,
+                                marks: layers.marks.flatMap { marks in
+                                    markStencil.map {
+                                        JBIG2.Page.MRC.Marks(tone: marks.tone, mask: $0,
+                                                             width: marks.width,
+                                                             height: marks.height,
+                                                             rect: marks.rect)
+                                    }
+                                })),
                             pixelWidth: encoded[index].pixelWidth,
                             pixelHeight: encoded[index].pixelHeight,
                             boxSize: encoded[index].boxSize,
@@ -2579,7 +2594,7 @@ final class OCRModel: ObservableObject {
                         let streams: [URL]
                         switch encoded[index].stream {
                         case .jpeg(let u): streams = [u]
-                        case .mrc(let m): streams = [m.mask, m.background, m.foreground]
+                        case .mrc: streams = encoded[index].stream.urls
                         default: continue
                         }
                         let out = pngDir.appendingPathComponent(

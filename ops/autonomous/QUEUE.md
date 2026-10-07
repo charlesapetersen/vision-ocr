@@ -1192,7 +1192,7 @@ say so in the commit.
       Session 3, 2026-10-05 (round 1, max): ink-measured tilts; parked by triage (c6cec50), 14 rows worse.
       Session 4, 2026-10-06 (round 1): DONE WHEN checked on unchanged code, ux-regression 0 worse; the ad
       column accepted as PDFKit grouping on a 0.06 pt margin (C55). Closed.
-- [ ] **c28-first-principles** — fix C28 again, starting from first principles. The owner took it off the
+- [x] **c28-first-principles** — fix C28 again, starting from first principles. The owner took it off the
       parked list on 2026-09-25 and asked for a fresh attempt, not a continuation of the old campaign.
       THE DEFECT. On the layered (MRC) route, the 1-bit stencil is the page's adaptive binarisation
       intersected with the geometry of the words Vision recognised (`textRegionMask`,
@@ -1227,6 +1227,8 @@ say so in the commit.
       BOUND: rule 10. Rule 4 applies.
       2026-10-06: round 1, sessions 1 and 2. Session 1's uncommitted strand (dark unboxed ink into the
       stencil on all-text pages) was adopted by session 2, which kept it out of the margins. Pencil left.
+      2026-10-06: round 1, session 3. Pencil gets a mark layer at 1/3; Ford p1 and Former p2 read; the
+      22 sample documents +5.5% (`BUGS.md` C28, session 3).
       (origin: BUGS.md C28)
 - [ ] **c41-newspaper-scans** — read whole-page scans of small-town newspapers as well as their print
       allows (`BUGS.md` C41, split from C39). Start from the band swap parked at

@@ -6953,7 +6953,7 @@ elsewhere need the stain (`Flattener.ShapeComponent.medianRun`'s own comment say
 hundreds"*, which a stain at 11 does not contradict), and no committed TSV carries the 2.96x at all, so no
 artefact moves.
 
-### C28 · The stencil is confined to Vision's word boxes, so ink the recogniser missed is stored at an eighth of the page — HALF FIXED (the shape term is WIRED 2026-08-22 and rescues 13 of the 16 measured losses; three hand-made marks remain, one of them unreachable from this seam)
+### C28 · The stencil is confined to Vision's word boxes, so ink the recogniser missed is stored at an eighth of the page — FIXED 2026-10-06 (dark unboxed ink goes into the stencil, pale marks into a mark layer at 1/3; the shape term stays)
 *(opened 2026-08-19 out of `C26`'s sub-step 4, on the owner's decision at that day's check-in: move
 the bar **and** open this as its own entry rather than fold it into C26. **Four sub-steps worked
 2026-08-20 and they cover the whole population** — the eight near-misses in
@@ -15569,6 +15569,36 @@ pipeline: Doermann p21 128,848 -> 129,651 B (session 1's 130,703 included margin
 Suite 1775/1775; `ux-regression.sh` 0 worse, 2 better (`1954 - Why` p5, p8 leg2). DONE WHEN verifier, by
 eye at 1:1: Doermann's rule crisp (was a grey band), Ford's pencil and Former p2's pencil address still
 broken specks, text identical: criterion 1 FAILS, corpus bytes not yet priced. Box open; next step above.
+
+**Session 3, 2026-10-06: pencil gets a mark layer.** Measured first: Ford p1's pencil lies mostly
+*inside* Vision's padded line boxes, so the loss is the 1/8 background, not the word confinement.
+Rendered through PDFKit at 1:1 with the whole background finer, the insertion reads at 1/3 and 1/2 and
+not at 1/4, but 1/2 cost Ford's six pages +837 KB, nearly all paper grain (the background JPEG went
+from 10 KB to 61 KB on a page even with every mark switched off). So an all-text page now gets a fourth
+layer: `paleMarks` takes pixels darker than the smoothed paper by 8, at least 4 px from type's dark
+core, in groups of at least line²/32 seeds (or an eighth of that within a line height of such a group),
+and `markTone` stores them at 1/3, cropped to their box, flat outside the marks, under a JBIG2 mask
+drawn between background and foreground (`JBIG2.Page.MRC.marks`, `/Im3`, `/Im4`). PDFKit at 1:1: Ford
+p1's "There must be a readjustment of our freight rates" and Former p2's pencilled address read (both
+broken specks before). 22 documents holding the 73 sub-bar pages: 5,228,056 -> 5,514,201 B (+5.5%),
+nine unchanged; the dearest are Doermann p21 +53.6 KB (the typescript's grey haze round its letters
+passes as marks) and McKenna p4 +47.8 KB (the photographed page stack). Rejected, one line each: the
+whole background at 1/2 (+837 KB on Ford) or 1/3 (+313 KB); keeping the paper flat inside a finer
+background (61 KB a page of JPEG floor); a contrast floor on groups (Former's pencil reads 10-12 levels,
+the same as Ford's show-through); joining all groups across a quarter line (+250 KB, the grain joins).
+One bug found on the way: a sideways page's box height is its line's length, so Former p2's floor was
+25,800 seeds; the line size is the box's short side. Suite 1778/1778; new checks
+in colour and grey, red without the layer (strokes 216-230 against 203-206 with it, drawn at 204).
+`ux-regression` 1 worse (Former students' bytes 67,429 -> 85,865, the address now kept), 2 better;
+baseline refreshed.
+
+DONE WHEN verifier (independent, PDFKit at 1:1 over before/after of all 73 pages): all four PASS. Ford
+p1's insertion and margin note and Former p2's pencil read; the other losing pages are legible and
+pixel-identical before and after where the shape term routes them; 25 sample pages that lose nothing are
+the same or closer to the source (Stanford_1891 p1's handwritten "work", labelled as losing nothing, was
+a smudge and now reads); PDFKit text identical on 73/73; bytes as above. **FIXED.** Two lines of record:
+the shape term routes 8 of the 16 away, not the 13 this entry's header said; and the run log's "stored at
+an eighth" note now overstates the loss on pages with a mark layer (left as is).
 
 ### C29 · A born-digital cover page is rasterised and re-OCR'd, and `hasDigitalText` never even looks at it — FIXED
 

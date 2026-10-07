@@ -901,17 +901,22 @@ func measure(_ page: PDFPage, label: String, index: Int,
         return outcome
     }
     defer {
-        for url in [layers.mask, layers.background, layers.foreground] {
-            try? FileManager.default.removeItem(at: url)
-        }
+        for url in layers.files { try? FileManager.default.removeItem(at: url) }
     }
+    // C28. The mark layer ships too, when there is one: its tones and its stencil.
+    let markBytes = layers.marks.map { m in
+        (try? Data(contentsOf: m.tone).count).flatMap { tone in
+            jbig2Bytes(ofMaskAt: m.mask, stem: stem + "-marks").map { tone + $0 }
+        }
+    } ?? 0
     guard let maskBytes = jbig2Bytes(ofMaskAt: layers.mask, stem: stem),
           let backgroundBytes = try? Data(contentsOf: layers.background).count,
-          let foregroundBytes = try? Data(contentsOf: layers.foreground).count else {
+          let foregroundBytes = try? Data(contentsOf: layers.foreground).count,
+          let markBytes else {
         decline("encode failed", boxes: boxes.count, inkOut: inkOut)
         return outcome
     }
-    let mrc = maskBytes + backgroundBytes + foregroundBytes
+    let mrc = maskBytes + backgroundBytes + foregroundBytes + markBytes
     outcome.mrc = mrc
     outcome.backgroundFactor = Double(w) / Double(max(layers.backgroundWidth, 1))
     outcome.foregroundFactor = Double(w) / Double(max(layers.foregroundWidth, 1))

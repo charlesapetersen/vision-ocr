@@ -3334,6 +3334,105 @@ do {
               false, "no layers")
     }
 
+    // C28, 2026-10-06. Pencil: strokes too pale for any 1-bit cut (204 on 255 paper), so
+    // in neither the stencil nor the text layer. In a background at an eighth they
+    // average into the paper; the mark layer keeps them. Read through PDFKit, the way
+    // Preview draws the page, with the mark layer and without it. `Ford_1941` p1's
+    // pencilled insertion is the case.
+    let c28Pencil = tmp.appendingPathComponent("c28-pencil.pdf")
+    let pencilStrokes = (0..<6).map { NSRect(x: 1000, y: 1330 - 156 * $0, width: 130, height: 6) }
+    makeScannedPDF(at: c28Pencil, lines: c28Dense,
+                   colourBars: pencilStrokes.map { ($0, NSColor(white: 0.8, alpha: 1)) })
+    func c28Published(_ layers: Flattener.MRCLayers, marks: Bool, stem: String) -> [UInt8]? {
+        guard let jb = JBIG2.encoder else { return nil }
+        let stencil = c26Dir.appendingPathComponent(stem + ".jbig2")
+        let markStencil = c26Dir.appendingPathComponent(stem + "-k.jbig2")
+        guard (try? JBIG2.encode(png: layers.mask, to: stencil, using: jb)) != nil else { return nil }
+        var kept: JBIG2.Page.MRC.Marks?
+        if marks, let m = layers.marks {
+            guard (try? JBIG2.encode(png: m.mask, to: markStencil, using: jb)) != nil else { return nil }
+            kept = JBIG2.Page.MRC.Marks(tone: m.tone, mask: markStencil, width: m.width,
+                                        height: m.height, rect: m.rect)
+        }
+        let out = c26Dir.appendingPathComponent(stem + ".pdf")
+        let page = JBIG2.Page(
+            stream: .mrc(JBIG2.Page.MRC(
+                mask: stencil, background: layers.background, foreground: layers.foreground,
+                backgroundWidth: layers.backgroundWidth, backgroundHeight: layers.backgroundHeight,
+                foregroundWidth: layers.foregroundWidth, foregroundHeight: layers.foregroundHeight,
+                isColour: layers.isColour, maskWidth: layers.maskWidth,
+                maskHeight: layers.maskHeight, marks: kept)),
+            pixelWidth: 1224, pixelHeight: 1584, boxSize: CGSize(width: 612, height: 792))
+        guard (try? JBIG2.assemble([page], to: out)) != nil,
+              let doc = PDFDocument(url: out), let p = doc.page(at: 0),
+              let ctx = CGContext(data: nil, width: 1224, height: 1584, bitsPerComponent: 8,
+                                  bytesPerRow: 1224, space: CGColorSpaceCreateDeviceGray(),
+                                  bitmapInfo: CGImageAlphaInfo.none.rawValue) else { return nil }
+        ctx.setFillColor(CGColor(gray: 1, alpha: 1))
+        ctx.fill(CGRect(x: 0, y: 0, width: 1224, height: 1584))
+        ctx.scaleBy(x: 2, y: 2)
+        p.draw(with: .mediaBox, to: ctx)
+        guard let data = ctx.data else { return nil }
+        // Top-down rows; `c28Mean` flips them to the fixture's bottom-up frame.
+        let px = data.bindMemory(to: UInt8.self, capacity: 1224 * 1584)
+        return (0..<(1224 * 1584)).map { px[$0] }
+    }
+    func c28Mean(_ px: [UInt8], _ r: NSRect) -> Double {
+        var sum = 0, n = 0
+        for y in Int(r.minY)..<Int(r.maxY) {
+            for x in Int(r.minX) + 4..<Int(r.maxX) - 4 { sum += Int(px[(1583 - y) * 1224 + x]); n += 1 }
+        }
+        return n > 0 ? Double(sum) / Double(n) : -1
+    }
+    /// The darkest row across a stroke and three rows either side: where the stroke is,
+    /// whichever cells of a layer it falls across.
+    func c28Darkest(_ px: [UInt8], _ r: NSRect) -> Double {
+        (Int(r.minY) - 3..<Int(r.maxY) + 3).map {
+            c28Mean(px, NSRect(x: r.minX, y: CGFloat($0), width: r.width, height: 1))
+        }.min() ?? -1
+    }
+    // In colour and in grey: the two routes build the mark layer's tones separately.
+    for colour in [true, false] {
+        let name = "C28: pencil too pale for the stencil is drawn on a page read as all text, "
+            + (colour ? "in colour" : "in grey")
+        guard let doc = PDFDocument(url: c28Pencil), let page = doc.page(at: 0),
+              let layers = Flattener.mrcLayers(
+                  for: page, boxes: c28Boxes(14), into: c26Dir, stem: "c28-pencil-\(colour)",
+                  backgroundDownsample: Prefs.PhotoDetail.balanced.downsample, inColour: colour),
+              let with = c28Published(layers, marks: true, stem: "c28-pencil-with-\(colour)"),
+              let without = c28Published(layers, marks: false, stem: "c28-pencil-without-\(colour)")
+        else {
+            check(name, false, "no layers, or the page did not publish")
+            continue
+        }
+        let strokeWith = pencilStrokes.map { c28Darkest(with, $0) }
+        let strokeWithout = pencilStrokes.map { c28Darkest(without, $0) }
+        // The paper in the gap between the next two lines of type, 78 px under each
+        // stroke: the mark layer must not draw there.
+        let paper = pencilStrokes.map { $0.offsetBy(dx: 0, dy: -78) }
+        let paperMoved = zip(paper.map { c28Mean(with, $0) }, paper.map { c28Mean(without, $0) })
+            .map { abs($0 - $1) }.max() ?? 99
+        check(name,
+              layers.shrunkAsAllText && layers.marks != nil
+                && strokeWith.allSatisfy { $0 <= 210 }
+                && zip(strokeWith, strokeWithout).allSatisfy { $0 <= $1 - 8 }
+                && paperMoved < 3,
+              "shrunk \(layers.shrunkAsAllText), marks \(layers.marks != nil), strokes "
+                + strokeWith.map { String(format: "%.0f", $0) }.joined(separator: "/")
+                + " with the mark layer, "
+                + strokeWithout.map { String(format: "%.0f", $0) }.joined(separator: "/")
+                + String(format: " without (drawn at 204), paper beside them moved %.1f", paperMoved))
+    }
+    // …and a page with no pale marks pays for no mark layer.
+    if let layers = c28Layers(c28Rule, boxes: c28Boxes(14), stem: "c28-nomarks") {
+        check("…and a page with nothing pale on it has no mark layer",
+              layers.shrunkAsAllText && layers.marks == nil,
+              "shrunk \(layers.shrunkAsAllText), marks "
+                + (layers.marks.map { "\($0.width)x\($0.height)" } ?? "none"))
+    } else {
+        check("…and a page with nothing pale on it has no mark layer", false, "no layers")
+    }
+
     // …and the C26 fixture forty lines above reads 0 too, which is what keeps THOSE
     // checks measuring C26. Its 30x30 ink figure is one component whose median run is
     // 6x the page's own glyph run, so `shapeRunHigh` refuses it — measured, and worth

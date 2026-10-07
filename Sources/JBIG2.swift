@@ -62,7 +62,9 @@ enum JBIG2 {
             var urls: [URL] {
                 switch self {
                 case .jbig2(let u), .jpeg(let u): return [u]
-                case .mrc(let m): return [m.mask, m.background, m.foreground]
+                case .mrc(let m):
+                    return [m.mask, m.background, m.foreground]
+                        + (m.marks.map { [$0.tone, $0.mask] } ?? [])
                 case .passthrough, .sourcePage: return []
                 }
             }
@@ -72,7 +74,7 @@ enum JBIG2 {
             var imageCount: Int {
                 switch self {
                 case .jbig2, .jpeg: return 1
-                case .mrc: return 3
+                case .mrc(let m): return m.marks == nil ? 3 : 5
                 case .passthrough, .sourcePage: return 0
                 }
             }
@@ -115,6 +117,19 @@ enum JBIG2 {
             /// A size that disagrees with the stream is not an error any reader
             /// reports; it draws the stencil stretched over part of the page.
             var maskWidth: Int? = nil, maskHeight: Int? = nil
+            /// C28. A fourth layer of marks too pale for the stencil, drawn between the
+            /// background and the foreground: `tone` a JPEG in the tone layers' colour
+            /// space, `mask` a JBIG2 stencil of the same size saying where it shows,
+            /// drawn on `rect`, a share of the page from its bottom left. See
+            /// `Flattener.MRCLayers.marks`.
+            var marks: Marks? = nil
+
+            struct Marks {
+                let tone: URL
+                let mask: URL
+                let width: Int, height: Int
+                let rect: CGRect
+            }
         }
         let stream: Stream
         let pixelWidth: Int
@@ -600,12 +615,26 @@ enum JBIG2 {
             """)
 
             // Scale the unit image square to the page box. An MRC page draws
-            // twice: the background, then the foreground over it — the stencil
-            // is not drawn, it is the foreground's /Mask.
+            // twice, or three times with a mark layer: the background, the marks,
+            // then the foreground over them — the stencils are not drawn, they are
+            // the /Masks of the images over them.
             let content: String
             switch page.stream {
-            case .mrc:
-                content = "q \(w) 0 0 \(h) 0 0 cm /Im0 Do Q\n"
+            case .mrc(let m):
+                // C28. The mark layer, when there is one, between the two, on its own
+                // rect: over the paper, under the ink.
+                var marks = ""
+                if let r = m.marks?.rect {
+                    let size = page.boxSize
+                    guard let x = trimOffset(r.minX * size.width),
+                          let y = trimOffset(r.minY * size.height),
+                          let mw = trim(r.width * size.width),
+                          let mh = trim(r.height * size.height) else {
+                        throw Failure.badPageBox(page: i + 1, size: r.size)
+                    }
+                    marks = "q \(mw) 0 0 \(mh) \(x) \(y) cm /Im3 Do Q\n"
+                }
+                content = "q \(w) 0 0 \(h) 0 0 cm /Im0 Do Q\n" + marks
                         + "q \(w) 0 0 \(h) 0 0 cm /Im1 Do Q\n"
             case .jbig2 where page.placement != nil || page.overlay != nil:
                 // C37. A kept stream on its own rect, then the ink over it, black.
@@ -712,6 +741,16 @@ enum JBIG2 {
                 try writeImage(objects[2], from: m.mask, width: m.maskWidth ?? page.pixelWidth,
                                height: m.maskHeight ?? page.pixelHeight, filter: "/JBIG2Decode",
                                bits: 1, space: "", isStencil: true, decode: maskDecode)
+                // C28. The mark layer and its stencil, paired as the foreground and
+                // its stencil are.
+                if let marks = m.marks {
+                    try writeImage(objects[3], from: marks.tone, width: marks.width,
+                                   height: marks.height, filter: "/DCTDecode", bits: 8,
+                                   space: toneSpace, mask: objects[4])
+                    try writeImage(objects[4], from: marks.mask, width: marks.width,
+                                   height: marks.height, filter: "/JBIG2Decode", bits: 1,
+                                   space: "", isStencil: true, decode: maskDecode)
+                }
             case .passthrough, .sourcePage:
                 throw Failure.cannotAssemblePassthrough(page: i + 1)
             }
