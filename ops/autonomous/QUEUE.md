@@ -1042,7 +1042,7 @@ say so in the commit.
       reclaimed, a waiting suite does not RED the gate or burn a session's time, and a mutant removing the take
       turns it red; the harness runs in the health gate. ESTIMATE: 1 session. BOUND: rule 10.
       (context: owner request 2026-10-06)
-- [ ] **two-sessions-design** — decide whether a second session at once would help this daemon, before the larger Claude
+- [x] **two-sessions-design** — decide whether a second session at once would help this daemon, before the larger Claude
       plan arrives. (effort: medium)
       WHY. Owner, 2026-10-06: "We'll be moving up a tier in usage plans shortly so we should prepare for that in
       advance" (the Claude plan). This daemon runs one session at a time; Archive Suite now runs a supervisor with up
@@ -1056,6 +1056,35 @@ say so in the commit.
       Build nothing in this item. DONE WHEN the measurement and the recommendation are written here and a follow-up
       item is queued if the recommendation is to build. ESTIMATE: 1 session. BOUND: rule 10.
       (context: owner request 2026-10-06)
+      MEASURED 2026-10-07 [daemon.log, suite-timings.tsv, mac-heavy.log; 2026-09-30 00:00 to 2026-10-07 07:37, 176 h].
+      The window readings are `$STATE/usage-window.tsv` (per-session peaks, a `cut` column; there is no `usage.tsv`).
+      Sessions 57-59 h (53 launched; 3 ended by a daemon stop). Waiting on a spent window 29 h, 15 waits, each begun
+      at 95-116%; 7-8 sessions cut off by it. Bake-off nights holding engine.lock 26 h (the Mac running models;
+      nothing else fits in 18 GB). Health gates 2 h. Daemon stopped by the owner about 56 h. No window was seen
+      ending unspent while the daemon was free to run: every gap is the window, the bake-off or the owner. Suite
+      runs inside sessions (labels session, pre-commit, selftest, c41-measure) held test.lock about 10.5 h, 18% of
+      session time; mac-heavy.lock is shared with Archive Suite (29 of the 61 takes in mac-heavy.log), whose two
+      workers draw on the same account-wide window.
+      RECOMMENDATION: do not build a second session now. On this plan the window is the limit, so a second
+      session would spend it twice as fast and finish no more; it would also compete with Archive Suite's workers.
+      Of the open items only analysis like this one could run beside another session; c41, c52, c56 and
+      attempt-on-worked-item change code, so their commits run the suite in the hook, and the bake-off needs the whole machine. Rejected: a second lane for
+      docs-only items now (almost none are queued, by rule 1).
+      IF THE LARGER PLAN MAKES THE WINDOW SLACK, the design: the daemon keeps its one product lane and adds one
+      lane for items marked `(lane: side)` (analysis, docs, harness work that runs no suite and no Vision process);
+      a lane claims its item by `mkdir $STATE/claims/<tag>` with pid and start, stale when the pid is dead, as
+      mac-heavy.lock does; `next-item.sh --lane side` skips claimed tags; both lanes pause together on one window
+      reading. Borrow from Archive Suite's supervisor its pause rule (never let an older reading cancel a current
+      spent window) and its claims coordinator; not its two general workers, since two suite-running sessions
+      serialise on test.lock and one Vision process at a time is a hard memory rule here. Follow-up:
+      `two-sessions-recheck`.
+- [ ] **two-sessions-recheck** — once the larger plan is in use, re-measure and build the side lane if it pays.
+      (blocked-on: larger-plan-active)
+      WHAT. Over the first week on the new plan, rerun two-sessions-design's measurement. Build the side lane it
+      designs only if the daemon spent under a tenth of its running time waiting on the window and at least two
+      `(lane: side)`-shaped items are queued; otherwise write that here and tick the box. DONE WHEN the figures and
+      the decision are written here, and if built, a harness shows two lanes never claim one item and both pause on
+      a spent window. ESTIMATE: 1-2 sessions. BOUND: rule 10. (context: two-sessions-design 2026-10-07)
 - [ ] **ocr-bakeoff-run** — read the bake-off sample with every candidate that fits, as one long unattended
       job. (blocked-on: ocr-lab-setup, bakeoff-tonight-ok)
       PAUSED AGAIN 2026-10-06 07:55 (owner needs the Mac): `bakeoff.sh stop` during Churro 3B; see the hold.
@@ -1321,6 +1350,8 @@ so `next-item.sh` does not read them. To queue one, move it back into the queue 
 
 ## HOLD — owner-only, never auto-executed
 
+- [ ] **larger-plan-active** — the owner says the larger Claude plan is in use. Tick it when it is, with the date;
+      `two-sessions-recheck` waits on it. [hold] needs: owner — only the owner knows when the plan changes.
 - [x] **bakeoff-tonight-ok** — the owner says the Mac is free, so the bake-off may resume (rest of Chandra 2, then the
       Qwen3.5-9B try). Owner, 2026-10-05: the daemons work through the day, the bake-off waits for tonight. [hold] needs: owner
       TICKED 2026-10-05 about 22:00: owner, "I'm done with the computer for the night." The bake-off was restarted
