@@ -136,7 +136,8 @@ STEP 3.5 — PROVE IT IS FIXED BEFORE YOU SAY SO.
 
 STEP 4 — COMMIT AND PUSH.
   The pre-commit hook runs the full suite when a staged path matches
-  `Sources/ Helper/ Tests/ Tools/ build.sh run_tests.sh`, and lets anything else through in seconds. Never
+  `Sources/ Helper/ Tests/ Tools/make-plate-fixtures.swift build.sh run_tests.sh`; other staged tools are
+  type-checked without the suite, and anything else goes through in seconds. Never
   use `--no-verify`, and never wrap `git commit` in `test-lock.sh` (it deadlocks against the hook). For a
   code commit, write the message to a file and run it detached, then poll until the sha moves:
       before=$(git rev-parse HEAD)

@@ -1623,7 +1623,83 @@ fault_hook_parses() {
   rm -rf "$sc"; SC=""
 }
 
-FAULTS="relocate build_continues missing_licence detach_fails helper mrc_refuses argv_writers text_voids drawn_census shape_dump hook_parses"
+# EFFICIENCY-PLAN round 1. Which staged paths make the hook run the suite. Of Tools/, only
+# make-plate-fixtures.swift reaches the suite; any other staged tool is type-checked (and a Python tool
+# self-tested) and the suite is skipped. Scratch repositories with a stub run_tests.sh and a stub
+# check-tools-compile.sh that only record that they ran, so no row can start a real suite. Then two
+# deliberately broken copies of the hook, each of which must turn at least one row red.
+fault_hook_suite_scope() {
+  local hook="$REPO/.githooks/pre-commit"
+  SC="$(mktemp -d)"
+  local sc="$SC" R out rc row fails
+  # suite_rows HOOK — one line per row that does not hold; nothing when all hold.
+  suite_rows() {
+    local h="$1" n
+    mkdir -p "$sc/h"; cp "$h" "$sc/h/pre-commit"; chmod +x "$sc/h/pre-commit"
+    # $1 want-suite (yes/no) · $2 want-typecheck (yes/no) · $3 want-rc · rest: paths to create and stage
+    srow() {
+      local ws="$1" wt="$2" wrc="$3" f; shift 3
+      R="$(mktemp -d "$sc/repoXXXXXX")"
+      git -C "$R" init -q >/dev/null 2>&1
+      git -C "$R" config user.email fault-inject@example.invalid
+      git -C "$R" config user.name fault-inject
+      git -C "$R" config commit.gpgsign false
+      mkdir -p "$R/Tools" "$R/Sources" "$R/Tests" "$R/Helper"
+      printf '#!/bin/bash\ntouch "$(dirname "$0")/.suite-ran"\necho "3/3 passed"\n' > "$R/run_tests.sh"
+      printf '#!/bin/bash\necho "$*" >> "$(dirname "$0")/../.typecheck-ran"\n! grep -qs BROKEN "$@"\n' > "$R/Tools/check-tools-compile.sh"
+      chmod +x "$R/run_tests.sh" "$R/Tools/check-tools-compile.sh"
+      printf '.suite-ran\n.typecheck-ran\n' > "$R/.gitignore"
+      echo readme > "$R/README.md"
+      git -C "$R" add -A; git -C "$R" commit -q -m initial >/dev/null 2>&1
+      git -C "$R" config core.hooksPath "$sc/h"
+      for f in "$@"; do
+        case "$f" in *=BROKEN) f="${f%=BROKEN}"; mkdir -p "$R/$(dirname "$f")"; echo BROKEN > "$R/$f" ;;
+                     *.sh) echo "# $f" >> "$R/$f" ;;
+                     *) mkdir -p "$R/$(dirname "$f")"; echo "// $f" >> "$R/$f" ;; esac
+        git -C "$R" add "$f"
+      done
+      out="$(cd "$R" && git commit -q -m x 2>&1)"; rc=$?
+      n="[$*]"
+      [ "$rc" = "$wrc" ] || echo "$n: exit $rc, wanted $wrc: $(tail -1 <<<"$out")"
+      if [ -f "$R/.suite-ran" ]; then [ "$ws" = yes ] || echo "$n: the suite ran"
+      else [ "$ws" = no ] || echo "$n: the suite did not run"; fi
+      if [ -f "$R/.typecheck-ran" ]; then [ "$wt" = yes ] || echo "$n: the tools were type-checked"
+      else [ "$wt" = no ] || echo "$n: the staged tools were not type-checked"; fi
+    }
+    srow no  yes 0 Tools/score-x.swift
+    srow no  yes 0 Tools/score-x.swift Tools/helper.sh
+    srow no  yes 0 Tools/sweep.py
+    srow no  no  0 Tools/README.md
+    srow no  no  0 README.md
+    srow no  yes 1 Tools/score-x.swift=BROKEN
+    srow yes yes 0 Tools/make-plate-fixtures.swift
+    srow no  yes 0 Tools/make-plate-fixtures.swift.orig.swift
+    srow yes yes 0 Tools/score-x.swift Sources/A.swift
+    srow yes no  0 Sources/A.swift
+    srow yes no  0 Tests/main.swift
+    srow yes no  0 Helper/main.swift
+    srow yes no  0 build.sh
+    srow yes no  0 run_tests.sh
+  }
+  local real; real="$(suite_rows "$hook")"
+  if [ -z "$real" ]; then ok "the hook runs the suite for exactly the paths the suite uses (14 rows)"
+  else bad "hook suite scope" "$(echo "$real" | tr '\n' ';')"; fi
+  # Each broken copy must fail at least one row. The anchor must occur once and the copy must differ.
+  hmut() {
+    local name="$1" from="$2" to="$3" m="$sc/mut-$1" c
+    c="$(grep -cF -- "$from" "$hook")"
+    [ "$c" = 1 ] || { bad "mutant $name" "its anchor occurs $c times, not once — not applied"; return; }
+    /usr/bin/python3 -c 'import sys; s=open(sys.argv[1]).read(); open(sys.argv[2],"w").write(s.replace(sys.argv[3],sys.argv[4],1))' "$hook" "$m" "$from" "$to"
+    cmp -s "$hook" "$m" && { bad "mutant $name" "the copy did not change — not applied"; return; }
+    [ -n "$(suite_rows "$m")" ] && ok "mutant $name is caught" || bad "mutant $name" "SURVIVED"
+  }
+  hmut old-pattern 'Tools/make-plate-fixtures\.swift$|build' 'Tools/|build'
+  hmut no-typecheck-when-tools-only '  suite_needed=0' '  echo "pre-commit: no code staged, skipping the suite."; exit 0'
+  hmut unanchored-plates 'Tools/make-plate-fixtures\.swift$|' 'Tools/make-plate-fixtures\.swift|'
+  rm -rf "$sc"; SC=""
+}
+
+FAULTS="relocate build_continues missing_licence detach_fails helper mrc_refuses argv_writers text_voids drawn_census shape_dump hook_parses hook_suite_scope"
 
 if [ "${1:-}" = "--list" ]; then
   for f in $FAULTS; do echo "  $f"; done; exit 0

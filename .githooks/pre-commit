@@ -163,14 +163,23 @@ if [ "$shell_parse_failed" -ne 0 ]; then
 fi
 
 # Docs-only commits do not need forty minutes of real OCR. Anything that can
-# change behaviour does: sources, tests, the build or test scripts, the tools.
+# change behaviour does: sources, tests, the build or test scripts.
 # Helper/ is in the list because R40 put shipped code there: it builds
 # visionocr-recognise, which does the recognition for every batch. A change to
 # it that skipped the suite would skip the parity check that is the only thing
 # holding the helper and the app to the same observations.
-if ! echo "$staged" | grep -qE '^(Sources/|Helper/|Tests/|Tools/|build\.sh|run_tests\.sh)'; then
-  echo "pre-commit: no code staged, skipping the suite."
-  exit 0
+# Of Tools/, only make-plate-fixtures.swift reaches the suite (run_tests.sh builds it and the R56/R57 checks
+# read what it writes); no other tool is compiled or run by it. A commit staging other tools and nothing
+# above is type-checked and self-tested below and skips the suite (EFFICIENCY-PLAN round 1; 10 of 18
+# Tools-touching commits from 25 Sep to 7 Oct ran a full suite over code it never touches).
+# `Tools/fault-inject.sh hook_suite_scope` holds the table.
+suite_needed=1
+if ! echo "$staged" | grep -qE '^(Sources/|Helper/|Tests/|Tools/make-plate-fixtures\.swift$|build\.sh|run_tests\.sh)'; then
+  if ! echo "$staged" | grep -qE '^Tools/'; then
+    echo "pre-commit: no code staged, skipping the suite."
+    exit 0
+  fi
+  suite_needed=0
 fi
 
 if ! command -v swiftc >/dev/null 2>&1; then
@@ -238,6 +247,11 @@ while IFS= read -r f; do
 done <<EOF
 $(echo "$staged" | grep -E '^Tools/.*\.py$' || true)
 EOF
+
+if [ "$suite_needed" = 0 ]; then
+  echo "pre-commit: only tools staged (not Tools/make-plate-fixtures.swift, which the suite builds) — checked above, skipping the suite."
+  exit 0
+fi
 
 # ⚠️ SAY THE REAL NUMBER. This read "2-4 minutes" until 2026-08-16, when the suite was timed end to end:
 # **39m30s** (lock acquired 20:29:23, released 21:08:53, 1137/1137 with no skips) — swiftc 1m47s of it, the

@@ -43,7 +43,8 @@ git config core.hooksPath .githooks
 ```
 
 The hook runs the full suite (about 5 minutes) when a staged path matches
-`Sources/ Helper/ Tests/ Tools/ build.sh run_tests.sh`, type-checks staged tools and shell scripts, and
+`Sources/ Helper/ Tests/ Tools/make-plate-fixtures.swift build.sh run_tests.sh`, type-checks staged tools
+and shell scripts (a commit of other tools alone skips the suite), and
 lets anything else through in seconds.
 
 ## Commands
