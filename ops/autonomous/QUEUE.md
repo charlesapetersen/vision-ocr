@@ -1421,7 +1421,10 @@ so `next-item.sh` does not read them. To queue one, move it back into the queue 
 
 ## HOLD — owner-only, never auto-executed
 
-- [ ] **larger-plan-active** — the owner says the larger Claude plan is in use. Tick it when it is, with the date;
+- [x] **larger-plan-active** — the owner says the larger Claude plan is in use. Tick it when it is, with the date;
+      TICKED 2026-10-07: owner, "Claude for Education Premium has just been activated for this account. We now have access
+      to Fable and a much larger usage window (approximately 5x what we had before)." The Claude readings now also carry
+      a weekly window. Fable is used for max-effort sessions only (owner).
       `two-sessions-recheck` waits on it. [hold] needs: owner — only the owner knows when the plan changes.
 - [x] **bakeoff-tonight-ok** — the owner says the Mac is free, so the bake-off may resume (rest of Chandra 2, then the
       Qwen3.5-9B try). Owner, 2026-10-05: the daemons work through the day, the bake-off waits for tonight. [hold] needs: owner
