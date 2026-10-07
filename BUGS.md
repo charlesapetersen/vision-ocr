@@ -18833,6 +18833,28 @@ son, leader.`, Kalispell, which is the defect) from two separate runs PDFKit gro
 the recogniser's observations (a box whose span crosses a blank vertical strip of the source), not from
 PDFKit's lines, then split at every gutter, not only one.
 
+#### 2026-10-06, round 1 session 2: few rows are fused in the recogniser's own boxes
+
+Measured by running code (scratch tool compiled with `Sources/`, not committed: `Recogniser.render` of page 1,
+`recogniseInBands`, then `splitAtGutter`; a box counts as fused when, a line in from its ends, it spans a
+pixel strip blank over its rows and two lines either side, a line wide, or blank-rule-blank 0.6 line wide).
+`splitAtGutter` already asks every gutter (C52), so "only one" above is wrong; it splits each line once.
+
+| page | lines | gutters found | flagged | of them, body rows across a gutter |
+|---|---|---|---|---|
+| Helena 1941 | 865 | 12 | 1 | 0 (an ad's `Kirshmoor COATS`) |
+| Billings 1926 | 1,441 | 6 | 6 | 1 (`…that there was 40,000 VISITORS SPEND`, body into a headline) |
+| Kalispell 1939 | 641 | 1 | 0 | 0 |
+| Comic 1950 | 996 → 1,001 | 7 | 3 | about 3 (the bridge column's small print, read garbled) |
+| October 1960 | 844 | 7 | 7 | 1 (`(Simon & RUTH WALKER, Lampasas…`) |
+
+The rest flagged are letter-spaced headlines. Kalispell's `Miss Helen Jorgensen left Sundas son, leader.` is
+0.17 of the page wide with no blank strip in it: a misread inside one column, not a fused row. So the 6-30
+fused rows a page on C39's drag table were PDFKit's line grouping (C39 `WONTFIX`), and the recogniser fuses
+about five rows over the five pages. Next step, if worth one commit: find why `splitAtGutter` leaves the
+Billings and October 1960 rows whole (gutter not found at that height, or the margin test); otherwise this
+entry's remaining defects are Vision's misreads, the bake-off's work.
+
 ### C42 · A page whose crop box is not centred on its media box gets its text layer shifted off the ink, 81 pt on a two-page book spread — FIXED
 
 *(found 2026-09-27 by `ux-read`, from `UX-RUN-2026-09-27-pages.tsv`: Boltanski p51/p102/p153 red on
