@@ -1243,6 +1243,8 @@ say so in the commit.
       ordinary pages across a corpus sample are unchanged; invariant 3 holds; a new check goes red without
       the change. Drag selection is not in scope (C39 closed it).
       BOUND: rule 10.
+      2026-10-06: round 1, session 1 (opened at 89% of the window). Measured: the published pages are
+      within 1.3 points of Vision's best band reading, so the band swap is dropped; fused rows remain (C41).
       (origin: BUGS.md C41)
 - [ ] **c52-column-jumps** — make a drag down one column stay in it on the pages C34 still misses.
       Riesman p2 is fixed (ff25f3b, 4657cff); Marth p2 and Cong p16 are not. The first bound was spent

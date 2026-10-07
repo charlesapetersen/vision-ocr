@@ -18804,6 +18804,30 @@ line kept beside its clean reading). Drag selection on these pages is not part o
 the 11 newspaper pages, most of them scrambled drag text rather than misreads; 503 are words Vision read right
 on a plain render of the source.)*
 
+#### 2026-10-06, `c41-newspaper-scans` round 1 session 1: Vision's own ceiling is where the app already is
+
+Measured by running code (scratch tools, not committed; `/usr/share/dict/words`, words of 2+ letters, page 1).
+Published today, through PDFKit's `page.string`, against the best Vision reads from a 300 dpi render of the
+source with eight full-width bands (overlapping, so its word count is inflated, not its share):
+
+| page | published | 8 bands | whole page, one request |
+|---|---|---|---|
+| Helena 1941 | 77.8% | 79.1% | 74.1% (1,228 words) |
+| Billings 1926 | 79.1% | 78.0% | 70.4% (409) |
+| Kalispell 1939 | 76.7% | 75.7% | 34.5% (139) |
+| Comic 1950 | 83.5% | 84.2% | 78.2% |
+| October 1960 | 84.7% | 85.2% | 79.3% |
+
+The merge already carries the bands' reading: the published page is within 1.3 points of the bands on every
+page, and above them on two. So the parked band swap, however its defects (a)-(e) are mended, can buy at most
+about a point here, which is what C39's `finerReading` trial found (-0.02 to +0.26). Also tried on Helena, all
+no better: bands at 200 and 450 dpi (79.1%, 77.9%), 16 and 24 bands (78.2%, 78.0%), column tiles 8x2, 8x3,
+12x4 (77.0-77.3%), and contrast, levels and unsharp-mask preprocessing (78.0-78.3%). The misreads that remain
+are Vision's on this print; a better reader is the bake-off's work (`ocr-bakeoff-run` and after), not this
+entry's. Rejected for that reason: finishing the band swap. Left in this entry: the rows fused across columns
+(`splitAtGutter` splits at one gutter only, C39), untried. Next step: count fused rows per page on `pub0`-style
+output from the content stream (not `pdfkit-drag`'s cross column, which over-counts), then split at every gutter.
+
 ### C42 · A page whose crop box is not centred on its media box gets its text layer shifted off the ink, 81 pt on a two-page book spread — FIXED
 
 *(found 2026-09-27 by `ux-read`, from `UX-RUN-2026-09-27-pages.tsv`: Boltanski p51/p102/p153 red on
