@@ -276,6 +276,7 @@ launch() {   # $1 = VISIONOCR_IDLE_STOP ; backgrounds the daemon, echoes its pid
   VISIONOCR_STATUS_CMD="${STATUS_CMD:-$T/status-stub.sh}" \
   VISIONOCR_COMPACTOR="${COMPACTOR:-$T/no-such-compactor}" \
   VISIONOCR_TEST_LOCK="$STATE/test.lock" VISIONOCR_GRANT_CMD="${GRANT:-$T/no-grant}" \
+  VISIONOCR_GRANT_TIMEOUT="${GRANT_TIMEOUT:-30}" \
   BASH_ENV="$T/preload.sh" \
     bash "$DAEMON" >> "$T/daemon.stdout" 2>&1 &
   local pid=$!; echo "$pid" >> "$T/daemon.pids"; echo "$pid"
@@ -1021,6 +1022,8 @@ grep -q 'no progress' "$L" && bad "a grant wait counted as no progress (backoff 
 rm -f "$T/grant.wait"; sleep 6; stop "$P"
 grep -q "Agent Manager grants again $EM the wait is over" "$L" && [ "$(nsessions "$L")" -ge 1 ] \
   && ok "the session starts once the manager grants" || bad "no session after the grant: $(tail -3 "$L")"
+[ ! -e "$STATE/grant.wait" ] && ok "the grant removes \$STATE/grant.wait (the status stops saying wait)" \
+  || bad "grant.wait outlived the grant: $(cat "$STATE/grant.wait")"
 # An idle stopwatch already running when a wait begins is cleared, so a long wait cannot park the run.
 echo "0:no" > "$CTRL"; reset_state; rm -f "$T/grant.wait" "$STATE/grant.wait"
 P=$(GRANT="$T/grant-stub" launch 0); sleep 5
@@ -1033,13 +1036,26 @@ else
 fi
 stop "$P"; rm -f "$T/grant.wait"
 for rc in 3 1; do
-  echo "$rc" > "$T/grant.rc"
+  echo "$rc" > "$T/grant.rc"; echo "stale reason" > "$STATE/grant.wait"
   L=$(GRANT="$T/grant-stub" run_daemon 0 6)
   [ "$(nsessions "$L")" -ge 1 ] && ok "an erroring helper (exit $rc) launches as before" || bad "exit $rc held the session"
+  [ ! -e "$STATE/grant.wait" ] && ok "…and clears a stale grant.wait (exit $rc)" || bad "grant.wait survived an exit-$rc fallback"
 done
 rm -f "$T/grant.rc"
+echo "stale reason" > "$STATE/grant.wait"
 L=$(GRANT="$T/absent-grant" run_daemon 0 6)
 [ "$(nsessions "$L")" -ge 1 ] && ok "no helper installed: launches as before" || bad "absent helper held the session"
+[ ! -e "$STATE/grant.wait" ] && ok "…and a stale grant.wait from an uninstalled helper is cleared" \
+  || bad "grant.wait survived with no helper installed — the status would say wait for ever"
+# A helper that hangs is killed after VISIONOCR_GRANT_TIMEOUT (SIGALRM, exit 142) and the daemon launches as
+# before. The stub is a shell script whose `sleep` child would hold a $(…) pipe open past the kill.
+printf '#!/bin/sh\nsleep 987653\necho granted\n' > "$T/grant-slow"; chmod +x "$T/grant-slow"
+L=$(GRANT="$T/grant-slow" GRANT_TIMEOUT=2 run_daemon 0 8)
+[ "$(nsessions "$L")" -ge 1 ] && ok "a hung helper is cut off after the timeout and the session launches" \
+  || bad "a hung helper held the daemon: $(nsessions "$L") sessions in 8s"
+grep -q "grant helper timed out after 2s $EM launching as before" "$L" && ok "…and the timeout is logged" \
+  || bad "no timeout line: $(grep 'Agent Manager' "$L" | tail -2)"
+pkill -f "sleep 987653" 2>/dev/null
 
 echo
 echo "=================== $PASS passed, $FAIL failed, $SKIP skipped ==================="

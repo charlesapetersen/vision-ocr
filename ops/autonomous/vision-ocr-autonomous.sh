@@ -72,6 +72,9 @@ HEAVY_PAUSE_MAX="${VISIONOCR_HEAVY_PAUSE_MAX:-14400}"
 # Absent, or any other answer: the session starts exactly as before (fail-open).
 GRANT_CMD="${VISIONOCR_GRANT_CMD:-$HOME/Claude/Agent Manager/bin/grant}"
 GRANT_PROJECT="${VISIONOCR_GRANT_PROJECT:-Vision OCR}"
+# A helper that hangs cannot hold the daemon: it is killed by SIGALRM after this many seconds (exit 142),
+# which is "any other answer" and so launches as before.
+GRANT_TIMEOUT="${VISIONOCR_GRANT_TIMEOUT:-30}"
 # =======================================================================================================
 RUN="${VISIONOCR_RUN:-$STATE/RUN.md}"          # run state: RUN STATUS + FOCUS + HOLD + SESSION LOG
 QUEUE="${VISIONOCR_QUEUE:-$REPO/ops/autonomous/QUEUE.md}"
@@ -1804,11 +1807,15 @@ culprits are per-worktree build/ directories and Tools/mutation-out/. Free some 
   #      has the highest priority, so in practice only the threshold applies). 75 = wait: no session this cycle,
   #      logged once per reason, and not idleness (the idle stopwatch is cleared, so a long wait cannot park the
   #      run). An absent helper, or any other answer, launches as before.
+  #      The helper is bounded by GRANT_TIMEOUT, and its output goes through a file rather than $(…): a killed
+  #      shell-script helper can leave a child holding the pipe open, and $(…) would wait for that child.
   if [ -x "$GRANT_CMD" ]; then
     local g_out g_rc
-    g_out="$("$GRANT_CMD" --project "$GRANT_PROJECT" --agent claude 2>/dev/null)"; g_rc=$?
+    perl -e 'alarm shift; exec @ARGV or exit 127' "$GRANT_TIMEOUT" \
+      "$GRANT_CMD" --project "$GRANT_PROJECT" --agent claude > "$STATE/grant.out" 2>/dev/null; g_rc=$?
+    g_out="$(head -1 "$STATE/grant.out" 2>/dev/null)"; rm -f "$STATE/grant.out"
     if [ "$g_rc" = 75 ]; then
-      g_out="${g_out%%$'\n'*}"; g_out="${g_out#wait: }"; g_out="${g_out:-no reason given}"
+      g_out="${g_out#wait: }"; g_out="${g_out:-no reason given}"
       [ "$g_out" = "$(cat "$STATE/grant.wait" 2>/dev/null)" ] \
         || log "Agent Manager says wait — $g_out; no session until it grants."
       printf '%s\n' "$g_out" > "$STATE/grant.wait"
@@ -1816,12 +1823,14 @@ culprits are per-worktree build/ directories and Tools/mutation-out/. Free some 
       write_status
       return 0
     fi
-    if [ -f "$STATE/grant.wait" ]; then
-      if [ "$g_rc" = 0 ]; then log "Agent Manager grants again — the wait is over."
-      else log "Agent Manager's grant helper failed (exit $g_rc) — launching as before."; fi
-      rm -f "$STATE/grant.wait"
+    if [ "$g_rc" = 0 ]; then
+      [ -f "$STATE/grant.wait" ] && log "Agent Manager grants again — the wait is over."
+    elif [ "$g_rc" = 142 ]; then log "Agent Manager's grant helper timed out after ${GRANT_TIMEOUT}s — launching as before."
+    else
+      [ -f "$STATE/grant.wait" ] && log "Agent Manager's grant helper failed (exit $g_rc) — launching as before."
     fi
   fi
+  rm -f "$STATE/grant.wait"   # granted, failed or absent: a wait file must never outlive the wait
 
   # 3e. Effort per item (owner, 2026-09-26). The item at the head of the queue gets its session at max
   #     effort once it has had two attempts that did not finish it. Attempts are the item's
