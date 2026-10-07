@@ -1085,7 +1085,7 @@ say so in the commit.
       `(lane: side)`-shaped items are queued; otherwise write that here and tick the box. DONE WHEN the figures and
       the decision are written here, and if built, a harness shows two lanes never claim one item and both pause on
       a spent window. ESTIMATE: 1-2 sessions. BOUND: rule 10. (context: two-sessions-design 2026-10-07)
-- [ ] **ocr-bakeoff-run** — read the bake-off sample with every candidate that fits, as one long unattended
+- [x] **ocr-bakeoff-run** — read the bake-off sample with every candidate that fits, as one long unattended
       job. (blocked-on: ocr-lab-setup, bakeoff-tonight-ok)
       PAUSED AGAIN 2026-10-06 07:55 (owner needs the Mac): `bakeoff.sh stop` during Churro 3B; see the hold.
             PAUSED 2026-10-05 08:05 (owner needs the Mac for the day): stopped with `bakeoff.sh stop` after Surya 2
@@ -1120,8 +1120,11 @@ say so in the commit.
             read after the crop that follows one cut at max_tokens, which had shortened ocr-lab-setup's crop
             readings (DeepSeek's 0.541). Smoke run on two pages [measured]: LightOnOCR peaks at 11.3 GB on crops
             and tripped the swap rule once on each of two reads with this session's memory in use.
-      - [ ] **bakeoff-run-counted** — the job finished and counted. (blocked-on: bakeoff-tonight-ok) — 2026-10-07: finished
-        bar Qwen3.5-9B, which the owner dropped; mark its bakeoff-models.tsv row dropped (owner) so the scorer skips it.
+      - [x] **bakeoff-run-counted** — the job finished and counted, 2026-10-07: `OCR-BAKEOFF-COUNT-2026-10-07.tsv`
+        [measured from the saved readings]: 14 candidates complete, 56 whole readings each and every owed crop read
+        a reading or a reason (14 reasons, all LightOnOCR base/ocr-soup crops the guard killed twice at 12.3 GB).
+        Qwen3.5-9B (8 pages) is `dropped` in bakeoff-models.tsv: bakeoff.sh no longer tries or reads it, and
+        ocr-bakeoff-score must skip it.
 - [ ] **ocr-bakeoff-score** — score the saved readings against the truth set and name the top three.
       OVERNIGHT OPTION (owner, 2026-10-05: "we may want to include an option for models that can basically only be
       used overnight when the computer is in limited use otherwise"): when naming the top three, also name any

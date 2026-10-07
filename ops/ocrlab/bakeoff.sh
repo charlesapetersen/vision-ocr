@@ -211,7 +211,9 @@ read_model() {
 
 # Qwen3.5-9B's last guarded try, through try-mlx.sh as ocr-lab-setup measured the others, only once at
 # least 8 GB is reclaimable (it tripped once at 5.9 GB). It joins the run if it fits; if not, its weights go.
-if [ ! -f "$J/qwen9b.decided" ]; then
+# Only while its row's set is `owed`: the owner dropped it on 2026-10-07 (set `dropped`), so neither runs now.
+qwen9b_owed() { [ "$(field 2 qwen3.5-9b-4bit)" = owed ]; }
+if qwen9b_owed && [ ! -f "$J/qwen9b.decided" ]; then
     kills=$(/usr/bin/awk -F'\t' '$2 ~ /^qwen3.5-9b-4bit/ && $9 != "-"' "$OCRLAB/guard.tsv" | wc -l | tr -d ' ')
     if [ "$kills" -lt 2 ]; then
         log "qwen3.5-9b-4bit	last try (guard kills so far: $kills)"
@@ -235,6 +237,6 @@ if [ ! -f "$J/qwen9b.decided" ]; then
 fi
 
 labels=$(/usr/bin/awk -F'\t' -v b="$build" '!/^#/ && $2 == b {print $1}' "$J/scripts/bakeoff-models.tsv")
-[ "$build" = fitted ] && [ "$(cat "$J/qwen9b.decided" 2>/dev/null)" = fits ] && labels="$labels qwen3.5-9b-4bit"
+[ "$build" = fitted ] && qwen9b_owed && [ "$(cat "$J/qwen9b.decided" 2>/dev/null)" = fits ] && labels="$labels qwen3.5-9b-4bit"
 for label in $labels; do read_model "$label"; done
 log "all models done"

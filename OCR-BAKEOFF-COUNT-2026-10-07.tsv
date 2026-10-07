@@ -1,0 +1,23 @@
+# Readings per model in $STATE/ocrlab/readings after bake-off night 3 (ended 2026-10-07 07:40), counted by ocr-bakeoff-run.
+# Sample: OCR-SAMPLE-2026-10-04.tsv, 67 pages. The 11 newspapers are read as crops only, so a complete model holds 56
+# whole readings. crops_owed = the 11 newspapers + pages whose whole reading holds under 0.9 of the transcript's words
+# (rough-recall.py, as bakeoff.sh decides it), recomputed from the saved readings; every owed crop read is a reading or
+# a .reason (all 14 say the guard killed the crops read twice, at 12,297 MB). vision is the truth run's
+# own readings, copied, with crops for every page. qwen3.5-9b-4bit was dropped by the owner at 8 pages; ocr-bakeoff-score must skip it.
+label	status	whole	crops	reasons	crops_owed	missing
+chandra-ocr-2-oQ8	complete	56	49	0	49	0
+churro-3b-8bit	complete	56	45	0	45	0
+deepseek-ocr-2-4bit	complete	56	51	0	51	0
+falcon-ocr-bf16	complete	56	49	0	49	0
+glm-ocr-4bit	complete	56	51	0	51	0
+hunyuanocr-4bit	complete	56	49	0	49	0
+lightonocr-2-1b-4bit-1540	complete	56	49	0	49	0
+lightonocr-2-1b-base-8bit-1540	complete	56	43	7	50	0
+lightonocr-2-1b-ocr-soup-8bit-1540	complete	56	42	7	49	0
+olmocr-2-7b-4bit	complete	56	51	0	51	0
+qwen3-vl-8b-4bit	complete	56	46	0	46	0
+qwen3.5-2b-4bit	complete	56	51	0	51	0
+qwen3.5-4b-4bit	complete	56	46	0	46	0
+qwen3.5-9b-4bit	dropped	8	6	0	-	-
+surya-ocr-2-pkg	complete	56	50	0	50	0
+vision	reference	67	67	0	-	0

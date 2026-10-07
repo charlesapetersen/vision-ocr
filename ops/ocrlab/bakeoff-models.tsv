@@ -9,7 +9,8 @@
 # reading as <id>[.crops].txt.part.xml.
 # qwen3-vl-8b-4bit and olmocr-2-7b-4bit (lab2-olmocr-qwen3vl) peak near 8 GB, hence need_gb 8; olmOCR 2's first read
 # waiting for only 6 tripped the swap limit. Qwen3-VL-8B's weights are shared with Archive Suite's segbench in the same cache.
-# qwen3.5-9b-4bit is `owed`: bakeoff.sh gives it its last guarded try first and adds it to the run if it fits.
+# qwen3.5-9b-4bit is `dropped` (owner, 2026-10-07, after 8 of 56 pages with weak reads): no run reads it, and
+# ocr-bakeoff-score must skip it; its 8 readings stay on disk. While it was `owed`, bakeoff.sh gave it a last guarded try first.
 # need_gb is the reclaimable memory the guard waits for before each read, higher for the larger builds, so a
 # trip is less likely to measure the machine instead of the model. prompt `-` means read-mlx.py's default; `""` an empty prompt (LightOnOCR takes none). extra is passed to read-mlx.py.
 label	set	runtime	repo	prompt	extra	need_gb
@@ -21,7 +22,7 @@ hunyuanocr-4bit	fitted	mlx	hadeseus/HunyuanOCR-mlx-4bit	Extract all the text in 
 qwen3.5-4b-4bit	fitted	mlx	lmstudio-community/Qwen3.5-4B-MLX-4bit	-	-	4
 surya-ocr-2-pkg	fitted	surya	datalab-to/surya-ocr-2-gguf	-	-	4
 chandra-ocr-2-oQ8	fitted	mlx	mlx-community/chandra-ocr-2-oQ8	-	-	6
-qwen3.5-9b-4bit	owed	mlx	mlx-community/Qwen3.5-9B-4bit	-	-	8
+qwen3.5-9b-4bit	dropped	mlx	mlx-community/Qwen3.5-9B-4bit	-	-	8
 lightonocr-2-1b-ocr-soup-8bit-1540	fitted	mlx	local/LightOnOCR-2-1B-ocr-soup-8bit	""	--max-side 1540 --max-tokens 4096	8
 lightonocr-2-1b-base-8bit-1540	fitted	mlx	local/LightOnOCR-2-1B-base-8bit	""	--max-side 1540 --max-tokens 4096	8
 falcon-ocr-bf16	fitted	mlx	tiiuae/Falcon-OCR	plain	-	4
