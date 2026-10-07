@@ -1120,7 +1120,8 @@ say so in the commit.
             read after the crop that follows one cut at max_tokens, which had shortened ocr-lab-setup's crop
             readings (DeepSeek's 0.541). Smoke run on two pages [measured]: LightOnOCR peaks at 11.3 GB on crops
             and tripped the swap rule once on each of two reads with this session's memory in use.
-      - [ ] **bakeoff-run-counted** — the job finished and counted. (blocked-on: bakeoff-tonight-ok)
+      - [ ] **bakeoff-run-counted** — the job finished and counted. (blocked-on: bakeoff-tonight-ok) — 2026-10-07: finished
+        bar Qwen3.5-9B, which the owner dropped; mark its bakeoff-models.tsv row dropped (owner) so the scorer skips it.
 - [ ] **ocr-bakeoff-score** — score the saved readings against the truth set and name the top three.
       OVERNIGHT OPTION (owner, 2026-10-05: "we may want to include an option for models that can basically only be
       used overnight when the computer is in limited use otherwise"): when naming the top three, also name any
@@ -1366,6 +1367,10 @@ so `next-item.sh` does not read them. To queue one, move it back into the queue 
 
 These are offered to nobody. `next-item.sh` prints them as `hold` so they stay visible.
 
+      DONE 2026-10-07 07:40: owner, "Let's discard Qwen3.5-9B. The bake-off is then done, correct? We can move on?"
+      Night 3 (23:35-07:40) finished Churro 3B, olmOCR-2-7B and Qwen3-VL-8B; Qwen3.5-9B was stopped at 6 of 56
+      pages (weak early reads: one whole page 4 characters) and is DROPPED by the owner, not owed another try. No
+      further bake-off night is needed for ocr-bakeoff-run; ocr-bakeoff-bits will need its own (4-6 h job).
 - [ ] **taborder** — the tab-order walk is still by hand. [hold] needs: owner — accepted by the owner
       as a known gap on 2026-08-13.
       (origin: TODO.md, the one open checkbox there)
