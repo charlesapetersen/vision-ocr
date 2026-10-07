@@ -18851,9 +18851,17 @@ pixel strip blank over its rows and two lines either side, a line wide, or blank
 The rest flagged are letter-spaced headlines. Kalispell's `Miss Helen Jorgensen left Sundas son, leader.` is
 0.17 of the page wide with no blank strip in it: a misread inside one column, not a fused row. So the 6-30
 fused rows a page on C39's drag table were PDFKit's line grouping (C39 `WONTFIX`), and the recogniser fuses
-about five rows over the five pages. Next step, if worth one commit: find why `splitAtGutter` leaves the
-Billings and October 1960 rows whole (gutter not found at that height, or the margin test); otherwise this
-entry's remaining defects are Vision's misreads, the bake-off's work.
+about five rows over the five pages.
+
+Why `splitAtGutter` leaves them whole [measured, same tool]: on Billings, no gutter `columnGutters` finds
+covers that row (it is a body line run into the headline beside it, in a region with no column-wide lines);
+on October 1960 the gutter at 0.185-0.196 is found and the row is among its lines, but it starts at x=0.150,
+mid-column, with no column margin within three line heights, which is the guard that keeps centred headings
+whole (C34). Loosening either guard to split one row a page would risk splitting headings across the corpus;
+rejected. The case for closing C41: the published text sits at Vision's own band ceiling (session 1), and the
+fused rows left are one or two a page, each refused by a guard that protects ordinary pages. What remains is
+Vision's misreading of this print, which `ocr-bakeoff-run` and the items after it address. Recommended: close
+`WONTFIX` at a max-effort session (rule 8), pointing the misreads at the bake-off.
 
 ### C42 · A page whose crop box is not centred on its media box gets its text layer shifted off the ink, 81 pt on a two-page book spread — FIXED
 
