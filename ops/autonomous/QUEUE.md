@@ -1154,8 +1154,31 @@ say so in the commit.
       oQ8 0.24% / 0.47% at 82 s (bearable on lines; overnight for whole documents). Vision on crops 3.1% / 12.9% at 1-2 s; the app's layer
       (832b7ac) 1.9% / 21.8%. The top three are those; the bits item uses them. Weights kept (76 GB free).
       BOUND: rule 10. (context: owner request 2026-10-02)
+- [ ] **ocr-lab-round3** — fit-test the 2026-10-07 survey's candidates and score newspapers on NewsBench, so the next
+      model night reads them beside the top three. (effort: medium)
+      WHY. Owner, 2026-10-07: "Do more research on whether there are other projects like Churro worth considering. Be
+      thorough." Findings in `PRIOR-ART-2026-10-07.md`: no open successor to Churro exists, but four independent sources
+      find that on dense newspaper pages the layout step decides the result, and nobody has measured Churro on layout
+      regions or on NewsBench.
+      WHAT, same lab rules as ocr-lab-round2 (the guard, one model at a time, free space by `ops/ocrlab/free-mb.sh`,
+      the lab under 50 GB, mac-heavy.lock; fit tests are ordinary work any time):
+      - [ ] **lab3-dots** — `mlx-community/dots.mocr-4bit` (MIT, 3B; `dots_ocr` is in mlx-vlm 0.7.4): its two test pages.
+      - [ ] **lab3-paddle** — PaddleOCR-VL-1.6 (`PaddlePaddle/PaddleOCR-VL-1.6`, Apache-2.0, 0.96B; mlx-vlm
+        `paddleocr_vl` or its official GGUF), as a REGION reader: the newspaper page's crops only.
+      - [ ] **lab3-layout** — DocLayout-YOLO (`juliozhao/DocLayout-YOLO-DocStructBench`, Apache-2.0 weights, AGPL code;
+        Core ML or PyTorch MPS) and PP-DocLayoutV3 (Apache-2.0; mlx-vlm `pp_doclayout_v3`): regions and reading order
+        on the newspaper test page, timed, as candidates for ocr-hybrid-proto's region step.
+      - [ ] **lab3-newsbench** — fetch NewsBench (github.com/nealcaren/newsbench, MIT; 15 scored Library of Congress
+        pages 1850s-1919 with volunteer gold) into the lab, outside git, and score with its own 1−CER scorer: Churro 3B,
+        Qwen3-VL-8B, Qwen3.5-4B and Apple Vision whole-page, and Churro and the fitting round-3 readers on DocLayout-YOLO
+        regions. Its scoresheet's published rows (GLM-OCR on DocLayout regions 0.970) are the reference.
+      - [ ] **lab3-extras** — `wjbmattingly/nara-qwen-3.5-2b` (Apache-2.0, typescripts and forms, its own prompt.txt);
+        NuMarkdown-8B-Thinking only if disk and time allow.
+      DONE WHEN each candidate has a row in `OCR-MODELS-<date>.tsv` (fits or why not), each fitting build is a `fitted`
+      row in `ops/ocrlab/bakeoff-models.tsv`, and `OCR-NEWSBENCH-<date>.tsv` holds the NewsBench scores. ESTIMATE: 2-3
+      sessions. BOUND: rule 10. (context: owner request 2026-10-07)
 - [ ] **ocr-bakeoff-bits** — run the top three at 4-bit and at 8-bit and compare.
-      (blocked-on: ocr-bakeoff-score)
+      (blocked-on: ocr-bakeoff-score, ocr-lab-round3)
       The owner's 2026-10-02 request: the same sample through `bakeoff.sh` with the build as the parameter,
       holding the engine lock, scored as `ocr-bakeoff-score` scores. DONE WHEN, committed as
       `OCR-BITS-<date>.tsv`: for each of the three, the difference between 4-bit and 8-bit in words right,
