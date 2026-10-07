@@ -18825,8 +18825,13 @@ no better: bands at 200 and 450 dpi (79.1%, 77.9%), 16 and 24 bands (78.2%, 78.0
 12x4 (77.0-77.3%), and contrast, levels and unsharp-mask preprocessing (78.0-78.3%). The misreads that remain
 are Vision's on this print; a better reader is the bake-off's work (`ocr-bakeoff-run` and after), not this
 entry's. Rejected for that reason: finishing the band swap. Left in this entry: the rows fused across columns
-(`splitAtGutter` splits at one gutter only, C39), untried. Next step: count fused rows per page on `pub0`-style
-output from the content stream (not `pdfkit-drag`'s cross column, which over-counts), then split at every gutter.
+(`splitAtGutter` splits at one gutter only, C39), untried. A scratch probe over PDFKit's `selectionsByLine`
+(a line whose span holds a blank, ink-free strip 0.6 line tall that runs two lines up and down) flagged 85 to
+291 lines a page, but it cannot tell a Vision box fused across a gutter (`Miss Helen Jorgensen left Sunday
+son, leader.`, Kalispell, which is the defect) from two separate runs PDFKit groups into one selection line
+(drag order, C39's `WONTFIX`), and most of its samples were the latter. Next step: count fused boxes from
+the recogniser's observations (a box whose span crosses a blank vertical strip of the source), not from
+PDFKit's lines, then split at every gutter, not only one.
 
 ### C42 · A page whose crop box is not centred on its media box gets its text layer shifted off the ink, 81 pt on a two-page book spread — FIXED
 
