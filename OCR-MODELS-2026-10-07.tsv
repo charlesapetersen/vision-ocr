@@ -6,3 +6,5 @@
 # --max-side 2000. Vision on the same crops: rough recall 0.774, precision 0.720.
 candidate	build	params	runtime	quant	download_MB	boxes	ordinary_peak_MB	ordinary_s	ordinary_recall	ordinary_precision	newspaper_page_peak_MB	newspaper_page_s	newspaper_page_outcome	newspaper_crops_peak_MB	newspaper_crops_s	newspaper_crops_recall	newspaper_crops_precision	fits	why
 dots.mocr-4bit	mlx-community/dots.mocr-4bit	3B	MLX (mlx-vlm 0.7.4)	4bit	3374	block boxes (layout JSON)	6421	75.2	0.903	0.971	8358	-	guard:swap_grew_2651MB	5628	291.0	0.890	0.891	yes	-
+pp-doclayout-v3	PaddlePaddle/PP-DocLayoutV3_safetensors	-	MLX (mlx-vlm 0.7.4)	float32	127	layout regions + reading order	3000	0.21	-	-	3119	0.33	ok	-	-	-	-	yes	layout detector, not a reader: OCR-LAYOUT-2026-10-07.tsv (text ink covered 0.818)
+doclayout-yolo-docstructbench	wybxc/DocLayout-YOLO-DocStructBench-onnx	-	onnxruntime 1.30 CPU	float32	71	layout regions	650	0.52	-	-	874	0.58	ok	-	-	-	-	yes	layout detector, not a reader: OCR-LAYOUT-2026-10-07.tsv (text ink covered 0.952; 4 headlines boxed as figure)

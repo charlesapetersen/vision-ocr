@@ -1165,7 +1165,7 @@ say so in the commit.
       - [x] **lab3-dots** — `mlx-community/dots.mocr-4bit` (MIT, 3B; `dots_ocr` is in mlx-vlm 0.7.4): its two test pages.
       - [ ] **lab3-paddle** — PaddleOCR-VL-1.6 (`PaddlePaddle/PaddleOCR-VL-1.6`, Apache-2.0, 0.96B; mlx-vlm
         `paddleocr_vl` or its official GGUF), as a REGION reader: the newspaper page's crops only.
-      - [ ] **lab3-layout** — DocLayout-YOLO (`juliozhao/DocLayout-YOLO-DocStructBench`, Apache-2.0 weights, AGPL code;
+      - [x] **lab3-layout** — DocLayout-YOLO (`juliozhao/DocLayout-YOLO-DocStructBench`, Apache-2.0 weights, AGPL code;
         Core ML or PyTorch MPS) and PP-DocLayoutV3 (Apache-2.0; mlx-vlm `pp_doclayout_v3`): regions and reading order
         on the newspaper test page, timed, as candidates for ocr-hybrid-proto's region step.
       - [ ] **lab3-newsbench** — fetch NewsBench (github.com/nealcaren/newsbench, MIT; 15 scored Library of Congress
@@ -1195,6 +1195,16 @@ say so in the commit.
       was already fit-tested on 2026-10-04 (`OCR-MODELS-2026-10-04.tsv`: crops recall 0.203, the 1,850 px crops
       above its 1 MP cap), so lab3-paddle needs smaller regions, i.e. lab3-layout first. NEXT: lab3-layout, then
       the owed NewsBench rows.
+      Round 1, session 3, 2026-10-07: lab3-layout TICKED. New `ops/ocrlab/layout-regions.py` runs either detector on a
+      page and writes regions, crops and an overlay (`$OCRLAB/out/layout`). Measured, `OCR-LAYOUT-2026-10-07.tsv`, newspaper
+      page: DocLayout-YOLO (wybxc's ONNX build, onnxruntime CPU) 0.58 s, 874 MB, 197 text regions covering 0.952 of the
+      text ink, but 4 headlines boxed as `figure`; PP-DocLayoutV3 (mlx-vlm, float32) 0.33 s, 3,119 MB footprint, its own
+      reading order, but 0.818 covered even at conf 0.3 (0.767 at its default 0.5; worse at larger inputs). Both fit;
+      both have an `OCR-MODELS` row, and no `bakeoff-models.tsv` row, because they are not readers. YOLO is the one
+      to build on, with figure boxes read too. NEXT: lab3-paddle on `$OCRLAB/out/layout/yolo.newspaper.crops` (largest
+      0.37 MP, under PaddleOCR-VL's 1 MP cap), then the owed NewsBench region rows. YOLO has no class-agnostic
+      suppression: 22 pairs of its text boxes overlap by more than half the smaller one, so drop near-duplicates
+      before reading (`crops.tsv` marks every crop that touches another `yes`: 65 of 197).
 - [ ] **ocr-bakeoff-bits** — run the top three at 4-bit and at 8-bit and compare.
       (blocked-on: ocr-bakeoff-score, ocr-lab-round3)
       The owner's 2026-10-02 request: the same sample through `bakeoff.sh` with the build as the parameter,

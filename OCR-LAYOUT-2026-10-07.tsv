@@ -1,0 +1,18 @@
+# OCR-LAYOUT-2026-10-07: ocr-lab-round3 lab3-layout. Two layout detectors on the lab's two test pages ($OCRLAB/pages,
+# the Helena Daily Independent 1931 newspaper page at 4558x5733 and the ordinary page), as candidates for ocr-hybrid-proto's
+# region step. Run by ops/ocrlab/layout-regions.py under run-guarded.sh, peak memory by /usr/bin/time -l (the guard's 2 s
+# sample missed YOLO's sub-second run). download_MB is MiB (2^20 B); peaks, as in OCR-MODELS, the larger of RSS and footprint. Machine: M3 Pro, 18 GB. Regions, overlays and crops in $OCRLAB/out/layout.
+# text_ink_covered: share of the page's dark pixels (< 128) inside a text region, leaving out the ink of the two
+# photographs (PP's two `image` boxes, the same mask for both) and of column rules (thin ink runs over 400 px). It is what a
+# region step would hand a reader; the rest would be lost. 1.000 on the ordinary page for both. The script's own printed
+# `ink_covered` leaves out each model's own non-text boxes, so it flatters YOLO's headline `figure`s; only this column compares.
+# PP-DocLayoutV3 at its default conf 0.5 covers 0.767 (whole paragraphs and the "PORTLAND PEEVED" headline missed); 0.3 is
+# kept, 0.2 adds nothing (0.814 by the script's own measure). At input 1536 it finds 72 regions and at 2048 16: 1024 is its size.
+# DocLayout-YOLO at input 1600 is no better (0.939 by the script's measure, 1.39 s). Its fault: 4 of its 6 `figure` boxes are
+# headlines ("BLAST IN PLANT", "THREE HURT IN AUTO", "SIX MEN TRAPPED", "GRANVILLE STUART'S"); a region step that skips
+# figures drops them, so it must read figure boxes too or check them for text.
+# Reading order: PP's own head gives column by column, top to bottom, with a few neighbouring pairs swapped; YOLO has none
+# (the script's column sort is a stand-in).
+model	build	runtime	download_MB	input_px	conf	newspaper_detect_s	ordinary_detect_s	peak_rss_MB	peak_footprint_MB	newspaper_regions	newspaper_text_regions	largest_text_region_MP	text_ink_covered	labels_newspaper	reading_order	fits
+pp-doclayout-v3	PaddlePaddle/PP-DocLayoutV3_safetensors (mlx-vlm convert, float32)	MLX (mlx-vlm 0.7.4)	127	1024	0.3	0.33	0.21	562	3119	181	179	0.34	0.818	text=148, paragraph_title=20, doc_title=6, vision_footnote=3, header=1, number=1, image=2	model's own	yes
+doclayout-yolo-docstructbench	wybxc/DocLayout-YOLO-DocStructBench-onnx	onnxruntime 1.30 CPU	71	1024	0.25	0.58	0.52	874	825	203	197	0.37	0.952	plain text=164, title=30, figure=6, abandon=3	none	yes
