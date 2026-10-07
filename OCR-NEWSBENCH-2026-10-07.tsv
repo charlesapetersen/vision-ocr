@@ -1,0 +1,14 @@
+# OCR-NEWSBENCH-2026-10-07: NewsBench (github.com/nealcaren/newsbench @ 2372b6b, MIT; 19 Library of Congress pages
+# 1850s-1919, 15 scored, volunteer gold) scored with its own score.py (rapidfuzz 3.14.6), ocr-lab-round3's lab3-newsbench.
+# Clone and readings live in $OCRLAB/newsbench (outside git). overall = 1-CER on lowercased alphanumerics (order-
+# sensitive); bowF1 order-free; gap = bowF1 - overall (reading-order penalty). Measured by running code.
+# apple-vision-wholepage: ops/truth/vision-read.swift (revision 3, accurate, language correction: the app's settings) on
+# each whole JPG (2453-5975 px wide), one process per page, 1-8 s each. Vision scales the page down, so this is the
+# floor, not the app's banded path. Rows owed: Churro 3B, Qwen3-VL-8B, Qwen3.5-4B whole-page; Churro and round-3
+# readers on DocLayout-YOLO regions (needs lab3-layout).
+# reference rows are the published scoresheet.md's, not run here.
+model	region	overall	broadsheet	page	chrF	bowF1	gap	n	source
+apple-vision-wholepage	none	0.304	0.334	0.284	0.587	0.624	0.319	15	measured 2026-10-07
+glm-ocr-doclayout	DocLayout	0.970	0.976	0.967	0.986	0.986	0.015	15	reference (scoresheet.md)
+tesseract	none	0.677	0.614	0.719	0.866	0.844	0.167	15	reference (scoresheet.md)
+gemini-3.5-flash-lite	none	0.820	0.884	0.778	0.876	0.867	0.048	15	reference (scoresheet.md)

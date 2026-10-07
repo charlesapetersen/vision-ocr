@@ -1185,6 +1185,15 @@ say so in the commit.
       75 s, rough recall 0.903; the guard killed the whole newspaper page once, swap, and the crops were never read).
       So its next read, crops only, is its one remaining try; this session's used `--max-side 2000`, prompt "Extract
       the text content from this image." NEXT: try lab3-dots again when the network is back.
+      Round 1, session 2, 2026-10-07 (opened at 79% of the window): network back. NewsBench cloned into
+      `$OCRLAB/newsbench` (@2372b6b, 110 MB; rapidfuzz added to the lab venv). Measured: Apple Vision whole-page
+      (vision-read.swift, the app's settings) 1−CER 0.304, bowF1 0.624 over the 15 scored pages, against the
+      published GLM-OCR-on-DocLayout 0.970 and Tesseract 0.677: `OCR-NEWSBENCH-2026-10-07.tsv`. dots.mocr's weights
+      had been deleted after all (3,360 MB re-downloaded in 2.6 min); its crops-only read waited on mac-heavy.lock,
+      held by Archive Suite's VM memory series (see the session log for whether it ran). PaddleOCR-VL-1.6-4bit
+      was already fit-tested on 2026-10-04 (`OCR-MODELS-2026-10-04.tsv`: crops recall 0.203, the 1,850 px crops
+      above its 1 MP cap), so lab3-paddle needs smaller regions, i.e. lab3-layout first. NEXT: lab3-dots (if not
+      read), lab3-layout, then the owed NewsBench rows.
 - [ ] **ocr-bakeoff-bits** — run the top three at 4-bit and at 8-bit and compare.
       (blocked-on: ocr-bakeoff-score, ocr-lab-round3)
       The owner's 2026-10-02 request: the same sample through `bakeoff.sh` with the build as the parameter,
