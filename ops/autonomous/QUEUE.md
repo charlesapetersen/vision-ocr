@@ -1163,7 +1163,7 @@ say so in the commit.
       WHAT, same lab rules as ocr-lab-round2 (the guard, one model at a time, free space by `ops/ocrlab/free-mb.sh`,
       the lab under 50 GB, mac-heavy.lock; fit tests are ordinary work any time):
       - [x] **lab3-dots** — `mlx-community/dots.mocr-4bit` (MIT, 3B; `dots_ocr` is in mlx-vlm 0.7.4): its two test pages.
-      - [ ] **lab3-paddle** — PaddleOCR-VL-1.6 (`PaddlePaddle/PaddleOCR-VL-1.6`, Apache-2.0, 0.96B; mlx-vlm
+      - [x] **lab3-paddle** — PaddleOCR-VL-1.6 (`PaddlePaddle/PaddleOCR-VL-1.6`, Apache-2.0, 0.96B; mlx-vlm
         `paddleocr_vl` or its official GGUF), as a REGION reader: the newspaper page's crops only.
       - [x] **lab3-layout** — DocLayout-YOLO (`juliozhao/DocLayout-YOLO-DocStructBench`, Apache-2.0 weights, AGPL code;
         Core ML or PyTorch MPS) and PP-DocLayoutV3 (Apache-2.0; mlx-vlm `pp_doclayout_v3`): regions and reading order
@@ -1205,6 +1205,13 @@ say so in the commit.
       0.37 MP, under PaddleOCR-VL's 1 MP cap), then the owed NewsBench region rows. YOLO has no class-agnostic
       suppression: 22 pairs of its text boxes overlap by more than half the smaller one, so drop near-duplicates
       before reading (`crops.tsv` marks every crop that touches another `yes`: 65 of 197).
+      Round 1, session 4, 2026-10-07: lab3-paddle TICKED. New `ops/ocrlab/dedupe-regions.py` keeps YOLO's boxes but images, tables
+      and formulas (figures included), highest score first, dropping one more than half inside a kept box: 203 -> 181 regions (37 still touch).
+      Measured, PaddleOCR-VL-1.6-4bit with its own prompt `OCR:` on those 181: 74 s, peak 2,211 MB, rough recall 0.852,
+      precision 0.953 (0.203 on the 13 truth crops with the default prompt, 2026-10-04); Vision on the same 181 regions 0.721 / 0.776 in 22 s.
+      It FITS as a region reader: an `OCR-MODELS` row, and a bakeoff row in set `fitted-regions`, not `fitted` (rejected:
+      `--build fitted` reads whole pages and truth crops, so it would score the 1 MP cap as the model). Not like for like with dots.mocr's 0.890,
+      which read the 13 truth crops. NEXT: the owed NewsBench region rows (Churro and the fitting readers on YOLO regions).
 - [ ] **ocr-bakeoff-bits** — run the top three at 4-bit and at 8-bit and compare.
       (blocked-on: ocr-bakeoff-score, ocr-lab-round3)
       The owner's 2026-10-02 request: the same sample through `bakeoff.sh` with the build as the parameter,

@@ -4,7 +4,12 @@
 # dots.mocr-4bit: ordinary and whole-newspaper figures are its 2026-10-04 reads (the whole page tripped the guard once);
 # the crops were read 2026-10-07 as its one remaining try, crops only, prompt "Extract the text content from this image.",
 # --max-side 2000. Vision on the same crops: rough recall 0.774, precision 0.720.
+# paddleocr-vl-1.6-4bit (lab3-paddle) is a REGION reader: its ordinary and whole-newspaper figures are its 2026-10-04 reads;
+# its crops are the newspaper page's 203 DocLayout-YOLO regions less 22 near-duplicates (dedupe-regions.py: 181, figures
+# and the abandon/label boxes included), not the 13 truth crops dots.mocr read; the crops alone were read with prompt "OCR:" (its own
+# task prompt), the 2026-10-04 pages with read-mlx.py's default. Vision on the same 181: 0.721 / 0.776.
 candidate	build	params	runtime	quant	download_MB	boxes	ordinary_peak_MB	ordinary_s	ordinary_recall	ordinary_precision	newspaper_page_peak_MB	newspaper_page_s	newspaper_page_outcome	newspaper_crops_peak_MB	newspaper_crops_s	newspaper_crops_recall	newspaper_crops_precision	fits	why
 dots.mocr-4bit	mlx-community/dots.mocr-4bit	3B	MLX (mlx-vlm 0.7.4)	4bit	3374	block boxes (layout JSON)	6421	75.2	0.903	0.971	8358	-	guard:swap_grew_2651MB	5628	291.0	0.890	0.891	yes	-
 pp-doclayout-v3	PaddlePaddle/PP-DocLayoutV3_safetensors	-	MLX (mlx-vlm 0.7.4)	float32	127	layout regions + reading order	3000	0.21	-	-	3119	0.33	ok	-	-	-	-	yes	layout detector, not a reader: OCR-LAYOUT-2026-10-07.tsv (text ink covered 0.818)
 doclayout-yolo-docstructbench	wybxc/DocLayout-YOLO-DocStructBench-onnx	-	onnxruntime 1.30 CPU	float32	71	layout regions	650	0.52	-	-	874	0.58	ok	-	-	-	-	yes	layout detector, not a reader: OCR-LAYOUT-2026-10-07.tsv (text ink covered 0.952; 4 headlines boxed as figure)
+paddleocr-vl-1.6-4bit	mlx-community/PaddleOCR-VL-1.6-4bit	0.9B	MLX (mlx-vlm 0.7.4)	4bit	681	none from the VLM; regions from DocLayout-YOLO	2164	4.0	0.910	0.969	2405	72.1	cut:max_tokens	2211	74.2	0.852	0.953	yes	read as layout regions (181 YOLO crops; two figure crops, 1.64 and 1.26 MP, pass its 1 MP cap); one or more crops cut at max_tokens 3000; bakeoff set fitted-regions

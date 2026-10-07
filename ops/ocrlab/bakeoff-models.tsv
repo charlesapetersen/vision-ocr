@@ -13,6 +13,9 @@
 # ocr-bakeoff-score must skip it; its 8 readings stay on disk. While it was `owed`, bakeoff.sh gave it a last guarded try first.
 # need_gb is the reclaimable memory the guard waits for before each read, higher for the larger builds, so a
 # trip is less likely to measure the machine instead of the model. prompt `-` means read-mlx.py's default; `""` an empty prompt (LightOnOCR takes none). extra is passed to read-mlx.py.
+# paddleocr-vl-1.6-4bit fits only as a region reader (lab3-paddle): a whole newspaper page or a truth crop passes its ~1 MP input
+# cap and it reads 0.12-0.20 of the words; on DocLayout-YOLO regions it read 0.852. Its set is `fitted-regions`, not `fitted`, so
+# `--build fitted` (whole pages and truth crops) does not score the cap as the model; ocr-hybrid-proto gives it regions.
 label	set	runtime	repo	prompt	extra	need_gb
 deepseek-ocr-2-4bit	fitted	mlx	mlx-community/DeepSeek-OCR-2-4bit	Free OCR.	--no-remote-code	4
 lightonocr-2-1b-4bit-1540	fitted	mlx	mlx-community/LightOnOCR-2-1B-4bit	""	--max-side 1540	5
@@ -30,3 +33,4 @@ churro-3b-8bit	fitted	mlx	local/churro-3B-8bit	""	--churro --max-side 1600	6
 qwen3-vl-8b-4bit	fitted	mlx	mlx-community/Qwen3-VL-8B-Instruct-4bit	-	-	8
 olmocr-2-7b-4bit	fitted	mlx	mlx-community/olmOCR-2-7B-1025-4bit	-	-	8
 dots.mocr-4bit	fitted	mlx	mlx-community/dots.mocr-4bit	Extract the text content from this image.	--max-side 2000	6
+paddleocr-vl-1.6-4bit	fitted-regions	mlx	mlx-community/PaddleOCR-VL-1.6-4bit	OCR:	-	4
