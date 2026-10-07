@@ -1,0 +1,8 @@
+# OCR-MODELS-2026-10-07: ocr-lab-round3, the 2026-10-07 survey's candidates (PRIOR-ART-2026-10-07.md), fit-tested on
+# this Mac (M3 Pro, 18 GB) the way OCR-MODELS-2026-10-04.tsv's header describes (same two pages, guard, fit rule, columns).
+# Rows are added by each session of the item: `make-table.py $OCRLAB/results.tsv out.tsv <labels…>`.
+# dots.mocr-4bit: ordinary and whole-newspaper figures are its 2026-10-04 reads (the whole page tripped the guard once);
+# the crops were read 2026-10-07 as its one remaining try, crops only, prompt "Extract the text content from this image.",
+# --max-side 2000. Vision on the same crops: rough recall 0.774, precision 0.720.
+candidate	build	params	runtime	quant	download_MB	boxes	ordinary_peak_MB	ordinary_s	ordinary_recall	ordinary_precision	newspaper_page_peak_MB	newspaper_page_s	newspaper_page_outcome	newspaper_crops_peak_MB	newspaper_crops_s	newspaper_crops_recall	newspaper_crops_precision	fits	why
+dots.mocr-4bit	mlx-community/dots.mocr-4bit	3B	MLX (mlx-vlm 0.7.4)	4bit	3374	block boxes (layout JSON)	6421	75.2	0.903	0.971	8358	-	guard:swap_grew_2651MB	5628	291.0	0.890	0.891	yes	-

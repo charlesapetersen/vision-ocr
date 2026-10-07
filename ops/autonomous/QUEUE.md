@@ -1162,7 +1162,7 @@ say so in the commit.
       regions or on NewsBench.
       WHAT, same lab rules as ocr-lab-round2 (the guard, one model at a time, free space by `ops/ocrlab/free-mb.sh`,
       the lab under 50 GB, mac-heavy.lock; fit tests are ordinary work any time):
-      - [ ] **lab3-dots** — `mlx-community/dots.mocr-4bit` (MIT, 3B; `dots_ocr` is in mlx-vlm 0.7.4): its two test pages.
+      - [x] **lab3-dots** — `mlx-community/dots.mocr-4bit` (MIT, 3B; `dots_ocr` is in mlx-vlm 0.7.4): its two test pages.
       - [ ] **lab3-paddle** — PaddleOCR-VL-1.6 (`PaddlePaddle/PaddleOCR-VL-1.6`, Apache-2.0, 0.96B; mlx-vlm
         `paddleocr_vl` or its official GGUF), as a REGION reader: the newspaper page's crops only.
       - [ ] **lab3-layout** — DocLayout-YOLO (`juliozhao/DocLayout-YOLO-DocStructBench`, Apache-2.0 weights, AGPL code;
@@ -1189,11 +1189,12 @@ say so in the commit.
       `$OCRLAB/newsbench` (@2372b6b, 110 MB; rapidfuzz added to the lab venv). Measured: Apple Vision whole-page
       (vision-read.swift, the app's settings) 1−CER 0.304, bowF1 0.624 over the 15 scored pages, against the
       published GLM-OCR-on-DocLayout 0.970 and Tesseract 0.677: `OCR-NEWSBENCH-2026-10-07.tsv`. dots.mocr's weights
-      had been deleted after all (3,360 MB re-downloaded in 2.6 min); its crops-only read waited on mac-heavy.lock,
-      held by Archive Suite's VM memory series (see the session log for whether it ran). PaddleOCR-VL-1.6-4bit
+      had been deleted after all (3,360 MB re-downloaded in 2.6 min); its crops-only read waited 42 min on mac-heavy.lock
+      (Archive Suite's VM memory series), then FITS: 13 crops in 291 s, peak 5,628 MB, rough recall 0.890 / precision
+      0.891 (Vision on the crops 0.774 / 0.720); `OCR-MODELS-2026-10-07.tsv`, `fitted` in bakeoff-models.tsv. PaddleOCR-VL-1.6-4bit
       was already fit-tested on 2026-10-04 (`OCR-MODELS-2026-10-04.tsv`: crops recall 0.203, the 1,850 px crops
-      above its 1 MP cap), so lab3-paddle needs smaller regions, i.e. lab3-layout first. NEXT: lab3-dots (if not
-      read), lab3-layout, then the owed NewsBench rows.
+      above its 1 MP cap), so lab3-paddle needs smaller regions, i.e. lab3-layout first. NEXT: lab3-layout, then
+      the owed NewsBench rows.
 - [ ] **ocr-bakeoff-bits** — run the top three at 4-bit and at 8-bit and compare.
       (blocked-on: ocr-bakeoff-score, ocr-lab-round3)
       The owner's 2026-10-02 request: the same sample through `bakeoff.sh` with the build as the parameter,

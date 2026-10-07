@@ -29,3 +29,4 @@ falcon-ocr-bf16	fitted	mlx	tiiuae/Falcon-OCR	plain	-	4
 churro-3b-8bit	fitted	mlx	local/churro-3B-8bit	""	--churro --max-side 1600	6
 qwen3-vl-8b-4bit	fitted	mlx	mlx-community/Qwen3-VL-8B-Instruct-4bit	-	-	8
 olmocr-2-7b-4bit	fitted	mlx	mlx-community/olmOCR-2-7B-1025-4bit	-	-	8
+dots.mocr-4bit	fitted	mlx	mlx-community/dots.mocr-4bit	Extract the text content from this image.	--max-side 2000	6
