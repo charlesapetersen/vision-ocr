@@ -35,10 +35,23 @@
 #                         is its stale test, so a long wait here does not get the suite lock broken.
 #      MAC_HEAVY_HELD=1   set for <cmd>; a nested take inside it runs straight through.
 #      MAC_HEAVY_POLL     seconds between polls (default 5)
+#      VISIONOCR_HEAVY_DELEGATE  the Agent Manager's shared helper (default below); EMPTY forces the fallback
 #
 # EXIT: `run` propagates <cmd>'s status · 4 not taken within --wait · 2 usage. `status`: 0 free, 1 held.
 set -uo pipefail
 export PATH="/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:${PATH:-}"
+
+# THE DELEGATE (Agent Manager stage 2, 2026-10-07). When the Agent Manager's shared helper is installed and
+# executable, every command goes to it with the same arguments, so every call site here takes the one machine-wide
+# lock: a kernel flock that cannot go stale, which also takes and honours the mkdir lock below for as long as an
+# un-switched helper may use it. Without it, everything below runs exactly as before; the manager is optional.
+# This project's own defaults go with it (project vision-ocr, a 5 s poll, a "<project>-<pid>" label; a --label
+# given later wins). The prove harness points VISIONOCR_HEAVY_DELEGATE at a scratch copy, never the real one.
+HEAVY_DELEGATE="${VISIONOCR_HEAVY_DELEGATE-${HOME:-}/Claude/Agent Manager/bin/heavy-lock}"
+if [ -n "$HEAVY_DELEGATE" ] && [ -f "$HEAVY_DELEGATE" ] && [ -x "$HEAVY_DELEGATE" ]; then
+  export MAC_HEAVY_PROJECT="${MAC_HEAVY_PROJECT:-vision-ocr}" MAC_HEAVY_POLL="${MAC_HEAVY_POLL:-5}"
+  exec "$HEAVY_DELEGATE" --label "${MAC_HEAVY_PROJECT}-$$" "$@"
+fi
 
 LOCK="${MAC_HEAVY_LOCK:-$HOME/.local/state/mac-heavy.lock}"
 BASE="$(dirname "$LOCK")"

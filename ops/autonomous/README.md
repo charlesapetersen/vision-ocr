@@ -124,6 +124,12 @@ specification. The suite (through `test-lock.sh run`, both forms), the gate's bu
 session's time queued there (up to `VISIONOCR_HEAVY_PAUSE_MAX`, 4 h). `tests/prove-mac-heavy-lock.sh` and
 `prove-gate-fix.sh` [8] prove it, and both run in the gate.
 
+Since 2026-10-07 the helper is a thin delegate: when the Agent Manager's shared `bin/heavy-lock` is installed at
+`~/Claude/Agent Manager/bin/heavy-lock` (override: `VISIONOCR_HEAVY_DELEGATE`; empty forces the fallback) it
+`exec`s that with the same arguments, which takes a kernel flock and the mkdir lock above together. Without it,
+the helper runs its own protocol unchanged. `prove-mac-heavy-lock.sh` runs once on each, against a scratch copy
+of the manager's helper (`VISIONOCR_HEAVY_DELEGATE_SRC`, else the installed one; skipped if neither exists).
+
 The lock is a `mkdir`-atomic directory recording the **caller's** pid, so a holder killed mid-run (a closed
 lid, a watchdog TERM) is reclaimable the instant its pid is gone rather than after a timeout. It also
 consults `pgrep -x tests`, which catches a suite started by something that never heard of the lock — and it

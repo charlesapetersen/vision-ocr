@@ -142,6 +142,7 @@ Never report a change as working without `./run_tests.sh` passing. Add a test th
 - **Heavy work takes the machine-wide lock shared with Archive Suite**: `ops/autonomous/mac-heavy-lock.sh run
   --label L -- <cmd>` (`status` shows the holder). The suite through `test-lock.sh`, the gate's build and
   `run-guarded.sh` already do. Wrap any other long build, VM run or corpus job in it too; one-page checks don't need to.
+  When the Agent Manager's `bin/heavy-lock` is installed, the helper hands every call to it (`ops/autonomous/README.md`).
 
 - **Never run two suites at once, in any two worktrees.** `build/tests` has no
   bundle identifier, so `UserDefaults.standard` lands in a domain keyed by the
