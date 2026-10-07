@@ -1177,6 +1177,14 @@ say so in the commit.
       DONE WHEN each candidate has a row in `OCR-MODELS-<date>.tsv` (fits or why not), each fitting build is a `fitted`
       row in `ops/ocrlab/bakeoff-models.tsv`, and `OCR-NEWSBENCH-<date>.tsv` holds the NewsBench scores. ESTIMATE: 2-3
       sessions. BOUND: rule 10. (context: owner request 2026-10-07)
+      Round 1, session 1, 2026-10-07: nothing downloaded. The network failed throughout (HF reads and handshakes
+      timing out at about 10 MB a minute, with and without Xet; a shallow NewsBench clone died with `early EOF` after
+      16 min), so no sub-box could start. The lab was at 49.7 GB, so dots.mocr's 3,374 MB would have been refused;
+      Qwen3.5-9B's weights (dropped, 6.0 GB) were deleted, leaving the lab at 44.0 GB. NOTE for lab3-dots: the survey
+      missed that ocr-lab-setup already tried dots.mocr-4bit (`OCR-MODELS-2026-10-04.tsv`: ordinary page fits, 6.4 GB,
+      75 s, rough recall 0.903; the guard killed the whole newspaper page once, swap, and the crops were never read).
+      So its next read, crops only, is its one remaining try; this session's used `--max-side 2000`, prompt "Extract
+      the text content from this image." NEXT: try lab3-dots again when the network is back.
 - [ ] **ocr-bakeoff-bits** — run the top three at 4-bit and at 8-bit and compare.
       (blocked-on: ocr-bakeoff-score, ocr-lab-round3)
       The owner's 2026-10-02 request: the same sample through `bakeoff.sh` with the build as the parameter,
