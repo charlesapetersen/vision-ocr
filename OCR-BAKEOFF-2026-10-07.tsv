@@ -1,0 +1,57 @@
+# OCR-BAKEOFF: the bake-off's saved readings scored against the truth set (ocr-bakeoff-score, 2026-10-07), by
+# ops/ocrlab/score-bakeoff.py --times <time-reads.sh's times.tsv>. Sample: OCR-SAMPLE-2026-10-04.tsv, 67 pages;
+# 65 scored (s01 and s05 hold under 20 scored words, which the harness does not score either). Qwen3.5-9B is
+# left out (the owner dropped it after 8 pages).
+# MEASURE: `ux-harness --truth`'s visMiss, the same match (the scorer reproduces Vision's on 64 of 67 pages; s01 has
+# none, and s41 and s42 print a literal tag, which the scorer strips from readings only: up to 0.6 points). `*_miss` = the page's scored body words
+# (contested, figure and handwriting words left out) missing from the reading's word bag, i.e. words wrong and
+# missing together; word-weighted over the class. `*_added` = reading words matched by no transcript word, over
+# the scored words: a crops reading repeats the crops' overlap (Vision's crops add 16-31% that way), so only a
+# figure well above that is a defect (DeepSeek's 0.9-1.1 and Qwen3.5-2B's 0.71 are runaway repetition). Read
+# order is not scored. A page a reader could not read (`unread`: the guard killed it twice, at 12,297 MB) counts
+# as all missing. `cut` = readings stopped at the token or time limit.
+# CLASSES: newspaper by route (11 pages, 24,867 words; read as crops); `old` print = documents before 1985
+# (33 pages, 16,688 words); modern (21 pages, 8,718 words). Pages read whole, newspapers as crops.
+# SPEED: seconds per read and peak MB (the larger of RSS and footprint) from the job's log, through the guard;
+# `crops_s` is over the pages each model was owed crops (whole recall < 0.9), a different set per model. Vision
+# was timed here by time-reads.sh (vision-read: revision 3, accurate, language correction) on 34 pages, whole and
+# as crops, one process a read (model loading included, as for the models). DeepSeek's and LightOnOCR-4bit's
+# speeds are the busy machine's (owner, 2026-10-05) and do NOT count: their quiet re-time was started and dropped
+# after 23 minutes without a turn at the machine-wide lock (Archive Suite's VM memory runs held it). It changes
+# no pick: DeepSeek is out on words; ocr-bakeoff-bits reads LightOnOCR again and times it there.
+# REFERENCES: `vision` = Vision on one plain render (it scales the page down: Briefer's typescript loses half its
+# words), `vision.crops` = Vision on the crops, `app-layer@832b7ac` = the app's published text layer
+# (TRUTH-RUN-2026-09-30-pages.tsv's layerMiss): old print 1.86%, newspapers 21.8%.
+# TOP THREE, by words right on old print and newspapers at a speed this Mac can bear:
+#   1. falcon-ocr-bf16 — old 0.23%, newspapers 0.52%, 12 s a page whole, 30 s as crops, peak 4.5 GB.
+#   2. lightonocr-2-1b-4bit-1540 — old 0.35%, newspapers 0.77%, 13 s a page on the busy machine, an upper bound
+#      that is bearable whatever the quiet figure (the 8-bit builds read 13 s quiet); but crops peak 11.3 GB (the guard
+#      stops at 12) and two newspapers ran into repetition (s30, s46: added 1.06 and 0.60).
+#   3. chandra-ocr-2-oQ8 — old 0.24%, newspapers 0.47% (the best), 82 s a page whole, 163 s as crops, 8.8 GB. It
+#      ran every page under the guard, so this Mac bears it, but slowly: 2.3 hours per 100 pages read whole, so
+#      for a whole document it is the OVERNIGHT candidate for the owner's review, and in the day only on the lines
+#      Vision misses (ocr-hybrid-proto's arrangement c). Surya, the next best, is not much faster (60 s). No
+#      slower reader reads clearly better than Chandra or Falcon, so no other is named.
+# REJECTED for third: surya-ocr-2-pkg (4-6 GB, 60 s, but 1.45% on old print, six times Falcon's); qwen3.5-4b-4bit
+# and qwen3-vl-8b-4bit (1.5-1.7%); LightOnOCR's 8-bit ocr-soup and base (as good on what they read, but the guard
+# killed three of the eleven newspapers at 12 GB). Against the app's layer, Falcon misses 88% fewer words on old
+# print and 98% fewer on newspapers. Weights kept: 76,585 MB free, over the 20 GB floor. By route:
+# OCR-BAKEOFF-2026-10-07-routes.tsv.
+label	old_miss	old_added	newspaper_miss	newspaper_added	modern_miss	modern_added	pages	unread	cut	whole_s	whole_peak_mb	crops_s	crops_peak_mb	timed
+chandra-ocr-2-oQ8	0.0024	0.0141	0.0047	0.1679	0.0104	0.0259	65	0	0	81.6	8805	163.2	7911	the job's log
+churro-3b-8bit	0.0321	0.0454	0.0304	0.1754	0.0224	0.0297	65	0	1	45.1	6120	164.5	6526	the job's log
+deepseek-ocr-2-4bit	0.1261	1.0773	0.1256	0.8940	0.0539	0.9233	65	0	7	16.3	4478	38.6	4603	the job's log, BUSY machine: not counted until re-timed
+falcon-ocr-bf16	0.0023	0.0030	0.0052	0.1180	0.0063	0.0107	65	0	1	12.1	3169	30.2	4516	the job's log
+glm-ocr-4bit	0.0442	0.0021	0.0326	0.0617	0.0431	0.0034	65	0	0	27.5	3880	48.7	3754	the job's log
+hunyuanocr-4bit	0.0748	0.2978	0.0432	0.4983	0.0320	0.0174	65	0	7	33.2	5592	58.9	4634	the job's log
+lightonocr-2-1b-4bit-1540	0.0035	0.0058	0.0077	0.3519	0.0209	0.0170	65	0	2	13.3	8627	52.1	11273	the job's log, BUSY machine: not counted until re-timed
+lightonocr-2-1b-base-8bit-1540	0.0073	0.0050	0.3555	0.0555	0.0138	0.0095	65	3	0	13.1	9172	43.8	11273	the job's log
+lightonocr-2-1b-ocr-soup-8bit-1540	0.0038	0.0059	0.3466	0.0828	0.0125	0.0139	65	3	0	13.3	9173	45.0	11273	the job's log
+olmocr-2-7b-4bit	0.0259	0.0047	0.0880	0.2032	0.0195	0.0034	65	0	1	74.3	8750	128.7	7896	the job's log
+qwen3-vl-8b-4bit	0.0149	0.0190	0.0160	0.3003	0.0192	0.0161	65	0	3	91.0	9716	144.3	8434	the job's log
+qwen3.5-2b-4bit	0.0422	0.0204	0.0572	0.7088	0.0225	0.0077	65	0	6	37.7	5454	63.5	4524	the job's log
+qwen3.5-4b-4bit	0.0146	0.0184	0.0165	0.2060	0.0088	0.0033	65	0	1	54.4	6965	90.9	6062	the job's log
+surya-ocr-2-pkg	0.0145	0.0025	0.0118	0.1434	0.0102	0.0106	65	0	0	60.5	3992	85.3	6274	the job's log
+vision	0.1396	0.0564	0.1285	0.3083	0.0262	0.0360	65	0	0	1.0	366	2.2	295	time-reads.sh on 34 pages, guarded, load 3.4-4.7
+vision.crops	0.0307	0.1607	0.1285	0.3083	0.0248	0.1966	65	0	0	1.0	366	2.2	295	time-reads.sh on 34 pages, guarded, load 3.4-4.7
+app-layer@832b7ac	0.0186	-	0.2179	-	0.0072	-	65	0	0	-	-	-	-	-

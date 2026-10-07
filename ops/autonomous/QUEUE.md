@@ -1125,7 +1125,7 @@ say so in the commit.
         a reading or a reason (14 reasons, all LightOnOCR base/ocr-soup crops the guard killed twice at 12.3 GB).
         Qwen3.5-9B (8 pages) is `dropped` in bakeoff-models.tsv: bakeoff.sh no longer tries or reads it, and
         ocr-bakeoff-score must skip it.
-- [ ] **ocr-bakeoff-score** — score the saved readings against the truth set and name the top three.
+- [x] **ocr-bakeoff-score** — score the saved readings against the truth set and name the top three.
       OVERNIGHT OPTION (owner, 2026-10-05: "we may want to include an option for models that can basically only be
       used overnight when the computer is in limited use otherwise"): when naming the top three, also name any
       reader too slow or too memory-hungry for daytime use that reads clearly better, with its time per 100 pages
@@ -1147,6 +1147,12 @@ say so in the commit.
       reason, Vision beside them with its own measured speed, and the top three named by words right on old print and newspapers at a
       speed this Mac can bear. Delete the weights of candidates outside the top three only if the available space (`ops/ocrlab/free-mb.sh`) would otherwise
       fall below 20 GB. ESTIMATE: 1 session.
+      DONE 2026-10-07, `OCR-BAKEOFF-2026-10-07.tsv` (`ops/ocrlab/score-bakeoff.py`, Vision timed by
+      `time-reads.sh`). Words missed, old print / newspapers: Falcon-OCR bf16 0.23% / 0.52% at 12 s a page;
+      LightOnOCR-2-1B 4-bit 0.35% / 0.77% at 13 s busy (crops peak 11.3 GB, two newspaper runaways; its quiet
+      re-time, blocked 23 min at the heavy lock by Archive Suite's VM runs, is ocr-bakeoff-bits'); Chandra-OCR-2
+      oQ8 0.24% / 0.47% at 82 s (bearable on lines; overnight for whole documents). Vision on crops 3.1% / 12.9% at 1-2 s; the app's layer
+      (832b7ac) 1.9% / 21.8%. The top three are those; the bits item uses them. Weights kept (76 GB free).
       BOUND: rule 10. (context: owner request 2026-10-02)
 - [ ] **ocr-bakeoff-bits** — run the top three at 4-bit and at 8-bit and compare.
       (blocked-on: ocr-bakeoff-score)
@@ -1154,6 +1160,9 @@ say so in the commit.
       holding the engine lock, scored as `ocr-bakeoff-score` scores. DONE WHEN, committed as
       `OCR-BITS-<date>.tsv`: for each of the three, the difference between 4-bit and 8-bit in words right,
       seconds per page and peak memory, and the build each memory limit from 4 GB to 12 GB should use.
+      THE THREE (`OCR-BAKEOFF-2026-10-07.tsv`): falcon-ocr-bf16, lightonocr-2-1b-4bit-1540, chandra-ocr-2-oQ8. Score
+      with `ops/ocrlab/score-bakeoff.py`. LightOnOCR-4bit's speed there is the busy machine's: this run's is its first
+      quiet timing.
       ESTIMATE: 1-2 sessions, plus about 4-6 hours of unattended job. Sub-boxes: job started, scored.
       BOUND: rule 10. (context: owner request 2026-10-02)
 - [ ] **ocr-hybrid-proto** — build the ways of putting a better reader's words into the text layer, behind a
