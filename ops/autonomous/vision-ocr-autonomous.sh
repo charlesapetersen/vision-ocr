@@ -68,6 +68,10 @@ _heavy_waiting() { [ -x "$HEAVY" ] && "$HEAVY" waiting-under "$1" >/dev/null 2>&
 # The uncharged time has a ceiling, so a holder that wedges (a hung VM, a stuck suite elsewhere) cannot stall
 # the daemon loop for ever: past it, the wait counts against the clock like anything else.
 HEAVY_PAUSE_MAX="${VISIONOCR_HEAVY_PAUSE_MAX:-14400}"
+# The Agent Manager's session-grant helper (stage 4, 2026-10-07): asked before each session; 0 = granted, 75 = wait.
+# Absent, or any other answer: the session starts exactly as before (fail-open).
+GRANT_CMD="${VISIONOCR_GRANT_CMD:-$HOME/Claude/Agent Manager/bin/grant}"
+GRANT_PROJECT="${VISIONOCR_GRANT_PROJECT:-Vision OCR}"
 # =======================================================================================================
 RUN="${VISIONOCR_RUN:-$STATE/RUN.md}"          # run state: RUN STATUS + FOCUS + HOLD + SESSION LOG
 QUEUE="${VISIONOCR_QUEUE:-$REPO/ops/autonomous/QUEUE.md}"
@@ -1793,6 +1797,30 @@ culprits are per-worktree build/ directories and Tools/mutation-out/. Free some 
     local w_t0; w_t0=$(date +%s)
     while [ "$(date +%s)" -lt "$w_until" ]; do sleep 60; done
     usage_row wait "$w_t0" "$(date +%s)" - - - "${w_pct:-} ${w_reset:-}" "" "${w_cut:-}"
+  fi
+
+  # 3d'. Ask the Agent Manager (stage 4, 2026-10-07). It owns the rules shared across projects: another project's
+  #      exclusive job, a subscription at its stop threshold, and priority while a window is tight (this project
+  #      has the highest priority, so in practice only the threshold applies). 75 = wait: no session this cycle,
+  #      logged once per reason, and not idleness (the idle stopwatch is cleared, so a long wait cannot park the
+  #      run). An absent helper, or any other answer, launches as before.
+  if [ -x "$GRANT_CMD" ]; then
+    local g_out g_rc
+    g_out="$("$GRANT_CMD" --project "$GRANT_PROJECT" --agent claude 2>/dev/null)"; g_rc=$?
+    if [ "$g_rc" = 75 ]; then
+      g_out="${g_out%%$'\n'*}"; g_out="${g_out#wait: }"; g_out="${g_out:-no reason given}"
+      [ "$g_out" = "$(cat "$STATE/grant.wait" 2>/dev/null)" ] \
+        || log "Agent Manager says wait — $g_out; no session until it grants."
+      printf '%s\n' "$g_out" > "$STATE/grant.wait"
+      rm -f "$IDLE_SINCE" 2>/dev/null || true
+      write_status
+      return 0
+    fi
+    if [ -f "$STATE/grant.wait" ]; then
+      if [ "$g_rc" = 0 ]; then log "Agent Manager grants again — the wait is over."
+      else log "Agent Manager's grant helper failed (exit $g_rc) — launching as before."; fi
+      rm -f "$STATE/grant.wait"
+    fi
   fi
 
   # 3e. Effort per item (owner, 2026-09-26). The item at the head of the queue gets its session at max

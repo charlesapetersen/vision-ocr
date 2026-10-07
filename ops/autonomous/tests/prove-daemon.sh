@@ -275,7 +275,7 @@ launch() {   # $1 = VISIONOCR_IDLE_STOP ; backgrounds the daemon, echoes its pid
   VISIONOCR_GATEFIX_MAX="${GATEFIX_MAX:-0}" \
   VISIONOCR_STATUS_CMD="${STATUS_CMD:-$T/status-stub.sh}" \
   VISIONOCR_COMPACTOR="${COMPACTOR:-$T/no-such-compactor}" \
-  VISIONOCR_TEST_LOCK="$STATE/test.lock" \
+  VISIONOCR_TEST_LOCK="$STATE/test.lock" VISIONOCR_GRANT_CMD="${GRANT:-$T/no-grant}" \
   BASH_ENV="$T/preload.sh" \
     bash "$DAEMON" >> "$T/daemon.stdout" 2>&1 &
   local pid=$!; echo "$pid" >> "$T/daemon.pids"; echo "$pid"
@@ -997,6 +997,49 @@ else
 fi
 git -C "$REPO" worktree remove --force "$OW2" >/dev/null 2>&1
 git -C "$REPO" branch -D auto/orphan-progress >/dev/null 2>&1
+
+echo "[19] AGENT MANAGER GRANT (stage 4) — 75 holds the session, 0 lets it start, anything else is the old behaviour"
+cat > "$T/grant-stub" <<STUB
+#!/bin/sh
+printf '%s|' "\$@" >> "$T/grant.calls"; echo >> "$T/grant.calls"
+[ -f "$T/grant.wait" ] && { echo "wait: Claude's five-hour window is 98% used; it resets at 19:00"; exit 75; }
+rc=\$(cat "$T/grant.rc" 2>/dev/null || echo 0); [ "\$rc" = 0 ] && echo granted || echo broken >&2
+exit "\$rc"
+STUB
+chmod +x "$T/grant-stub"
+echo "0:no" > "$CTRL"; reset_repo; dfset 999999; reset_state; rm -f "$T/grant.calls" "$T/grant.rc" "$STATE/grant.wait"
+touch "$T/grant.wait"
+P=$(GRANT="$T/grant-stub" launch 0); sleep 8; L="$STATE/daemon.log"
+[ "$(nsessions "$L")" = 0 ] && ok "no session while the manager says wait" || bad "$(nsessions "$L") session(s) launched during a wait"
+[ "$(grep -c "Agent Manager says wait $EM Claude's five-hour window is 98% used; it resets at 19:00" "$L")" = 1 ] \
+  && ok "the wait is logged once, with the manager's reason" || bad "wait log: $(grep -c 'Agent Manager says wait' "$L")"
+[ "$(head -1 "$T/grant.calls")" = "--project|Vision OCR|--agent|claude|" ] && ok "asks for Vision OCR on claude" \
+  || bad "grant argv: $(head -1 "$T/grant.calls")"
+[ "$(wc -l < "$T/grant.calls" | tr -d ' ')" -ge 2 ] && ok "asks again each cycle" || bad "asked only once"
+[ ! -f "$STATE/idle.since" ] && ok "a grant wait is not idleness" || bad "idle.since set during a grant wait"
+grep -q 'no progress' "$L" && bad "a grant wait counted as no progress (backoff grows)" || ok "no backoff growth while waiting"
+rm -f "$T/grant.wait"; sleep 6; stop "$P"
+grep -q "Agent Manager grants again $EM the wait is over" "$L" && [ "$(nsessions "$L")" -ge 1 ] \
+  && ok "the session starts once the manager grants" || bad "no session after the grant: $(tail -3 "$L")"
+# An idle stopwatch already running when a wait begins is cleared, so a long wait cannot park the run.
+echo "0:no" > "$CTRL"; reset_state; rm -f "$T/grant.wait" "$STATE/grant.wait"
+P=$(GRANT="$T/grant-stub" launch 0); sleep 5
+if [ -f "$STATE/idle.since" ]; then
+  ok "premise: idle sessions started the idle stopwatch"
+  touch "$T/grant.wait"; sleep 10
+  [ ! -f "$STATE/idle.since" ] && ok "a grant wait clears a running idle stopwatch" || bad "idle.since survived a grant wait"
+else
+  bad "premise failed: no idle.since after idle sessions, so the check below is vacuous"
+fi
+stop "$P"; rm -f "$T/grant.wait"
+for rc in 3 1; do
+  echo "$rc" > "$T/grant.rc"
+  L=$(GRANT="$T/grant-stub" run_daemon 0 6)
+  [ "$(nsessions "$L")" -ge 1 ] && ok "an erroring helper (exit $rc) launches as before" || bad "exit $rc held the session"
+done
+rm -f "$T/grant.rc"
+L=$(GRANT="$T/absent-grant" run_daemon 0 6)
+[ "$(nsessions "$L")" -ge 1 ] && ok "no helper installed: launches as before" || bad "absent helper held the session"
 
 echo
 echo "=================== $PASS passed, $FAIL failed, $SKIP skipped ==================="
