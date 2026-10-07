@@ -14,6 +14,8 @@ an older entry mentions "Window ▸ Vision Reader Window", the menu item is now
 
 ## Unreleased
 
+- On newspaper scans with a rule printed down the gap between columns, a line the recogniser read on into the
+  next column is now split into its two columns, so it selects and searches as printed (C41).
 - On scanned pages that hold only text, dark marks the recogniser did not read as words (a rule, a stamp,
   ink handwriting, a missed word) stay sharp instead of being blurred into the background, except in the
   page's outer margins (C28).

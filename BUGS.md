@@ -18863,6 +18863,39 @@ fused rows left are one or two a page, each refused by a guard that protects ord
 Vision's misreading of this print, which `ocr-bakeoff-run` and the items after it address. Recommended: close
 `WONTFIX` at a max-effort session (rule 8), pointing the misreads at the bake-off.
 
+#### 2026-10-07, round 1 session 3: rows read across a printed column rule are split
+
+Session 2's count missed the rows that cross a printed rule: its probe asked for a blank strip, and a rule down
+the gutter is ink. Measured by running code (scratch tools over `recogniseInBands` + `splitAtGutter`, on the
+1-bit bitmaps `Flattener` writes, captured from the helper; then the gate's published PDFs through PDFKit):
+`blankGutter` refused every row cut by a dashed rule whose paper either side was narrower than the gutter found
+(comic page, Recogniser.render: 9 and 10 px beside a 2 px rule, gutter 14 px). Now a thin run of ink with blank
+paper strips either side, through a quarter of the rows three line heights above and below, counts as paper; each
+half stops clear of the rule (else Vision read it, `I trail.`), and a half whose text a longer line over it already
+holds at that place is dropped (`ble.` twice).
+
+| page (production bitmap) | rows split, before → after |
+|---|---|
+| Helena 1941 | 0 → 4 (`…teacher of now, and the best and fairest`, `…bombing R. Selee,`, `- try and member ot the board Near Fort Benton`) |
+| Helena 1931 | 1 → 4 |
+| Billings 1926, Kalispell 1939, October 1960, Comic 1950, Helena 1928 | unchanged |
+
+Ordinary column pages (Riesman p1-3, Marth p1-2, `_1953_99 Cong_ 2` p16, render): split rows identical; one
+Marth p2 half reads `Motorola` for `Motorola,`. Costs, accepted: Helena 1941 publishes `obert. Ball and O. Li
+Brackman,` beside the existing `Robert Ball…` (near-duplicate; a box-only test dropped better readings, rejected);
+it gains `L of Hetera, have been elected`, read nowhere before. Comic 1950 is not reached in production: its
+bitmap's lines give `columnGutters` a gutter at 0.168-0.172, not the real one at 0.126, so its two fused bridge
+rows stay (a gutter-finding defect, not touched here). Helena 1928's row stays: rule and paper are 16 px against a
+22 px gutter. Diff review found a letter beside the gutter could pass as a rule and vanish from both halves; the
+paper-strip test fixes it, with a check. `ux-regression.sh`: 4 better (Helena 1941 find 0.77 -> 0.80, wer
+2.85 -> 2.74, its `find` flag gone, truth find 0.81 -> 0.85), 2 worse, accepted: the same page's drag-text welds
+8 -> 9 and 8 -> 10 on the truth row. Drag is outside C41 (C39 `WONTFIX`) and `page.string` shows no new weld;
+baseline refreshed from this run's results. DONE WHEN verifier: fused rows FAIL (only Helena 1941 of the five
+changed), pages named PASS, ordinary pages PASS (on this record), hand count of misreads not done. Its
+`Mr. Locker was a for- armor-plereing…` is PDFKit grouping two runs: no half of this change holds either. Invariant
+3 not re-measured: `SearchableWriter` is untouched. Remaining: the comic's gutter finding, then the rule-8 case
+above for the rest.
+
 ### C42 · A page whose crop box is not centred on its media box gets its text layer shifted off the ink, 81 pt on a two-page book spread — FIXED
 
 *(found 2026-09-27 by `ux-read`, from `UX-RUN-2026-09-27-pages.tsv`: Boltanski p51/p102/p153 red on

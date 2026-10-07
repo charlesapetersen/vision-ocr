@@ -10802,6 +10802,78 @@ do {
     } else {
         check("C34: the two-column fixture draws", false)
     }
+
+    // C41: a rule printed down a narrow gutter, with less paper either side of it than
+    // the gutter is wide (the 1950 comic page: 9 and 10 pixels beside a 14-pixel gutter),
+    // still cuts a row read across it, and each half stops clear of the rule. A stroke
+    // as thin whose ink stops with its row is a letter, not a rule; so is one at the edge
+    // of a column whose lines above and below have letters at its x.
+    enum GutterInk { case ruled, lone, letter }
+    func gutterRow(_ ink: GutterInk) -> CGImage? {
+        guard let ctx = CGContext(data: nil, width: 1000, height: 600, bitsPerComponent: 8,
+                                  bytesPerRow: 1000, space: CGColorSpaceCreateDeviceGray(),
+                                  bitmapInfo: CGImageAlphaInfo.none.rawValue) else { return nil }
+        ctx.setFillColor(gray: 1, alpha: 1)
+        ctx.fill(CGRect(x: 0, y: 0, width: 1000, height: 600))
+        ctx.setFillColor(gray: 0, alpha: 1)
+        // Two columns of 30-pixel rows ending 9 pixels left and 9 right of x 500-502.
+        for top in [205, 245, 325, 365] {
+            ctx.fill(CGRect(x: 100, y: top, width: 391, height: 30))
+            ctx.fill(CGRect(x: 511, y: top, width: 389, height: 30))
+        }
+        // The row read across the gutter.
+        ctx.fill(CGRect(x: 100, y: 285, width: ink == .letter ? 380 : 391, height: 30))
+        ctx.fill(CGRect(x: 511, y: 285, width: 389, height: 30))
+        switch ink {
+        case .ruled:
+            for y in stride(from: 0, to: 600, by: 10) { ctx.fill(CGRect(x: 500, y: y, width: 2, height: 6)) }
+        case .lone:
+            ctx.fill(CGRect(x: 500, y: 285, width: 2, height: 30))
+        case .letter:
+            // `… as I`, the `I` at x 484-486 with the gutter's paper after it.
+            ctx.fill(CGRect(x: 484, y: 285, width: 2, height: 30))
+        }
+        return ctx.makeImage()
+    }
+    let fusedRow = Box(x: 0.1, y: 285.0 / 600, width: 0.8, height: 30.0 / 600)
+    let narrow = SearchableWriter.Gutter(from: 0.494, to: 0.508)
+    if let ruled = gutterRow(.ruled), let lone = gutterRow(.lone), let letter = gutterRow(.letter) {
+        // `stretchCrop` widens each half by an eighth of the 26-pixel line, 3.25 pixels,
+        // so a half clear of the rule at x 500-502 ends by 0.4965 and starts from 0.5055.
+        let cut = Recogniser.blankGutter(under: fusedRow, near: narrow, of: ruled, level: 128,
+                                         lineX: 0.026)
+        check("C41: a row read across a rule down a narrow gutter is cut there, clear of the rule",
+              cut.map { $0.left >= 0.491 && $0.left <= 0.4965 && $0.right >= 0.5055 && $0.right <= 0.511 }
+                  ?? false,
+              "\(String(describing: cut))")
+        check("C41: …and a thin stroke whose ink stops with its row is not taken for a rule",
+              Recogniser.blankGutter(under: fusedRow, near: narrow, of: lone, level: 128,
+                                     lineX: 0.026) == nil)
+        let beside = Recogniser.blankGutter(under: fusedRow, near: narrow, of: letter, level: 128,
+                                            lineX: 0.026)
+        check("C41: …nor a letter at a column's edge under and over the column's text",
+              beside.map { $0.left >= 0.4865 } ?? false, "\(String(describing: beside))")
+    } else {
+        check("C41: the ruled-gutter fixture draws", false)
+    }
+
+    // C41: a half read again from a box taller than its row takes in a piece of the
+    // row beside it, read already; that piece is dropped, and of two equal readings one.
+    let readings = [Obs(boundingBox: Box(x: 0.13, y: 0.794, width: 0.121, height: 0.006),
+                      text: "ble. And it was oniy too apparent", confidence: 1),
+                  Obs(boundingBox: Box(x: 0.13, y: 0.794, width: 0.014, height: 0.005),
+                      text: "ble.", confidence: 1),
+                  Obs(boundingBox: Box(x: 0.4, y: 0.5, width: 0.1, height: 0.01),
+                      text: "twice", confidence: 1),
+                  Obs(boundingBox: Box(x: 0.4, y: 0.5, width: 0.1, height: 0.01),
+                      text: "twice", confidence: 1)]
+    check("C41: a reading already held by a longer line over it is read elsewhere",
+          readings.indices.map { Recogniser.readElsewhere($0, in: readings) } == [false, true, false, true])
+    // …but not a word the longer line holds somewhere else: `apparent` lies at its end.
+    let elsewhere = [readings[0], Obs(boundingBox: Box(x: 0.13, y: 0.794, width: 0.03, height: 0.005),
+                                    text: "apparent", confidence: 1)]
+    check("C41: …and a word the longer line holds at another place is kept",
+          !Recogniser.readElsewhere(1, in: elsewhere))
     resetPrefs()
 }
 

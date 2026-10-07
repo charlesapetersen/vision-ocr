@@ -1914,6 +1914,35 @@ enum Recogniser {
         a.x == b.x && a.y == b.y && a.width == b.width && a.height == b.height
     }
 
+    /// Whether the line at `i` is read already by another of `observations`: one whose
+    /// box holds half of its box or more and whose text holds its text where it lies,
+    /// its place in that text within an eighth of the box's width of where it starts, and
+    /// is longer or, the same, comes first (so of two equal readings one is kept). By the
+    /// text as well as the boxes, since the bands' merge keeps overlapping readings of one
+    /// line and a box alone would drop the cleaner (`former grade school teacher of` under
+    /// `Fore grade Echool teacher`, C41); and where it lies, so that a half reading `the`
+    /// is not taken for any `the` in a tall line over it.
+    static func readElsewhere(_ i: Int, in observations: [SearchableWriter.Observation]) -> Bool {
+        let p = observations[i], a = p.boundingBox
+        guard a.width > 0, a.height > 0, !p.text.isEmpty else { return false }
+        return observations.indices.contains { j in
+            let o = observations[j], b = o.boundingBox
+            let shared = max(0, min(a.x + a.width, b.x + b.width) - max(a.x, b.x))
+                * max(0, min(a.y + a.height, b.y + b.height) - max(a.y, b.y))
+            guard j != i, shared >= a.width * a.height / 2,
+                  o.text.count > p.text.count || (o.text == p.text && j < i) else { return false }
+            let count = Double(o.text.count)
+            var from = o.text.startIndex
+            while let r = o.text.range(of: p.text, range: from..<o.text.endIndex) {
+                let at = b.x + b.width * Double(o.text.distance(from: o.text.startIndex,
+                                                                to: r.lowerBound)) / count
+                if abs(at - a.x) <= b.width / 8 { return true }
+                from = o.text.index(after: r.lowerBound)
+            }
+            return false
+        }
+    }
+
     /// `observations` with each line that runs across the page's column gutter
     /// (`SearchableWriter.columnGutter`) over no ink there replaced by its two
     /// halves, each recognised on its own as an unread stretch is (C34). On
@@ -1936,9 +1965,9 @@ enum Recogniser {
     /// 0.4 of its share by width (invariant 1: the fused reading is kept rather
     /// than lose its text). The halves are cut in the middle of the blank paper
     /// (`blankGutter`), so the end of a long left line reaching into the gutter stays
-    /// with its half. A row read across a rule printed down the gutter is cut beside
-    /// the rule where the paper there is as wide as the gutter found, and kept whole
-    /// where it is not.
+    /// with its half. A row read across a rule printed down the gutter is cut at the
+    /// rule, each half stopping clear of it (C41). A half's reading already held by
+    /// another line, from a box taller than its row, is dropped.
     ///
     /// Every gutter the writer orders the page by is asked, not only the page's
     /// widest-backed one (`SearchableWriter.columnGutters`): on `Riesman_1949` p2, three
@@ -1976,17 +2005,18 @@ enum Recogniser {
         guard !across.isEmpty else { return observations }
         var level: UInt8??
         var out: [SearchableWriter.Observation] = []
+        var added = Set<Int>()
         for (index, o) in observations.enumerated() {
             let b = o.boundingBox
             guard !isCancelled(), let g = across[index] else { out.append(o); continue }
             if level == nil { level = inkScan(of: image, strips: [])?.level }
             guard let known = level ?? nil,
-                  let middle = blankGutter(under: b, near: g, of: image, level: known, lineX: lineX)
+                  let cut = blankGutter(under: b, near: g, of: image, level: known, lineX: lineX)
             else { out.append(o); continue }
             var halves: [SearchableWriter.Observation] = []
-            for s in [SearchableWriter.BoundingBox(x: b.x, y: b.y, width: middle - b.x,
+            for s in [SearchableWriter.BoundingBox(x: b.x, y: b.y, width: cut.left - b.x,
                                                    height: b.height),
-                      SearchableWriter.BoundingBox(x: middle, y: b.y, width: b.x + b.width - middle,
+                      SearchableWriter.BoundingBox(x: cut.right, y: b.y, width: b.x + b.width - cut.right,
                                                    height: b.height)] {
                 guard let rect = stretchCrop(s, pageWidth: w, pageHeight: h, lineHeight: line),
                       let crop = image.cropping(to: CGRect(x: rect.left, y: rect.top,
@@ -2017,28 +2047,45 @@ enum Recogniser {
                 halves += piece
             }
             let read = Double(halves.reduce(0) { $0 + $1.text.count })
-            out += !halves.isEmpty && read >= 0.8 * Double(o.text.count) ? halves : [o]
+            if !halves.isEmpty, read >= 0.8 * Double(o.text.count) {
+                added.formUnion(out.count..<(out.count + halves.count))
+                out += halves
+            } else {
+                out.append(o)
+            }
         }
-        return out
+        // A box taller than its row takes in a piece of the row beside it, which is
+        // read already: `ble.` again, under `ble. And it was…` (C41).
+        return out.indices.filter { !added.contains($0) || !readElsewhere($0, in: out) }.map { out[$0] }
     }
 
     /// Where a line read across `g` is cut: the middle of a run of blank paper under its
     /// row `b`, within a line height of the gutter, at least as wide as the gutter and a
     /// third of a line, and covering half of it or more; of several, the one covering
     /// most. Nil when there is none: the row has ink across the gutter, as a heading
-    /// does, whose word spaces are narrower than the gutter between its columns.
+    /// does, whose word spaces are narrower than the gutter between its columns. The
+    /// left half ends at `left` and the right begins at `right`, which are the same
+    /// place unless a rule is printed down the gutter.
     ///
     /// Found from the pixels because a gutter found from the boxes can sit off the
     /// paper: on `Riesman_1949` p2 the right column's boxes overshoot further than the
     /// middle column's, the strip found started at 0.6405, and the fused first row's
     /// `more` ends at 0.6441, so a test of the whole strip read its last letter as ink
     /// in the gutter and the row stayed whole (C52). The blank paper runs to 0.6634
-    /// there. A rule printed down the gutter leaves a run beside it, and a row read
-    /// across it is cut there when that run is as wide as the gutter found. A pixel
-    /// column is blank with under one pixel in 25 at or under `level`, which lets a speck
-    /// of dirt pass.
+    /// there. A pixel column is blank with under one pixel in 25 at or under `level`,
+    /// which lets a speck of dirt pass.
+    ///
+    /// A rule printed down the gutter, a few pixels of ink between blank paper whose ink
+    /// runs on through the rows above and below, counts as paper. On the 1950 comic page
+    /// four of the bridge column's rows were read on into the next column across a dashed
+    /// rule with 9 and 10 pixels of paper beside it, and the gutter found was 14, so
+    /// neither side alone was as wide and the rows stayed whole (C41). A letter between
+    /// two word spaces is as thin, but its ink stops with its row. Each half then stops
+    /// clear of the rule by `stretchCrop`'s margin where the paper allows, because a crop
+    /// holding it read it as a letter (`I trail.`).
     static func blankGutter(under b: SearchableWriter.BoundingBox, near g: SearchableWriter.Gutter,
-                            of image: CGImage, level: UInt8, lineX: Double) -> Double? {
+                            of image: CGImage, level: UInt8,
+                            lineX: Double) -> (left: Double, right: Double)? {
         let w = image.width, h = image.height
         let from = max(0, g.from - lineX), to = min(1, g.to + lineX)
         let top = max(0, b.y), bottom = min(1, b.y + b.height)
@@ -2048,26 +2095,63 @@ enum Recogniser {
         guard let grey = greyPixels(of: image, x0: x0, y0: y0, x1: x1, y1: y1) else { return nil }
         let pw = x1 - x0, ph = y1 - y0
         let gutter = g.to - g.from
-        var best: (middle: Double, covering: Double)?
+        var blank = (0..<pw).map { column -> Bool in
+            var dark = 0
+            for row in 0..<ph where grey[row * pw + column] <= level { dark += 1 }
+            return dark * 25 < ph
+        }
+        let line = lineX * Double(w)
+        let thin = max(2, Int((line / 6).rounded()))
+        let ry0 = max(0, y0 - 3 * ph), ry1 = min(h, y1 + 3 * ph)
+        var rule = [Bool](repeating: false, count: pw)
+        var column = 0
+        while column < pw {
+            guard !blank[column] else { column += 1; continue }
+            var end = column
+            while end < pw, !blank[end] { end += 1 }
+            // A row counts for the rule where the run is inked and a strip of paper either side
+            // of it is blank: inside a column of text the lines above and below have letters
+            // at nearly every x, so ink alone would take an `I` beside the gutter for a rule.
+            // The strips start a pixel out, since a rule on a skewed scan drifts by one over
+            // the rows asked (`_1928_Creative writing` p1, C41).
+            let side = thin, out = side + 1
+            if column > 0, end < pw, end - column <= thin, x0 + column >= out, x0 + end + out <= w,
+               let tall = greyPixels(of: image, x0: x0 + column - out, y0: ry0,
+                                     x1: x0 + end + out, y1: ry1) {
+                let rw = end - column + 2 * out
+                let ruled = (0..<(ry1 - ry0)).filter { row in
+                    let dark = { (c: Int) in tall[row * rw + c] <= level }
+                    return (side..<(rw - side)).contains(where: dark)
+                        && !(0..<side).contains(where: dark)
+                        && !((rw - side)..<rw).contains(where: dark)
+                }.count
+                if 4 * ruled >= ry1 - ry0 {
+                    for c in column..<end { blank[c] = true; rule[c] = true }
+                }
+            }
+            column = end
+        }
+        var best: (left: Double, right: Double, covering: Double)?
         var start = 0
         for column in 0...pw {
-            var blank = false
-            if column < pw {
-                var dark = 0
-                for row in 0..<ph where grey[row * pw + column] <= level { dark += 1 }
-                blank = dark * 25 < ph
-            }
-            if blank { continue }
+            if column < pw, blank[column] { continue }
             // The run `start..<column`, in widths of the page.
             let from = Double(x0 + start) / Double(w), to = Double(x0 + column) / Double(w)
             let covering = min(to, g.to) - max(from, g.from)
             if to - from >= max(lineX / 3, gutter), covering >= gutter / 2,
                covering > (best?.covering ?? 0) {
-                best = ((from + to) / 2, covering)
+                if let first = (start..<column).first(where: { rule[$0] }),
+                   let last = (start..<column).last(where: { rule[$0] }) {
+                    let margin = (line / 8).rounded(.up) + 1
+                    best = (max(from, (Double(x0 + first) - margin) / Double(w)),
+                            min(to, (Double(x0 + last + 1) + margin) / Double(w)), covering)
+                } else {
+                    best = ((from + to) / 2, (from + to) / 2, covering)
+                }
             }
             start = column + 1
         }
-        return best?.middle
+        return best.map { ($0.left, $0.right) }
     }
 
     /// The pixels `x0..<x1` by `y0..<y1` of `image` as 8-bit grey, row by row from the

@@ -1245,6 +1245,9 @@ say so in the commit.
       BOUND: rule 10.
       2026-10-06: round 1, session 1 (opened at 89% of the window). Measured: the published pages are
       within 1.3 points of Vision's best band reading, so the band swap is dropped; fused rows remain (C41).
+      Session 2 (docs only): few fused rows in the recogniser's own boxes. 2026-10-07: session 3: rows read
+      across a printed column rule now split (Helena 1941 0 -> 4, 1931 1 -> 4). Left: the comic page's gutter
+      is not found from its bitmap's lines (`columnGutters`); Billings, Oct 1960 and 1928 as C41 says.
       (origin: BUGS.md C41)
 - [ ] **c52-column-jumps** — make a drag down one column stay in it on the pages C34 still misses.
       Riesman p2 is fixed (ff25f3b, 4657cff); Marth p2 and Cong p16 are not. The first bound was spent
