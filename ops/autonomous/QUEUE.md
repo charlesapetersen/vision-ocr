@@ -1042,6 +1042,20 @@ say so in the commit.
       reclaimed, a waiting suite does not RED the gate or burn a session's time, and a mutant removing the take
       turns it red; the harness runs in the health gate. ESTIMATE: 1 session. BOUND: rule 10.
       (context: owner request 2026-10-06)
+- [ ] **two-sessions-design** — decide whether a second session at once would help this daemon, before the larger Claude
+      plan arrives. (effort: medium)
+      WHY. Owner, 2026-10-06: "We'll be moving up a tier in usage plans shortly so we should prepare for that in
+      advance" (the Claude plan). This daemon runs one session at a time; Archive Suite now runs a supervisor with up
+      to two workers (its W35.workers / W35.pace, `ops/autonomous/worker-supervisor.py` in that repo), sized from the
+      usage readings. With more usage, one session may leave the window unspent.
+      WHAT. Measure first: over the last week's `$STATE/usage.tsv` and daemon.log, how often a window ended unspent
+      while this daemon was idle or waiting, and how much of each session's wall time is spent holding test.lock or
+      mac-heavy.lock (a second session could not run its suite then). Then write the design or the case against it in
+      this item: which items could run side by side (docs, analysis, harness work) and which cannot (anything that runs
+      the suite), how a second session would claim its item, and what it would borrow from Archive Suite's supervisor.
+      Build nothing in this item. DONE WHEN the measurement and the recommendation are written here and a follow-up
+      item is queued if the recommendation is to build. ESTIMATE: 1 session. BOUND: rule 10.
+      (context: owner request 2026-10-06)
 - [ ] **ocr-bakeoff-run** — read the bake-off sample with every candidate that fits, as one long unattended
       job. (blocked-on: ocr-lab-setup, bakeoff-tonight-ok)
       PAUSED AGAIN 2026-10-06 07:55 (owner needs the Mac): `bakeoff.sh stop` during Churro 3B; see the hold.
