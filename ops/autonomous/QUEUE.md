@@ -1485,6 +1485,54 @@ say so in the commit.
       unchanged and adds to B's, and a mutant restoring head-counting turns it red. ESTIMATE: 1 session.
       BOUND: rule 10. (context: owner request 2026-10-05)
 
+- [ ] **session-policy** — the daemon asks the Agent Manager for each session's model, effort and limits, and its
+      own attempt ladder and fixed time limit stop deciding them. (blocked-on: attempt-on-worked-item) (uses: light)
+      WHY. Agent Manager stage 7 (owner, 2026-10-08). The manager side is on that repo's master (82c75ee): `bin/grant`
+      now takes the item's evidence with the grant request and answers with the session's settings. The reasons are
+      in its design: on 2026-10-07/08 this daemon's 22:48 session was killed at its fixed 4-hour limit while doing
+      model work, and ocr-lab-round3 was counted three attempts while it made steady progress. The interface, its
+      fields and its rules are in `~/Claude/Agent Manager/README.md`, "Session policy"; read it before starting. The
+      progress count below needs the item the session worked, which attempt-on-worked-item records, hence the block.
+      - [ ] **sp-evidence** — send the evidence with the grant request, and give sessions the escalate rule.
+        (blocked-on: attempt-on-worked-item) (uses: light) Move 3e's head-item lookup ahead of step 3d' so the request
+        knows the item, and pass `--evidence FILE --policy-line` (the file in `$STATE`, rewritten each cycle). Its
+        keys: `item` (the head tag, or `gate-fix`); `marker` (the item's effort marker, none for a gate fix); `uses`
+        (the item's raw uses tag); `estimate_sessions` (the ESTIMATE text in the item's own lines); and
+        `sessions_since_progress`, the sessions counted against the item since its last progress plus its attempts
+        marker, where progress is a ticked sub-box or a committed measurement or code change on the item. Today
+        `attempts.tsv` counts only sessions that ticked nothing, so a code commit does not reset the count: write a
+        progress line there and count from the newest one. Also `escalate_requested` and `escalate_reason`, from an
+        `escalate: <reason>` line in the newest SESSION LOG entry in `$RUN` for that item and no older one; and for a
+        gate fix `is_gatefix`, `gatefix_tries` (the try number in `$GATEFIX_TRIES`) and `gatefix_max`. Reading the
+        first line of the answer (granted, wait, anything else) stays exactly as it is. The resume prompt gains one
+        short rule where the session writes its SESSION LOG entry: write `escalate: <reason>` on a line of its own
+        when it has tried an approach twice and judges the problem subtle, and not because the work is long. The
+        launch is unchanged in this box. DONE WHEN `tests/prove-daemon.sh` shows the grant stub receiving each key
+        for a fixture item: the count at two after two sessions without progress, back to zero after a ticked
+        sub-box and after a code commit, the escalate line read from the newest entry and not an older one; the
+        grant argv check is updated; `tests/prove-gate-fix.sh` shows tries one to three sent for a gate fix; and a
+        mutant of each (no reset on a commit, the escalate line read from an older entry, the lookup back after the
+        request) turns it red. ESTIMATE: 1 session.
+      - [ ] **sp-launch** — launch with the manager's answer, and keep today's rules only as the fallback.
+        (blocked-on: sp-evidence) (uses: light) Read the `policy:` line and use its `model`, `fallback_model`,
+        `effort`, `budget_usd` and `wall_limit_seconds` for the claude flags and watchdog A's backstop, honour
+        `wall_excludes=heavy-lock-wait` (watchdog A already leaves heavy-lock queue time uncharged), and give
+        `quiet_limit_seconds` to that session's health watchdog in place of `HB_STALL`. Check each value (a known
+        model, an effort level, positive whole seconds and dollars, fallback not the model). A `policy-omitted` line,
+        no policy line, a bad value, a helper failure or a timeout launches exactly as today, with the attempt ladder,
+        `MAXRUN`, `MAXRUN_MAX` and the budgets, and logs which rule set the session. The ladder and the fixed
+        limits are thereby retired as the deciding rule and survive only as that fallback. `VISIONOCR_SESSION_EFFORT`
+        and the launch line follow whichever rule decided. Amend the ladder sentences in rule 7 and rule 11's
+        sentence on the daemon raising an item, and nothing else in them, plus 3e's comment and
+        `ops/autonomous/README.md`. DONE WHEN `tests/prove-daemon.sh` shows a policy line's values reaching claude's
+        argv, a short wall limit ending a session at that limit with heavy-lock queue time not charged, and the
+        quiet limit reaching the watchdog; each fallback case launching with today's settings (the existing ladder
+        table passes under it); `tests/prove-gate-fix.sh`'s medium, medium, max holding both through an answer and
+        through the fallback; and a mutant of each (the answer ignored, the fallback dropped, a bad value accepted)
+        turns it red. ESTIMATE: 1 session.
+      DONE WHEN the two sub-boxes are ticked. ESTIMATE: 2 sessions. BOUND: rule 10.
+      (context: owner request 2026-10-08, ~/Claude/Agent Manager/PROGRESS.md stage 7)
+
 - [ ] **concurrent-suites** — let two suites run at once from two worktrees without either one wiping the other's
       settings, logs or files, so that `test.lock` limits only what truly conflicts. (uses: build)
       WHY. EFFICIENCY-PLAN item 10 (owner, 2026-10-07: "isolate parts of test suites that create heavy load so we
