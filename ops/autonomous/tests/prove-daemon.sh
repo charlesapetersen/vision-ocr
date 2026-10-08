@@ -1081,7 +1081,8 @@ markq() {
 }
 echo "0:no" > "$CTRL"; dfset 999999
 # Each case: "<markers>|<model fallback effort budget>|<what it proves>". The harness's VISIONOCR_BUDGET is 1;
-# BUDGET_MAX is the daemon's default 140, so the budget column shows which sessions got max's larger cap.
+# BUDGET_MAX is the daemon's default 140, so the budget column shows which sessions got max's larger cap, and
+# a Fable session's cap is that times Fable's 2.5x price ratio over Opus (MAX_MODEL_COST): 2.5, or 350 at max.
 while IFS='|' read -r marks want what; do
   markq "$marks"; L=$(run_daemon 0 4)
   [ -s "$T/claude.argv" ] || bad "premise failed ($what): no session launched"
@@ -1089,22 +1090,24 @@ while IFS='|' read -r marks want what; do
 done <<'CASES'
 |opus sonnet medium 1|no attempts: Opus at the default
 (attempts: 1)|opus sonnet medium 1|one attempt: still Opus at the default
-(attempts: 2)|fable opus high 1|rung 1 (two attempts): Fable at high, ordinary budget
-(attempts: 3)|fable opus xhigh 1|rung 2 (three attempts): Fable at xhigh, ordinary budget
-(attempts: 4)|fable opus max 140|rung 3 (four attempts): Fable at max, max's budget
-(attempts: 9)|fable opus max 140|every attempt after rung 3 stays Fable at max
-(attempts: 3) (effort: medium)|fable opus medium 1|a marker wins the effort on a rung; the model stays Fable
-(attempts: 2) (effort: max)|fable opus max 140|a max marker on rung 1 is max, with max's budget
-(effort: max)|fable opus max 140|a max marker with no attempts is Fable at max
+(attempts: 2)|fable opus high 2.5|rung 1 (two attempts): Fable at high, ordinary budget at Fable's 2.5x price
+(attempts: 3)|fable opus xhigh 2.5|rung 2 (three attempts): Fable at xhigh, ordinary budget at Fable's price
+(attempts: 4)|fable opus max 350|rung 3 (four attempts): Fable at max, max's budget at Fable's price
+(attempts: 9)|fable opus max 350|every attempt after rung 3 stays Fable at max
+(attempts: 3) (effort: medium)|fable opus medium 2.5|a marker wins the effort on a rung; the model and its price stay Fable
+(attempts: 2) (effort: max)|fable opus max 350|a max marker on rung 1 is max, with max's budget
+(effort: max)|fable opus max 350|a max marker with no attempts is Fable at max
 (effort: high)|opus sonnet high 1|a high marker with no attempts stays on Opus
 CASES
 markq "(attempts: 2)"; L=$(run_daemon 0 4)
-grep -q 'budget \$1, model fable, effort high for C24b after 2 attempts' "$L" && ok "the launch line names the rung's model and effort" \
+grep -q 'budget \$2.5, model fable, effort high for C24b after 2 attempts' "$L" && ok "the launch line names the rung's model and effort" \
   || bad "launch line: $(grep 'launching fresh' "$L" | head -1)"
 markq "(attempts: 2)"; L=$(VISIONOCR_MAX_MODEL=claude-test-model run_daemon 0 4)
 [ "$(launched)" = "claude-test-model opus high 1" ] && ok "VISIONOCR_MAX_MODEL overrides the escalation model" || bad "override: '$(launched)'"
 markq "(attempts: 4)"; L=$(VISIONOCR_MAX_MODEL=opus run_daemon 0 4)
 [ "$(launched)" = "opus sonnet max 140" ] && ok "an override to opus never falls back to itself" || bad "opus override: '$(launched)'"
+markq "(attempts: 2)"; L=$(VISIONOCR_MAX_MODEL_COST=2 run_daemon 0 4)
+[ "$(launched)" = "fable opus high 2" ] && ok "VISIONOCR_MAX_MODEL_COST overrides the price ratio" || bad "cost override: '$(launched)'"
 rm -f "$REPO/ops/autonomous/next-item.sh" "$STATE/attempts.tsv"; reset_repo
 
 echo

@@ -201,6 +201,19 @@ MAX_MODEL="${VISIONOCR_MAX_MODEL:-fable}" # the model for an ESCALATED session (
                                           # 2026-10-07: the account moved to Claude for Education Premium,
                                           # which carries Fable, and the ruling was "Fable for hard items
                                           # only" — Opus stays the default.
+# The budget caps above are dollars, and they were sized on Opus 5.5 ($4/$20 per MTok). Fable is $10/$50,
+# 2.5x per token, so the same dollar cap on a Fable session buys 40% of the work: a rung-1 Fable session at
+# $70 could afford what a $28 Opus session could, max's $140 less than an ordinary Opus session, and the $15
+# of landing headroom about 15 poll turns instead of about 40. A cap kill counts as an attempt and climbs the
+# ladder, so an under-funded rung spends itself on budget kills. Every session on $MAX_MODEL therefore gets
+# its cap multiplied by this price ratio: the cap keeps buying the same TOKENS the owner sized. 2.5 is the
+# published price ratio for fable (and mythos), 1 for any other override; this keeps the owner's 70/140 in
+# Opus-equivalent dollars and the resulting $175/$350 Fable caps are theirs to lower.
+MAX_MODEL_COST="${VISIONOCR_MAX_MODEL_COST:-}"
+if [ -z "$MAX_MODEL_COST" ]; then
+  case "$MAX_MODEL" in fable*|claude-fable*|mythos*|claude-mythos*) MAX_MODEL_COST=2.5 ;; *) MAX_MODEL_COST=1 ;; esac
+fi
+case "$MAX_MODEL_COST" in ''|*[!0-9.]*|*.*.*|.) MAX_MODEL_COST=1 ;; esac
 
 # Idle backoff — the loop's answer to "nothing is happening". Any cycle that advances nothing doubles the
 # gap up to $MAXBACKOFF; any progress resets it instantly; $IDLE_STOP of unbroken no-progress PARKS the run.
@@ -1871,14 +1884,21 @@ culprits are per-worktree build/ directories and Tools/mutation-out/. Free some 
   # Two attempts that did not finish the item put it on rung 1, Fable at high; the next failed attempt is
   # rung 2, Fable at xhigh; every attempt after that is rung 3, Fable at max. A marker sets the EFFORT
   # outright and wins over the rung; the model is Fable on any rung, and at max however max was reached.
-  # Only max gets the larger budget and time limit.
+  # Only max gets the larger budget and time limit; every escalated session's cap is then scaled by
+  # MAX_MODEL_COST, so a Fable session buys the tokens its Opus-dollar cap was sized for.
   local rung=0
   [ "$head_attempts" -ge 2 ] && rung=$(( head_attempts - 1 ))
+  # A gate fix's LAST allowed try (the run parks if it still leaves the gate red) goes straight to max, as
+  # the third try did before the ladder: with the default GATEFIX_MAX=3 the tries see 0, 1, 2 earlier
+  # attempts, so the ladder alone would end on high and park the run without ever trying xhigh or max.
+  [ "$head_tag" = gate-fix ] && [ "$GATEFIX_MAX" -gt 0 ] && [ $(( head_attempts + 1 )) -ge "$GATEFIX_MAX" ] && rung=3
   case "$rung" in 0) ;; 1) eff=high ;; 2) eff=xhigh ;; *) eff=max ;; esac
   [ -n "$eff_set" ] && eff="$eff_set"
   local budget="$BUDGET" maxrun="$MAXRUN" model=opus fallback=sonnet
   [ "$eff" = max ] && { budget="$BUDGET_MAX"; maxrun="$MAXRUN_MAX"; }
-  { [ "$rung" -ge 1 ] || [ "$eff" = max ]; } && { model="$MAX_MODEL"; fallback=opus; }
+  # An escalated session's cap is rescaled to the escalation model's price (see MAX_MODEL_COST).
+  { [ "$rung" -ge 1 ] || [ "$eff" = max ]; } && { model="$MAX_MODEL"; fallback=opus;
+    budget="$(awk -v b="$budget" -v r="$MAX_MODEL_COST" 'BEGIN{printf "%g", b*r}')"; }
   # claude refuses a fallback equal to the main model, so VISIONOCR_MAX_MODEL=opus falls back to sonnet.
   [ "$fallback" = "$model" ] && fallback=sonnet
   export VISIONOCR_HEAD_ITEM="$head_tag" VISIONOCR_ATTEMPTS="$head_attempts" VISIONOCR_SESSION_EFFORT="$eff"
