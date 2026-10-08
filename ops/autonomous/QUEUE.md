@@ -1220,6 +1220,11 @@ say so in the commit.
       Vision on regions 0.741 / 0.938 (whole page 0.304 / 0.624), PaddleOCR-VL-1.6-4bit on regions 0.742 / 0.982 in 604 s.
       Both sit 0.20-0.24 under their bowF1 because the regions are read in a stand-in column order: for the app, a layout
       step plus a real reading order is worth more than a better reader. Churro on regions: 405 s for one 2,631-word page.
+      Round 1, session 6, 2026-10-07: session 5's detached Churro run died at page 13 when its worktree was removed under
+      it (run-guarded.sh gone); the three unread pages were reread. Measured, Churro 3B on regions: 0.706 / 0.938 in
+      ~650 s a page, peak 3,503 MB: no better than Vision on the same regions and well under PaddleOCR-VL, so Churro is not
+      the newspaper reader. Started, detached: dots.mocr on regions, then Churro, Qwen3.5-4B, Qwen3-VL-8B whole-page
+      (log `/tmp/nb-chain.log`; a detached job must run from a worktree that outlives it).
 - [ ] **ocr-bakeoff-bits** — run the top three at 4-bit and at 8-bit and compare.
       (blocked-on: ocr-bakeoff-score, ocr-lab-round3)
       The owner's 2026-10-02 request: the same sample through `bakeoff.sh` with the build as the parameter,
