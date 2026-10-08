@@ -1165,7 +1165,7 @@ say so in the commit.
       oQ8 0.24% / 0.47% at 82 s (bearable on lines; overnight for whole documents). Vision on crops 3.1% / 12.9% at 1-2 s; the app's layer
       (832b7ac) 1.9% / 21.8%. The top three are those; the bits item uses them. Weights kept (76 GB free).
       BOUND: rule 10. (context: owner request 2026-10-02)
-- [ ] **ocr-lab-round3** — fit-test the 2026-10-07 survey's candidates and score newspapers on NewsBench, so the next
+- [x] **ocr-lab-round3** — fit-test the 2026-10-07 survey's candidates and score newspapers on NewsBench, so the next
       model night reads them beside the top three. (effort: medium)
       WHY. Owner, 2026-10-07: "Do more research on whether there are other projects like Churro worth considering. Be
       thorough." Findings in `PRIOR-ART-2026-10-07.md`: no open successor to Churro exists, but four independent sources
@@ -1248,7 +1248,8 @@ say so in the commit.
       its card's repetition penalty 1.1 (read-mlx.py gained `--prompt-file` and `--repetition-penalty`). Measured: ordinary
       page 9.7 s, peak 3,429 MB, rough recall 0.874 / precision 0.919; newspaper crops 121 s, peak 4,111 MB, 0.523 / 0.722,
       LOOPING (lines repeated up to 37 times, a crop cut at 3,000 tokens). Fits by the rule, narrowly; a `fitted` bakeoff
-      row. NuMarkdown-8B-Thinking not run: its smallest MLX build (5,391 MB) would take the lab past 50 GB. THE REGION
+      row. On NewsBench's YOLO regions: 0.732 / bowF1 0.947 in 1,306 s, peak 3,881 MB, no region at the cap (the
+      DONE WHEN verifier caught that a fitting reader owed this row). NuMarkdown-8B-Thinking not run: its smallest MLX build (5,391 MB) would take the lab past 50 GB. THE REGION
       READER for hp-regions is PaddleOCR-VL-1.6-4bit: level with dots.mocr on NewsBench regions (0.742 / 0.746) in 604 s
       against 1,654 s, and peaking at 2,211 MB against 5,628 MB in the fit tests; Churro (0.706) is not it.
 - [ ] **ocr-bakeoff-bits** — run the top three at 4-bit and at 8-bit and compare.
