@@ -11398,7 +11398,9 @@ do {
         "photoDetail",      // the MRC background factor
         "joinHyphenated",   // a text-layer transform, after recognition
         "preserveAnnotations",  // object surgery after every page is written
-        "password",         // opens the document; never reaches the request
+        "modelArrangement", // a second reader after Vision's; its handover is checked
+        "modelReader",      //   with the helper's, and its effect under ocr-hybrid-proto
+        "password",        // opens the document; never reaches the request
         "pdfDPIAuto",       // what to rasterise at when not rebuilding
         "pdfDPI",
         "confidence",       // applied to the observations, not by the request
@@ -11489,6 +11491,8 @@ do {
         "minTextHeight": { $0.minTextHeightOn = true; $0.minTextHeight = 0.05 },
         "minTextHeightOn": { $0.minTextHeightOn = true; $0.minTextHeight = 0.05 },
         "confidence": { $0.confidence = 0.4 },
+        "modelArrangement": { $0.modelArrangement = .align },
+        "modelReader": { $0.modelReader = "/usr/local/bin/reader --fast" },
     ]
 
     func describeRequest(_ r: VNRecognizeTextRequest) -> String {
@@ -11519,8 +11523,11 @@ do {
         check("\(field) survives the round trip through the arguments",
               describeRequest(Recogniser.makeRequest(back))
                   == describeRequest(Recogniser.makeRequest(changed))
-                  && back.confidence == changed.confidence,
-              describeRequest(Recogniser.makeRequest(back)) + " conf=\(back.confidence)")
+                  && back.confidence == changed.confidence
+                  && back.modelArrangement == changed.modelArrangement
+                  && back.modelReader == changed.modelReader,
+              describeRequest(Recogniser.makeRequest(back)) + " conf=\(back.confidence)"
+                  + " model=\(back.modelArrangement.rawValue) \(back.modelReader)")
     }
 
     // The two list fields carry whatever the user typed, so a value is allowed
@@ -11549,6 +11556,162 @@ do {
             from: Recogniser.helperArguments(base).map { $0 == "0.0" ? "yes" : $0 }) == nil)
     check("a full argument list is accepted",
           Recogniser.helperSettings(from: Recogniser.helperArguments(base)) != nil)
+    resetPrefs()
+}
+
+print("\na model's reading takes Vision's lines' words where the two agree (ocr-hybrid-proto)")
+
+do {
+    func line(_ text: String, y: Double, x: Double = 0.1, width: Double = 0.8) -> SearchableWriter.Observation {
+        .init(boundingBox: .init(x: x, y: y, width: width, height: 0.02), text: text, confidence: 0.9)
+    }
+    func words(_ t: String) -> [String] { t.split(separator: " ").map(String.init) }
+    let garbled = [line("Tbe quick brown f0x", y: 0.1), line("jumps ovcr the lazy dog.", y: 0.13)]
+    let model = words("The quick brown fox jumps over the lazy dog.")
+    let fixed = Recogniser.alignedReading(of: garbled, from: model, aspect: 1.3).map(\.text)
+    check("a model's words replace the words Vision misread, line by line",
+          fixed == ["The quick brown fox", "jumps over the lazy dog."], fixed.joined(separator: " / "))
+    // Out of order in the list, as merged readings arrive: reading order is by position.
+    let shuffled = Recogniser.alignedReading(of: garbled.reversed(), from: model, aspect: 1.3).map(\.text)
+    check("…whatever order the lines arrive in",
+          shuffled == ["jumps over the lazy dog.", "The quick brown fox"], shuffled.joined(separator: " / "))
+
+    // Review of 2026-10-08: an unlike word took Vision's place wherever the line passed.
+    let unlike = Recogniser.alignedReading(of: [line("see Table 4 for the results of the survey", y: 0.1)],
+                                           from: words("see Figure for the results of the survey"),
+                                           aspect: 1.3).map(\.text)
+    check("an unlike word does not replace Vision's unless it stands between two anchors",
+          unlike == ["see Table 4 for the results of the survey"], unlike.joined())
+    let between = Recogniser.alignedReading(of: [line("a vvlinc of ships", y: 0.1)],
+                                            from: words("a volume of ships"), aspect: 1.3).map(\.text)
+    check("…and between two it does", between == ["a volume of ships"], between.joined())
+    let stacked = [line("we con-", y: 0.1), line("tin-", y: 0.13), line("ued here", y: 0.16)]
+    let unstacked = Recogniser.alignedReading(of: stacked, from: words("we continued here"),
+                                              aspect: 1.3).map(\.text)
+    check("two hyphenated line ends in a row write no word twice",
+          unstacked == stacked.map(\.text), unstacked.joined(separator: " / "))
+    let inserted = Recogniser.alignedReading(
+        of: [line("the cat sat on mat", y: 0.1), line("and then it left", y: 0.13)],
+        from: words("the cat sat on the mat so and then it left"), aspect: 1.3).map(\.text)
+    check("a word Vision skipped goes in between two anchors on its line, and not across lines",
+          inserted == ["the cat sat on the mat", "and then it left"], inserted.joined(separator: " / "))
+
+    // The DONE WHEN check of 2026-10-08, on Briefer Book Notes p1: `an in.` over `egrated`.
+    let tail = [line("an in.", y: 0.1), line("egrated plan of work", y: 0.13)]
+    let untailed = Recogniser.alignedReading(of: tail, from: words("an integrated plan of work"),
+                                             aspect: 1.3).map(\.text)
+    check("a word Vision read only the end of is not written whole beside its start",
+          untailed == tail.map(\.text), untailed.joined(separator: " / "))
+
+    let split = [line("a valuable stn-", y: 0.1), line("dy of the past", y: 0.13)]
+    let joined = Recogniser.alignedReading(of: split, from: words("a valuable study of the past"),
+                                           aspect: 1.3).map(\.text)
+    check("a word the model reads whole is split again where Vision's line broke it",
+          joined == ["a valuable stu-", "dy of the past"], joined.joined(separator: " / "))
+
+    let kept = Recogniser.alignedReading(of: [line("the 1951 census of farms", y: 0.1)],
+                                         from: words("the census of farms"), aspect: 1.3).map(\.text)
+    check("a word Vision read and the model did not is kept", kept == ["the 1951 census of farms"],
+          kept.joined())
+
+    let other = Recogniser.alignedReading(of: garbled, from: words("Minutes of the annual meeting held in March"),
+                                          aspect: 1.3).map(\.text)
+    check("a reading of other text leaves every line as Vision read it",
+          other == garbled.map(\.text), other.joined(separator: " / "))
+
+    var turned = line("Tbe quick brown f0x", y: 0.5)
+    turned.quarterTurns = 1
+    let upright = Recogniser.alignedReading(of: garbled + [turned], from: model, aspect: 1.3)
+    check("a turned line is not aligned", upright.last?.text == "Tbe quick brown f0x"
+          && upright.last?.quarterTurns == 1, upright.last?.text ?? "nil")
+
+    let markup = "## Notes\nservice.\"<sup>16</sup> **This** | --- |<br/>*so* p < 0.05 &amp; q\n- item"
+        + " Association<|end_of_query|>"
+    check("a model's markup goes and its text stays",
+          Recogniser.modelWords(markup)
+              == ["Notes", "service.\"16", "This", "so", "p", "<", "0.05", "&", "q", "item", "Association"],
+          Recogniser.modelWords(markup).joined(separator: " · "))
+
+    // Through the production pipeline: Vision reads the scan, a reader writes its own
+    // words, and the published layer carries them only when the setting is on.
+    resetPrefs()
+    let dir = tmp.appendingPathComponent("model-align")
+    try? FileManager.default.removeItem(at: dir)
+    try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+    let source = dir.appendingPathComponent("scan.pdf")
+    makeScannedPDF(at: source, lines: ["The model reader's words", "reach the text layer"])
+    func reader(_ name: String, _ body: String) -> String {
+        let url = dir.appendingPathComponent(name)
+        try? ("#!/bin/sh\n" + body + "\n").write(to: url, atomically: true, encoding: .utf8)
+        try? FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: url.path)
+        return url.path
+    }
+    let good = reader("reader.sh", "printf '%s\\n' \"The model reader's wordz reach the texts layer\" > \"$2\"")
+    let broken = reader("broken.sh", "exit 3")
+    let silent = reader("silent.sh", ": > \"$2\"")
+    func publish(_ arrangement: Prefs.ModelArrangement, _ path: String) -> (String, String, Runner.Result.Outcome?) {
+        d.set(arrangement.rawValue, forKey: Prefs.modelArrangement)
+        d.set(path, forKey: Prefs.modelReader)
+        let out = dir.appendingPathComponent("\(arrangement.rawValue)-\((path as NSString).lastPathComponent).ocr.pdf")
+        var outcome: Runner.Result.Outcome?, message = ""
+        OCRModel.makeSearchablePDF(file: source, output: out, rebuild: true, rebuildMode: .auto,
+                                   password: nil, control: RunControl(), progress: { _, _ in },
+                                   report: { o, m in outcome = o; message = m })
+        return (embeddedText(of: out), message, outcome)
+    }
+    let off = publish(.off, good)
+    check("with the setting off the layer is Vision's", off.0.contains("words") && !off.0.contains("wordz"),
+          off.0 + " | " + off.1)
+    let on = publish(.align, good)
+    check("with it on the published layer carries the reader's words",
+          on.2 == .succeeded && on.0.contains("wordz") && on.0.contains("texts"), on.0 + " | " + on.1)
+    let failed = publish(.align, broken)
+    check("a reader that fails fails the file, saying why, and publishes nothing",
+          failed.2 == .failed && failed.1.contains("model reader") && failed.0.isEmpty,
+          "\(String(describing: failed.2)) \(failed.1)")
+    let quiet = publish(.align, silent)
+    check("…and so does one that reads nothing on a page Vision read",
+          quiet.2 == .failed && quiet.1.contains("read nothing") && quiet.0.isEmpty,
+          "\(String(describing: quiet.2)) \(quiet.1)")
+
+    // And through the helper, which is how a batch recognises: the setting crosses over.
+    let pngs = dir.appendingPathComponent("pages")
+    try? FileManager.default.createDirectory(at: pngs, withIntermediateDirectories: true)
+    let rebuilt = dir.appendingPathComponent("rebuilt.pdf")
+    let bitmaps = (try? Flattener.flatten(source, to: rebuilt, mode: .blackAndWhite, pngDirectory: pngs)) ?? []
+    var settings = Prefs.Snapshot.current()
+    settings.modelArrangement = .align
+    settings.modelReader = good
+    var fellBack: [String] = []
+    let viaHelper = try? Recogniser.recogniseDocument(visible: rebuilt, bitmaps: bitmaps, settings: settings,
+                                                      useHelper: true, onFallback: { fellBack.append($0) })
+    let helperText = (viaHelper?[1] ?? []).map(\.text).joined(separator: " ")
+    check("the helper aligns the reader's words too, without falling back",
+          fellBack.isEmpty && helperText.contains("wordz"), helperText + " | " + fellBack.joined())
+
+    // A cancel stops the reader, which Foundation put in a process group of its own:
+    // in the helper by its SIGTERM handler, in the app by `Runner.stop` (review, 2026-10-08).
+    for viaHelperRoute in [true, false] {
+        let pidFile = dir.appendingPathComponent("sleeper-\(viaHelperRoute).pid")
+        var sleeping = settings
+        sleeping.modelReader = reader("sleeper-\(viaHelperRoute).sh",
+                                      "echo $$ > '\(pidFile.path)'\nexec /bin/sleep 60")
+        let began = Date()
+        let cancelled = (try? Recogniser.recogniseDocument(
+            visible: rebuilt, bitmaps: bitmaps, settings: sleeping, useHelper: viaHelperRoute,
+            isCancelled: { FileManager.default.fileExists(atPath: pidFile.path) })) == nil
+        let pid = pid_t((try? String(contentsOf: pidFile, encoding: .utf8))?
+            .trimmingCharacters(in: .whitespacesAndNewlines) ?? "") ?? 0
+        var gone = false
+        for _ in 0..<40 where pid > 0 {
+            if kill(pid, 0) != 0 { gone = true; break }
+            usleep(50_000)
+        }
+        if !gone && pid > 0 { kill(pid, SIGKILL) }
+        check("a cancel stops the model reader \(viaHelperRoute ? "the helper started" : "the app started")",
+              cancelled && pid > 0 && gone && Date().timeIntervalSince(began) < 30,
+              "cancelled \(cancelled), pid \(pid), gone \(gone)")
+    }
     resetPrefs()
 }
 

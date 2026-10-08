@@ -50,10 +50,13 @@ enum Recogniser {
         case cancelled
         case unreadablePage(Int)
         case unreadableRegions(String)
+        case modelReader(String)
 
         var errorDescription: String? {
             switch self {
             case .cancelled: return "Cancelled."
+            case .modelReader(let why):
+                return "The model reader set for this run could not read a page: \(why)."
             case .unreadableRegions(let what):
                 return "The columns of a pasted-up page could not be read (\(what))."
             case .unreadablePage(let n):
@@ -937,7 +940,19 @@ enum Recogniser {
             merged = greyReading(of: merged, from: greyLines,
                                  aspect: Double(first.height) / Double(first.width))
         }
-        return fittedToGutters(merged, of: fitOn, isCancelled: isCancelled)
+        let fitted = fittedToGutters(merged, of: fitOn, isCancelled: isCancelled)
+        guard settings.modelArrangement == .align, !isCancelled() else { return fitted }
+        // The grey render when there is one: a model reads grey better than Otsu's 1-bit.
+        let reading = try modelReading(
+            of: FileManager.default.fileExists(atPath: greyURL.path) ? greyURL : pageURL,
+            reader: settings.modelReader, isCancelled: isCancelled)
+        // Nothing, over a page Vision read lines on, is a reader that failed quietly.
+        if modelWords(reading).isEmpty && !fitted.isEmpty {
+            throw Failure.modelReader("\(settings.modelReader) read nothing on a page holding "
+                                      + "\(fitted.count) lines")
+        }
+        return alignedReading(of: fitted, from: modelWords(reading),
+                              aspect: Double(fitOn.height) / Double(fitOn.width))
     }
 
     /// The lines of `finer` that the copy's reading has nothing over: each at full
@@ -1176,6 +1191,320 @@ enum Recogniser {
         guard total > 0 else { return 0 }
         let shared = x.reduce(0) { $0 + min($1.value, y[$1.key] ?? 0) }
         return 2 * Double(shared) / Double(total)
+    }
+
+    // MARK: - A model's reading on Vision's lines (`ocr-hybrid-proto`, arrangement b)
+
+    /// The process group of the model reader running now, 0 when none: Foundation makes
+    /// every child the leader of its own group, so a helper stopped by the app (cancel,
+    /// or its stall bound) would leave its reader running, 3.4 GB of it. The helper's
+    /// SIGTERM handler kills this group, and a pointer is what a handler may read.
+    static let readerGroup: UnsafeMutablePointer<pid_t> = {
+        let p = UnsafeMutablePointer<pid_t>.allocate(capacity: 1)
+        p.pointee = 0
+        return p
+    }()
+
+    /// The longest one page's reading may take before it counts as failed.
+    static let readerSeconds: Double = 600
+
+    /// The text `reader` writes for the page at `image`, run as `<reader> <image>
+    /// <out.txt>`. Throws when no reader is set, or it cannot start, exits non-zero,
+    /// runs past `readerSeconds` or writes no file: the run asked for the model's
+    /// words, and a page published without them, saying nothing, is not the document
+    /// that was asked for.
+    static func modelReading(of image: URL, reader: String,
+                             isCancelled: () -> Bool = { false }) throws -> String {
+        guard !reader.isEmpty else { throw Failure.modelReader("no reader is set") }
+        // One reader at a time across every process: a batch runs several helpers at
+        // once, and each reading loads the model (Falcon-OCR peaks at 3.4 GB), so six at
+        // once would ask more of an 18 GB Mac than it has. Released when the descriptor
+        // closes, which a crash does too.
+        let lock = open(FileManager.default.temporaryDirectory
+                            .appendingPathComponent("visionocr-model-reader.lock").path,
+                        O_CREAT | O_RDWR, 0o600)
+        guard lock >= 0 else { throw Failure.modelReader("its lock could not be opened") }
+        defer { close(lock) }
+        while flock(lock, LOCK_EX | LOCK_NB) != 0 {
+            if isCancelled() { throw Failure.cancelled }
+            usleep(100_000)
+        }
+        let out = FileManager.default.temporaryDirectory
+            .appendingPathComponent("visionocr-reader-\(UUID().uuidString).txt")
+        defer { try? FileManager.default.removeItem(at: out) }
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: reader)
+        process.arguments = [image.path, out.path]
+        process.standardInput = FileHandle.nullDevice
+        process.standardOutput = FileHandle.nullDevice
+        process.standardError = FileHandle.nullDevice
+        do { try process.run() } catch {
+            throw Failure.modelReader("\(reader) could not be started (\(error.localizedDescription))")
+        }
+        let group = Runner.processGroup(of: process)
+        readerGroup.pointee = group ?? 0
+        defer { readerGroup.pointee = 0 }
+        let deadline = Date().addingTimeInterval(readerSeconds)
+        while process.isRunning {
+            if isCancelled() {
+                Runner.stop(process, knownGroup: group)
+                throw Failure.cancelled
+            }
+            if Date() > deadline {
+                Runner.stop(process, knownGroup: group)
+                throw Failure.modelReader("\(reader) took longer than \(Int(readerSeconds)) seconds")
+            }
+            usleep(50_000)
+        }
+        guard process.terminationReason == .exit else {
+            throw Failure.modelReader("\(reader) was stopped by signal \(process.terminationStatus)")
+        }
+        guard process.terminationStatus == 0 else {
+            throw Failure.modelReader("\(reader) exited with status \(process.terminationStatus)")
+        }
+        guard let text = try? String(contentsOf: out, encoding: .utf8) else {
+            throw Failure.modelReader("\(reader) wrote no text")
+        }
+        return text
+    }
+
+    /// A model's reading as words, with the markup some models write taken out:
+    /// inline HTML joins its neighbours (Falcon-OCR writes `service."<sup>16</sup>`, as
+    /// printed), any other tag or control token is a space, the common entities are decoded, and
+    /// Markdown's heading, list and emphasis marks and a table's rule cells are dropped.
+    /// A `<` that opens no tag, as in `p < 0.05`, is text.
+    static func modelWords(_ text: String) -> [String] {
+        func sub(_ t: String, _ pattern: String, _ with: String) -> String {
+            t.replacingOccurrences(of: pattern, with: with, options: [.regularExpression, .caseInsensitive])
+        }
+        // A model's control token (Falcon-OCR ends a page with `<|end_of_query|>`).
+        var t = sub(text, "<\\|[^|<>\\s]{1,40}\\|>", " ")
+        t = sub(t, "</?(sup|sub|i|b|em|strong|u)>", "")
+        t = sub(t, "</?[a-z][a-z0-9]*(\\s[^<>]{0,80})?/?>", " ")
+        for (entity, character) in [("&lt;", "<"), ("&gt;", ">"), ("&quot;", "\""), ("&#39;", "'"),
+                                    ("&nbsp;", " "), ("&amp;", "&")] {
+            t = t.replacingOccurrences(of: entity, with: character)
+        }
+        t = sub(t, "(?m)^[ \\t]*(#{1,6}|[-*•])[ \\t]+", "")
+        t = t.replacingOccurrences(of: "**", with: "").replacingOccurrences(of: "__", with: "")
+        t = sub(t, "(?<![\\w*])\\*(\\S[^*\\n]*?)\\*(?![\\w*])", "$1")
+        return t.split(whereSeparator: \.isWhitespace).map(String.init)
+            .filter { t in !(t.allSatisfy { "|-:".contains($0) } && (t.contains("|") || t.count >= 3)) }
+    }
+
+    /// A word as the alignment compares it: case folded, letters and digits only.
+    static func alignmentKey(_ word: String) -> [Character] {
+        Array(word.lowercased().filter { $0.isLetter || $0.isNumber })
+    }
+
+    /// How alike two words are, 0 to 1: one less their edit distance over the longer
+    /// one's length. Two words of punctuation alone are alike; one of them alone is not.
+    static func wordLikeness(_ a: [Character], _ b: [Character]) -> Double {
+        if a.isEmpty || b.isEmpty { return a.isEmpty && b.isEmpty ? 1 : 0 }
+        if a == b { return 1 }
+        var row = Array(0...b.count)
+        for i in 1...a.count {
+            var previous = row[0]
+            row[0] = i
+            for j in 1...b.count {
+                let held = row[j]
+                row[j] = min(row[j] + 1, row[j - 1] + 1, previous + (a[i - 1] == b[j - 1] ? 0 : 1))
+                previous = held
+            }
+        }
+        return 1 - Double(row[b.count]) / Double(max(a.count, b.count))
+    }
+
+    /// The likeness at which a model's word counts as the same word Vision read, and so
+    /// as evidence the two readings are in step there.
+    static let alignmentAnchor = 0.5
+    /// What leaving a word of either reading unpaired costs. A pair of unlike words
+    /// costs at most 1, under two of these, so a word Vision garbled is paired with the
+    /// model's word in its place rather than both being left out.
+    static let alignmentGap: Float = 0.7
+    /// The most words a model reads that Vision has nothing for, in one place, that
+    /// are put into a line: more would shrink the line's type to fit its box.
+    static let alignmentInsertion = 3
+    /// The most cells the alignment will fill (Vision's words times the model's); a
+    /// page past it keeps Vision's words. A newspaper page is hp-regions' work.
+    static let alignmentCells = 64_000_000
+
+    /// `lines` with their words taken from `words`, a model's reading of the same page,
+    /// where the two readings agree enough to be trusted; boxes, order, turns and
+    /// confidences unchanged. The queue's arrangement (b), in one model call a page.
+    ///
+    /// The upright lines are put in reading order as `prepared` orders them (each
+    /// strip of a pasted-up page on its own, its lines column by column), and their
+    /// words are aligned with the model's by a monotonic edit alignment
+    /// (`wordLikeness`). The idea, one whole-page reading aligned onto detected lines
+    /// rather than one model call a line, is local-llm-pdf-ocr's (MIT,
+    /// github.com/ahnafnafee/local-llm-pdf-ocr; `PRIOR-ART-2026-10-05.md` §4); it
+    /// aligns by each box's share of the characters, and Falcon-OCR's reading comes
+    /// back in paragraphs, so this aligns word by word on Vision's own words instead.
+    ///
+    /// A line is rewritten only when at least half its words are anchors
+    /// (`alignmentAnchor`). In it a word the model has nothing for stays as Vision read
+    /// it, and a word the model read differently is replaced only when it is an anchor
+    /// or stands between two (Vision's `tbc` is the model's `the` there; `Table` is not
+    /// `Figure` elsewhere). Model words Vision has nothing for go in only between two
+    /// anchors on one line, at most `alignmentInsertion` of them. A word split by a
+    /// hyphen at a line's end is one word to the alignment and split again where Vision
+    /// split it. If under half of all of Vision's words are anchors, the readings are
+    /// not of the same text in the same order, and the page keeps Vision's words.
+    static func alignedReading(of lines: [SearchableWriter.Observation], from words: [String],
+                               aspect: Double) -> [SearchableWriter.Observation] {
+        guard !lines.isEmpty, !words.isEmpty else { return lines }
+        // Reading order, by index into `lines`.
+        func upright(_ o: SearchableWriter.Observation) -> Bool { ((o.quarterTurns ?? 0) % 4 + 4) % 4 == 0 }
+        var strips: [Int?] = []
+        var byStrip: [Int?: [Int]] = [:]
+        for i in lines.indices where upright(lines[i]) {
+            if byStrip[lines[i].region] == nil { strips.append(lines[i].region) }
+            byStrip[lines[i].region, default: []].append(i)
+        }
+        func key(_ o: SearchableWriter.Observation) -> String {
+            let b = o.boundingBox
+            return "\(b.x) \(b.y) \(b.width) \(b.height) \(o.text)"
+        }
+        var order: [Int] = []
+        for strip in strips {
+            let members = (byStrip[strip] ?? []).sorted { lines[$0].boundingBox.y < lines[$1].boundingBox.y }
+            var waiting: [String: [Int]] = [:]
+            for i in members { waiting[key(lines[i]), default: []].append(i) }
+            for o in SearchableWriter.columnOrdered(members.map { lines[$0] }, aspect: aspect) {
+                guard let i = waiting[key(o)]?.first else { continue }
+                waiting[key(o)]?.removeFirst()
+                order.append(i)
+            }
+        }
+        // Vision's words in that order. A word ending a line in a hyphen and the next
+        // line's first word are one word (`parts` names both places).
+        let lineWords = lines.map { $0.text.split(whereSeparator: \.isWhitespace).map(String.init) }
+        var vision: [(key: [Character], parts: [(line: Int, word: Int)])] = []
+        var skipFirst = Set<Int>()
+        for (n, line) in order.enumerated() {
+            let ws = lineWords[line]
+            for (w, word) in ws.enumerated() where !(w == 0 && skipFirst.contains(line)) {
+                if w == ws.count - 1, word.count > 1, word.hasSuffix("-"),
+                   word.dropLast().last?.isLetter == true,
+                   n + 1 < order.count, let next = lineWords[order[n + 1]].first,
+                   next.first?.isLetter == true,
+                   // A next line that is one hyphenated word joins on to the line after it.
+                   !(lineWords[order[n + 1]].count == 1 && next.hasSuffix("-")) {
+                    vision.append((alignmentKey(String(word.dropLast()) + next),
+                                   [(line, w), (order[n + 1], 0)]))
+                    skipFirst.insert(order[n + 1])
+                } else {
+                    vision.append((alignmentKey(word), [(line, w)]))
+                }
+            }
+        }
+        let model = words.map(alignmentKey)
+        let n = vision.count, m = model.count
+        guard n > 0, n * m <= alignmentCells else { return lines }
+        // Edit alignment: 0 pairs vision[i-1] with model[j-1], 1 leaves vision[i-1]
+        // unpaired, 2 leaves model[j-1] unpaired.
+        var step = [UInt8](repeating: 0, count: (n + 1) * (m + 1))
+        var above = (0...m).map { Float($0) * alignmentGap }
+        for j in 1...m { step[j] = 2 }
+        var here = above
+        for i in 1...n {
+            here[0] = Float(i) * alignmentGap
+            step[i * (m + 1)] = 1
+            for j in 1...m {
+                let pair = above[j - 1] + Float(1 - wordLikeness(vision[i - 1].key, model[j - 1]))
+                let dropVision = above[j] + alignmentGap
+                let dropModel = here[j - 1] + alignmentGap
+                if pair <= dropVision && pair <= dropModel {
+                    here[j] = pair
+                } else if dropVision <= dropModel {
+                    here[j] = dropVision; step[i * (m + 1) + j] = 1
+                } else {
+                    here[j] = dropModel; step[i * (m + 1) + j] = 2
+                }
+            }
+            swap(&above, &here)
+        }
+        // Back through it: each Vision word's paired model word, and the model words
+        // left over before each Vision word (index n: after the last one).
+        var paired = [Int?](repeating: nil, count: n)
+        var extra = [[Int]](repeating: [], count: n + 1)
+        var (i, j) = (n, m)
+        while i > 0 || j > 0 {
+            switch step[i * (m + 1) + j] {
+            case 0: paired[i - 1] = j - 1; i -= 1; j -= 1
+            case 1: i -= 1
+            default: extra[i].insert(j - 1, at: 0); j -= 1
+            }
+        }
+        func anchored(_ v: Int) -> Bool {
+            paired[v].map { wordLikeness(vision[v].key, model[$0]) >= alignmentAnchor } ?? false
+        }
+        guard 2 * vision.indices.filter(anchored).count >= n else { return lines }
+        // Each line's anchors, and its new words.
+        var anchors = [Int](repeating: 0, count: lines.count)
+        var counted = [Int](repeating: 0, count: lines.count)
+        var proposed = lineWords
+        var after = lineWords.map { [[String]](repeating: [], count: $0.count) }
+        for v in 0..<n {
+            let parts = vision[v].parts
+            for p in parts {
+                counted[p.line] += 1
+                if anchored(v) { anchors[p.line] += 1 }
+            }
+            // An unlike word replaces Vision's only between two anchors, where the
+            // two readings are in step on both sides of it.
+            if let w = paired[v], anchored(v) || (v > 0 && v + 1 < n && anchored(v - 1) && anchored(v + 1)) {
+                let word = words[w]
+                if parts.count == 1 {
+                    // A model word holding Vision's whole and three letters more at one
+                    // end is a word Vision saw the rest of on another line: on Briefer
+                    // Book Notes p3 `Uní-` over `versity` became `Uní-` over `University`,
+                    // and `dis-` over `discusses` joined to `disdiscusses`. Vision's stays.
+                    let mine = vision[v].key, theirs = model[w]
+                    let part = !mine.isEmpty && theirs.count >= mine.count + 3
+                        && (theirs.starts(with: mine) || theirs.reversed().starts(with: mine.reversed()))
+                    if !part { proposed[parts[0].line][parts[0].word] = word }
+                } else {
+                    // Split where Vision split it: after as many letters and digits as
+                    // its head holds. A model word of another length is not this word
+                    // (`con-` `tin-` `ued` against `continued`), and keeps Vision's.
+                    let head = alignmentKey(lineWords[parts[0].line][parts[0].word]).count
+                    var seen = 0, cut = word.endIndex
+                    for index in word.indices where word[index].isLetter || word[index].isNumber {
+                        if seen == head { cut = index; break }
+                        seen += 1
+                    }
+                    if cut < word.endIndex, abs(model[w].count - vision[v].key.count) <= 1 {
+                        let first = word[..<cut]
+                        proposed[parts[0].line][parts[0].word] =
+                            first.hasSuffix("-") ? String(first) : String(first) + "-"
+                        proposed[parts[1].line][parts[1].word] = String(word[cut...])
+                    }
+                }
+            }
+            // Model words with no Vision word, put after this word, but only between
+            // two anchors on one line: anywhere else they may be text read elsewhere.
+            let gap = extra[v + 1].map { words[$0] }
+            let last = parts[parts.count - 1]
+            if !gap.isEmpty, gap.count <= alignmentInsertion, v + 1 < n, anchored(v), anchored(v + 1),
+               vision[v + 1].parts[0].line == last.line {
+                after[last.line][last.word] += gap
+            }
+        }
+        var out = lines
+        for line in lines.indices where counted[line] > 0 && 2 * anchors[line] >= counted[line] {
+            var text: [String] = []
+            for (w, word) in proposed[line].enumerated() { text.append(word); text += after[line][w] }
+            let joined = text.joined(separator: " ")
+            guard joined != lines[line].text else { continue }
+            var o = SearchableWriter.Observation(boundingBox: lines[line].boundingBox, text: joined,
+                                                 confidence: lines[line].confidence)
+            o.quarterTurns = lines[line].quarterTurns
+            o.region = lines[line].region
+            out[line] = o
+        }
+        return out
     }
 
     /// The regions `flatten` wrote beside the bitmap at `image`, or nil when it wrote
@@ -3339,6 +3668,8 @@ enum Recogniser {
             "--min-text-height-on", settings.minTextHeightOn ? "1" : "0",
             "--min-text-height", "\(settings.minTextHeight)",
             "--confidence", "\(settings.confidence)",
+            "--model-arrangement", settings.modelArrangement.rawValue,
+            "--model-reader", settings.modelReader,
         ]
     }
 
@@ -3377,7 +3708,10 @@ enum Recogniser {
               let words = values["--custom-words"],
               let minOn = flag("--min-text-height-on"),
               let minHeight = number("--min-text-height"),
-              let confidence = number("--confidence")
+              let confidence = number("--confidence"),
+              let arrangement = values["--model-arrangement"]
+                  .flatMap(Prefs.ModelArrangement.init(rawValue:)),
+              let reader = values["--model-reader"]
         else { return nil }
 
         return Prefs.Snapshot(
@@ -3390,7 +3724,8 @@ enum Recogniser {
             preserveAnnotations: false,
             fast: fast, languages: languages, languageCorrection: correction,
             confidence: confidence, pdfDPIAuto: true, pdfDPI: 0, password: "",
-            customWords: words, minTextHeightOn: minOn, minTextHeight: minHeight)
+            customWords: words, minTextHeightOn: minOn, minTextHeight: minHeight,
+            modelArrangement: arrangement, modelReader: reader)
     }
 
     /// One page's worth of the helper's output, and the app's input.

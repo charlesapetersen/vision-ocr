@@ -338,6 +338,21 @@ enum Prefs {
     /// the wrong one to impose on someone converting a receipt.
     static let preserveAnnotations = "preserveAnnotations"
 
+    /// How a second, stronger reader's words reach the text layer (`ocr-hybrid-proto`).
+    /// Off by default and offered nowhere in the panel yet: the arrangements are being
+    /// built and measured, and `ocr-integrate-settings` gives the winner its controls.
+    static let modelArrangement = "modelArrangement"
+    /// The reader itself: an executable run as `<reader> <page image> <out.txt>`, which
+    /// writes the page's text, in reading order, to `out.txt` and exits 0.
+    static let modelReader = "modelReader"
+
+    /// `modelArrangement`'s values. `align` keeps Vision's lines, boxes and order and
+    /// takes their words from one whole-page reading by the model
+    /// (`Recogniser.alignedReading`): the queue's arrangement (b).
+    enum ModelArrangement: String, CaseIterable {
+        case off, align
+    }
+
     /// Write a record of each finished batch to `~/Library/Logs/VisionOCR`.
     ///
     /// On by default. The log this copies is in-memory and dies with the
@@ -399,6 +414,8 @@ enum Prefs {
         var customWords: String
         var minTextHeightOn: Bool
         var minTextHeight: Double
+        var modelArrangement: ModelArrangement = .off
+        var modelReader: String = ""
 
         /// Reads the live settings. Call on the main actor, once per batch.
         static func current(_ d: UserDefaults = .standard) -> Snapshot {
@@ -421,7 +438,10 @@ enum Prefs {
                 password: d.string(forKey: Prefs.password) ?? "",
                 customWords: d.string(forKey: Prefs.customWords) ?? "",
                 minTextHeightOn: d.bool(forKey: Prefs.minTextHeightOn),
-                minTextHeight: d.double(forKey: Prefs.minTextHeight))
+                minTextHeight: d.double(forKey: Prefs.minTextHeight),
+                modelArrangement: ModelArrangement(
+                    rawValue: d.string(forKey: Prefs.modelArrangement) ?? "") ?? .off,
+                modelReader: d.string(forKey: Prefs.modelReader) ?? "")
         }
     }
 
@@ -437,7 +457,7 @@ enum Prefs {
         password, customWords, minTextHeightOn, minTextHeight,
         warnDigitalText, rebuildImages, rebuildMode, useJBIG2, photoDetail,
         joinHyphenated, preserveAnnotations, writeRunReport, concurrency,
-        checkForUpdates, skippedVersion, lastUpdateCheck,
+        checkForUpdates, skippedVersion, lastUpdateCheck, modelArrangement, modelReader,
     ]
 
     /// Set once the pre-rename settings have been brought across. Deliberately
@@ -566,6 +586,9 @@ enum Prefs {
             // be found at all. In narrow-column archival material that is most
             // of the words worth searching for.
             joinHyphenated: true,
+
+            modelArrangement: ModelArrangement.off.rawValue,
+            modelReader: "",
 
             // On by default. The cost is a few kilobytes of text per batch in
             // the directory macOS already keeps logs in; the benefit is that a

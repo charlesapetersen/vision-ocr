@@ -1298,6 +1298,27 @@ say so in the commit.
       DONE WHEN each arrangement runs on two sample pages through the production pipeline and its check is in
       the suite. ESTIMATE: 2-3 sessions. Sub-boxes: one per arrangement. BOUND: rule 10.
       (context: owner request 2026-10-02, split 2026-10-04)
+      Round 1, session 1, 2026-10-08: arrangement (b) built and measured; sub-box hp-align below TICKED. The
+      settings are `modelArrangement` (off|align) and `modelReader` (an executable run as `<reader> <image>
+      <out.txt>`; `ops/ocrlab/reader-falcon.sh` runs Falcon-OCR from the lab), carried to the helper; no panel
+      control yet. One reader runs at a time machine-wide (flock), a cancel kills it in the helper and in the
+      app, and a reader that fails or reads nothing on a page Vision read fails the file. Pages not rebuilt, and
+      pages over `alignmentCells`, keep Vision's words; nothing reports per page which pages took the model's.
+- [x] **hp-align** — arrangement (b): one whole-page Falcon-OCR reading aligned word by word onto Vision's
+      lines (`Recogniser.alignedReading`). Measured (score-gate, then `ux-harness --truth`, off vs align, same
+      build): Briefer Book Notes p1 wrong 11 -> 2, copyErr 0.0228 -> 0.0098; p3 10 -> 1, 0.0168 -> 0.0031; 1954 -
+      Why p8 3 -> 2, 0.0085 -> 0.0063; p9 9 -> 3, 0.6682 -> 0.6545 (its 279 added words are the page's own, unchanged).
+      Selection columns unchanged; splits/welds 2/1 -> 1/0 on Briefer p1; every PDFKit line selects one line.
+      16 pages in 262 s with Falcon. The DONE WHEN verifier found `<|end_of_query|>` in the layer and a word Vision
+      read part of written whole beside it (`disdiscusses`, `Uní- / University`); both fixed and gone on
+      re-measure. Left as found: the model "corrects" a printed misspelling (Why p8 `discliplined`). The suite's
+      block "a model's reading takes Vision's lines' words..." holds its checks. (context: ocr-hybrid-proto)
+- [ ] **hp-replace** — arrangement (a): the model replacing Vision outright, with its own line or word boxes,
+      behind `modelArrangement`. Falcon-OCR writes no boxes; pick a top-three model that does, or say why none
+      can. DONE WHEN as the parent's, for (a). ESTIMATE: 1 session. (uses: build,model:12) (context: ocr-hybrid-proto)
+- [ ] **hp-fill** — arrangement (c) on pages other than newspapers: Vision as now, the model reading only the
+      lines Vision skipped or read with low confidence, behind `modelArrangement`. DONE WHEN as the parent's,
+      for (c). ESTIMATE: 1 session. (uses: build,model:12) (context: ocr-hybrid-proto)
 - [ ] **ocr-hybrid-run** — run every arrangement with each of the top three over the sample, as one job. (uses: machine)
       (blocked-on: ocr-hybrid-proto, model-night-ok)
       2026-10-07: model-night-ok added when ocr-hybrid-proto stopped waiting on the bits item (EFFICIENCY-PLAN

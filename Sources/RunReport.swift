@@ -246,6 +246,11 @@ enum RunReport {
             rows.append(("Join broken words", c.settings.joinHyphenated ? "on" : "off"))
             rows.append(("Keep highlights and notes",
                          c.settings.preserveAnnotations ? "on" : "off"))
+            // `Recogniser.recognisePage(at:)` is the only place the reader runs, so a
+            // page that is not rebuilt keeps Vision's words whatever this says.
+            rows.append(("Model reader", c.settings.modelArrangement == .off ? "off"
+                            : "\(c.settings.modelArrangement.rawValue), \(c.settings.modelReader)"
+                            + (c.rebuildImages ? "" : " — not used: pages are not rebuilt")))
         }
 
         rows.append(("Recognition", c.settings.fast ? "fast" : "accurate"))
@@ -296,6 +301,8 @@ enum RunReport {
         "customWords": "Custom words",
         "minTextHeightOn": "Minimum text height",
         "minTextHeight": "Minimum text height",
+        "modelArrangement": "Model reader",
+        "modelReader": "Model reader",
     ]
 
     /// Rows that report something outside the snapshot, so the coverage check

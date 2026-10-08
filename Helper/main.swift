@@ -72,6 +72,17 @@ func announce(_ index: Int) {
     }
 }
 
+// The app stops a helper with SIGTERM before SIGKILL (`Runner.stop`). A model reader
+// this helper started is in a group of its own, out of the app's reach, so it goes
+// down here, or it would run on, orphaned, holding gigabytes (`Recogniser.readerGroup`).
+// Then the signal is raised again as it was, so the helper still dies of it.
+signal(SIGTERM) { _ in
+    let group = Recogniser.readerGroup.pointee
+    if group > 0 { kill(-group, SIGKILL) }
+    signal(SIGTERM, SIG_DFL)
+    raise(SIGTERM)
+}
+
 let arguments = Array(CommandLine.arguments.dropFirst())
 
 // Answered before anything else, and the reason it exists is `build.sh`: the
