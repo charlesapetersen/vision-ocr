@@ -1079,7 +1079,10 @@ say so in the commit.
       serialise on test.lock and one Vision process at a time is a hard memory rule here. Follow-up:
       `two-sessions-recheck`.
 - [ ] **two-sessions-recheck** — once the larger plan is in use, re-measure and build the side lane if it pays.
-      (blocked-on: larger-plan-active)
+      (blocked-on: larger-plan-active) (not-before: 2026-10-14)
+      2026-10-07 (round 1, session 1): the plan went live at 16:06 today, so there was no week of readings to
+      measure; `next-item.sh` gained `(not-before:)` (harness `tests/prove-next-item.sh`) and holds this item
+      until 2026-10-14.
       WHAT. Over the first week on the new plan, rerun two-sessions-design's measurement. Build the side lane it
       designs only if the daemon spent under a tenth of its running time waiting on the window and at least two
       `(lane: side)`-shaped items are queued; otherwise write that here and tick the box. DONE WHEN the figures and
