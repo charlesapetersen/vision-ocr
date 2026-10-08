@@ -11889,6 +11889,222 @@ do {
     resetPrefs()
 }
 
+print("\na model's own blocks and words replace Vision's reading (ocr-hybrid-proto, replace)")
+
+do {
+    let blocks = Recogniser.modelBlocks("0.1\t0.15\t0.8\t0.3\tText\t<p>one two</p>\n"
+                                        + "0.5\t0.5\t0.4\t0.6\tText\tinverted\n"
+                                        + "0.1\t0.45\t0.8\t0.5\tFootnote\tthree\n")
+    check("a reader's blocks parse as fractions of the page, and a block with an impossible box is left out",
+          blocks?.count == 2 && blocks?[0].label == "Text" && blocks?[1].text == "three"
+              && blocks.map { abs($0[0].box.width - 0.7) < 1e-9 && abs($0[0].box.height - 0.15) < 1e-9 } == true,
+          "\(blocks?.map(\.text) ?? [])")
+    check("…and an answer that is not blocks at all does not parse",
+          Recogniser.modelBlocks("Transcribed text of the page\nwith no boxes\n") == nil)
+
+    // Rows of a 100-wide block: a 2-row accent over a 10-row line, then two 10-row lines
+    // that touch (20 rows), then a 10-row line.
+    let width = 100
+    func rows(_ inked: [Range<Int>], height: Int) -> [UInt8] {
+        var g = [UInt8](repeating: 255, count: width * height)
+        for r in inked { for y in r { for x in 10..<(y >= 60 ? 40 : 90) { g[y * width + x] = 0 } } }
+        return g
+    }
+    let found = Recogniser.blockLines(grey: rows([5..<7, 8..<18, 25..<45, 60..<70], height: 80), width: width,
+                                      level: 128, inside: 0..<80)
+    check("a block's lines are its inked rows: an accent joins its line, touching lines are cut apart",
+          found.map(\.rows) == [5..<18, 25..<35, 35..<45, 60..<70]
+              && found.map(\.columns) == [10..<90, 10..<90, 10..<90, 10..<40],
+          found.map { "\($0.rows) \($0.columns)" }.joined(separator: " / "))
+    // Briefer Book Notes p3, 2026-10-08: on a scan the rows between lines hold a little
+    // ink, and one 371-row block read as one line. Two dense lines, faint rows between.
+    var faint = [UInt8](repeating: 255, count: width * 24)
+    for y in 0..<24 { for x in 0..<((10..<14).contains(y) ? 2 : 80) { faint[y * width + x] = 0 } }
+    let apart = Recogniser.blockLines(grey: faint, width: width, level: 128, inside: 0..<24).map(\.rows)
+    check("lines whose gap holds a little ink are two lines, each grown to half the gap",
+          apart == [0..<12, 12..<24], "\(apart)")
+    check("…and a line whose middle lies past the block's own rows is the next block's",
+          Recogniser.blockLines(grey: rows([5..<15, 60..<70], height: 80), width: width, level: 128,
+                                inside: 0..<50).map(\.rows) == [5..<15])
+
+    let shares = Recogniser.distributed("aaaa bbbb cccc dddd eeee ffff gggg hhhh i".split(separator: " ").map(String.init),
+                                        over: [80, 80, 10], pieces: [4, 4, 1])
+    check("a block's words are laid over its lines in order, a short last line taking a short share",
+          shares == [["aaaa", "bbbb", "cccc", "dddd"], ["eeee", "ffff", "gggg", "hhhh"], ["i"]],
+          "\(shares)")
+    let pieced = Recogniser.distributed(["aaaaaaaaaa", "b", "c", "dddd", "eeee"], over: [50, 50], pieces: [3, 2])
+    check("…and where widths alone would move a word across a break, the line's pieces of ink keep it",
+          pieced == [["aaaaaaaaaa", "b", "c"], ["dddd", "eeee"]], "\(pieced)")
+    let byInk = Recogniser.placed(["aaaa", "bb", "cccccc", "dd", "eeee"], pieces: [[40, 20, 60], [20, 40]])
+    check("a block's words go to the pieces of ink their letters fit, so each line ends where the print does",
+          byInk == [["aaaa", "bb", "cccccc"], ["dd", "eeee"]], "\(byInk ?? [])")
+    let hyphened = Recogniser.placed(["manufacturing", "is"], pieces: [[50], [80, 20]])
+    check("…and a word hyphenated over a line's end goes on the line it starts on",
+          hyphened == [["manufacturing"], ["is"]], "\(hyphened ?? [])")
+    check("…and a line's pieces of ink are told apart by a word space, not a letter's gap",
+          Recogniser.blockLines(grey: { () -> [UInt8] in
+              var g = [UInt8](repeating: 255, count: width * 12)
+              for y in 1..<11 { for x in [2, 3, 4, 6, 7, 20, 21, 30] { g[y * width + x] = 0 } }
+              return g }(), width: width, level: 128, inside: 0..<12).map(\.pieces) == [[6, 2, 1]])
+
+    // A 1000 x 1300 page: a block of three lines (rows 200, 250, 300; the last short), a
+    // block of one line (row 600), and a page number at row 1200 that the model gave no block.
+    let (w, h) = (1000, 1300)
+    let ctx = CGContext(data: nil, width: w, height: h, bitsPerComponent: 8, bytesPerRow: w,
+                        space: CGColorSpaceCreateDeviceGray(), bitmapInfo: CGImageAlphaInfo.none.rawValue)!
+    ctx.setFillColor(gray: 1, alpha: 1)
+    ctx.fill(CGRect(x: 0, y: 0, width: w, height: h))
+    ctx.setFillColor(gray: 0, alpha: 1)
+    // Each line drawn as its words, 20 px apart: four, three, one, three and one.
+    for (top, width, words) in [(200, 700, 4), (250, 700, 3), (300, 200, 1), (600, 500, 3), (1200, 40, 1)] {
+        let piece = (width - 20 * (words - 1)) / words
+        for k in 0..<words {
+            ctx.fill(CGRect(x: 100 + k * (piece + 20), y: h - top - 30,
+                            width: k == words - 1 ? width - k * (piece + 20) : piece, height: 30))
+        }
+    }
+    let page = ctx.makeImage()!
+    func line(_ text: String, top: Double, width: Double = 0.7) -> SearchableWriter.Observation {
+        .init(boundingBox: .init(x: 0.1, y: top / 1300, width: width, height: 30.0 / 1300), text: text, confidence: 1)
+    }
+    let vision = [line("Tbe frst lime", top: 200), line("of tlie block", top: 250), line("ends", top: 300, width: 0.2),
+                  line("A secoud block", top: 600, width: 0.5), line("12", top: 1200, width: 0.04)]
+    let dir = tmp.appendingPathComponent("model-replace")
+    try? FileManager.default.removeItem(at: dir)
+    try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+    let shown = dir.appendingPathComponent("page.png")
+    if let dest = CGImageDestinationCreateWithURL(shown as CFURL, "public.png" as CFString, 1, nil) {
+        CGImageDestinationAddImage(dest, page, nil)
+        _ = CGImageDestinationFinalize(dest)
+    }
+    func reader(_ name: String, _ body: String) -> String {
+        let url = dir.appendingPathComponent(name)
+        try? ("#!/bin/sh\n" + body + "\n").write(to: url, atomically: true, encoding: .utf8)
+        try? FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: url.path)
+        return url.path
+    }
+    // The model's boxes are rough: the first cuts its top line, as Chandra's do.
+    let model = reader("blocks.sh", "printf '0.09\\t0.16\\t0.81\\t0.26\\tText\\tThe first line of<br>the "
+                       + "block ends here\\n0.09\\t0.45\\t0.61\\t0.49\\tText\\tA second block\\n' > \"$2\"")
+    let read = (try? Recogniser.replacedReading(of: vision, on: page, shown: shown, reader: model)) ?? []
+    check("each block's words go on the lines in its ink, in the model's order, and Vision's lines there go",
+          read.map(\.text) == ["The first line of", "the block ends", "here", "A second block", "12"],
+          read.map(\.text).joined(separator: " / "))
+    check("…each line's box is its ink, its region its block's turn, and the line no block held keeps Vision's",
+          read.count == 5 && zip(read, vision).allSatisfy { r, v in
+              abs(r.boundingBox.y - v.boundingBox.y) < 0.002 && abs(r.boundingBox.width - v.boundingBox.width) < 0.002
+                  && abs(r.boundingBox.height - v.boundingBox.height) < 0.002
+          } && read.map(\.region) == [0, 0, 0, 1, 2],
+          read.map { "\($0.boundingBox) \($0.region ?? -1)" }.joined(separator: " / "))
+
+    // Review of 2026-10-08: the blocks a model's words must not stand in for.
+    let level = Recogniser.inkScan(of: page, strips: [])!.level
+    func lookup(_ box: SearchableWriter.BoundingBox) -> (grey: [UInt8], width: Int, top: Int, left: Int)? {
+        let x0 = Int(box.x * 1000), x1 = Int((box.x + box.width) * 1000)
+        let y0 = max(0, Int(box.y * 1300) - 15), y1 = min(1300, Int((box.y + box.height) * 1300) + 15)
+        var g = [UInt8](repeating: 255, count: (x1 - x0) * (y1 - y0))
+        let c = CGContext(data: &g, width: x1 - x0, height: y1 - y0, bitsPerComponent: 8, bytesPerRow: x1 - x0,
+                          space: CGColorSpaceCreateDeviceGray(), bitmapInfo: CGImageAlphaInfo.none.rawValue)!
+        c.draw(page.cropping(to: CGRect(x: x0, y: y0, width: x1 - x0, height: y1 - y0))!,
+               in: CGRect(x: 0, y: 0, width: x1 - x0, height: y1 - y0))
+        return (g, x1 - x0, y0, x0)
+    }
+    func box(_ x0: Double, _ y0: Double, _ x1: Double, _ y1: Double) -> SearchableWriter.BoundingBox {
+        .init(x: x0, y: y0, width: x1 - x0, height: y1 - y0)
+    }
+    let picture = Recogniser.replaced(vision, blocks: [.init(box: box(0.09, 0.16, 0.81, 0.26), label: "Image",
+                                                             text: "A black and white photograph of a factory")],
+                                      pageWidth: 1000, pageHeight: 1300, level: level, lookup: lookup).map(\.text)
+    check("a block the model calls a picture keeps Vision's reading, not the model's description of it",
+          picture == vision.map(\.text), picture.joined(separator: " / "))
+    let partly = Recogniser.replaced(vision, blocks: [.init(box: box(0.09, 0.16, 0.81, 0.26), label: "Text",
+                                                            text: "The first")],
+                                     pageWidth: 1000, pageHeight: 1300, level: level, lookup: lookup).map(\.text)
+    check("…nor does a block holding under four fifths of the words of Vision's lines in it",
+          partly == vision.map(\.text), partly.joined(separator: " / "))
+    let skipped = Recogniser.replaced(vision, blocks: [.init(box: box(0.09, 0.16, 0.81, 0.26), label: "Text",
+                                                             text: "The first line of")],
+                                      pageWidth: 1000, pageHeight: 1300, level: level, lookup: lookup).map(\.text)
+    check("…nor one whose model reading holds under three quarters of the words its ink holds",
+          skipped == vision.map(\.text), skipped.joined(separator: " / "))
+    // Review of the adoption, 2026-10-08: a model that skipped one line passes every count.
+    var missedLine = vision
+    missedLine[1] = line("quixotic zebra parade", top: 250)
+    let missed = Recogniser.replaced(missedLine, blocks: [.init(box: box(0.09, 0.16, 0.81, 0.26), label: "Text",
+                                                                text: "The first line extra words seven ends here")],
+                                     pageWidth: 1000, pageHeight: 1300, level: level, lookup: lookup).map(\.text)
+    check("…nor one holding a Vision line whose longer words the model's reading mostly lacks",
+          missed == missedLine.map(\.text), missed.joined(separator: " / "))
+    let oneRow = Recogniser.replaced([vision[0]], blocks: [.init(box: box(0.09, 0.16, 0.81, 0.26), label: "Text",
+                                                                  text: "The first line of the block ends here")],
+                                     pageWidth: 1000, pageHeight: 1300, level: level, lookup: lookup).map(\.text)
+    check("…and a block whose ink holds more lines than Vision read there by over one keeps Vision's reading",
+          oneRow == [vision[0].text], oneRow.joined(separator: " / "))
+    var sideways = vision
+    sideways[1].quarterTurns = 1
+    let turnedKept = Recogniser.replaced(sideways, blocks: [.init(box: box(0.09, 0.16, 0.81, 0.26), label: "Text",
+                                                                  text: "The first line of the block ends here")],
+                                         pageWidth: 1000, pageHeight: 1300, level: level, lookup: lookup)
+    check("…and a turned line Vision read inside a block is kept as Vision read it",
+          turnedKept.contains { $0.text == "of tlie block" && $0.quarterTurns == 1 },
+          turnedKept.map(\.text).joined(separator: " / "))
+    let twice = Recogniser.replaced(vision, blocks: [.init(box: box(0.09, 0.16, 0.81, 0.26), label: "Text",
+                                                           text: "The first line of the block ends here"),
+                                                     .init(box: box(0.09, 0.15, 0.81, 0.21), label: "Caption",
+                                                           text: "The first line of")],
+                                    pageWidth: 1000, pageHeight: 1300, level: level, lookup: lookup)
+    check("…and a block over lines an earlier block took adds no second run on them",
+          twice.filter { $0.boundingBox.y < 0.17 }.count == 1, twice.map(\.text).joined(separator: " / "))
+
+    var why = ""
+    do { _ = try Recogniser.replacedReading(of: vision, on: page, shown: shown,
+                                            reader: reader("plain.sh", "echo 'The first line' > \"$2\"")) } catch {
+        why = error.localizedDescription
+    }
+    check("a reader that writes plain text, not blocks, fails the page, saying so",
+          why.contains("something other than blocks"), why)
+    why = ""
+    do { _ = try Recogniser.replacedReading(of: vision, on: page, shown: shown,
+                                            reader: reader("empty.sh", "printf '0.1\\t0.1\\t0.9\\t0.9\\tImage\\t\\n' > \"$2\"")) } catch {
+        why = error.localizedDescription
+    }
+    check("…and so does one that writes no block with words, where Vision read lines",
+          why.contains("read no block"), why)
+
+    // Through the production pipeline, in the app and in the helper: one block over the page.
+    resetPrefs()
+    let source = dir.appendingPathComponent("scan.pdf")
+    makeScannedPDF(at: source, lines: ["Vision reads these words", "and then this line"], bars: [])
+    let whole = reader("whole.sh", "[ $# -eq 2 ] || exit 4\n"
+                       + "printf '0\\t0\\t1\\t1\\tText\\tModel replaced words here and its second line\\n' > \"$2\"")
+    d.set(Prefs.ModelArrangement.replace.rawValue, forKey: Prefs.modelArrangement)
+    d.set(whole, forKey: Prefs.modelReader)
+    let out = dir.appendingPathComponent("replace.ocr.pdf")
+    var outcome: Runner.Result.Outcome?, message = ""
+    OCRModel.makeSearchablePDF(file: source, output: out, rebuild: true, rebuildMode: .auto,
+                               password: nil, control: RunControl(), progress: { _, _ in },
+                               report: { o, m in outcome = o; message = m })
+    let published = embeddedText(of: out)
+    check("with replace on the published layer holds the model's words and not Vision's",
+          outcome == .succeeded && published.contains("Model replaced words") && published.contains("second line")
+              && !published.contains("these words"), published + " | " + message)
+    let pngs = dir.appendingPathComponent("pages")
+    try? FileManager.default.createDirectory(at: pngs, withIntermediateDirectories: true)
+    let rebuilt = dir.appendingPathComponent("rebuilt.pdf")
+    let bitmaps = (try? Flattener.flatten(source, to: rebuilt, mode: .blackAndWhite, pngDirectory: pngs)) ?? []
+    var settings = Prefs.Snapshot.current()
+    settings.modelArrangement = .replace
+    settings.modelReader = whole
+    var fellBack: [String] = []
+    let viaHelper = try? Recogniser.recogniseDocument(visible: rebuilt, bitmaps: bitmaps, settings: settings,
+                                                      useHelper: true, onFallback: { fellBack.append($0) })
+    let helperText = (viaHelper?[1] ?? []).map(\.text).joined(separator: " ")
+    check("the helper replaces too, without falling back",
+          fellBack.isEmpty && helperText.contains("Model replaced") && !helperText.contains("these words"),
+          helperText + " | " + fellBack.joined())
+    resetPrefs()
+}
+
 print("\na helper is only worth it when there is something to overlap with")
 
 do {

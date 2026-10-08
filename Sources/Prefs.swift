@@ -346,16 +346,21 @@ enum Prefs {
     /// writes the page's text, in reading order, to `out.txt` and exits 0. `fill` runs it
     /// as `<reader> <page image> <out.txt> <crops.tsv>`: a header line, then one crop a
     /// line as `name x y width height` in the image's pixels, tab-separated; it writes
-    /// each crop's text on one line of `out.txt`, in the file's order.
+    /// each crop's text on one line of `out.txt`, in the file's order. Under `replace` the
+    /// reader writes the page's layout blocks to `out.txt`, one a line, in reading order, as
+    /// `x0 y0 x1 y1 label text`, tab-separated, the four as fractions of the image with a
+    /// top-left origin (`Recogniser.modelBlocks`).
     static let modelReader = "modelReader"
 
     /// `modelArrangement`'s values. `align` keeps Vision's lines, boxes and order and
     /// takes their words from one whole-page reading by the model
     /// (`Recogniser.alignedReading`): the queue's arrangement (b). `fill` keeps Vision's
     /// reading and has the model read only the lines Vision was unsure of and the
-    /// inked lines it skipped (`Recogniser.filledReading`): arrangement (c).
+    /// inked lines it skipped (`Recogniser.filledReading`): arrangement (c). `replace`
+    /// takes the model's blocks and words in place of Vision's, its lines found in the
+    /// ink of each block (`Recogniser.replacedReading`): arrangement (a).
     enum ModelArrangement: String, CaseIterable {
-        case off, align, fill
+        case off, align, fill, replace
     }
 
     /// Write a record of each finished batch to `~/Library/Logs/VisionOCR`.

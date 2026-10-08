@@ -948,6 +948,10 @@ enum Recogniser {
             return try filledReading(of: fitted, on: fitOn, shown: shown, reader: settings.modelReader,
                                      isCancelled: isCancelled)
         }
+        if settings.modelArrangement == .replace {
+            return try replacedReading(of: fitted, on: fitOn, shown: shown, reader: settings.modelReader,
+                                       isCancelled: isCancelled)
+        }
         let reading = try modelReading(of: shown, reader: settings.modelReader, isCancelled: isCancelled)
         // Nothing, over a page Vision read lines on, is a reader that failed quietly.
         if modelWords(reading).isEmpty && !fitted.isEmpty {
@@ -1736,6 +1740,421 @@ enum Recogniser {
             throw Failure.modelReader("\(reader) read nothing in \(targets.count) crops")
         }
         return filled(lines, targets: targets, readings: readings, aspect: Double(h) / Double(w))
+    }
+
+    // MARK: - The model's own blocks and words in place of Vision's (arrangement a)
+
+    /// One layout block of a model's reading of a page: its box (normalised, top-left
+    /// origin), the model's label for it and its text, in the model's reading order.
+    struct ModelBlock: Equatable {
+        let box: SearchableWriter.BoundingBox
+        let label: String
+        let text: String
+
+        static func == (a: ModelBlock, b: ModelBlock) -> Bool {
+            a.label == b.label && a.text == b.text && a.box.x == b.box.x && a.box.y == b.box.y
+                && a.box.width == b.box.width && a.box.height == b.box.height
+        }
+    }
+
+    /// The blocks a `replace` reader writes, one a line as `x0 y0 x1 y1 label text`,
+    /// tab-separated, the four as fractions of the image. Nil when a line has not six
+    /// fields, which is a reader writing something else. A block whose box is not
+    /// finite, inverted or off the image is left out: no line is found in it, so the
+    /// Vision lines under it stay (`replaced`).
+    static func modelBlocks(_ tsv: String) -> [ModelBlock]? {
+        var out: [ModelBlock] = []
+        for line in tsv.split(whereSeparator: \.isNewline) where !line.trimmingCharacters(in: .whitespaces).isEmpty {
+            let f = line.split(separator: "\t", maxSplits: 5, omittingEmptySubsequences: false).map(String.init)
+            guard f.count == 6 else { return nil }
+            let n = f[0..<4].compactMap { Double($0.trimmingCharacters(in: .whitespaces)) }
+            guard n.count == 4, n.allSatisfy({ $0.isFinite && $0 >= -0.01 && $0 <= 1.01 }),
+                  n[2] > n[0], n[3] > n[1] else { continue }
+            let (x0, y0) = (max(0, n[0]), max(0, n[1]))
+            out.append(ModelBlock(box: .init(x: x0, y: y0, width: min(1, n[2]) - x0, height: min(1, n[3]) - y0),
+                                  label: f[4], text: f[5]))
+        }
+        return out
+    }
+
+    /// The text lines of one block, top to bottom, as row ranges and column ranges of
+    /// `grey` (the block's pixels, `width` a row, at or below `level` for ink), each
+    /// row range's centre in `inside` (the block's own rows; `grey` reaches a little
+    /// past them, so a line the model's box cuts through is found whole, and in the one
+    /// block that holds its centre). A row is inked when 1 in 200 of its pixels is, and a
+    /// fifth as many as the block's row at its 80th percentile of ink.
+    /// Runs under half the median run's height join the nearer neighbour when the gap is
+    /// under that half (an accent, a descender's tail), and runs over 1.7 medians tall are
+    /// lines that touch, cut into as many equal lines as medians they hold; each then grows
+    /// over the fainter rows above and below it, to half the gap to its neighbour. `pieces`
+    /// are the widths, left to right, of a line's ink apart by clear columns a fifth of its
+    /// height wide, which a word space is and a letter's side bearing is not.
+    static func blockLines(grey: [UInt8], width: Int, level: UInt8, inside: Range<Int>)
+        -> [(rows: Range<Int>, columns: Range<Int>, pieces: [Int])] {
+        guard width > 0, grey.count >= width else { return [] }
+        let height = grey.count / width
+        var counts = [Int](repeating: 0, count: height)
+        for y in 0..<height { for x in 0..<width where grey[y * width + x] <= level { counts[y] += 1 } }
+        // Between two lines of a scan there is rarely no ink at all: a descender, a tilt,
+        // the paper's grain. A fifth of the block's dense rows' ink is a line's own.
+        let dense = counts.sorted()[min(height - 1, height * 4 / 5)]
+        let faint = max(1, width / 200), need = max(faint, dense / 5)
+        let inked = counts.map { $0 >= need }
+        var runs: [Range<Int>] = []
+        var start: Int?
+        for y in 0...height {
+            if y < height, inked[y] { if start == nil { start = y }; continue }
+            if let s = start { runs.append(s..<y); start = nil }
+        }
+        let tall = runs.map(\.count).filter { $0 >= 3 }.sorted()
+        guard !tall.isEmpty else { return [] }
+        let median = tall[tall.count / 2]
+        var merged = runs
+        var i = 0
+        while i < merged.count {
+            guard 2 * merged[i].count < median, merged.count > 1 else { i += 1; continue }
+            let above = i > 0 ? merged[i].lowerBound - merged[i - 1].upperBound : Int.max
+            let below = i + 1 < merged.count ? merged[i + 1].lowerBound - merged[i].upperBound : Int.max
+            guard 2 * min(above, below) < median else { i += 1; continue }
+            if above <= below {
+                merged[i - 1] = merged[i - 1].lowerBound..<merged[i].upperBound
+                merged.remove(at: i)
+            } else {
+                merged[i + 1] = merged[i].lowerBound..<merged[i + 1].upperBound
+                merged.remove(at: i)
+            }
+        }
+        var cut: [Range<Int>] = []
+        for r in merged where 4 * r.count >= median {
+            guard 10 * r.count > 17 * median else { cut.append(r); continue }
+            let k = max(2, Int((Double(r.count) / Double(median)).rounded()))
+            for j in 0..<k {
+                cut.append((r.lowerBound + j * r.count / k)..<(r.lowerBound + (j + 1) * r.count / k))
+            }
+        }
+        // Each line out over its fainter rows (ascenders, descenders), to half the gap
+        // to the next line at most, so its box spans its ink and still clears its neighbours'.
+        let grown = cut.indices.map { i -> Range<Int> in
+            let r = cut[i]
+            let ceiling = i > 0 ? (cut[i - 1].upperBound + r.lowerBound + 1) / 2 : max(0, r.lowerBound - median / 2)
+            let floor = i + 1 < cut.count ? (r.upperBound + cut[i + 1].lowerBound) / 2 : min(height, r.upperBound + median / 2)
+            var top = r.lowerBound, bottom = r.upperBound
+            while top > ceiling, counts[top - 1] >= faint { top -= 1 }
+            while bottom < floor, counts[bottom] >= faint { bottom += 1 }
+            return top..<bottom
+        }
+        return zip(cut, grown).compactMap { core, rows -> (rows: Range<Int>, columns: Range<Int>, pieces: [Int])? in
+            guard inside.contains((core.lowerBound + core.upperBound) / 2) else { return nil }
+            let want = max(1, rows.count / 8)
+            var dark = [Int](repeating: 0, count: width)
+            for y in rows { for x in 0..<width where grey[y * width + x] <= level { dark[x] += 1 } }
+            guard let left = dark.firstIndex(where: { $0 >= want }),
+                  let right = dark.lastIndex(where: { $0 >= want }) else { return nil }
+            let space = max(2, rows.count / 5)
+            var pieces: [Int] = [], from = left, clear = 0
+            for x in left...right {
+                if dark[x] == 0 { clear += 1; continue }
+                if clear >= space { pieces.append(x - clear - from); from = x }
+                clear = 0
+            }
+            pieces.append(right + 1 - from)
+            return (rows, left..<(right + 1), pieces)
+        }
+    }
+
+    /// `words` over a block's lines, in order, every word on a line and a line taking
+    /// none or more. Each line has its inked `widths` and the `pieces` of ink apart by a
+    /// word space in it (`blockLines`), and the cut chosen is the one that best fits both
+    /// at once: the squared difference between the words a line takes and its pieces,
+    /// plus that between the letters it takes and its width's share of the block's letters
+    /// in words of the block's mean length. Pieces alone miss where a dash joins two words
+    /// or a broken letter parts one; width alone puts a word on the wrong side of every
+    /// break it is near, and a word on the wrong line is one `findString` finds elsewhere.
+    static func distributed(_ words: [String], over widths: [Double], pieces: [Int]) -> [[String]] {
+        let lines = widths.count
+        guard lines > 0, pieces.count == lines else { return [] }
+        let n = words.count
+        let total = widths.reduce(0, +)
+        guard n > 0, total > 0 else { return [words] + [[String]](repeating: [], count: lines - 1) }
+        var prefix = [0.0]
+        for w in words { prefix.append(prefix.last! + Double(w.count + 1)) }
+        let letters = prefix[n], mean = letters / Double(n)
+        // A line of dotted leaders or speckle may hold hundreds of pieces: the median line's
+        // bound keeps the search to a page's worth of steps (review of 2026-10-08: 30 s).
+        let reach = min(n, max(3 * pieces.sorted()[pieces.count / 2], 3 * n / lines) + 10)
+        // best[j][i]: the least cost of putting words 0..<i on lines 0..<j.
+        var best = [[Double]](repeating: [Double](repeating: .infinity, count: n + 1), count: lines + 1)
+        var from = [[Int]](repeating: [Int](repeating: 0, count: n + 1), count: lines + 1)
+        best[0][0] = 0
+        for j in 0..<lines {
+            let share = widths[j] / total * letters, want = Double(pieces[j])
+            for i in 0...n where best[j][i].isFinite {
+                for k in i...min(n, i + reach) {
+                    let a = Double(k - i) - want, b = (prefix[k] - prefix[i] - share) / mean
+                    let c = best[j][i] + a * a + b * b
+                    if c < best[j + 1][k] { best[j + 1][k] = c; from[j + 1][k] = i }
+                }
+            }
+        }
+        guard best[lines][n].isFinite else { return [words] + [[String]](repeating: [], count: lines - 1) }
+        var out = [[String]](repeating: [], count: lines)
+        var k = n
+        for j in stride(from: lines, to: 0, by: -1) {
+            let i = from[j][k]
+            out[j - 1] = Array(words[i..<k])
+            k = i
+        }
+        return out
+    }
+
+    /// About how wide `word` prints, in a lower-case letter's widths: capitals and `m`,
+    /// `w` wider, `i`, `l`, `t`, `f`, `r`, `j` and stops narrower. On `Briefer Book Notes` p4
+    /// a heading in capitals, counted letter for letter, took the next line's first word.
+    static func printedWidth(_ word: String) -> Double {
+        word.reduce(0) { sum, c in
+            sum + {
+                if "MW".contains(c) { return 1.5 }
+                if c.isUppercase { return 1.25 }
+                if "mw".contains(c) { return 1.4 }
+                if "iljtfrI1".contains(c) { return 0.55 }
+                if ".,:;'’!|()-".contains(c) { return 0.45 }
+                return 1
+            }()
+        }
+    }
+
+    /// The most cells `placed` aligns over; a block past it is `distributed`.
+    static let placementCells = 4_000_000
+
+    /// `words` over a block's lines by where each one is printed: the words, in order,
+    /// aligned with the pieces of ink of the block's lines (`blockLines`), in order, each
+    /// word's letters against each piece's width at the block's mean width a letter. A word
+    /// takes a piece, two words one piece (a space too tight to see), or one word two (a
+    /// letter broken open, or a word hyphenated over a line's end, each half two letters wide
+    /// at least, which goes on the line it starts on); a piece no word fits (a rule, a speck, a footnote mark the model left out)
+    /// is passed over, and so is a word no piece fits, which goes on the line before it.
+    /// Each costs the absolute log of its width over the letters' width, and a merge, a
+    /// split or a skip a fixed sum besides. Nil where there are no pieces, or more than
+    /// `placementCells` to align, for `distributed` to do.
+    static func placed(_ words: [String], pieces lines: [[Int]]) -> [[String]]? {
+        var pieces: [(width: Double, line: Int)] = []
+        for (j, line) in lines.enumerated() { for w in line where w > 0 { pieces.append((Double(w), j)) } }
+        let n = words.count, m = pieces.count
+        guard n > 0, m > 0, (n + 1) * (m + 1) <= placementCells else { return nil }
+        let lengths = words.map { max(0.5, printedWidth($0)) }
+        let letter = pieces.reduce(0) { $0 + $1.width } / lengths.reduce(0, +)
+        func fit(_ letters: Double, _ width: Double) -> Double { abs(log(letters * letter / width)) }
+        let joined = 0.6, skipped = 1.5
+        // cost[i][j]: the least cost of words 0..<i over pieces 0..<j; step how it was reached.
+        let row = m + 1
+        var cost = [Double](repeating: .infinity, count: (n + 1) * row)
+        var step = [UInt8](repeating: 0, count: (n + 1) * row)
+        cost[0] = 0
+        for i in 0...n {
+            for j in 0...m {
+                let here = cost[i * row + j]
+                guard here.isFinite else { continue }
+                func reach(_ a: Int, _ b: Int, _ c: Double, _ s: UInt8) {
+                    let k = a * row + b
+                    if c < cost[k] { cost[k] = c; step[k] = s }
+                }
+                if i < n, j < m { reach(i + 1, j + 1, here + fit(lengths[i], pieces[j].width), 1) }
+                if i + 1 < n, j < m {
+                    reach(i + 2, j + 1, here + joined + fit(lengths[i] + lengths[i + 1] + 1, pieces[j].width), 2)
+                }
+                // Over a line's end only as a hyphen's two halves, each two letters wide at
+                // least: on `Briefer Book Notes` p4 a speck ending a heading took `Proceedings`.
+                if i < n, j + 1 < m, pieces[j].line == pieces[j + 1].line
+                    || min(pieces[j].width, pieces[j + 1].width) >= 2 * letter {
+                    reach(i + 1, j + 2, here + joined + fit(lengths[i], pieces[j].width + pieces[j + 1].width), 3)
+                }
+                if j < m { reach(i, j + 1, here + skipped, 4) }
+                if i < n { reach(i + 1, j, here + skipped, 5) }
+            }
+        }
+        guard cost[n * row + m].isFinite else { return nil }
+        var line = [Int](repeating: -1, count: n)
+        var (i, j) = (n, m)
+        while i > 0 || j > 0 {
+            switch step[i * row + j] {
+            case 1: line[i - 1] = pieces[j - 1].line; (i, j) = (i - 1, j - 1)
+            case 2: line[i - 1] = pieces[j - 1].line; line[i - 2] = pieces[j - 1].line; (i, j) = (i - 2, j - 1)
+            case 3: line[i - 1] = pieces[j - 2].line; (i, j) = (i - 1, j - 2)
+            case 4: j -= 1
+            case 5: i -= 1
+            default: return nil
+            }
+        }
+        var out = [[String]](repeating: [], count: lines.count)
+        var last = 0
+        for (k, word) in words.enumerated() {
+            if line[k] >= 0 { last = line[k] }
+            out[last].append(word)
+        }
+        return out
+    }
+
+    /// How many rows `lines` stand on: lines side by side, a box's centre above the
+    /// lowest bottom of the row before it, are one.
+    static func visualRows(_ lines: [SearchableWriter.Observation]) -> Int {
+        var rows = 0, bottom = -Double.infinity
+        for o in lines.sorted(by: { $0.boundingBox.y + $0.boundingBox.height / 2 < $1.boundingBox.y + $1.boundingBox.height / 2 }) {
+            let b = o.boundingBox
+            if b.y + b.height / 2 > bottom { rows += 1; bottom = b.y + b.height } else { bottom = max(bottom, b.y + b.height) }
+        }
+        return rows
+    }
+
+    /// The labels of blocks that are pictures, not text: Chandra describes a photograph
+    /// in words (`A black and white photograph of a woman…`), and its halftone inks every
+    /// row, so its description would be laid over it as lines. Vision's reading stays there.
+    static let pictureLabels: Set<String> = ["image", "figure", "picture"]
+
+    /// The page as the model read it (arrangement a): each block's words on the lines
+    /// `blockLines` finds in its ink, `distributed` by width, a line's box its ink, its
+    /// region the block's turn in the model's order, so the writer keeps a block's lines
+    /// together. `lookup(box)` gives a block's pixels as `blockLines` takes them: the
+    /// grey rows, their width, the page row of the first, and the page column of the
+    /// first. A line an earlier block already took (half its height and any of its width
+    /// shared) is not taken again, so nested or overlapping boxes do not stack runs.
+    ///
+    /// Vision's lines stay wherever the model's do not stand for them. A block keeps
+    /// Vision's reading when it is a picture (`pictureLabels`), finds no line in its ink,
+    /// finds more or fewer than Vision's rows in it by over one and a fifth (`visualRows`),
+    /// or holds under four fifths as many words as the upright Vision lines centred in it,
+    /// or under three quarters as many as its lines hold pieces of ink, or holds a Vision
+    /// line whose longer words it mostly does not have (a line it skipped): the model read part
+    /// of what its box claims, and its words would be spread over all of it. A
+    /// Vision line is dropped only when its centre lies in one of the model's lines, so the
+    /// paragraph a model skipped inside a block it read stays, and never when it is turned
+    /// (C36), which rows of ink cannot find; kept lines come after the blocks', at a region of their own, so what
+    /// the model skipped (a margin note, a page number) is not lost.
+    static func replaced(_ lines: [SearchableWriter.Observation], blocks: [ModelBlock],
+                         pageWidth w: Int, pageHeight h: Int, level: UInt8,
+                         lookup: (SearchableWriter.BoundingBox) -> (grey: [UInt8], width: Int, top: Int, left: Int)?)
+        -> [SearchableWriter.Observation] {
+        typealias Box = SearchableWriter.BoundingBox
+        guard w > 0, h > 0 else { return lines }
+        func holds(_ b: Box, _ o: SearchableWriter.Observation) -> Bool {
+            let cx = o.boundingBox.x + o.boundingBox.width / 2, cy = o.boundingBox.y + o.boundingBox.height / 2
+            return cx >= b.x && cx <= b.x + b.width && cy >= b.y && cy <= b.y + b.height
+        }
+        func upright(_ o: SearchableWriter.Observation) -> Bool { ((o.quarterTurns ?? 0) % 4 + 4) % 4 == 0 }
+        func wordCount(_ t: String) -> Int { t.split(whereSeparator: \.isWhitespace).count }
+        var out: [SearchableWriter.Observation] = []
+        for (index, block) in blocks.enumerated()
+        where !pictureLabels.contains(block.label.lowercased()) {
+            let words = modelWords(block.text)
+            let vision = lines.filter { upright($0) && holds(block.box, $0) }.reduce(0) { $0 + wordCount($1.text) }
+            guard !words.isEmpty, 5 * words.count >= 4 * vision,
+                  let px = lookup(block.box), px.width > 0 else { continue }
+            // A model that skipped one line of a long paragraph passes the counts above, and
+            // its neighbours' words would be spread over that line's ink, dropping it. So a
+            // block in which any Vision line has under a third of its words of four letters
+            // or more alike (`alignmentAnchor`) to one of the block's keeps Vision's reading.
+            let keys = words.map(alignmentKey).filter { $0.count >= 4 }
+            let skipped = lines.contains { o in
+                guard upright(o), holds(block.box, o) else { return false }
+                let own = o.text.split(whereSeparator: \.isWhitespace).map { alignmentKey(String($0)) }
+                    .filter { $0.count >= 4 }
+                let alike = own.filter { a in keys.contains { wordLikeness(a, $0) >= alignmentAnchor } }.count
+                return !own.isEmpty && 3 * alike < own.count
+            }
+            if skipped { continue }
+            let top = Int((block.box.y * Double(h)).rounded()) - px.top
+            let bottom = Int(((block.box.y + block.box.height) * Double(h)).rounded()) - px.top
+            guard bottom > top else { continue }
+            // A line an earlier block took is not taken again; one that only reaches into an
+            // earlier block's line (grown over the rows between them) gives those rows up.
+            let found = blockLines(grey: px.grey, width: px.width, level: level, inside: top..<bottom)
+                .compactMap { line -> (rows: Range<Int>, columns: Range<Int>, pieces: [Int])? in
+                var y0 = px.top + line.rows.lowerBound, y1 = px.top + line.rows.upperBound
+                let x0 = px.left + line.columns.lowerBound, x1 = px.left + line.columns.upperBound
+                for o in out {
+                    let b = o.boundingBox
+                    let (top, bottom) = (Int((b.y * Double(h)).rounded()), Int(((b.y + b.height) * Double(h)).rounded()))
+                    let across = min(Double(x1), (b.x + b.width) * Double(w)) - max(Double(x0), b.x * Double(w))
+                    guard across > 0, min(y1, bottom) > max(y0, top) else { continue }
+                    if 2 * (min(y1, bottom) - max(y0, top)) >= line.rows.count { return nil }
+                    if top <= y0 { y0 = bottom } else { y1 = top }
+                }
+                guard y1 > y0 else { return nil }
+                return ((y0 - px.top)..<(y1 - px.top), line.columns, line.pieces)
+            }
+            // Vision is the better judge of how many lines a block holds: where the ink says
+            // otherwise, the box holds something else (Why p9's drawing beside its text, a
+            // heading in large type cut into slices), and Vision's reading stays.
+            let rows = visualRows(lines.filter { upright($0) && holds(block.box, $0) })
+            guard !found.isEmpty, rows == 0 || abs(found.count - rows) <= max(1, rows / 5) else { continue }
+            // Under three quarters as many words as the ink holds pieces is a model that left
+            // part of the block out; its words would be spread over the whole of it.
+            guard 4 * words.count >= 3 * found.reduce(0, { $0 + $1.pieces.count }) else { continue }
+            let shares = placed(words, pieces: found.map(\.pieces))
+                ?? distributed(words, over: found.map { Double($0.columns.count) }, pieces: found.map(\.pieces.count))
+            for (line, said) in zip(found, shares) where !said.isEmpty {
+                var o = SearchableWriter.Observation(
+                    boundingBox: .init(x: Double(px.left + line.columns.lowerBound) / Double(w),
+                                       y: Double(px.top + line.rows.lowerBound) / Double(h),
+                                       width: Double(line.columns.count) / Double(w),
+                                       height: Double(line.rows.count) / Double(h)),
+                    text: said.joined(separator: " "), confidence: 1)
+                o.region = index
+                out.append(o)
+            }
+        }
+        let taken = out.map(\.boundingBox)
+        for l in lines where !upright(l) || !taken.contains(where: { holds($0, l) }) {
+            var o = l
+            o.region = blocks.count
+            out.append(o)
+        }
+        return out
+    }
+
+    /// `replaced` over the page's image: the reader writes the model's blocks for
+    /// `shown` (`modelBlocks`), and each block's pixels are read from `image`, half a
+    /// line past its top and bottom, at the page's Otsu level. A reader writing what
+    /// does not parse fails the file, and so does one that writes no block with words on
+    /// a page Vision read lines on, as `align`'s reader reading nothing does, and so does
+    /// a page too large for `inkScan`, whose lines could not be found.
+    static func replacedReading(of lines: [SearchableWriter.Observation], on image: CGImage, shown: URL,
+                                reader: String, isCancelled: () -> Bool = { false })
+        throws -> [SearchableWriter.Observation] {
+        let raw = try modelReading(of: shown, reader: reader, isCancelled: isCancelled)
+        guard let blocks = modelBlocks(raw) else {
+            throw Failure.modelReader("\(reader) wrote something other than blocks")
+        }
+        if !lines.isEmpty && !blocks.contains(where: { !modelWords($0.text).isEmpty }) {
+            throw Failure.modelReader("\(reader) read no block on a page holding \(lines.count) lines")
+        }
+        if isCancelled() { throw Failure.cancelled }
+        guard let level = inkScan(of: image, strips: [])?.level else {
+            throw Failure.modelReader("the page is too large to find the lines of its blocks in")
+        }
+        let w = image.width, h = image.height
+        let pad = max(2, lineHeight(of: lines, pageHeight: h) / 2)
+        return replaced(lines, blocks: blocks, pageWidth: w, pageHeight: h, level: level) { box in
+            let x0 = max(0, Int((box.x * Double(w)).rounded(.down)))
+            let x1 = min(w, Int(((box.x + box.width) * Double(w)).rounded(.up)))
+            let y0 = max(0, Int((box.y * Double(h)).rounded(.down)) - pad)
+            let y1 = min(h, Int(((box.y + box.height) * Double(h)).rounded(.up)) + pad)
+            guard x1 > x0, y1 > y0,
+                  let piece = image.cropping(to: CGRect(x: x0, y: y0, width: x1 - x0, height: y1 - y0))
+            else { return nil }
+            let (pw, ph) = (x1 - x0, y1 - y0)
+            var grey = [UInt8](repeating: 255, count: pw * ph)
+            let drawn = grey.withUnsafeMutableBytes { raw -> Bool in
+                guard let base = raw.baseAddress, let ctx = CGContext(
+                    data: base, width: pw, height: ph, bitsPerComponent: 8, bytesPerRow: pw,
+                    space: CGColorSpaceCreateDeviceGray(),
+                    bitmapInfo: CGImageAlphaInfo.none.rawValue) else { return false }
+                ctx.setFillColor(gray: 1, alpha: 1)
+                ctx.fill(CGRect(x: 0, y: 0, width: pw, height: ph))
+                ctx.draw(piece, in: CGRect(x: 0, y: 0, width: pw, height: ph))
+                return true
+            }
+            return drawn ? (grey, pw, y0, x0) : nil
+        }
     }
 
     /// The regions `flatten` wrote beside the bitmap at `image`, or nil when it wrote

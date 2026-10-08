@@ -1307,6 +1307,8 @@ say so in the commit.
       Round 1, session 2, 2026-10-08: arrangement (c) built and measured; sub-box hp-fill TICKED. `fill` sends
       only the whole width's uncovered ink, not a quarter strip's (C33's voids beside a read column), and puts
       unsure lines first in its 80-crop cap. Left: hp-replace (a) and hp-regions.
+      Round 1, session 3, 2026-10-08: arrangement (a) built and measured; sub-box hp-replace TICKED. `replace` takes
+      `<reader> <image> <out.tsv>` writing layout blocks (`Prefs.modelReader`). Left: hp-regions.
 - [x] **hp-align** — arrangement (b): one whole-page Falcon-OCR reading aligned word by word onto Vision's
       lines (`Recogniser.alignedReading`). Measured (score-gate, then `ux-harness --truth`, off vs align, same
       build): Briefer Book Notes p1 wrong 11 -> 2, copyErr 0.0228 -> 0.0098; p3 10 -> 1, 0.0168 -> 0.0031; 1954 -
@@ -1316,9 +1318,25 @@ say so in the commit.
       read part of written whole beside it (`disdiscusses`, `Uní- / University`); both fixed and gone on
       re-measure. Left as found: the model "corrects" a printed misspelling (Why p8 `discliplined`). The suite's
       block "a model's reading takes Vision's lines' words..." holds its checks. (context: ocr-hybrid-proto)
-- [ ] **hp-replace** — arrangement (a): the model replacing Vision outright, with its own line or word boxes,
+- [x] **hp-replace** — arrangement (a): the model replacing Vision outright, with its own line or word boxes,
       behind `modelArrangement`. Falcon-OCR writes no boxes; pick a top-three model that does, or say why none
       can. DONE WHEN as the parent's, for (a). ESTIMATE: 1 session. (uses: build,model:12) (context: ocr-hybrid-proto)
+      DONE 2026-10-08: `modelArrangement=replace` (`Recogniser.replacedReading`) with `ops/ocrlab/reader-chandra.sh`.
+      Chandra OCR 2 (oQ8) is the one of the three that writes boxes, and only per block; LightOnOCR-2's box build
+      boxes pictures. Each block's lines come from its ink (`blockLines`), and its words are aligned with the
+      lines' pieces of ink (`placed`). Vision's lines stay under picture blocks, under-read blocks, turned lines
+      and anything no block covers. Measured (score-gate, then `ux-harness --truth`, off vs replace, same build):
+      Briefer pp1-6 wrong 69 -> 3, missing 4 -> 8, find 0.97-1.00 -> 1.00 on every page; 1954 - Why p8-9 wrong 12 -> 2,
+      missing 6 -> 0, find 0.96/0.97 -> 1.00/0.93. Briefer p1's 8 missing words are in the layer
+      (`…Sciences of the United States…`, where the print has a comma); the harness's alignment counts them missing.
+      Time: about 130 s a page against Vision's 7; Chandra peaks at 6.7 GB. Width-only placement first gave find
+      0.28-0.59 and a 371-row block read as one line; both fixed. The invariant-3 tools recognise with `bitmaps: []`,
+      so they never reach the model and cannot score this layer. The ux-harness selection columns stand in for them:
+      splits and welds within one of off on every page, `cols` the same, `midBreaks` within two.
+      Landed by triage of the stranded session: its review found a block that passed every count with one line
+      skipped would drop that Vision line; a block now keeps Vision's reading when any Vision line in it has under
+      a third of its 4+-letter words alike to the model's (reasoned and unit-tested, not re-measured on the pages
+      above). chandra_blocks.py now reads `[x0, y0, x1, y1]` boxes and exits 1 on a worded block with no box.
 - [x] **hp-fill** — arrangement (c) on pages other than newspapers: Vision as now, the model reading only the
       lines Vision skipped or read with low confidence, behind `modelArrangement`. DONE WHEN as the parent's,
       for (c). ESTIMATE: 1 session. (uses: build,model:12) (context: ocr-hybrid-proto)
