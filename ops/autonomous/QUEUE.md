@@ -38,6 +38,8 @@ say so in the commit.
    takes: `light` runs no suite, build or model; `build` takes the heavy lock for a suite or build;
    `model:N` a model of about N GB; `machine` the whole Mac for a long job. It is a resource, not a hold,
    and nothing reads it yet; `side-lane` makes the second lane offer only `light` items (2026-10-07).
+   `next-item.sh` ends an item at the next checkbox, so a sub-box is an item of its own: give every open
+   sub-box its own tag, and never write a whole tag in parentheses inside prose, which would tag that item.
 
 6. **Done means verified as the reader sees it.** A box is ticked, and an entry closed, only after the
    item's DONE WHEN is checked on the published output through PDFKit, which is what Preview uses, by the
@@ -1084,19 +1086,16 @@ say so in the commit.
       spent window) and its claims coordinator; not its two general workers, since two suite-running sessions
       serialise on test.lock and one Vision process at a time is a hard memory rule here. Follow-up:
       `two-sessions-recheck`.
-- [ ] **two-sessions-recheck** — once the larger plan is in use, re-measure and build the side lane if it pays. (uses: light)
+- [ ] **two-sessions-recheck** — once the larger plan is in use, re-measure and decide whether the side lane pays. (uses: light)
       (blocked-on: larger-plan-active) (not-before: 2026-10-14)
       2026-10-07 (round 1, session 1): the plan went live at 16:06 today, so there was no week of readings to
       measure; `next-item.sh` gained `(not-before:)` (harness `tests/prove-next-item.sh`) and holds this item
       until 2026-10-14.
       WHAT. Over the first week on the new plan, rerun two-sessions-design's measurement. Build the side lane it
-      designs only if the daemon spent under a tenth of its running time waiting on the window and at least two
-      `(lane: side)`-shaped items are queued; otherwise write that here and tick the box. DONE WHEN the figures and
-      the decision are written here, and if built, a harness shows two lanes never claim one item and both pause on
-      a spent window. ESTIMATE: 1-2 sessions. BOUND: rule 10. (context: two-sessions-design 2026-10-07)
-      2026-10-07: the build is now `side-lane` (EFFICIENCY-PLAN item 13). This item measures and decides; a
-      `(lane: side)`-shaped item is one marked `(uses: light)` (rule 5). If it decides to build, tick it with the
-      figures and the decision, and side-lane follows.
+      designs pays only if the daemon spent under a tenth of its running time waiting on the window and at least
+      two items tagged light are queued. This item builds nothing: the build is `side-lane` (EFFICIENCY-PLAN item
+      13, 2026-10-07), which waits on this one. DONE WHEN the figures and the decision, build or not, are written
+      here. ESTIMATE: 1 session. BOUND: rule 10. (context: two-sessions-design 2026-10-07)
 - [x] **ocr-bakeoff-run** — read the bake-off sample with every candidate that fits, as one long unattended
       job. (blocked-on: ocr-lab-setup, bakeoff-tonight-ok)
       PAUSED AGAIN 2026-10-06 07:55 (owner needs the Mac): `bakeoff.sh stop` during Churro 3B; see the hold.
@@ -1260,7 +1259,10 @@ say so in the commit.
       EDGE CHANGED 2026-10-07 (EFFICIENCY-PLAN item 16; `QUEUE-ANALYSIS-2026-10-07.md`): it waited on
       ocr-bakeoff-bits, but the arrangements are built for the top model, and ocr-bakeoff-score already named the
       top three and their builds in `OCR-BAKEOFF-2026-10-07.tsv`. Which build each memory limit uses is the bits
-      item's answer, and ocr-hybrid-pick is where it is used, so the edge moved there.
+      item's answer, and ocr-hybrid-pick is where it is used, so the edge moved there. Through the bits item this
+      item also waited on ocr-lab-round3. That edge was considered and kept for the newspaper part only: round 3 is
+      still measuring which reader suits layout regions (sessions 5-6 above), so the region arrangement and (c)'s
+      newspaper bands are the sub-box hp-regions, which waits on it. Arrangements (a) and (b) on other pages do not.
       FROM local-llm-pdf-ocr (MIT; `PRIOR-ART-2026-10-05.md` §4): for arrangement (b), align ONE whole-page model
       reading onto Vision's lines with its monotonic dynamic-programming alignment (area-share character budget,
       asymmetric costs) instead of one model call per line, fall back where alignment confidence is low, and use
@@ -1277,6 +1279,9 @@ say so in the commit.
       the model reading each line's crop and its words placed in Vision's boxes (the truth set's crop-and-align
       method); (c) Vision as now, the model only on lines Vision skipped or read with low confidence and on
       newspaper bands. Each needs a check that goes red without it, and invariant 3's four properties hold.
+      - [ ] **hp-regions** — the layout-region arrangement and (c)'s newspaper bands, with the region reader
+        ocr-lab-round3 named. (blocked-on: ocr-lab-round3) (uses: build,model:12) DONE WHEN as the parent's, for
+        these two, on two newspaper sample pages. ESTIMATE: 1 session.
       DONE WHEN each arrangement runs on two sample pages through the production pipeline and its check is in
       the suite. ESTIMATE: 2-3 sessions. Sub-boxes: one per arrangement. BOUND: rule 10.
       (context: owner request 2026-10-02, split 2026-10-04)
@@ -1434,22 +1439,30 @@ say so in the commit.
       `~/Claude/Agent Manager/analysis/VISION-OCR-TEST-LOAD-2026-10-07.md`, change E.
       BASE. Rounds 1-2 (branch `efficiency`: the Tools skip, the run-phase-only heavy lock, the shared binary cache,
       the green stamp) rewrote `run_tests.sh` and `test-lock.sh`. Work from them as they are on main.
-      - [ ] **cs-domains** — ONE commit. Give the suite a preferences domain of its own that two suites running at
-        once do not share. The shared binary cache must still hit across worktrees, so the domain cannot be compiled
-        in per worktree; choose the mechanism (an embedded test-only `CFBundleIdentifier` plus a run-time domain the
-        `Prefs` layer takes, or another) and record the option rejected. The id must never equal or contain the
-        app's own, which would wipe the owner's settings. In the same commit: parameterise the rename domain
+      Nothing lets two suites run together until cs-narrow-lock, so the first two boxes can land apart.
+      - [ ] **cs-domains** — give the suite a preferences domain of its own that two suites do not share, and
+        inject the rename domain. (uses: build) The shared binary cache must still hit across worktrees, so the
+        domain cannot be compiled in per worktree; choose the mechanism (an embedded test-only `CFBundleIdentifier`
+        plus a run-time domain the `Prefs` layer takes, or another) and record the option rejected. The id must
+        never equal or contain the app's own, which would wipe the owner's settings. Parameterise the rename domain
         `com.cp1.VisionReaderGUI` (`Sources/Prefs.swift` 464, `Tests/main.swift` 20014) so the R6/A4.3 migration
-        checks run against an injected domain rather than being skipped; parameterise `~/Library/Logs/VisionOCR`
-        (`Sources/RunReport.swift` 50-61) so the three report tests write to a per-run directory; give fixed
-        `/tmp` names a per-run directory (`Tests/main.swift` 1722-1724 writes `/tmp/c29-*.pdf`; find the rest);
-        and change the `pgrep -x tests` guards (`test-lock.sh` `_suite_live` 112 and its ancestry logic,
-        `ops/ocrlab/run-guarded.sh` 57), which would otherwise read a second suite as a held lock.
-        DONE WHEN a prove harness starts two suites together from two worktrees, both pass, their domains, log
-        directories and temporary paths are disjoint, the app's own preferences file is byte-identical before
-        and after, the migration checks still run (check count unchanged), and a mutant restoring the shared
-        domain turns the harness red. ESTIMATE: 1-2 sessions.
-      - [ ] **cs-narrow-lock** — shrink `test.lock` to what two suites still share. (blocked-on: cs-domains)
+        checks run against an injected domain rather than being skipped. If the mechanism changes the suite's
+        process name, the commit that changes it also changes the `pgrep -x tests` guards (see cs-paths). DONE WHEN
+        two runs given different domains write disjoint preferences files, the app's own preferences file is
+        byte-identical before and after a run, the migration checks still run (check count unchanged), and a
+        mutant restoring the shared domain turns the check red. ESTIMATE: 1 session.
+      - [ ] **cs-paths** — per-run logs and temporary paths, and a suite guard that sees two suites.
+        (blocked-on: cs-domains) (uses: build) Parameterise `~/Library/Logs/VisionOCR` (`Sources/RunReport.swift`
+        50-61) so the three report tests write to a per-run directory; give fixed `/tmp` names a per-run directory
+        (`Tests/main.swift` 1722-1724 writes `/tmp/c29-*.pdf`; find the rest). Change `test-lock.sh`'s suite
+        detection (`_suite_live` 112 and its ancestry logic), which would otherwise read a second suite as a held
+        lock. Do not weaken `ops/ocrlab/run-guarded.sh` 57: it is a memory guard (one model or Vision process at a
+        time on 18 GB), and it must keep refusing while any suite runs, one or two; only keep it matching the
+        suite's process. DONE WHEN a prove harness starts two suites together from two worktrees (bypassing
+        `test.lock` for the test), both pass, their domains, log directories and temporary paths are disjoint,
+        run-guarded refuses while either runs, and a mutant restoring a shared path turns the harness red.
+        ESTIMATE: 1 session.
+      - [ ] **cs-narrow-lock** — shrink `test.lock` to what two suites still share. (blocked-on: cs-paths) (uses: build)
         Audit what remains shared once cs-domains is in (`build/` is per worktree; candidates: appends to
         `$STATE/suite-timings.tsv`, the binary cache's temp-then-rename, the green stamp's record) and hold the
         lock only around those. The machine-wide heavy lock still serialises the run phase across projects; do
@@ -1457,7 +1470,7 @@ say so in the commit.
         `ops/autonomous/README.md`. DONE WHEN a harness shows two suites from two worktrees compiling at the same
         time with no `test.lock` wait and both green, a write to a shared path still serialised, and a mutant
         removing that serialisation turns it red. ESTIMATE: 1 session.
-      DONE WHEN both sub-boxes are ticked. The hook and the gate still run the full suite. ESTIMATE: 2-3 sessions.
+      DONE WHEN the three sub-boxes are ticked. The hook and the gate still run the full suite. ESTIMATE: 3 sessions.
       BOUND: rule 10. (context: owner request 2026-10-07, ~/Claude/Agent Manager/EFFICIENCY-PLAN.md item 10)
 - [ ] **light-tier** — a light test tier of the sections that never call Vision, with per-section timing, so a
       session's working runs take a fraction of the suite's time. (uses: build)
@@ -1467,46 +1480,52 @@ say so in the commit.
       subprocess, jbig2 and qpdf sites. A static count finds 47 of the 108 sections (about 415 checks) with no
       direct call to any of them, but they share globals (`sample`, `tmp`, `d`, `resetPrefs`) and nothing times a
       section today. Evidence: `VISION-OCR-TEST-LOAD-2026-10-07.md`, changes F and G.
-      - [ ] **lt-sections** — wrap each section of `Tests/main.swift` as `section("name") { … }`, which records its
-        wall time to a per-run TSV beside `suite-timings.tsv`. Globals a later section reads stay global. DONE WHEN
-        the suite's check count and pass set are unchanged, every check sits inside a named section, and one full
-        run's per-section times are committed. ESTIMATE: 1-2 sessions.
+      - [ ] **lt-sections** — add `section("name") { … }`, which records a section's wall time to a per-run TSV
+        beside `suite-timings.tsv`, and wrap the sections in the first half of `Tests/main.swift` (to about line
+        10,000) with it. (uses: build) Globals a later section reads stay global. DONE WHEN the suite's check count
+        and pass set are unchanged and every check in that half sits inside a named section. ESTIMATE: 1 session.
+      - [ ] **lt-sections-rest** — wrap the remaining sections the same way. (blocked-on: lt-sections)
+        (uses: build) DONE WHEN the suite's check count and pass set are unchanged, every check sits inside a named
+        section, and one full run's per-section times are committed. ESTIMATE: 1 session.
       - [ ] **lt-audit** — find at run time which sections touch Vision, the Flattener or a subprocess.
-        (blocked-on: lt-sections) Count the calls per section with test-only tripwires on the recogniser, the
+        (blocked-on: lt-sections-rest) (uses: build) Count the calls per section with test-only tripwires on the recogniser, the
         Flattener's entry points and process launches, over one full run, and commit the table (section, checks,
         seconds, touches). The static 47 is a lead, not the answer. DONE WHEN the table covers every section and a
         mutant that hides one call from the tripwires shows up as a changed row. ESTIMATE: 1 session.
       - [ ] **lt-tier** — `VISIONOCR_TIER=light` runs only the sections the audit found clean, and
-        `VISIONOCR_SECTIONS=a,b` runs named sections. (blocked-on: lt-audit) A light run whose tripwires fire fails,
+        `VISIONOCR_SECTIONS=a,b` runs named sections. (blocked-on: lt-audit) (uses: build) A light run whose tripwires fire fails,
         so the tier cannot quietly grow heavy. The hook, the gate and the green stamp ignore both variables and run
         everything. Whether a light run takes the heavy lock is this box's call, from its measured CPU. The resume
         prompt tells sessions to use the light tier or their area's sections while working, and the full suite
         before committing. DONE WHEN the light run's time is recorded here, a harness shows the hook and the gate
         running the full suite with either variable set, and a mutant letting the variable reach the hook turns it
         red. ESTIMATE: 1 session.
-      DONE WHEN the three sub-boxes are ticked. ESTIMATE: 3-4 sessions. BOUND: rule 10.
+      DONE WHEN the four sub-boxes are ticked. ESTIMATE: 4 sessions. BOUND: rule 10.
       (context: owner request 2026-10-07, ~/Claude/Agent Manager/EFFICIENCY-PLAN.md item 11)
-- [ ] **side-lane** — build two-sessions-design's second lane, offering only `(uses: light)` items.
+- [ ] **side-lane** — build two-sessions-design's second lane, offering only items tagged light.
       (blocked-on: attempt-on-worked-item, two-sessions-recheck) (uses: light)
       WHY. EFFICIENCY-PLAN item 13. The design is written in two-sessions-design: the daemon keeps one product lane
       and adds one lane for light items; a lane claims its item with `mkdir $STATE/claims/<tag>` holding pid and
       start, stale when the pid is dead; the resolver skips claimed tags; both lanes pause together on one window
       reading, with Archive Suite's rule that an older reading never cancels a current spent window. The lane marker
-      is now `(uses: light)` (rule 5), not `(lane: side)`. attempt-on-worked-item comes first because two lanes
+      is now the light resource tag (rule 5), not `(lane: side)`. attempt-on-worked-item comes first because two lanes
       charging attempts to the queue head would escalate the wrong item twice as fast. two-sessions-recheck comes
       first because it decides whether this pays: if it decides not to build, tick this item and both sub-boxes
       with that reason. Each lane works in its own worktree; one writer per worktree.
-      - [ ] **sl-resolver** — `next-item.sh --lane side` offers only open `(uses: light)` items no live claim holds,
-        the main lane skips claimed tags, and claims are taken and reclaimed as the design says.
-        (blocked-on: attempt-on-worked-item, two-sessions-recheck) DONE WHEN `tests/prove-next-item.sh` shows two
+      - [ ] **sl-resolver** — `next-item.sh --lane side` offers only open items tagged light that no live claim
+        holds, the main lane skips claimed tags, and claims are taken and reclaimed as the design says.
+        (blocked-on: attempt-on-worked-item, two-sessions-recheck) (uses: light) DONE WHEN `tests/prove-next-item.sh` shows two
         lanes never offered one item, a dead holder's claim reclaimed, a non-light item never offered to the side
         lane, and a mutant of each turns it red. ESTIMATE: 1 session.
-      - [ ] **sl-daemon** — the daemon runs the side lane beside the main one. (blocked-on: sl-resolver) A side
-        session that stages a path the hook runs the suite for stops and hands the item back. DONE WHEN
-        `prove-daemon.sh` shows both lanes pausing on one spent window, a side session refused a suite-path
-        commit, attempts counted per lane on the item worked, and a mutant of each turns it red; the first day with
-        both lanes measured here (sessions, items finished, window share). ESTIMATE: 1-2 sessions.
-      DONE WHEN both sub-boxes are ticked, or two-sessions-recheck decided against building. ESTIMATE: 2-3 sessions.
+      - [ ] **sl-daemon** — the daemon runs the side lane beside the main one. (blocked-on: sl-resolver)
+        (uses: light) A side session that stages a path the hook runs the suite for stops and hands the item back.
+        DONE WHEN `prove-daemon.sh` shows both lanes pausing on one spent window, a side session refused a
+        suite-path commit, attempts counted per lane on the item worked, and a mutant of each turns it red.
+        ESTIMATE: 1 session.
+      - [ ] **sl-measure** — the first full day with both lanes, measured. (blocked-on: sl-daemon) (uses: light)
+        DONE WHEN sessions per lane, items finished and window share for that day are written here. ESTIMATE:
+        1 session.
+      DONE WHEN the three sub-boxes are ticked, or two-sessions-recheck decided against building. ESTIMATE: 3 sessions.
       BOUND: rule 10. (context: owner request 2026-10-07, ~/Claude/Agent Manager/EFFICIENCY-PLAN.md item 13)
 - [ ] **queue-notes** — sessions write an item's round notes to a file of its own, not into its `QUEUE.md` body.
       (uses: light)
@@ -1520,27 +1539,30 @@ say so in the commit.
       sentence of rule 10 to say where, and nothing else in it. Tell sessions in the resume prompt and
       `ops/autonomous/README.md`. Consider `merge=union` for the notes files in `.gitattributes`.
       DONE WHEN `check-queue-coherence.sh` reports a notes file whose tag is not in the queue, its self-test
-      pins that with a mutant, `next-item.sh`'s output on the tree is unchanged, and the next session's notes
-      land in a file. ESTIMATE: 1 session. BOUND: rule 10.
+      pins that with a mutant, `next-item.sh`'s output on the tree is unchanged, and this session's own round note
+      is in `ops/autonomous/notes/queue-notes.md`. ESTIMATE: 1 session. BOUND: rule 10.
       (context: owner request 2026-10-07, ~/Claude/Agent Manager/EFFICIENCY-PLAN.md item 17)
 - [ ] **bugs-split** — one file per `BUGS.md` entry, with `BUGS.md` kept as their index, so a session reads and
-      writes only the entry it works. (uses: light)
+      writes only the entry it works. (uses: light,build)
       WHY. EFFICIENCY-PLAN item 17. `BUGS.md` is 2.2 MB (2,237,810 bytes on 2026-10-07) and every session that
       records a finding writes into it, the second shared file named in the queue analysis ("What stops extra
       workers" 7, proposal e). Its readers are `next-item.sh`, `check-queue-coherence.sh`, `bugs-entry.sh`, the
       pre-commit hook's rule-8 check and the health gate's document checks; all of them parse the entry headings
       `### <TAG> · <title> — <STATUS>`.
       - [ ] **bs-readers** — entries may live in `bugs/<TAG>.md`, and `BUGS.md` holds each entry's heading line as
-        an index. `bugs-entry.sh` and the hook's rule-8 check read the entry file; a check fails when an index line
-        and its file's heading disagree. Move no entries yet. DONE WHEN `next-item.sh` and
-        `check-queue-coherence.sh` give identical output on the tree, a fixture entry moved to a file reads the
-        same through `bugs-entry.sh`, and a mutant making index and file disagree turns the check red.
-        ESTIMATE: 1-2 sessions.
-      - [ ] **bs-move** — move every entry, verbatim, into its file in one commit. (blocked-on: bs-readers) Rule 3's
+        an index; `bugs-entry.sh` and the hook's rule-8 check read the entry file. (uses: light) Move no entries
+        yet. DONE WHEN a fixture entry moved to a file reads the same through `bugs-entry.sh` and the rule-8 check,
+        and a mutant that reads only `BUGS.md` turns the fixture red. ESTIMATE: 1 session.
+      - [ ] **bs-index-check** — `check-queue-coherence.sh` and `next-item.sh` read the index, and a check fails
+        when an index line and its file's heading disagree. (blocked-on: bs-readers) (uses: light) DONE WHEN both
+        give identical output on the tree, and a mutant making index and file disagree turns the check red.
+        ESTIMATE: 1 session.
+      - [ ] **bs-move** — move every entry, verbatim, into its file in one commit. (blocked-on: bs-index-check)
+        (uses: build) The health gate runs a build and the full suite, hence the tag. Rule 3's
         "one line in the relevant `BUGS.md` entry" then means the entry's file; amend that phrase and nothing else.
         DONE WHEN the files concatenated in index order reproduce the old `BUGS.md` byte for byte apart from the
         index, the resolver and coherence outputs are unchanged, and the health gate is green. ESTIMATE: 1 session.
-      DONE WHEN both sub-boxes are ticked. ESTIMATE: 2-3 sessions. BOUND: rule 10.
+      DONE WHEN the three sub-boxes are ticked. ESTIMATE: 3 sessions. BOUND: rule 10.
       (context: owner request 2026-10-07, ~/Claude/Agent Manager/EFFICIENCY-PLAN.md item 17)
 
 - [ ] **c56-heavy-type** — keep 1-bit sources' strokes as thin as they arrive. (uses: build)
