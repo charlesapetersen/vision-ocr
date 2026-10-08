@@ -1725,6 +1725,31 @@ def startup_line(n_mutants, n_todo, seconds):
             f"after every campaign.", True)
 
 
+def run_suite(where):
+    """Run ./run_tests.sh in `where`; return (proc, output, pass count or None).
+
+    Always a real suite and never a stamp. run_tests.sh skips a tree whose exact inputs
+    passed within 24 hours, and its stamps live outside every tree, so the rsync'd copy
+    matched a stamp the real tree wrote: the baseline printed no count and the tool
+    refused a green tree, and a re-run SURVIVED mutant hit its own stamp and scored
+    MISMATCH. VISIONOCR_SUITE_FRESH=1 runs it regardless; VISIONOCR_SUITE_STAMP=off
+    stops a passing mutant from stamping a mutated tree. A skip line still printed is
+    read as no count.
+    """
+    env = dict(os.environ, VISIONOCR_SUITE_FRESH="1", VISIONOCR_SUITE_STAMP="off")
+    proc = subprocess.run(["./run_tests.sh"], cwd=where, capture_output=True, text=True, env=env)
+    out = proc.stdout + proc.stderr
+    total = None
+    for line in out.splitlines():
+        t = line.strip()
+        if t.endswith("passed") and "/" in t:
+            try: total = int(t.split("/")[1].split()[0])
+            except ValueError: pass
+    if "run_tests: skipped:" in out:
+        total = None
+    return proc, out, total
+
+
 def self_test():
     """Check `logged_seconds` and `estimate_minutes`. Run by the pre-commit hook.
 
@@ -2083,6 +2108,28 @@ def self_test():
     check(f"every catalogue id is unique ({len(ids)} entries)" + (f" — {dupes}" if dupes else ""),
           not dupes)
 
+    # (10) The suite is always run for real. A fake run_tests.sh that behaves like the
+    # stamp: it skips unless VISIONOCR_SUITE_FRESH=1, and stamps unless the stamp is off.
+    fake = os.path.join(tmp, "fake-tree")
+    os.makedirs(fake)
+    with open(os.path.join(fake, "run_tests.sh"), "w") as fh:
+        fh.write('#!/bin/bash\n'
+                 '[ "${VISIONOCR_SUITE_STAMP:-}" = off ] || touch stamped\n'
+                 'if [ "${VISIONOCR_SUITE_FRESH:-0}" != 1 ]; then\n'
+                 '  echo "run_tests: skipped: identical inputs passed at 2026-10-07 09:15:00 (stamp abc)"; exit 0\n'
+                 'fi\n'
+                 'echo "7/7 passed"\n')
+    os.chmod(os.path.join(fake, "run_tests.sh"), 0o755)
+    _, _, n = run_suite(fake)
+    check("the suite runs past a green stamp (VISIONOCR_SUITE_FRESH=1) and its count is read", n == 7)
+    check("a mutant's passing run writes no stamp (VISIONOCR_SUITE_STAMP=off)",
+          not os.path.exists(os.path.join(fake, "stamped")))
+    with open(os.path.join(fake, "run_tests.sh"), "w") as fh:
+        fh.write('#!/bin/bash\necho "7/7 passed"\n'
+                 'echo "run_tests: skipped: identical inputs passed at 2026-10-07 09:15:00 (stamp abc)"\n')
+    _, _, n = run_suite(fake)
+    check("a skip line is read as no count, whatever else was printed", n is None)
+
     print(f"self-test: {len(failures)} failure(s)")
     return 1 if failures else 0
 
@@ -2137,16 +2184,7 @@ def run(argv=None):
         print("could not copy the tree:", r.stderr, file=sys.stderr)
         return 2
 
-    def suite(where):
-        proc = subprocess.run(["./run_tests.sh"], cwd=where, capture_output=True, text=True)
-        out = proc.stdout + proc.stderr
-        total = None
-        for line in out.splitlines():
-            t = line.strip()
-            if t.endswith("passed") and "/" in t:
-                try: total = int(t.split("/")[1].split()[0])
-                except ValueError: pass
-        return proc, out, total
+    suite = run_suite
 
     print("baseline:", end=" ", flush=True)
     _, base_out, baseline = suite(work)
