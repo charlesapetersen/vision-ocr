@@ -321,17 +321,19 @@ fi
 # terminal instead of $log), which means it does NOT get `run`'s automatic timing — and the hook is the most
 # frequent suite runner there is, so a ledger without it would under-report the common case. `record` keeps
 # the row format in test-lock.sh, the one place that owns it.
-# The suite also takes the machine-wide heavy lock (ops/autonomous/mac-heavy-lock.sh), through test-lock.sh's
-# reentrant `run`, which wraps it and keeps test.lock fresh while it waits. The redirect is INSIDE the command
-# so a "waiting for the machine lock" notice reaches your terminal, not $log.
+# The suite takes the machine-wide heavy lock (ops/autonomous/mac-heavy-lock.sh) itself, around its run phase
+# only; test-lock.sh's reentrant `run` hands it the lock directory to keep fresh while it waits. Its "waiting for
+# the machine lock" notice therefore lands in $log. The suite writes compiled / cache-hit / stamp-skip into
+# $log.note, and the ledger row's label carries it.
 suite_t0=$(date +%s)
 if [ -x "$LOCK_SH" ]; then
-  VISIONOCR_TEST_LOCK_HELD=1 "$LOCK_SH" run --label "pre-commit $$" -- /bin/bash -c './run_tests.sh >"$0" 2>&1' "$log"
+  VISIONOCR_SUITE_NOTE="$log.note" VISIONOCR_TEST_LOCK_HELD=1 "$LOCK_SH" run --label "pre-commit $$" -- /bin/bash -c './run_tests.sh >"$0" 2>&1' "$log"
 else
   ./run_tests.sh >"$log" 2>&1
 fi
 suite_rc=$?
-[ -x "$LOCK_SH" ] && "$LOCK_SH" record --label "pre-commit $$" \
+suite_kind="$(head -1 "$log.note" 2>/dev/null)"; rm -f "$log.note"
+[ -x "$LOCK_SH" ] && "$LOCK_SH" record --label "pre-commit $$${suite_kind:+ [$suite_kind]}" \
   --seconds "$(( $(date +%s) - suite_t0 ))" --rc "$suite_rc" 2>/dev/null || true
 if [ "$suite_rc" -ne 0 ]; then
   echo >&2

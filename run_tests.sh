@@ -95,4 +95,14 @@ if ! swiftc -o "$PLATES" \
   exit 1
 fi
 
-VISIONOCR_HELPER="$PWD/$HELPER" VISIONOCR_PLATE_FIXTURES="$PWD/$PLATES" "./$BIN"
+# THE RUN, and only the run, under the machine-wide heavy lock shared with Archive Suite (mac-heavy-lock.sh):
+# the compiles above are outside it, so another project's job waits on this suite's ~4 minutes of OCR and not
+# on its swiftc. test-lock.sh, which callers wrap this script in, still holds test.lock over both; it passes
+# its lock directory (touched while this waits, so test.lock is not broken as stale) and its label.
+HEAVY="${VISIONOCR_MAC_HEAVY:-ops/autonomous/mac-heavy-lock.sh}"
+RUN=(env VISIONOCR_HELPER="$PWD/$HELPER" VISIONOCR_PLATE_FIXTURES="$PWD/$PLATES" "./$BIN")
+if [ -x "$HEAVY" ]; then
+  MAC_HEAVY_TOUCH="${VISIONOCR_TEST_LOCK_DIR:-}" exec "$HEAVY" run --label "${VISIONOCR_SUITE_LABEL:-suite}" -- "${RUN[@]}"
+fi
+echo "run_tests: $HEAVY is missing — running WITHOUT the machine-wide heavy lock." >&2
+exec "${RUN[@]}"

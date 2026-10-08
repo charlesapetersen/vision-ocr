@@ -10,8 +10,9 @@
 #   [3] a dead holder is reclaimed; a live one, or a taker that has not yet written its owner, is not;
 #   [4] a waiter is visible to `waiting-under` from its ancestors only, keeps MAC_HEAVY_TOUCH fresh, and its
 #       wait is unbounded unless --wait is given;
-#   [5] test-lock.sh `run` (both its own and the hook's reentrant form) and ops/ocrlab/run-guarded.sh take it,
-#       including the copy the bake-off runs from $STATE/ocrlab/scripts;
+#   [5] run_tests.sh takes it around ./build/tests and not around its compiles, under test-lock.sh `run` (both
+#       its own and the hook's reentrant form, which no longer take it themselves) and by hand; and
+#       ops/ocrlab/run-guarded.sh takes it, including the copy the bake-off runs from $STATE/ocrlab/scripts;
 #   [6] the holder forwards TERM to its command, keeps the caller's stdin and returns the command's status.
 # Then, once:
 #   [7] the delegate is chosen only when it is an executable file (the default path under $HOME included; EMPTY
@@ -42,6 +43,10 @@ export AGENT_MANAGER_STATE="$T/am-state" HEAVY_LOCK_SYSCTL="$T/fake-sysctl"
 unset MAC_HEAVY_HELD VISIONOCR_TEST_LOCK_HELD HEAVY_LOCK_FILE VISIONOCR_MAC_HEAVY
 printf '#!/bin/sh\necho 1\n' > "$T/fake-sysctl"; chmod +x "$T/fake-sysctl"
 L="$MAC_HEAVY_LOCK"
+# A scratch tree run_tests.sh can run in, with a fake swiftc that records which locks each phase held ([5]).
+. "$HERE/lib-fake-suite.sh"; FB="$T/fakebin"; fake_bin "$FB"
+# test-lock.sh puts the system directories first on PATH; this puts the fakes back in front, in every bash below it.
+printf 'pgrep() { return 1; }\nPATH="%s:$PATH"\n' "$FB" > "$T/no-pgrep.sh"
 waitfor() { local end=$(( $(date +%s) + $2 )); while [ "$(date +%s)" -lt "$end" ]; do eval "$1" && return 0; sleep 0.2; done; return 1; }
 
 # The scratch copy of the manager's helper, and a mutant of it whose take always succeeds.
@@ -165,13 +170,24 @@ prove() {
   [ "$rc" = 0 ] && ok "status exits 0 once it is free" || bad "status rc=$rc on a free lock"
   { kill "$unrelated"; wait "$unrelated"; } 2>/dev/null
 
-  echo "[5 $M] the suite lock and the guarded model runs take it"
-  export VISIONOCR_TEST_LOCK="$C/test.lock" VISIONOCR_SUITE_TIMINGS="$C/timings.tsv"
-  "$OPS/test-lock.sh" run --label probe-suite -- cat "$L/owner" > "$C/tl.out" 2>/dev/null
-  grep -q '^label=probe-suite' "$C/tl.out" && ok "test-lock.sh run holds mac-heavy around its command" || bad "owner seen inside: $(cat "$C/tl.out")"
-  VISIONOCR_TEST_LOCK_HELD=1 "$OPS/test-lock.sh" run --label "pre-commit 1" -- cat "$L/owner" > "$C/tl2.out" 2>/dev/null
-  grep -q '^label=pre-commit 1' "$C/tl2.out" && ok "…and so does its reentrant form, which the pre-commit hook uses" || bad "reentrant: $(cat "$C/tl2.out")"
-  export VISIONOCR_STATE="$C/vstate" OCRLAB="$C/ocrlab"; mkdir -p "$VISIONOCR_STATE"
+  echo "[5 $M] the suite's run phase (not its compiles) and the guarded model runs take it"
+  export VISIONOCR_TEST_LOCK="$C/test.lock" VISIONOCR_SUITE_TIMINGS="$C/timings.tsv" VISIONOCR_STATE="$C/vstate"
+  export FAKE_LOG="$C/fake.log" VISIONOCR_MAC_HEAVY="$H" VISIONOCR_TEST_CACHE=off VISIONOCR_SUITE_STAMP=off
+  fake_tree "$OPS/../../run_tests.sh" "$C/tree"; : > "$FAKE_LOG"
+  # test-lock.sh asks `pgrep -x tests` about the whole machine, where a real suite may be running.
+  (cd "$C/tree" && PATH="$FB:$PATH" BASH_ENV="$T/no-pgrep.sh" bash "$OPS/test-lock.sh" run --label probe-suite -- ./run_tests.sh) >/dev/null 2>&1
+  [ "$(grep -c '^compile .* heavy=no testlock=yes' "$FAKE_LOG")" = 3 ] && grep -q '^run tests .* heavy=yes label=probe-suite$' "$FAKE_LOG" \
+    && ok "under test-lock.sh run, the suite holds mac-heavy around ./build/tests only, under the caller's label" \
+    || bad "test-lock.sh run: $(tr '\n' ';' < "$FAKE_LOG" | cut -c1-300)"
+  : > "$FAKE_LOG"
+  (cd "$C/tree" && BASH_ENV="$T/no-pgrep.sh" VISIONOCR_TEST_LOCK_HELD=1 bash "$OPS/test-lock.sh" run --label "pre-commit 1" -- ./run_tests.sh) >/dev/null 2>&1
+  [ "$(grep -c '^compile .* heavy=no' "$FAKE_LOG")" = 3 ] && grep -q '^run tests .* heavy=yes label=pre-commit 1$' "$FAKE_LOG" \
+    && ok "…and under its reentrant form, which the pre-commit hook uses" || bad "reentrant: $(tr '\n' ';' < "$FAKE_LOG" | cut -c1-300)"
+  VISIONOCR_TEST_LOCK_HELD=1 bash "$OPS/test-lock.sh" run --label bare -- sh -c '[ -d "$MAC_HEAVY_LOCK" ] && echo held || echo free' > "$C/tl3.out" 2>/dev/null
+  BASH_ENV="$T/no-pgrep.sh" bash "$OPS/test-lock.sh" run --label bare2 -- sh -c '[ -d "$MAC_HEAVY_LOCK" ] && echo held || echo free' >> "$C/tl3.out" 2>/dev/null
+  [ "$(tr '\n' ' ' < "$C/tl3.out")" = "free free " ] && ok "test-lock.sh run no longer takes it itself, in either form" || bad "test-lock.sh took it: $(tr '\n' ' ' < "$C/tl3.out")"
+  unset FAKE_LOG VISIONOCR_MAC_HEAVY VISIONOCR_TEST_CACHE VISIONOCR_SUITE_STAMP
+  export OCRLAB="$C/ocrlab"; mkdir -p "$VISIONOCR_STATE"
   MAC_HEAVY_PROJECT=archive-suite "$H" run --label holder -- sleep 4 & hp=$!
   waitfor '[ -s "$L/owner" ]' 5
   "$OPS/../ocrlab/run-guarded.sh" --need-gb 0 -- true 2>/dev/null & gp=$!

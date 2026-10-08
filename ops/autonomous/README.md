@@ -119,7 +119,8 @@ the daemon loop; and the owner keeps working interactively in the primary checko
 **Inside test.lock sits a second, machine-wide lock: `mac-heavy-lock.sh`** (2026-10-06, after the Mac froze
 with this suite, Archive Suite's builds and VMs, and CrashPlan running at once). `~/.local/state/mac-heavy.lock`
 is shared with Archive Suite, which carries its own copy of the same protocol; the helper's header is the
-specification. The suite (through `test-lock.sh run`, both forms), the gate's build, the hook's UI build and every
+specification. The suite's run phase (`run_tests.sh` takes it around `./build/tests` only, since 2026-10-07; its
+compiles run under test.lock alone), the gate's build, the hook's UI build and every
 `ops/ocrlab/run-guarded.sh` model run take it, waiting without a limit. The daemon does not charge a gate's or a
 session's time queued there (up to `VISIONOCR_HEAVY_PAUSE_MAX`, 4 h). `tests/prove-mac-heavy-lock.sh` and
 `prove-gate-fix.sh` [8] prove it, and both run in the gate.
