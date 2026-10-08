@@ -1215,6 +1215,11 @@ say so in the commit.
       It FITS as a region reader: an `OCR-MODELS` row, and a bakeoff row in set `fitted-regions`, not `fitted` (rejected:
       `--build fitted` reads whole pages and truth crops, so it would score the 1 MP cap as the model). Not like for like with dots.mocr's 0.890,
       which read the 13 truth crops. NEXT: the owed NewsBench region rows (Churro and the fitting readers on YOLO regions).
+      Round 1, session 5, 2026-10-07: new `ops/ocrlab/newsbench.sh <reader> <whole|yolo>` reads the 15 scored pages, whole
+      or as their deduped DocLayout-YOLO regions (1,010 in all), into NewsBench's `ocr-results/`. Measured, 1−CER / bowF1:
+      Vision on regions 0.741 / 0.938 (whole page 0.304 / 0.624), PaddleOCR-VL-1.6-4bit on regions 0.742 / 0.982 in 604 s.
+      Both sit 0.20-0.24 under their bowF1 because the regions are read in a stand-in column order: for the app, a layout
+      step plus a real reading order is worth more than a better reader. Churro on regions: 405 s for one 2,631-word page.
 - [ ] **ocr-bakeoff-bits** — run the top three at 4-bit and at 8-bit and compare.
       (blocked-on: ocr-bakeoff-score, ocr-lab-round3)
       The owner's 2026-10-02 request: the same sample through `bakeoff.sh` with the build as the parameter,
