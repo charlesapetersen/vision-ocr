@@ -5,6 +5,9 @@
 # apple-vision-wholepage: ops/truth/vision-read.swift (revision 3, accurate, language correction: the app's settings) on
 # each whole JPG (2453-5975 px wide), one process per page, 1-8 s each. Vision scales the page down, so this is the
 # floor, not the app's banded path. Rows owed: Churro 3B, Qwen3-VL-8B, Qwen3.5-4B whole-page; dots.mocr on regions.
+# churro-3b-8bit-yolo: `--churro --max-side 1600`, max 3000 tokens a region, 9,742 s of reading for 15 pages (~650 s a page), peak
+# footprint 3,503 MB; 2 pages each have one region cut at max_tokens (kept, as bakeoff.sh keeps them). One earlier try of p.6
+# (mss3413201323-27) died on a Metal GPU timeout after 2,306 s and was reread.
 # region `yolo` rows: ops/ocrlab/newsbench.sh <reader> yolo — DocLayout-YOLO (ONNX, imgsz 1024) on each page, then
 # dedupe-regions.py: 1,010 regions over the 15 pages, 11 s of detection in all. Read in the stand-in order (columns by
 # x-centre), not a model's, which is why `overall` sits 0.20-0.24 under bowF1: the order costs more than the reader.
@@ -17,6 +20,7 @@ model	region	overall	broadsheet	page	chrF	bowF1	gap	n	source
 apple-vision-wholepage	none	0.304	0.334	0.284	0.587	0.624	0.319	15	measured 2026-10-07
 vision-yolo	DocLayout-YOLO	0.741	0.847	0.671	0.967	0.938	0.196	15	measured 2026-10-07
 paddleocr-vl-1.6-4bit-yolo	DocLayout-YOLO	0.742	0.853	0.668	0.985	0.982	0.240	15	measured 2026-10-07
+churro-3b-8bit-yolo	DocLayout-YOLO	0.706	0.850	0.611	0.970	0.938	0.232	15	measured 2026-10-07
 glm-ocr-doclayout	DocLayout	0.970	0.976	0.967	0.986	0.986	0.015	15	reference (scoresheet.md)
 tesseract	none	0.677	0.614	0.719	0.866	0.844	0.167	15	reference (scoresheet.md)
 gemini-3.5-flash-lite	none	0.820	0.884	0.778	0.876	0.867	0.048	15	reference (scoresheet.md)
