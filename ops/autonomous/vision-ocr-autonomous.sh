@@ -68,6 +68,13 @@ _heavy_waiting() { [ -x "$HEAVY" ] && "$HEAVY" waiting-under "$1" >/dev/null 2>&
 # The uncharged time has a ceiling, so a holder that wedges (a hung VM, a stuck suite elsewhere) cannot stall
 # the daemon loop for ever: past it, the wait counts against the clock like anything else.
 HEAVY_PAUSE_MAX="${VISIONOCR_HEAVY_PAUSE_MAX:-14400}"
+# The Agent Manager's session-grant helper (stage 4, 2026-10-07): asked before each session; 0 = granted, 75 = wait.
+# Absent, or any other answer: the session starts exactly as before (fail-open).
+GRANT_CMD="${VISIONOCR_GRANT_CMD:-$HOME/Claude/Agent Manager/bin/grant}"
+GRANT_PROJECT="${VISIONOCR_GRANT_PROJECT:-Vision OCR}"
+# A helper that hangs cannot hold the daemon: it is killed by SIGALRM after this many seconds (exit 142),
+# which is "any other answer" and so launches as before.
+GRANT_TIMEOUT="${VISIONOCR_GRANT_TIMEOUT:-30}"
 # =======================================================================================================
 RUN="${VISIONOCR_RUN:-$STATE/RUN.md}"          # run state: RUN STATUS + FOCUS + HOLD + SESSION LOG
 QUEUE="${VISIONOCR_QUEUE:-$REPO/ops/autonomous/QUEUE.md}"
@@ -1804,6 +1811,41 @@ culprits are per-worktree build/ directories and Tools/mutation-out/. Free some 
     while [ "$(date +%s)" -lt "$w_until" ]; do sleep 60; done
     usage_row wait "$w_t0" "$(date +%s)" - - - "${w_pct:-} ${w_reset:-}" "" "${w_cut:-}"
   fi
+
+  # 3d'. Ask the Agent Manager (stage 4, 2026-10-07). It owns the rules shared across projects: another project's
+  #      exclusive job, a subscription at its stop threshold, and priority while a window is tight (this project
+  #      has the highest priority, so in practice only the threshold applies). 75 = wait: no session this cycle,
+  #      logged once per reason, and not idleness (the idle stopwatch is cleared, so a long wait cannot park the
+  #      run). An absent helper, or any other answer, launches as before.
+  #      The helper is bounded by GRANT_TIMEOUT, and its output goes through a file rather than $(…): a killed
+  #      shell-script helper can leave a child holding the pipe open, and $(…) would wait for that child.
+  if [ -x "$GRANT_CMD" ]; then
+    local g_out g_rc g_prev
+    perl -e 'alarm shift; exec @ARGV or exit 127' "$GRANT_TIMEOUT" \
+      "$GRANT_CMD" --project "$GRANT_PROJECT" --agent claude > "$STATE/grant.out" 2>/dev/null; g_rc=$?
+    g_out="$(head -1 "$STATE/grant.out" 2>/dev/null)"; rm -f "$STATE/grant.out"
+    if [ "$g_rc" = 75 ]; then
+      g_out="${g_out#wait: }"; g_out="${g_out:-no reason given}"
+      # "Once per reason" compares only the part before the first " (": the helper puts every figure that moves
+      # during a wait (used share, share of the window gone, run-out and reset clocks) in that tail, so a whole-line
+      # compare logged a new line on almost every cycle of a pace wait. grant.wait keeps the whole, newest reason
+      # for the status digest.
+      g_prev="$(head -1 "$STATE/grant.wait" 2>/dev/null)"
+      [ "${g_out%% (*}" = "${g_prev%% (*}" ] \
+        || log "Agent Manager says wait — $g_out; no session until it grants."
+      printf '%s\n' "$g_out" > "$STATE/grant.wait"
+      rm -f "$IDLE_SINCE" 2>/dev/null || true
+      write_status
+      return 0
+    fi
+    if [ "$g_rc" = 0 ]; then
+      [ -f "$STATE/grant.wait" ] && log "Agent Manager grants again — the wait is over."
+    elif [ "$g_rc" = 142 ]; then log "Agent Manager's grant helper timed out after ${GRANT_TIMEOUT}s — launching as before."
+    else
+      [ -f "$STATE/grant.wait" ] && log "Agent Manager's grant helper failed (exit $g_rc) — launching as before."
+    fi
+  fi
+  rm -f "$STATE/grant.wait"   # granted, failed or absent: a wait file must never outlive the wait
 
   # 3e. Effort per item (owner, 2026-09-26). The item at the head of the queue gets its session at max
   #     effort once it has had two attempts that did not finish it. Attempts are the item's

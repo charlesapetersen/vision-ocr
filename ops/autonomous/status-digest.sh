@@ -133,8 +133,19 @@ if [ -n "${VISIONOCR_STATUS_PARKED:-}" ]; then
   STATE_ICON="${AMB}◆${OFF}"; STATE_LINE="Stopped itself — what is left needs a decision from you"
   STATE_HINT="reason: $(printf '%s' "$VISIONOCR_STATUS_PARKED" | tr -d '\n' | cut -c1-70)"
 elif [ "$running" = 1 ]; then
+  # The Agent Manager said wait (stage 4): the daemon clears idle.since during a wait, so without this check
+  # the empty-stopwatch branch below would print "Working now" over a run that is launching nothing.
+  _gwait="$(head -1 "$STATE/grant.wait" 2>/dev/null)"
+  grant_wait_state() {
+    # Cut at 220, not 90: a pace wait's reason runs to about 150 characters with its run-out and reset in a
+    # " (...)" tail that opens near column 60, and a 90 cut left an open parenthesis and dropped both clocks.
+    STATE_ICON="${AMB}◐${OFF}"; STATE_LINE="Waiting — Agent Manager: $(printf '%s' "$_gwait" | cut -c1-220)"
+    STATE_HINT="This is NOT out of work; it starts a session by itself once the manager grants."
+  }
   case "$since" in
-    ''|*[!0-9]*) STATE_ICON="${GRN}●${OFF}"; STATE_LINE="Working now" ;;
+    ''|*[!0-9]*)
+      if [ -n "$_gwait" ]; then grant_wait_state
+      else STATE_ICON="${GRN}●${OFF}"; STATE_LINE="Working now"; fi ;;
     *)
       idle=$(( $(date +%s) - since ))
       STATE_ICON="${AMB}◐${OFF}"
@@ -188,6 +199,7 @@ elif [ "$running" = 1 ]; then
               STATE_HINT="$STATE_HINT  ($(plural "$orph_assigned" 'stranded worktree') queued for a session to triage — nothing for you.)"
             fi
           fi ;;
+        *'WAITING FOR THE AGENT MANAGER'*) grant_wait_state ;;
         *THROTTLED*)
           # Pass the epoch through: ratelimit_phrase with no argument degrades to a bare "usage cap" and throws
           # away the reset time the lib just computed, which is the half of the sentence the owner acts on.

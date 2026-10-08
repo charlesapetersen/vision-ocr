@@ -207,6 +207,12 @@ idle_explanation() {
       "$ran" "$idle"
     return 0
   fi
+  local gwait; gwait="$(head -1 "${STATE:-$HOME/.local/state/visionocr-autonomous}/grant.wait" 2>/dev/null)"
+  if [ -n "$gwait" ]; then
+    printf 'running, WAITING FOR THE AGENT MANAGER (idle %ss — %s; it starts a session by itself once the manager grants)' \
+      "$idle" "$gwait"
+    return 0
+  fi
   if reset="$(ratelimit_reset_epoch)"; then
     printf 'running, THROTTLED (idle %ss — last session was REFUSED by the %s; this is NOT an empty queue)' \
       "$idle" "$(ratelimit_phrase "$reset")"

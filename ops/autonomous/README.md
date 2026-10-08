@@ -292,7 +292,8 @@ check is the licence for having the second list.
 
 Items support `(blocked-on: TAG[, TAG…])`, resolved against both the queue's own checkboxes and `BUGS.md`
 status. A **missing** prerequisite tag counts as unmet, so a typo blocks loudly instead of running work out
-of order. `[hold]` / `needs: owner` items are printed but never offered.
+of order. `[hold]` / `needs: owner` items are printed but never offered. `(not-before: YYYY-MM-DD)` holds an
+item that needs elapsed time until that date (`blocked:not-before:<date>`); a malformed date blocks too.
 
 ## Reading BUGS.md without spending the session on it
 

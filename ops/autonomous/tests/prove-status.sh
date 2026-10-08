@@ -473,5 +473,37 @@ grep -q 'FAILED.*staleness — that step is broken now' <<<"$h" && ! grep -q 'id
   && ok "a RED carrying the stamp note names only its failing step" || bad "RED with note: $h"
 rm -f "$VISIONOCR_STATE/last-gate" "$VISIONOCR_STATE/last-gate.log"
 
+# ---- [12] the Agent Manager says wait (stage 4) ----------------------------------------------------------
+# The daemon clears idle.since during a grant wait, so the empty-stopwatch branch printed "Working now" over a
+# run that was launching nothing. Both stopwatch states are covered: absent (what the daemon leaves) and set.
+echo "[12] a grant wait from the Agent Manager"
+_since_saved="$(cat "$VISIONOCR_STATE/idle.since")"
+echo "Claude's five-hour window is 98% used; it resets at 19:00" > "$VISIONOCR_STATE/grant.wait"
+for _clock in absent set; do
+  [ "$_clock" = absent ] && rm -f "$VISIONOCR_STATE/idle.since" || echo "$_since_saved" > "$VISIONOCR_STATE/idle.since"
+  b="$(state_block)"
+  case "$b" in *"Waiting — Agent Manager: Claude's five-hour window is 98% used; it resets at 19:00"*)
+      ok "idle stopwatch $_clock: names the wait and the manager's reason" ;;
+    *) bad "idle stopwatch $_clock: no grant-wait line — got: $(printf '%s' "$b" | tr '\n' ' ')" ;; esac
+  case "$b" in *"Working now"*) bad "idle stopwatch $_clock: a grant wait reads as 'Working now'" ;;
+    *) ok "idle stopwatch $_clock: a grant wait does NOT read as working" ;; esac
+done
+rm -f "$VISIONOCR_STATE/grant.wait" "$VISIONOCR_STATE/idle.since"
+b="$(state_block)"
+case "$b" in *"Working now"*) ok "with the wait file gone, an empty stopwatch reads as working again" ;;
+  *) bad "NEGATIVE CONTROL FAILED: no 'Working now' once the wait file is gone" ;; esac
+: > "$VISIONOCR_STATE/grant.wait"
+case "$(state_block)" in *"Agent Manager"*) bad "an EMPTY grant.wait is reported as a wait" ;;
+  *) ok "an empty grant.wait is not a wait" ;; esac
+# A pace wait's reason is about 150 characters with its run-out and reset in a " (...)" tail that opens near
+# column 60; the old 90-character cut left an open parenthesis and dropped both clocks.
+echo "Claude's weekly window is ahead of the week's pace (70% used, 40% of the week gone; at this pace it runs out Sat 17 Oct 14:00, before its reset Sun 18 Oct 03:00)" \
+  > "$VISIONOCR_STATE/grant.wait"
+case "$(state_block)" in
+  *"Waiting — Agent Manager: Claude's weekly window is ahead of the week's pace (70% used, 40% of the week gone; at this pace it runs out Sat 17 Oct 14:00, before its reset Sun 18 Oct 03:00)"*)
+    ok "a pace wait shows its whole reason, run-out and reset included" ;;
+  *) bad "a pace wait's reason is cut: $(state_block | grep 'Agent Manager')" ;; esac
+rm -f "$VISIONOCR_STATE/grant.wait"; echo "$_since_saved" > "$VISIONOCR_STATE/idle.since"
+
 printf '\n  %s passed, %s failed\n' "$PASS" "$FAIL"
 [ "$FAIL" = 0 ]

@@ -1079,7 +1079,10 @@ say so in the commit.
       serialise on test.lock and one Vision process at a time is a hard memory rule here. Follow-up:
       `two-sessions-recheck`.
 - [ ] **two-sessions-recheck** — once the larger plan is in use, re-measure and build the side lane if it pays.
-      (blocked-on: larger-plan-active)
+      (blocked-on: larger-plan-active) (not-before: 2026-10-14)
+      2026-10-07 (round 1, session 1): the plan went live at 16:06 today, so there was no week of readings to
+      measure; `next-item.sh` gained `(not-before:)` (harness `tests/prove-next-item.sh`) and holds this item
+      until 2026-10-14.
       WHAT. Over the first week on the new plan, rerun two-sessions-design's measurement. Build the side lane it
       designs only if the daemon spent under a tenth of its running time waiting on the window and at least two
       `(lane: side)`-shaped items are queued; otherwise write that here and tick the box. DONE WHEN the figures and
@@ -1212,6 +1215,16 @@ say so in the commit.
       It FITS as a region reader: an `OCR-MODELS` row, and a bakeoff row in set `fitted-regions`, not `fitted` (rejected:
       `--build fitted` reads whole pages and truth crops, so it would score the 1 MP cap as the model). Not like for like with dots.mocr's 0.890,
       which read the 13 truth crops. NEXT: the owed NewsBench region rows (Churro and the fitting readers on YOLO regions).
+      Round 1, session 5, 2026-10-07: new `ops/ocrlab/newsbench.sh <reader> <whole|yolo>` reads the 15 scored pages, whole
+      or as their deduped DocLayout-YOLO regions (1,010 in all), into NewsBench's `ocr-results/`. Measured, 1−CER / bowF1:
+      Vision on regions 0.741 / 0.938 (whole page 0.304 / 0.624), PaddleOCR-VL-1.6-4bit on regions 0.742 / 0.982 in 604 s.
+      Both sit 0.20-0.24 under their bowF1 because the regions are read in a stand-in column order: for the app, a layout
+      step plus a real reading order is worth more than a better reader. Churro on regions: 405 s for one 2,631-word page.
+      Round 1, session 6, 2026-10-07: session 5's detached Churro run died at page 13 when its worktree was removed under
+      it (run-guarded.sh gone); the three unread pages were reread. Measured, Churro 3B on regions: 0.706 / 0.938 in
+      ~650 s a page, peak 3,503 MB: no better than Vision on the same regions and well under PaddleOCR-VL, so Churro is not
+      the newspaper reader. Started, detached: dots.mocr on regions, then Churro, Qwen3.5-4B, Qwen3-VL-8B whole-page
+      (log `/tmp/nb-chain.log`; a detached job must run from a worktree that outlives it).
 - [ ] **ocr-bakeoff-bits** — run the top three at 4-bit and at 8-bit and compare.
       (blocked-on: ocr-bakeoff-score, ocr-lab-round3)
       The owner's 2026-10-02 request: the same sample through `bakeoff.sh` with the build as the parameter,
@@ -1421,7 +1434,10 @@ so `next-item.sh` does not read them. To queue one, move it back into the queue 
 
 ## HOLD — owner-only, never auto-executed
 
-- [ ] **larger-plan-active** — the owner says the larger Claude plan is in use. Tick it when it is, with the date;
+- [x] **larger-plan-active** — the owner says the larger Claude plan is in use. Tick it when it is, with the date;
+      TICKED 2026-10-07: owner, "Claude for Education Premium has just been activated for this account. We now have access
+      to Fable and a much larger usage window (approximately 5x what we had before)." The Claude readings now also carry
+      a weekly window. Fable is used for max-effort sessions only (owner).
       `two-sessions-recheck` waits on it. [hold] needs: owner — only the owner knows when the plan changes.
 - [x] **bakeoff-tonight-ok** — the owner says the Mac is free, so the bake-off may resume (rest of Chandra 2, then the
       Qwen3.5-9B try). Owner, 2026-10-05: the daemons work through the day, the bake-off waits for tonight. [hold] needs: owner

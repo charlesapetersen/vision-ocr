@@ -28,6 +28,9 @@
 #   (blocked-on: TAG[, TAG…])   do not offer until EVERY named tag is done. A MISSING tag counts as UNMET,
 #                               so a typo blocks loudly instead of running work out of order.
 #   [hold] / needs: owner       never offered to an unattended session, whatever else is true.
+#   (not-before: YYYY-MM-DD)    do not offer before that local date; reported as `blocked:not-before:<date>`.
+#                               For items that need elapsed time (a week of readings), not another item.
+#                               A malformed date blocks, like a missing tag. VISIONOCR_TODAY overrides today.
 #
 # A prerequisite is satisfied if it is `[x]` here, OR its register entry in `BUGS.md` is closed. Reading
 # both matters: an item can be finished and its queue line archived, and a resolver that only knew the
@@ -93,7 +96,13 @@ awk '
 # ---- pass 2: resolve the queue ---------------------------------------------------------------------
 # Item SPANS, not lines: a `(blocked-on: …)` clause can wrap onto a continuation line, and a resolver that
 # only scanned the checkbox line would silently drop the second half of a clause and offer the item.
-out="$(awk -v bugstate="$BUGSTATE" '
+TODAY="${VISIONOCR_TODAY:-$(date +%Y-%m-%d)}"
+# The gate compares ISO dates as strings, so anything else here would order wrongly and could offer early.
+case "$TODAY" in
+  [0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]) ;;
+  *) echo "next-item: today '$TODAY' is not YYYY-MM-DD" >&2; exit 2 ;;
+esac
+out="$(awk -v bugstate="$BUGSTATE" -v today="$TODAY" '
   function flush_item() {
     if (cur_tag == "") return
     deps = alldeps(cur_span)
@@ -106,6 +115,9 @@ out="$(awk -v bugstate="$BUGSTATE" '
       if (d[i] == "") continue
       if (!tag_done(d[i])) unmet = unmet (unmet == "" ? "" : ",") d[i]
     }
+    nb = notbefore(cur_span)
+    if (nb != "" && (nb !~ /^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]$/ || today < nb))
+      unmet = unmet (unmet == "" ? "" : ",") "not-before:" nb
     if (unmet != "") print "blocked:" unmet "\t" cur_tag "\t" cur_text
     else { print "ok\t" cur_tag "\t" cur_text; nok++ }
     nopen++
@@ -128,6 +140,22 @@ out="$(awk -v bugstate="$BUGSTATE" '
       sub(/\)$/, "", t)
       gsub(/[[:space:]]/, "", t)
       res = res (res == "" ? "" : ",") t
+    }
+    return res
+  }
+  # Every clause counts, as in alldeps: the LATEST date wins and a malformed one wins over any date. An
+  # empty `(not-before:)` is a prose mention of the marker, not a clause, and is skipped.
+  function notbefore(s,   t, res) {
+    res = ""
+    while (match(s, /\(not-before:[^)]*\)/)) {
+      t = substr(s, RSTART, RLENGTH)
+      s = substr(s, RSTART + RLENGTH)
+      sub(/^\(not-before:[[:space:]]*/, "", t)
+      sub(/\)$/, "", t)
+      gsub(/[[:space:]]/, "", t)
+      if (t == "") continue
+      if (t !~ /^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]$/) return t
+      if (t > res) res = t
     }
     return res
   }
