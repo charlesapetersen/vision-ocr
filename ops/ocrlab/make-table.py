@@ -41,6 +41,7 @@ CARDS = {
     "infinity-parser2-flash-8bit": ("2B", "block boxes (its layout JSON)"),
     "qwen3-vl-8b-4bit": ("8B", "boxes by prompting (grounding), unmeasured"),
     "olmocr-2-7b-4bit": ("7B", "none (Markdown text, no coordinates)"),
+    "nara-qwen-3.5-2b-4bit": ("2B", "none (one text line per physical line, no coordinates)"),
 }
 NOTES = {
     "lightonocr-2-1b-4bit": "superseded by its retry, lightonocr-2-1b-4bit-1540",
@@ -96,6 +97,11 @@ NOTES = {
                         "its first ordinary read (swap_grew_2740MB at 7.4 GB, waiting for only 6 GB, as another "
                         "project's VM started); read on its one retry, needing 8 GB reclaimable; newspaper crops "
                         "had at least one crop run to its 3,000-token cap, and precision 0.54, weakest of those that fit",
+    "nara-qwen-3.5-2b-4bit": "wjbmattingly/nara-qwen-3.5-2b (@eddbe82, a Qwen3.5-2B fine-tune on Revolutionary War "
+                             "pension files) converted here at 4-bit by convert-mlx.py, bf16 download kept outside "
+                             "the lab; its own prompt.txt (--prompt-file) and its card's repetition penalty 1.1; "
+                             "newspaper crops LOOP: lines repeat up to 37 times and at least one crop ran to its "
+                             "3,000-token cap, so its 0.523 just clears the fit rule",
 }
 NOT_RUN = [
     ("teleocr", "XingChen-AGI/TeleOCR", "1.2B", "-", "-",

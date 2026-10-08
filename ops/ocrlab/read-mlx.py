@@ -1,7 +1,8 @@
 """read-mlx.py — read one page image with one MLX vision model, plain text out.
 
     python read-mlx.py <model-dir-or-repo> <image.png> <out.txt> [--prompt P] [--max-tokens N] [--seconds S]
-                       [--crops crops.tsv] [--max-side PX] [--churro | --infinity]
+                       [--crops crops.tsv] [--max-side PX] [--churro | --infinity] [--repetition-penalty R]
+                       [--prompt-file prompt.txt]
 
 Run it under run-guarded.sh. Prints one JSON line of statistics on stdout: load and read seconds,
 prompt and generated tokens, MLX's own peak memory, and whether the read was cut off by --seconds
@@ -24,7 +25,12 @@ ap.add_argument("--no-remote-code", action="store_true",
 ap.add_argument("--max-side", type=int, help="shrink each image (or crop) so its longer side is at most this")
 ap.add_argument("--churro", action="store_true", help="Churro's system prompt, sampler and XML answer")
 ap.add_argument("--infinity", action="store_true", help="Infinity-Parser2's layout prompt and JSON answer")
+ap.add_argument("--repetition-penalty", type=float, help="a model card's serving penalty (nara-qwen: 1.1)")
+ap.add_argument("--prompt-file", help="the prompt from a file, relative to the model's directory (nara-qwen's prompt.txt)")
 a = ap.parse_args()
+if a.prompt_file:
+    import os
+    a.prompt = open(os.path.join(a.model, a.prompt_file)).read().strip()
 
 import mlx.core as mx
 from mlx_vlm import load, stream_generate
@@ -40,6 +46,8 @@ gen_kw = {}
 import os
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 unwrap = None
+if a.repetition_penalty:
+    gen_kw["repetition_penalty"] = a.repetition_penalty
 if a.churro:
     from churro_xml import xml_text as unwrap
     gen_kw["repetition_penalty"] = 1.05

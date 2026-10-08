@@ -1183,7 +1183,7 @@ say so in the commit.
         pages 1850s-1919 with volunteer gold) into the lab, outside git, and score with its own 1−CER scorer: Churro 3B,
         Qwen3-VL-8B, Qwen3.5-4B and Apple Vision whole-page, and Churro and the fitting round-3 readers on DocLayout-YOLO
         regions. Its scoresheet's published rows (GLM-OCR on DocLayout regions 0.970) are the reference.
-      - [ ] **lab3-extras** — `wjbmattingly/nara-qwen-3.5-2b` (Apache-2.0, typescripts and forms, its own prompt.txt);
+      - [x] **lab3-extras** — `wjbmattingly/nara-qwen-3.5-2b` (Apache-2.0, typescripts and forms, its own prompt.txt);
         NuMarkdown-8B-Thinking only if disk and time allow.
       DONE WHEN each candidate has a row in `OCR-MODELS-<date>.tsv` (fits or why not), each fitting build is a `fitted`
       row in `ops/ocrlab/bakeoff-models.tsv`, and `OCR-NEWSBENCH-<date>.tsv` holds the NewsBench scores. ESTIMATE: 2-3
@@ -1243,6 +1243,14 @@ say so in the commit.
       mac-heavy.lock). Measured, Qwen3-VL-8B-4bit whole-page: 0.752 / bowF1 0.881, broadsheet 0.863, ordinary page 0.678,
       5,738 s for 15 pages, peak footprint 9,432 MB, 2 pages cut at max_tokens. It and Qwen3.5-4B (0.570 / 0.915) fail on
       opposite page types. NEXT: lab3-extras.
+      Round 1, session 9, 2026-10-08: lab3-extras TICKED. nara-qwen-3.5-2b (@eddbe82) converted to 4-bit MLX (1,661 MB in
+      the lab; the 4.4 GB bf16 download went to /private/tmp, outside the 50 GB limit), read with its own prompt.txt and
+      its card's repetition penalty 1.1 (read-mlx.py gained `--prompt-file` and `--repetition-penalty`). Measured: ordinary
+      page 9.7 s, peak 3,429 MB, rough recall 0.874 / precision 0.919; newspaper crops 121 s, peak 4,111 MB, 0.523 / 0.722,
+      LOOPING (lines repeated up to 37 times, a crop cut at 3,000 tokens). Fits by the rule, narrowly; a `fitted` bakeoff
+      row. NuMarkdown-8B-Thinking not run: its smallest MLX build (5,391 MB) would take the lab past 50 GB. THE REGION
+      READER for hp-regions is PaddleOCR-VL-1.6-4bit: level with dots.mocr on NewsBench regions (0.742 / 0.746) in 604 s
+      against 1,654 s, and peaking at 2,211 MB against 5,628 MB in the fit tests; Churro (0.706) is not it.
 - [ ] **ocr-bakeoff-bits** — run the top three at 4-bit and at 8-bit and compare.
       (blocked-on: ocr-bakeoff-score, model-night-ok) (uses: machine)
       EDGES CHANGED 2026-10-07 (EFFICIENCY-PLAN item 16; `QUEUE-ANALYSIS-2026-10-07.md`, Vision OCR section): no
