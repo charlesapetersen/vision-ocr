@@ -224,6 +224,7 @@ reset_repo
 cat > "$T/claude" <<STUB
 #!/usr/bin/env bash
 env > "$CHILDENV"                       # prove exactly what a session inherits
+[ -e "$T/claude.argv" ] || printf '%s\n' "\$@" > "$T/claude.argv"   # how the FIRST session since a reset launched
 IFS=: read -r rc docommit complete < "$CTRL"
 printf '\n### session note %s.%s\n' "\$(date +%s)" "\$\$" >> "$RUN"
 case "\$complete" in
@@ -1063,6 +1064,48 @@ L=$(GRANT="$T/grant-slow" GRANT_TIMEOUT=2 run_daemon 0 8)
 grep -q "grant helper timed out after 2s $EM launching as before" "$L" && ok "…and the timeout is logged" \
   || bad "no timeout line: $(grep 'Agent Manager' "$L" | tail -2)"
 pkill -f "sleep 987653" 2>/dev/null
+
+echo "[20] THE ESCALATION LADDER — Opus at the default, then Fable at high, xhigh, max; markers win"
+# argv_after FLAG — the value the FIRST stub session since a reset was given for FLAG, from its recorded argv.
+argv_after() { awk -v f="$1" 'p{print; exit} $0==f{p=1}' "$T/claude.argv" 2>/dev/null; }
+launched() { printf '%s %s %s %s' "$(argv_after --model)" "$(argv_after --fallback-model)" "$(argv_after --effort)" "$(argv_after --max-budget-usd)"; }
+# 3e reads the head item through next-item.sh, which the sandbox repo otherwise lacks — without it no item is
+# ever at the head and every session runs at the default, so every rung below would be vacuous.
+cp "$HERE/../next-item.sh" "$REPO/ops/autonomous/next-item.sh"
+# markq TEXT — put TEXT (the item's markers) on the head item, C24b, and commit it.
+markq() {
+  reset_repo
+  [ -n "$1" ] && sed -i '' "s/stub item one\$/stub item one $1/" "$QUEUE"
+  git -C "$REPO" commit -qam markers >/dev/null 2>&1; git -C "$REPO" update-ref refs/remotes/origin/main HEAD
+  rm -f "$STATE/attempts.tsv" "$T/claude.argv"
+}
+echo "0:no" > "$CTRL"; dfset 999999
+# Each case: "<markers>|<model fallback effort budget>|<what it proves>". The harness's VISIONOCR_BUDGET is 1;
+# BUDGET_MAX is the daemon's default 140, so the budget column shows which sessions got max's larger cap.
+while IFS='|' read -r marks want what; do
+  markq "$marks"; L=$(run_daemon 0 4)
+  [ -s "$T/claude.argv" ] || bad "premise failed ($what): no session launched"
+  [ "$(launched)" = "$want" ] && ok "$what: $want" || bad "$what: launched '$(launched)', want '$want'"
+done <<'CASES'
+|opus sonnet medium 1|no attempts: Opus at the default
+(attempts: 1)|opus sonnet medium 1|one attempt: still Opus at the default
+(attempts: 2)|fable opus high 1|rung 1 (two attempts): Fable at high, ordinary budget
+(attempts: 3)|fable opus xhigh 1|rung 2 (three attempts): Fable at xhigh, ordinary budget
+(attempts: 4)|fable opus max 140|rung 3 (four attempts): Fable at max, max's budget
+(attempts: 9)|fable opus max 140|every attempt after rung 3 stays Fable at max
+(attempts: 3) (effort: medium)|fable opus medium 1|a marker wins the effort on a rung; the model stays Fable
+(attempts: 2) (effort: max)|fable opus max 140|a max marker on rung 1 is max, with max's budget
+(effort: max)|fable opus max 140|a max marker with no attempts is Fable at max
+(effort: high)|opus sonnet high 1|a high marker with no attempts stays on Opus
+CASES
+markq "(attempts: 2)"; L=$(run_daemon 0 4)
+grep -q 'budget \$1, model fable, effort high for C24b after 2 attempts' "$L" && ok "the launch line names the rung's model and effort" \
+  || bad "launch line: $(grep 'launching fresh' "$L" | head -1)"
+markq "(attempts: 2)"; L=$(VISIONOCR_MAX_MODEL=claude-test-model run_daemon 0 4)
+[ "$(launched)" = "claude-test-model opus high 1" ] && ok "VISIONOCR_MAX_MODEL overrides the escalation model" || bad "override: '$(launched)'"
+markq "(attempts: 4)"; L=$(VISIONOCR_MAX_MODEL=opus run_daemon 0 4)
+[ "$(launched)" = "opus sonnet max 140" ] && ok "an override to opus never falls back to itself" || bad "opus override: '$(launched)'"
+rm -f "$REPO/ops/autonomous/next-item.sh" "$STATE/attempts.tsv"; reset_repo
 
 echo
 echo "=================== $PASS passed, $FAIL failed, $SKIP skipped ==================="

@@ -41,8 +41,10 @@ say so in the commit.
 7. **Attempts and effort.** The daemon counts the sessions it runs on an item that end with the item
    still open and no box ticked; a session that ticks a sub-box for a finished part is not a failed
    attempt, nor is one that opened at 85% or more of the usage window (owner, 2026-10-01). It adds the item's `(attempts: N)` marker, which records failures found later, by the
-   owner or a check. From the third attempt the session runs at `max` effort instead of the default
-   `medium`, with a $140 budget cap instead of $70 and an 8-hour time limit instead of 4. `(effort: <level>)` on an item sets its effort outright. When a ticked item is found not
+   owner or a check. From the third attempt the session escalates to Fable (owner, 2026-10-07): the
+   third attempt runs Fable at `high` effort, the fourth Fable at `xhigh`, and every one after that Fable at
+   `max`, with a $140 budget cap instead of $70 and an 8-hour time limit instead of 4 at `max` only. Before
+   that it is Opus at the default `medium`. `(effort: <level>)` on an item sets its effort outright. When a ticked item is found not
    fixed, reopen it or queue its successor with `(attempts: N)` carried over.
 8. **No `WONTFIX` before two max-effort sessions (owner, 2026-09-26).** An unattended session may close an
    entry `WONTFIX` only if it runs at `max` and an earlier max-effort session has already tried the item.

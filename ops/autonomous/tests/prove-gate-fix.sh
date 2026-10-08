@@ -88,6 +88,10 @@ SESSCTL="$T/sessctl"; SEEN="$T/seen"
 cat > "$T/claude" <<STUB
 #!/usr/bin/env bash
 [ -f "$STATE/gate-fix" ] && { echo "saw \$VISIONOCR_HEAD_ITEM" >> "$SEEN"; cp "$STATE/gate-fix" "$T/request.copy"; }
+# One line per session: "<attempts> <model> <fallback> <effort> <budget>", from the session's own argv.
+_m=; _f=; _e=; _b=; _p=
+for _a in "\$@"; do case "\$_p" in --model) _m=\$_a ;; --fallback-model) _f=\$_a ;; --effort) _e=\$_a ;; --max-budget-usd) _b=\$_a ;; esac; _p=\$_a; done
+echo "\${VISIONOCR_ATTEMPTS:-?} \$_m \$_f \$_e \$_b" >> "$T/ladder.log"
 [ "\$(cat "$SESSCTL")" = heavy ] && { echo start >> "$T/session.heavy.starts"; "$HEAVYH" run --label session-suite -- touch "$T/session.heavy.ran"; echo none > "$SESSCTL"; }
 if [ "\$(cat "$SESSCTL")" = commit ]; then
   _c=\$(git -C "$REPO" commit-tree "\$(git -C "$REPO" rev-parse 'HEAD^{tree}')" -p "\$(git -C "$REPO" rev-parse refs/remotes/origin/main)" -m "fix \$\$.\$RANDOM")
@@ -214,6 +218,22 @@ for cfg in "4 600 backstop" "60 2 health watchdog"; do
     || bad "the $who killed a queued session ($(wc -l < "$T/session.heavy.starts" 2>/dev/null | tr -d ' ') starts)"
 done
 rm -f "$STATE/last-gate"
+
+echo "[9] the gate fix's escalation ladder (owner, 2026-10-07): Opus twice, then Fable at high, xhigh, then max"
+# Every fix session commits and the gate stays red, so each one is a counted try. With GATEFIX_MAX=5 the five
+# sessions see 0..4 earlier attempts: rungs 0, 0, 1 (high), 2 (xhigh), 3 (max — and only max gets $140).
+reset; rm -f "$T/ladder.log"; echo red > "$GATECTL"; echo commit > "$SESSCTL"
+P=$(GFMAX=5 launch); waitfor 'grep -q PARKED "$L"' 150; stop "$P"
+want="0 opus sonnet medium 1
+1 opus sonnet medium 1
+2 fable opus high 1
+3 fable opus xhigh 1
+4 fable opus max 140"
+got="$(grep -v '^?' "$T/ladder.log" 2>/dev/null)"
+[ "$got" = "$want" ] && ok "five tries climb the ladder: opus medium x2, fable high, fable xhigh, fable max (\$140 at max only)" \
+  || bad "ladder: $(printf '%s' "$got" | tr '\n' '|')"
+grep -q 'model fable, effort high for gate-fix after 2 attempts' "$L" && ok "…and the launch line names each rung's model" \
+  || bad "launch lines: $(grep 'launching fresh' "$L" | sed 's/.*budget//' | tr '\n' '|')"
 
 echo ""
 echo "=================== $PASS passed, $FAIL failed ==================="

@@ -194,6 +194,13 @@ EFFORT="${VISIONOCR_EFFORT:-medium}"      # low|medium|high|xhigh|max. medium si
                                           # item, so per-ITEM tuning is not expressible here. What a session
                                           # CAN vary per task is its SUBAGENTS' model/effort; the resume
                                           # prompt delegates that to it explicitly.
+MAX_MODEL="${VISIONOCR_MAX_MODEL:-fable}" # the model for an ESCALATED session (3e: an item that has had two
+                                          # attempts or a gate fix's third try, at high, then xhigh, then max),
+                                          # or any max session, with opus as its fallback. Every other
+                                          # session is opus, with sonnet as the overload fallback. Owner,
+                                          # 2026-10-07: the account moved to Claude for Education Premium,
+                                          # which carries Fable, and the ruling was "Fable for hard items
+                                          # only" — Opus stays the default.
 
 # Idle backoff — the loop's answer to "nothing is happening". Any cycle that advances nothing doubles the
 # gap up to $MAXBACKOFF; any progress resets it instantly; $IDLE_STOP of unbroken no-progress PARKS the run.
@@ -1837,34 +1844,43 @@ culprits are per-worktree build/ directories and Tools/mutation-out/. Free some 
   fi
   rm -f "$STATE/grant.wait"   # granted, failed or absent: a wait file must never outlive the wait
 
-  # 3e. Effort per item (owner, 2026-09-26). The item at the head of the queue gets its session at max
-  #     effort once it has had two attempts that did not finish it. Attempts are the item's
-  #     `(attempts: N)` marker in QUEUE.md (failures found later, by the owner or a check) plus the sessions
+  # 3e. Effort per item (owner, 2026-09-26). The item at the head of the queue escalates once it has had
+  #     two attempts that did not finish it: Fable at high, then xhigh, then max (the ladder below).
+  #     Attempts are the item's `(attempts: N)` marker in QUEUE.md (failures found later, by the owner or a check) plus the sessions
   #     this daemon has run on it, from $STATE/attempts.tsv. A usage-limit fast-fail is not an attempt.
   #     `(effort: <level>)` in the item overrides both. The head is read here, before the session picks
   #     it; STEP 2 of the resume prompt takes the same first `ok` line. A session that adopts a rescue
-  #     instead (STEP 1.5) is still counted against the head item, which can bring max one session early.
-  local head_tag head_span n_q n_d eff="$EFFORT" eff_set head_attempts=0
+  #     instead (STEP 1.5) is still counted against the head item, which can bring escalation one session early.
+  local head_tag head_span n_q n_d eff="$EFFORT" eff_set="" head_attempts=0
   head_tag="$("$REPO/ops/autonomous/next-item.sh" "$REPO" 2>/dev/null | awk -F'\t' '$1=="ok"{print $2; exit}')"
   if [ -n "$head_tag" ]; then
     head_span="$(awk -v t="**$head_tag**" 'f && /^- \[/{exit} index($0,"- [")==1 && index($0,t){f=1} f' "$REPO/ops/autonomous/QUEUE.md")"
     n_q="$(printf '%s\n' "$head_span" | grep -oE '\(attempts: [0-9]+\)' | grep -oE '[0-9]+' | head -1)"
     n_d="$(awk -F'\t' -v t="$head_tag" '$1==t{c++} END{print c+0}' "$STATE/attempts.tsv" 2>/dev/null)"
     head_attempts=$(( ${n_q:-0} + ${n_d:-0} ))
-    [ "$head_attempts" -ge 2 ] && eff=max
     eff_set="$(printf '%s\n' "$head_span" | grep -oE '\(effort: (low|medium|high|xhigh|max)\)' | head -1 | sed -E 's/.*: ([a-z]+)\)/\1/')"
-    [ -n "$eff_set" ] && eff="$eff_set"
   fi
   # A pending gate fix is the session's item (resume prompt STEP 1.4), so it is what the attempt is counted
-  # against, and its third try gets max effort the same way.
+  # against, and its third try escalates the same way. An item's `(effort: …)` marker does not carry to it.
   if [ -f "$GATEFIX" ]; then
-    head_tag=gate-fix; eff="$EFFORT"
+    head_tag=gate-fix; eff_set=""
     head_attempts="$(cat "$GATEFIX_TRIES" 2>/dev/null)"; case "$head_attempts" in ''|*[!0-9]*) head_attempts=1 ;; esac
     head_attempts=$(( head_attempts - 1 ))
-    [ "$head_attempts" -ge 2 ] && eff=max
   fi
-  local budget="$BUDGET" maxrun="$MAXRUN"
+  # The escalation ladder (owner, 2026-10-07: "start first with Fable at High effort, then XHigh, then Max").
+  # Two attempts that did not finish the item put it on rung 1, Fable at high; the next failed attempt is
+  # rung 2, Fable at xhigh; every attempt after that is rung 3, Fable at max. A marker sets the EFFORT
+  # outright and wins over the rung; the model is Fable on any rung, and at max however max was reached.
+  # Only max gets the larger budget and time limit.
+  local rung=0
+  [ "$head_attempts" -ge 2 ] && rung=$(( head_attempts - 1 ))
+  case "$rung" in 0) ;; 1) eff=high ;; 2) eff=xhigh ;; *) eff=max ;; esac
+  [ -n "$eff_set" ] && eff="$eff_set"
+  local budget="$BUDGET" maxrun="$MAXRUN" model=opus fallback=sonnet
   [ "$eff" = max ] && { budget="$BUDGET_MAX"; maxrun="$MAXRUN_MAX"; }
+  { [ "$rung" -ge 1 ] || [ "$eff" = max ]; } && { model="$MAX_MODEL"; fallback=opus; }
+  # claude refuses a fallback equal to the main model, so VISIONOCR_MAX_MODEL=opus falls back to sonnet.
+  [ "$fallback" = "$model" ] && fallback=sonnet
   export VISIONOCR_HEAD_ITEM="$head_tag" VISIONOCR_ATTEMPTS="$head_attempts" VISIONOCR_SESSION_EFFORT="$eff"
 
   # 3d. Snapshot the decision surface BEFORE the session, so afterwards we can tell whether it actually
@@ -1895,19 +1911,20 @@ culprits are per-worktree build/ directories and Tools/mutation-out/. Free some 
   # about — reported as bogus results rather than as an error.
   export PATH="/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:$PATH"
 
-  log "launching fresh resume session (backstop ${maxrun}s, budget \$$budget, effort $eff for ${head_tag:-no item} after $head_attempts attempts, health-wd on)…"
+  log "launching fresh resume session (backstop ${maxrun}s, budget \$$budget, model $model, effort $eff for ${head_tag:-no item} after $head_attempts attempts, health-wd on)…"
   cd "$REPO" || { log "cannot cd $REPO — skip."; kill "$hb" 2>/dev/null; rm -f "$LOCK"; return 0; }
   # Fresh per-session log (keep one previous). stream-json is larger than text, so don't append forever; a
   # fresh file also gives the watchdog a clean zero baseline.
   local SLOG="$STATE/last-session.log"
   [ -f "$SLOG" ] && mv -f "$SLOG" "$SLOG.prev" 2>/dev/null; : > "$SLOG"
   # Run claude in the background so the watchdogs can TERM/KILL it (macOS has no `timeout`). $cpid is
-  # claude's own pid. MODEL IS DELIBERATELY FIXED (opus, sonnet only as the overload fallback) and not
-  # chosen per item: the flag resolves before the session knows which item it will pick. Per-task tuning
-  # lives one level down, in the session's SUBAGENTS — see the resume prompt's closing block.
+  # claude's own pid. The model follows 3e and nothing else: opus (sonnet as the overload fallback), or
+  # $MAX_MODEL (opus as the fallback) on an escalation rung or at max. It is not chosen per item: the
+  # flag resolves before the session knows which item it will pick. Per-task tuning lives one level down,
+  # in the session's SUBAGENTS — see the resume prompt's closing block.
   "$CLAUDE" -p "$(cat "$PROMPT")" \
       --permission-mode default \
-      --model opus --fallback-model sonnet \
+      --model "$model" --fallback-model "$fallback" \
       --effort "$eff" \
       --max-budget-usd "$budget" \
       --output-format stream-json --verbose --include-partial-messages \
