@@ -1388,7 +1388,15 @@ say so in the commit.
       22 sample documents +5.5% (`BUGS.md` C28, session 3).
       (origin: BUGS.md C28)
 - [ ] **c41-newspaper-scans** — read whole-page scans of small-town newspapers as well as their print
-      allows (`BUGS.md` C41, split from C39) (uses: build). Start from the band swap parked at
+      allows (`BUGS.md` C41, split from C39) (uses: build) (blocked-on: hp-regions).
+      2026-10-07 (owner asked whether this still makes sense beside the accurate-mode work): it waits for
+      hp-regions. ocr-lab-round3 measured Apple Vision on NewsBench at 1-CER 0.304 reading the whole page and
+      0.741 reading DocLayout-YOLO regions, so cutting a newspaper page by layout region is a far larger gain on
+      exactly these pages than finding column gutters from the bitmap, and hp-regions builds that cut. When it
+      unblocks, the first step is to measure the five pages below with the region arrangement, Vision as the
+      reader: close the item on that measurement if it meets DONE WHEN, otherwise keep only the defects the
+      regions leave. If ocr-hybrid-pick finds no route wins and hp-regions is dropped, remove this edge and
+      resume from session 3's record. Start from the band swap parked at
       `$STATE/rescue/PARKED-c39-dense-band-swap-2026-09-26.patch` and the eight defects C41 lists; fix
       them, or show that the swap cannot be made safe and try something else. Read C39's record of what
       was tried before starting.
