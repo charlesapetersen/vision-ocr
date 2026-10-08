@@ -1660,7 +1660,7 @@ These are offered to nobody. `next-item.sh` prints them as `hold` so they stay v
       Night 3 (23:35-07:40) finished Churro 3B, olmOCR-2-7B and Qwen3-VL-8B; Qwen3.5-9B was stopped at 6 of 56
       pages (weak early reads: one whole page 4 characters) and is DROPPED by the owner, not owed another try. No
       further bake-off night is needed for ocr-bakeoff-run; ocr-bakeoff-bits will need its own (4-6 h job).
-- [ ] **ocr-hybrid-approve** — the owner reads `OCR-HYBRID-DECISION-<date>.md` from `ocr-hybrid-pick` and approves an option. Tick
+- [ ] **ocr-hybrid-approve** — the owner reads `OCR-HYBRID-DECISION-<date>.md` from `ocr-hybrid-pick` and approves an option. (blocked-on: ocr-hybrid-pick) Tick
       it with the date and the owner's words naming the option; `ocr-integrate-engine` and everything after it wait on
       this. Added 2026-10-08 (owner: informed of the results, given options, approve the next step). An interactive
       session shows the owner the options as a choice and records the answer here. [hold] needs: owner — the choice of route is the owner's.

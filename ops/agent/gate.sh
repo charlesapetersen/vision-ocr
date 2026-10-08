@@ -4,7 +4,9 @@
 #   HEALTH GATE: GREEN                                   exit 0
 #   HEALTH GATE: RED — <step>, <step>                    exit 1
 #   HEALTH GATE CLASS: doc|code|mixed                    (after a RED line)
-#   no verdict at all (killed, cannot start)             exit 3, inconclusive
+# There is no skip code: health-gate.sh has no exit that means "skipped". Any nonzero exit without a RED line
+# (killed, a tool missing) is RED, named "no verdict (exit N)", because the daemon reads every nonzero gate exit
+# as RED (its own timeouts are the engine's, not this hook's). Exit 0 is GREEN, as the daemon reads it.
 # The step names are read the way the daemon's _classify_red does: after the prefix, up to the next " — " (a
 # stamped suite skip rides after it as a note). Document steps: staleness, queue-coherence,
 # queue-coherence-selftest; every other step builds or tests code. Heavy: the engine runs it under the heavy
@@ -33,9 +35,10 @@ if [ -n "$vline" ]; then
   else echo "HEALTH GATE CLASS: code"; fi
   exit 1
 fi
-if [ "$rc" = 0 ] && grep -q '^HEALTH GATE: GREEN' "$log"; then
+if [ "$rc" = 0 ]; then
   echo "HEALTH GATE: GREEN"
   exit 0
 fi
-echo "health-gate.sh gave no verdict (exit $rc): inconclusive"
-exit 3
+echo "HEALTH GATE: RED — no verdict (exit $rc)"
+echo "HEALTH GATE CLASS: code"
+exit 1

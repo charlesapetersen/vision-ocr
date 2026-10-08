@@ -139,6 +139,44 @@ def needs_owner(run):
     return out
 
 
+BLOCKED_ON = re.compile(r"\(blocked-on:([^)]*)\)")
+NOT_BEFORE = re.compile(r"\(not-before:\s*([^)]*?)\s*\)")
+CHECKBOX = re.compile(r"^\s*[-*]\s+\[([ xX])\]\s*")
+
+
+def tag_done_fn(queue):
+    """next-item.sh's rule: a tag is done if QUEUE.md ticks it and opens it nowhere, or its BUGS.md entry closed."""
+    done, pend, closed = set(), set(), set()
+    for line in queue.splitlines():
+        m = CHECKBOX.match(line)
+        if m:
+            t = re.match(r"[A-Za-z0-9][A-Za-z0-9._-]*", re.sub(r"^`", "", re.sub(r"^\*+", "", line[m.end():])))
+            if t:
+                (pend if m.group(1) == " " else done).add(t.group(0))
+    for line in (read(os.path.join(REPO, "BUGS.md")) or "").splitlines():
+        m = re.match(r"^###\s+([A-Za-z0-9][A-Za-z0-9._-]*)", line)
+        if m:
+            st = line.split("\u2014")[-1].replace("*", "").strip() if "\u2014" in line else ""
+            if re.match(r"^(FIXED|WONTFIX|NO DEFECT)", st):
+                closed.add(m.group(1))
+    return lambda t: t not in pend and (t in done or t in closed)
+
+
+def own_prerequisites_met(text, tag_done):
+    """A hold is ready to decide only when its own (blocked-on:) tags are done and its (not-before:) date has
+    come (R1 review finding 4). next-item.sh prints `hold` before it reads these, so they are read here."""
+    for clause in BLOCKED_ON.findall(text):
+        for t in clause.split(","):
+            t = t.replace("`", "").strip()
+            if t and not tag_done(t):
+                return False
+    today = os.environ.get("VISIONOCR_TODAY") or __import__("datetime").date.today().isoformat()
+    for d in NOT_BEFORE.findall(text):
+        if not re.match(r"^\d{4}-\d\d-\d\d$", d) or today < d:
+            return False
+    return True
+
+
 def holds():
     rc, rows, msg = resolver_rows()
     if rc not in (0, 3, 4):
@@ -150,9 +188,13 @@ def holds():
             unmet = [t for t in status[len("blocked:"):].split(",") if t]
             if len(unmet) == 1:
                 pending.add(unmet[0])
+    q = read(QUEUE) or ""
+    tag_done, seen = tag_done_fn(q), set()
     for status, tag, text in rows:
-        if status == "hold":
-            print(json.dumps({"key": tag, "text": text, "permanent": tag not in pending, "source": "QUEUE.md"},
+        if status == "hold" and tag not in seen:
+            seen.add(tag)
+            ready = tag in pending and own_prerequisites_met(span(q, tag) or text, tag_done)
+            print(json.dumps({"key": tag, "text": text, "permanent": not ready, "source": "QUEUE.md"},
                              ensure_ascii=False, sort_keys=True))
     for b in needs_owner(read(RUN) or ""):
         m = DATE.search(b)

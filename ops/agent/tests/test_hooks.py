@@ -33,10 +33,14 @@ QUEUE = """# Autonomous work queue
 - [ ] **second** — waits on the owner. (blocked-on: approve)
 - [ ] **third** — waits on two. (blocked-on: approve-two, first)
 - [ ] **later** — not yet. (not-before: 2099-01-01)
+- [ ] **after-later** — waits on a hold that is not ready. (blocked-on: approve-later)
+- [ ] **after-date** — waits on a dated hold. (blocked-on: approve-date)
 
 ## HOLD — owner-only, never auto-executed
 
 - [ ] **approve** — the owner approves. [hold] needs: owner
+- [ ] **approve-later** — approve once first is done. [hold] needs: owner (blocked-on: first)
+- [ ] **approve-date** — approve after a date. [hold] needs: owner (not-before: 2099-01-01)
 - [ ] **approve-two** — a second approval. [hold] needs: owner
 - [ ] **release** — cutting a release. [hold] needs: owner
 """
@@ -136,7 +140,8 @@ class Queue(Fixture):
         r = self.hook("queue")
         self.assertEqual(r.returncode, 0, r.stderr)
         items = {d["tag"]: d for d in self.jsonl(r.stdout)}
-        self.assertEqual(list(items), ["first", "second", "third", "later", "approve", "approve-two", "release"])
+        self.assertEqual(list(items), ["first", "second", "third", "later", "after-later", "after-date", "approve",
+                                       "approve-later", "approve-date", "approve-two", "release"])
         f = items["first"]
         self.assertEqual((f["status"], f["lanes"], f["uses"], f["effort"], f["estimate"], f["attempts"]),
                          ("ok", ["main"], ["build", "model:12"], "high", "1-2 sessions", 3))   # marker 1 + 2 rows
@@ -177,6 +182,22 @@ class Holds(Fixture):
         self.assertTrue(needs[1]["key"].startswith("needs-undated-"))
         self.assertTrue(all(d["permanent"] is False for d in needs))
         self.assertFalse(any("not an item" in d["text"] for d in items))
+
+    def test_a_hold_whose_own_prerequisites_are_unmet_is_not_pending(self):
+        # R1 review finding 4: after-later waits on approve-later alone, but approve-later waits on first.
+        by = {d["key"]: d for d in self.jsonl(self.hook("holds").stdout)}
+        self.assertTrue(by["approve-later"]["permanent"])
+        self.assertTrue(by["approve-date"]["permanent"])
+        self.write("ops/autonomous/QUEUE.md", QUEUE.replace("- [ ] **first**", "- [x] **first**"))
+        by = {d["key"]: d for d in self.jsonl(self.hook("holds").stdout)}
+        self.assertFalse(by["approve-later"]["permanent"])
+        by = {d["key"]: d for d in self.jsonl(self.hook("holds", VISIONOCR_TODAY="2099-01-02").stdout)}
+        self.assertFalse(by["approve-date"]["permanent"])
+
+    def test_a_prerequisite_closed_in_the_register_counts(self):
+        self.write("ops/autonomous/QUEUE.md", QUEUE.replace("(blocked-on: first)", "(blocked-on: C1)"))
+        by = {d["key"]: d for d in self.jsonl(self.hook("holds").stdout)}
+        self.assertFalse(by["approve-later"]["permanent"])
 
     def test_keys_are_stable(self):
         a = [d["key"] for d in self.jsonl(self.hook("holds").stdout)]
@@ -243,10 +264,15 @@ class Gate(Fixture):
                 self.assertEqual(r.stdout.splitlines()[-2:],
                                  ["HEALTH GATE: RED %s %s" % (EM, want), "HEALTH GATE CLASS: %s" % klass])
 
-    def test_no_verdict_is_inconclusive(self):
-        self.fake_gate(["half a log"], 143)
-        r = self.hook("gate")
-        self.assertEqual(r.returncode, 3)
+    def test_no_verdict_is_red(self):
+        # R1 review finding 1 (decision 1): the daemon calls any nonzero gate exit RED; this gate has no skip code.
+        for lines, rc in ((["half a log"], 143), ([], 3), (["HEALTH GATE: GREEN"], 2)):
+            with self.subTest(rc=rc):
+                self.fake_gate(lines, rc)
+                r = self.hook("gate")
+                self.assertEqual(r.returncode, 1)
+                self.assertEqual(r.stdout.splitlines()[-2:],
+                                 ["HEALTH GATE: RED %s no verdict (exit %d)" % (EM, rc), "HEALTH GATE CLASS: code"])
 
 
 class Precheck(Fixture):
