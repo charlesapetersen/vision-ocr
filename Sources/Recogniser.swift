@@ -941,11 +941,14 @@ enum Recogniser {
                                  aspect: Double(first.height) / Double(first.width))
         }
         let fitted = fittedToGutters(merged, of: fitOn, isCancelled: isCancelled)
-        guard settings.modelArrangement == .align, !isCancelled() else { return fitted }
+        guard settings.modelArrangement != .off, !isCancelled() else { return fitted }
         // The grey render when there is one: a model reads grey better than Otsu's 1-bit.
-        let reading = try modelReading(
-            of: FileManager.default.fileExists(atPath: greyURL.path) ? greyURL : pageURL,
-            reader: settings.modelReader, isCancelled: isCancelled)
+        let shown = FileManager.default.fileExists(atPath: greyURL.path) ? greyURL : pageURL
+        if settings.modelArrangement == .fill {
+            return try filledReading(of: fitted, on: fitOn, shown: shown, reader: settings.modelReader,
+                                     isCancelled: isCancelled)
+        }
+        let reading = try modelReading(of: shown, reader: settings.modelReader, isCancelled: isCancelled)
         // Nothing, over a page Vision read lines on, is a reader that failed quietly.
         if modelWords(reading).isEmpty && !fitted.isEmpty {
             throw Failure.modelReader("\(settings.modelReader) read nothing on a page holding "
@@ -1213,7 +1216,7 @@ enum Recogniser {
     /// runs past `readerSeconds` or writes no file: the run asked for the model's
     /// words, and a page published without them, saying nothing, is not the document
     /// that was asked for.
-    static func modelReading(of image: URL, reader: String,
+    static func modelReading(of image: URL, reader: String, crops: URL? = nil,
                              isCancelled: () -> Bool = { false }) throws -> String {
         guard !reader.isEmpty else { throw Failure.modelReader("no reader is set") }
         // One reader at a time across every process: a batch runs several helpers at
@@ -1234,7 +1237,7 @@ enum Recogniser {
         defer { try? FileManager.default.removeItem(at: out) }
         let process = Process()
         process.executableURL = URL(fileURLWithPath: reader)
-        process.arguments = [image.path, out.path]
+        process.arguments = [image.path, out.path] + (crops.map { [$0.path] } ?? [])
         process.standardInput = FileHandle.nullDevice
         process.standardOutput = FileHandle.nullDevice
         process.standardError = FileHandle.nullDevice
@@ -1505,6 +1508,234 @@ enum Recogniser {
             out[line] = o
         }
         return out
+    }
+
+    // MARK: - A model's reading of what Vision was unsure of (`ocr-hybrid-proto`, arrangement c)
+
+    /// One place on a page the model is asked to read: a line Vision read below full
+    /// confidence (`line` is its index), or a run of inked rows no line covers (`line`
+    /// nil), with its box normalised to the page.
+    struct FillTarget {
+        let box: SearchableWriter.BoundingBox
+        let line: Int?
+    }
+
+    /// The most places one page sends the model. A page past it has the first this many
+    /// read and keeps Vision's reading of the rest, which is the page as it was.
+    static let fillCrops = 80
+
+    /// Where on a page the model reads (`filledReading`): every upright line under full
+    /// confidence, then every run of inked rows (`inked`, the whole width's) that no
+    /// line's box reaches within a quarter line, as `hasVoid` counts covered rows. A run
+    /// counts when it is a third of a line to two lines tall, lies off the page's top
+    /// and bottom fiftieth, where a scan's edge shadows sit, and `inkSpan` finds ink
+    /// across at least two line heights of it, clear of the page's sides; its box is
+    /// that ink. A taller run is a picture or a block, not a line Vision skipped.
+    static func fillTargets(_ lines: [SearchableWriter.Observation], inked: [Bool],
+                            pageWidth w: Int, pageHeight h: Int,
+                            inkSpan: (_ top: Int, _ bottom: Int) -> (left: Int, right: Int)?)
+        -> [FillTarget] {
+        guard w > 0, h > 0 else { return [] }
+        var out = lines.indices.filter { i in
+            lines[i].confidence < 1 && ((lines[i].quarterTurns ?? 0) % 4 + 4) % 4 == 0
+                && !lines[i].text.trimmingCharacters(in: .whitespaces).isEmpty
+        }.map { FillTarget(box: lines[$0].boundingBox, line: $0) }
+        guard inked.count >= h, !lines.isEmpty else { return out }
+        let line = lineHeight(of: lines, pageHeight: h)
+        var covered = [Bool](repeating: false, count: h)
+        let pad = Double(max(1, line / 4))
+        for o in lines {
+            let top = o.boundingBox.y * Double(h) - pad
+            let bottom = (o.boundingBox.y + o.boundingBox.height) * Double(h) + pad
+            guard top.isFinite, bottom.isFinite else { continue }
+            let first = max(0, Int(min(max(top, -1), Double(h)).rounded(.down)))
+            let last = min(h - 1, Int(min(max(bottom, -1), Double(h)).rounded(.up)))
+            if first <= last { for y in first...last { covered[y] = true } }
+        }
+        let edge = h / 50, side = w / 100
+        var start: Int?
+        for y in 0...h {
+            if y < h, inked[y], !covered[y] {
+                if start == nil { start = y }
+                continue
+            }
+            guard let s = start else { continue }
+            start = nil
+            guard 3 * (y - s) >= line, y - s <= 2 * line, s > edge, y < h - edge,
+                  let span = inkSpan(s, y), span.right - span.left >= 2 * line,
+                  span.left > side, span.right < w - side else { continue }
+            out.append(FillTarget(box: .init(x: Double(span.left) / Double(w), y: Double(s) / Double(h),
+                                             width: Double(span.right - span.left) / Double(w),
+                                             height: Double(y - s) / Double(h)),
+                                  line: nil))
+        }
+        return out
+    }
+
+    /// The columns of `rows` in `image` that hold ink, from the first to one past the
+    /// last: a column counts when an eighth of the rows, and at least one, is at or
+    /// below `level`. Nil when none does, or the rows will not draw.
+    static func inkSpan(rows: Range<Int>, of image: CGImage, level: UInt8) -> (left: Int, right: Int)? {
+        let w = image.width, top = max(0, rows.lowerBound), bottom = min(image.height, rows.upperBound)
+        guard w > 0, bottom > top,
+              let piece = image.cropping(to: CGRect(x: 0, y: top, width: w, height: bottom - top))
+        else { return nil }
+        let ph = bottom - top
+        var grey = [UInt8](repeating: 255, count: w * ph)
+        let drawn = grey.withUnsafeMutableBytes { raw -> Bool in
+            guard let base = raw.baseAddress, let ctx = CGContext(
+                data: base, width: w, height: ph, bitsPerComponent: 8, bytesPerRow: w,
+                space: CGColorSpaceCreateDeviceGray(),
+                bitmapInfo: CGImageAlphaInfo.none.rawValue) else { return false }
+            ctx.setFillColor(gray: 1, alpha: 1)
+            ctx.fill(CGRect(x: 0, y: 0, width: w, height: ph))
+            ctx.draw(piece, in: CGRect(x: 0, y: 0, width: w, height: ph))
+            return true
+        }
+        guard drawn else { return nil }
+        let need = max(1, ph / 8)
+        var dark = [Int](repeating: 0, count: w)
+        for y in 0..<ph { for x in 0..<w where grey[y * w + x] <= level { dark[x] += 1 } }
+        guard let left = dark.firstIndex(where: { $0 >= need }),
+              let right = dark.lastIndex(where: { $0 >= need }) else { return nil }
+        return (left, right + 1)
+    }
+
+    /// `lines` with the model's reading of each target put in (`targets` and `readings`
+    /// in step), the queue's arrangement (c): Vision's reading stays everywhere else.
+    ///
+    /// A line Vision was unsure of takes the model's text when it holds between half
+    /// and twice as many letters and digits as Vision's, which held three at least (a
+    /// line of dashes is not text to replace, and on `Hughes` p4 and p6 the model read
+    /// a diagram's circle marks, `O` and `1 O`, as `0`): more is the model reading a
+    /// neighbouring line into the crop, less a reading cut short. Its box, turns,
+    /// region and confidence stay. Lines lying inside its box (four fifths of their
+    /// area) were read by the model with it, so their letters count as Vision's too,
+    /// and they go when it is replaced, but only if the model's reading holds three
+    /// quarters of each one's words (`alignmentAnchor`) and every one holding a digit
+    /// exactly; else the line keeps Vision's. On
+    /// `1954 - Why` p9 a box at 0.5 over two lines, `a nets for player und elible no be
+    /// sure tu take targe`, held Vision's `to take the Negro` inside it, and the model
+    /// read the two lines whole. A skipped run becomes a line of its own, at half
+    /// confidence in the run's ink box, when the model reads a word of two letters or
+    /// more there and no more characters than four a line height of the box's width
+    /// (type runs about two), so a picture the model narrates does not become a line;
+    /// it takes the region of the line nearest it in its column. A target the model reads nothing on
+    /// keeps the page as Vision read it.
+    static func filled(_ lines: [SearchableWriter.Observation], targets: [FillTarget],
+                       readings: [String], aspect: Double) -> [SearchableWriter.Observation] {
+        func letters(_ t: String) -> Int { t.filter { $0.isLetter || $0.isNumber }.count }
+        func inside(_ a: SearchableWriter.BoundingBox, _ b: SearchableWriter.BoundingBox) -> Bool {
+            let w = min(a.x + a.width, b.x + b.width) - max(a.x, b.x)
+            let h = min(a.y + a.height, b.y + b.height) - max(a.y, b.y)
+            return w > 0 && h > 0 && w * h >= 0.8 * a.width * a.height
+        }
+        var out = lines
+        var gone = Set<Int>()
+        for (target, reading) in zip(targets, readings) {
+            let words = modelWords(reading)
+            guard !words.isEmpty else { continue }
+            let text = words.joined(separator: " ")
+            let theirs = letters(text)
+            if let i = target.line {
+                guard !gone.contains(i) else { continue }
+                let held = lines.indices.filter {
+                    $0 != i && !gone.contains($0) && inside(lines[$0].boundingBox, lines[i].boundingBox)
+                }
+                let mine = held.reduce(letters(lines[i].text)) { $0 + letters(lines[$1].text) }
+                let keys = words.map(alignmentKey)
+                let read = held.allSatisfy { j in
+                    let own = lines[j].text.split(whereSeparator: \.isWhitespace).map { alignmentKey(String($0)) }
+                        .filter { !$0.isEmpty }
+                    // A figure must be there as Vision read it: `$4,312` is not `$4,318`.
+                    let found = own.filter { w in
+                        keys.contains { w.contains(where: \.isNumber) ? w == $0 : wordLikeness(w, $0) >= alignmentAnchor }
+                    }
+                    return 4 * found.count >= 3 * own.count
+                        && own.allSatisfy { w in !w.contains(where: \.isNumber) || found.contains(w) }
+                }
+                guard letters(lines[i].text) >= 3, 2 * theirs >= mine, theirs <= 2 * mine, read,
+                      text != lines[i].text else { continue }
+                var o = SearchableWriter.Observation(boundingBox: lines[i].boundingBox, text: text,
+                                                     confidence: lines[i].confidence)
+                o.quarterTurns = lines[i].quarterTurns
+                o.region = lines[i].region
+                out[i] = o
+                gone.formUnion(held)
+            } else {
+                let b = target.box
+                guard b.height > 0, aspect > 0,
+                      words.contains(where: { $0.filter(\.isLetter).count >= 2 }),
+                      Double(text.count) <= 4 * b.width / (b.height * aspect) else { continue }
+                var o = SearchableWriter.Observation(boundingBox: b, text: text, confidence: 0.5)
+                // Nearest among the lines beside it in its own column, when there are any:
+                // a newspaper's columns share rows.
+                let centre = b.y + b.height / 2
+                let column = lines.filter {
+                    min($0.boundingBox.x + $0.boundingBox.width, b.x + b.width) > max($0.boundingBox.x, b.x)
+                }
+                o.region = (column.isEmpty ? lines : column).min(by: {
+                    abs($0.boundingBox.y + $0.boundingBox.height / 2 - centre)
+                        < abs($1.boundingBox.y + $1.boundingBox.height / 2 - centre)
+                })?.region
+                out.append(o)
+            }
+        }
+        return out.indices.filter { !gone.contains($0) }.map { out[$0] }
+    }
+
+    /// `lines`, the page's finished reading of `image`, with the model's reading of the
+    /// lines Vision was unsure of and the inked lines it skipped (`fillTargets`,
+    /// `filled`), read in one call: each place a crop of `shown`, the image the model
+    /// reads, padded a sixth of a line above and below and half a line each side. A
+    /// page with no such place does not run the model. A reader that does not write
+    /// one reading for each crop fails the file, as `modelReading`'s other failures do,
+    /// and so does one that reads nothing in any crop when Vision read words in one.
+    static func filledReading(of lines: [SearchableWriter.Observation], on image: CGImage, shown: URL,
+                              reader: String, isCancelled: () -> Bool = { false })
+        throws -> [SearchableWriter.Observation] {
+        let w = image.width, h = image.height
+        let scan = inkScan(of: image, strips: [(0, 1)])
+        let targets = Array(fillTargets(lines, inked: scan?.rows.first ?? [], pageWidth: w, pageHeight: h,
+                                        inkSpan: { top, bottom in
+            scan.flatMap { inkSpan(rows: top..<bottom, of: image, level: $0.level) }
+        }).filter { [$0.box.x, $0.box.y, $0.box.width, $0.box.height].allSatisfy { $0.isFinite && abs($0) < 4 } }
+            .prefix(fillCrops))
+        guard !targets.isEmpty, !isCancelled() else { return lines }
+        guard let picture = loadImage(at: shown), picture.width > 0, picture.height > 0 else {
+            throw Failure.modelReader("the page image it reads would not load")
+        }
+        let (pw, ph) = (Double(picture.width), Double(picture.height))
+        let line = Double(lineHeight(of: lines, pageHeight: picture.height))
+        var tsv = "name\tx\ty\twidth\theight\n"
+        for (k, t) in targets.enumerated() {
+            let x0 = max(0, Int((t.box.x * pw - line / 2).rounded(.down)))
+            let y0 = max(0, Int((t.box.y * ph - line / 6).rounded(.down)))
+            let x1 = min(picture.width, Int(((t.box.x + t.box.width) * pw + line / 2).rounded(.up)))
+            let y1 = min(picture.height, Int(((t.box.y + t.box.height) * ph + line / 6).rounded(.up)))
+            tsv += "c\(k).png\t\(x0)\t\(y0)\t\(max(1, x1 - x0))\t\(max(1, y1 - y0))\n"
+        }
+        let crops = FileManager.default.temporaryDirectory
+            .appendingPathComponent("visionocr-crops-\(UUID().uuidString).tsv")
+        defer { try? FileManager.default.removeItem(at: crops) }
+        do { try tsv.write(to: crops, atomically: true, encoding: .utf8) } catch {
+            throw Failure.modelReader("its crops could not be written (\(error.localizedDescription))")
+        }
+        var readings = try modelReading(of: shown, reader: reader, crops: crops, isCancelled: isCancelled)
+            .components(separatedBy: "\n")
+        if readings.last == "" { readings.removeLast() }
+        guard readings.count == targets.count else {
+            throw Failure.modelReader("\(reader) wrote \(readings.count) readings for \(targets.count) crops")
+        }
+        // Nothing over every crop, where Vision read words in one, is a reader that failed
+        // quietly, as in `align`. A page whose crops are all skipped ink may be rules.
+        let worded = targets.contains { t in
+            t.line.map { lines[$0].text.filter { $0.isLetter || $0.isNumber }.count >= 3 } ?? false
+        }
+        guard !worded || readings.contains(where: { !modelWords($0).isEmpty }) else {
+            throw Failure.modelReader("\(reader) read nothing in \(targets.count) crops")
+        }
+        return filled(lines, targets: targets, readings: readings, aspect: Double(h) / Double(w))
     }
 
     /// The regions `flatten` wrote beside the bitmap at `image`, or nil when it wrote

@@ -19,6 +19,8 @@ ap.add_argument("--prompt", default="Transcribe all the text on this page, in re
 ap.add_argument("--max-tokens", type=int, default=12000)
 ap.add_argument("--seconds", type=float, default=600)
 ap.add_argument("--crops", help="a truth set crops.tsv: read each crop of the image in turn, joined")
+ap.add_argument("--one-line-each", action="store_true",
+                help="with --crops, each crop's reading on one line of the output (the app's `fill`)")
 ap.add_argument("--no-template", action="store_true", help="pass the prompt raw, without the chat template")
 ap.add_argument("--no-remote-code", action="store_true",
                 help="load without the repo's own Python (DeepSeek-OCR-2's needs an older transformers)")
@@ -68,6 +70,10 @@ if a.crops:
         name, x, y, w, h = line.split("\t")[:5]
         x, y, w, h = int(x), int(y), int(w), int(h)
         images.append(os.path.join(tmp, name)); page.crop((x, y, x + w, y + h)).save(images[-1])
+    if a.one_line_each:
+        # The app runs this once a page: its crops go when the reading is done.
+        import atexit, shutil
+        atexit.register(shutil.rmtree, tmp, True)
 if a.max_side:
     # A model trained at a fixed resolution can spend its memory on vision tokens for a 300 dpi page.
     import os, tempfile
@@ -90,6 +96,7 @@ for img in images:
             cut = "seconds"; break
     piece = "".join(piece); raw.append(piece + "\n")
     text.append(unwrap(piece).strip() if unwrap else piece)
+    if a.one_line_each: text[-1] = " ".join(text[-1].split())
     gen += getattr(last, "generation_tokens", 0)
     if cut == "seconds": text.append("\n"); break
     # One crop that runs to max_tokens (usually a loop) marks the read cut but does not stop the next crops.

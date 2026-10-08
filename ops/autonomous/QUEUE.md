@@ -1304,6 +1304,9 @@ say so in the commit.
       control yet. One reader runs at a time machine-wide (flock), a cancel kills it in the helper and in the
       app, and a reader that fails or reads nothing on a page Vision read fails the file. Pages not rebuilt, and
       pages over `alignmentCells`, keep Vision's words; nothing reports per page which pages took the model's.
+      Round 1, session 2, 2026-10-08: arrangement (c) built and measured; sub-box hp-fill TICKED. `fill` sends
+      only the whole width's uncovered ink, not a quarter strip's (C33's voids beside a read column), and puts
+      unsure lines first in its 80-crop cap. Left: hp-replace (a) and hp-regions.
 - [x] **hp-align** — arrangement (b): one whole-page Falcon-OCR reading aligned word by word onto Vision's
       lines (`Recogniser.alignedReading`). Measured (score-gate, then `ux-harness --truth`, off vs align, same
       build): Briefer Book Notes p1 wrong 11 -> 2, copyErr 0.0228 -> 0.0098; p3 10 -> 1, 0.0168 -> 0.0031; 1954 -
@@ -1316,9 +1319,20 @@ say so in the commit.
 - [ ] **hp-replace** — arrangement (a): the model replacing Vision outright, with its own line or word boxes,
       behind `modelArrangement`. Falcon-OCR writes no boxes; pick a top-three model that does, or say why none
       can. DONE WHEN as the parent's, for (a). ESTIMATE: 1 session. (uses: build,model:12) (context: ocr-hybrid-proto)
-- [ ] **hp-fill** — arrangement (c) on pages other than newspapers: Vision as now, the model reading only the
+- [x] **hp-fill** — arrangement (c) on pages other than newspapers: Vision as now, the model reading only the
       lines Vision skipped or read with low confidence, behind `modelArrangement`. DONE WHEN as the parent's,
       for (c). ESTIMATE: 1 session. (uses: build,model:12) (context: ocr-hybrid-proto)
+      DONE 2026-10-08: `modelArrangement=fill` (`Recogniser.filledReading`). Upright lines under full confidence
+      and inked row-runs no box covers are cropped and read in ONE reader call a page (`<reader> <image> <out>
+      <crops.tsv>`, one reading a line; `reader-falcon.sh` passes `--crops --one-line-each --max-tokens 400`).
+      Measured (score-gate, off vs fill, Falcon-OCR): only 7 of 93 owner pages (Briefer, Why, Bird, Hughes,
+      Leland, Morrow, Raskin, Delton) sent any crop, 23 crops in all: Vision rates nearly all its misreads at
+      full confidence, so (c) reaches few of the words (b) fixes. Why p9 (`ux-harness --truth`): wrong 9 -> 1,
+      missing 6 -> 0, find 0.97 -> 1.00, selection columns unchanged ((b) on the same page: 9 -> 3). Hughes p2
+      `5I2` -> `512`, p6 `""solstartes"` -> `"Solitaries"`. Worse, left as found: Hughes p4 `Slater` -> `Diar`
+      (the print says `Water`). Falcon read rule-only crops as HTML tables of 1..100; the length bound rejected
+      every one. Review and DONE WHEN check: blank readers now fail the file, a held line's figures must survive,
+      lines under three letters keep Vision's.
 - [ ] **ocr-hybrid-run** — run every arrangement with each of the top three over the sample, as one job. (uses: machine)
       (blocked-on: ocr-hybrid-proto, model-night-ok)
       2026-10-07: model-night-ok added when ocr-hybrid-proto stopped waiting on the bits item (EFFICIENCY-PLAN

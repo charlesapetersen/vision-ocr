@@ -11715,6 +11715,180 @@ do {
     resetPrefs()
 }
 
+print("\na model reads only the lines Vision was unsure of and the ones it skipped (ocr-hybrid-proto, fill)")
+
+do {
+    // A 1000 x 1300 page of four inked lines, 30 px tall, with Vision's reading of three:
+    // two at full confidence, one at 0.5, and the third line's ink read by nothing.
+    let (w, h) = (1000, 1300)
+    let ctx = CGContext(data: nil, width: w, height: h, bitsPerComponent: 8, bytesPerRow: w,
+                        space: CGColorSpaceCreateDeviceGray(), bitmapInfo: CGImageAlphaInfo.none.rawValue)!
+    ctx.setFillColor(gray: 1, alpha: 1)
+    ctx.fill(CGRect(x: 0, y: 0, width: w, height: h))
+    ctx.setFillColor(gray: 0, alpha: 1)
+    for top in [200, 300, 400, 500] {    // top-left rows; CoreGraphics counts from the bottom
+        ctx.fill(CGRect(x: 100, y: h - top - 30, width: 700, height: 30))
+    }
+    let page = ctx.makeImage()!
+    func line(_ text: String, top: Double, confidence: Double = 1) -> SearchableWriter.Observation {
+        .init(boundingBox: .init(x: 0.1, y: top / 1300, width: 0.7, height: 30.0 / 1300),
+              text: text, confidence: confidence)
+    }
+    let lines = [line("First line here", top: 200), line("Sccond lime txt", top: 300, confidence: 0.5),
+                 line("Fourth line here", top: 500)]
+    let scan = Recogniser.inkScan(of: page, strips: [(0, 1)])
+    let targets = Recogniser.fillTargets(lines, inked: scan?.rows.first ?? [], pageWidth: w, pageHeight: h,
+                                         inkSpan: { Recogniser.inkSpan(rows: $0..<$1, of: page, level: scan!.level) })
+    let skipped = targets.first { $0.line == nil }?.box
+    check("the model is sent the unsure line and the inked line nothing read, and nothing else",
+          targets.count == 2 && targets[0].line == 1 && skipped.map {
+              abs($0.x - 0.1) < 0.002 && abs($0.width - 0.7) < 0.002 && abs($0.y * 1300 - 400) < 1
+                  && abs($0.height * 1300 - 30) < 1 } == true,
+          targets.map { "\($0.line.map(String.init) ?? "-") \($0.box)" }.joined(separator: " / "))
+    var turned = line("Sccond lime txt", top: 300, confidence: 0.5)
+    turned.quarterTurns = 1
+    check("…not a turned line, and not ink by the page's top edge or as tall as a picture",
+          Recogniser.fillTargets([lines[0], turned, lines[2]], inked: [], pageWidth: w, pageHeight: h,
+                                 inkSpan: { _, _ in nil }).isEmpty
+          && Recogniser.fillTargets([lines[0], lines[2]], inked: (0..<h).map { $0 < 20 || (700..<800).contains($0) },
+                                    pageWidth: w, pageHeight: h, inkSpan: { _, _ in (100, 800) }).isEmpty)
+
+    let read = Recogniser.filled(lines, targets: targets, readings: ["Second line text", "Third line text"],
+                                 aspect: 1.3)
+    check("the unsure line takes the model's words in its own box, and the skipped line is added",
+          read.map(\.text) == ["First line here", "Second line text", "Fourth line here", "Third line text"]
+              && read[1].boundingBox.y == lines[1].boundingBox.y && read[3].confidence == 0.5,
+          read.map(\.text).joined(separator: " / "))
+    let wary = Recogniser.filled(lines, targets: targets,
+                                 readings: ["Sccond lime txt Third line text and more of the next", ""],
+                                 aspect: 1.3)
+    check("a reading twice Vision's length, or none, leaves the page as Vision read it",
+          wary.map(\.text) == lines.map(\.text), wary.map(\.text).joined(separator: " / "))
+    let narrated = Recogniser.filled(lines, targets: [targets[1]], readings: [String(
+        repeating: "The photograph shows a group of men standing in front of a factory. ", count: 3)], aspect: 1.3)
+    check("a skipped run the model reads more text over than fits it adds nothing",
+          narrated.count == lines.count, "\(narrated.count)")
+    // The DONE WHEN check of 2026-10-08, on `Hughes` p4: a circle mark Vision read as `O`.
+    let mark = [line("O", top: 300, confidence: 0.5)]
+    let marked = Recogniser.filled(mark, targets: [.init(box: mark[0].boundingBox, line: 0)], readings: ["0"],
+                                   aspect: 1.3).map(\.text)
+    check("a line of under three letters or digits keeps Vision's reading", marked == ["O"], marked.joined())
+
+    // `1954 - Why` p9, as Vision read it: a box at 0.5 over two lines, and a line of its
+    // own inside it at full confidence.
+    let fused = [SearchableWriter.Observation(boundingBox: .init(x: 0.0425, y: 0.3404, width: 0.3987, height: 0.0444),
+                                              text: "a nets for player und elible no be sure tu take targe",
+                                              confidence: 0.5),
+                 SearchableWriter.Observation(boundingBox: .init(x: 0.3154, y: 0.3636, width: 0.1225, height: 0.0233),
+                                              text: "to take the Negro", confidence: 1)]
+    let whole = "a new employee under his wing, be sure you make arrangements for one or two reliable "
+        + "“old-timers” to take the Negro<|end_of_query|>"
+    let unfused = Recogniser.filled(fused, targets: [.init(box: fused[0].boundingBox, line: 0)],
+                                    readings: [whole], aspect: 0.77).map(\.text)
+    check("a line inside the unsure box is read with it, and goes when the model's reading holds its words",
+          unfused == [String(whole.dropLast(16))], unfused.joined(separator: " / "))
+    let elsewhere = Recogniser.filled(fused, targets: [.init(box: fused[0].boundingBox, line: 0)],
+                                      readings: ["a new employee under his wing, be sure you"],
+                                      aspect: 0.77).map(\.text)
+    check("…and when it does not, both stay as Vision read them", elsewhere == fused.map(\.text),
+          elsewhere.joined(separator: " / "))
+    // Review of 2026-10-08: a held line's figures, missing from the model's reading, went with it.
+    var figures = fused
+    figures[1] = .init(boundingBox: fused[1].boundingBox, text: "Total 1954 $4,312 to the", confidence: 1)
+    let kept = Recogniser.filled(figures, targets: [.init(box: fused[0].boundingBox, line: 0)],
+                                 readings: ["a new employee under his wing, be sure you make arrangements for "
+                                            + "Total to the"], aspect: 0.77).map(\.text)
+    check("…nor when it lacks a figure the line inside holds", kept == figures.map(\.text),
+          kept.joined(separator: " / "))
+
+    // The reader's side of it: a crops file in the image's pixels, one reading a line.
+    let dir = tmp.appendingPathComponent("model-fill")
+    try? FileManager.default.removeItem(at: dir)
+    try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+    let shown = dir.appendingPathComponent("page.png")
+    if let dest = CGImageDestinationCreateWithURL(shown as CFURL, "public.png" as CFString, 1, nil) {
+        CGImageDestinationAddImage(dest, page, nil)
+        _ = CGImageDestinationFinalize(dest)
+    }
+    func reader(_ name: String, _ body: String) -> String {
+        let url = dir.appendingPathComponent(name)
+        try? ("#!/bin/sh\n" + body + "\n").write(to: url, atomically: true, encoding: .utf8)
+        try? FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: url.path)
+        return url.path
+    }
+    let crops = dir.appendingPathComponent("crops.tsv")
+    let echo = reader("echo.sh", "cp \"$3\" '\(crops.path)'\n"
+                      + "awk 'NR > 1 { print \"Second line text\" }' \"$3\" > \"$2\"")
+    let filled = try? Recogniser.filledReading(of: lines, on: page, shown: shown, reader: echo)
+    let rows = ((try? String(contentsOf: crops, encoding: .utf8)) ?? "").split(separator: "\n").dropFirst()
+        .map { $0.split(separator: "\t").dropFirst().compactMap { Int($0) } }
+    check("each crop is its place in the image's pixels, padded half a line each side and a sixth above and below",
+          // The second box is the ink scan's, 400/1300 + 30/1300, which may land a hair past row 430.
+          rows.count == 2 && rows[0] == [85, 295, 730, 40] && rows[1].prefix(3) == [85, 395, 730]
+              && (40...41).contains(rows[1].last ?? 0), rows.map { "\($0)" }.joined(separator: " "))
+    check("…and the page comes back with the readings in place",
+          filled?.map(\.text) == ["First line here", "Second line text", "Fourth line here", "Second line text"],
+          filled?.map(\.text).joined(separator: " / ") ?? "threw")
+    let short = reader("short.sh", "echo 'Second line text' > \"$2\"")
+    var why = ""
+    do { _ = try Recogniser.filledReading(of: lines, on: page, shown: shown, reader: short) } catch {
+        why = error.localizedDescription
+    }
+    check("a reader that writes fewer readings than crops fails the page, saying so",
+          why.contains("1 readings for 2 crops"), why)
+    let blank = reader("blank.sh", "awk 'NR > 1 { print \"\" }' \"$3\" > \"$2\"")
+    why = ""
+    do { _ = try Recogniser.filledReading(of: lines, on: page, shown: shown, reader: blank) } catch {
+        why = error.localizedDescription
+    }
+    check("…and so does one that reads nothing in any crop, where Vision read words",
+          why.contains("read nothing in 2 crops"), why)
+    let sure = [lines[0], line("Second line here", top: 300), line("Third line here", top: 400), lines[2]]
+    let untouched = try? Recogniser.filledReading(of: sure, on: page, shown: shown, reader: reader("never.sh", "exit 9"))
+    check("a page Vision read wholly and surely does not run the reader",
+          untouched?.map(\.text) == sure.map(\.text), untouched == nil ? "threw" : "")
+
+    // Through the production pipeline: a scan with a line's worth of ink under its text
+    // that Vision reads nothing in, which the reader reads as words.
+    resetPrefs()
+    let source = dir.appendingPathComponent("scan.pdf")
+    makeScannedPDF(at: source, lines: ["Vision reads these words", "and then this line"],
+                   bars: [NSRect(x: 130, y: 1150, width: 600, height: 30)])
+    let crowd = reader("crowd.sh", "[ $# -eq 3 ] || exit 4\n"
+                       + "awk 'NR > 1 { print \"Model added line\" }' \"$3\" > \"$2\"")
+    func publish(_ arrangement: Prefs.ModelArrangement) -> (String, String, Runner.Result.Outcome?) {
+        d.set(arrangement.rawValue, forKey: Prefs.modelArrangement)
+        d.set(crowd, forKey: Prefs.modelReader)
+        let out = dir.appendingPathComponent("\(arrangement.rawValue).ocr.pdf")
+        var outcome: Runner.Result.Outcome?, message = ""
+        OCRModel.makeSearchablePDF(file: source, output: out, rebuild: true, rebuildMode: .auto,
+                                   password: nil, control: RunControl(), progress: { _, _ in },
+                                   report: { o, m in outcome = o; message = m })
+        return (embeddedText(of: out), message, outcome)
+    }
+    let off = publish(.off)
+    check("with the setting off the skipped ink adds nothing",
+          off.0.contains("these words") && !off.0.contains("Model added"), off.0 + " | " + off.1)
+    let on = publish(.fill)
+    check("with fill on the published layer adds the reader's line and keeps Vision's",
+          on.2 == .succeeded && on.0.contains("Model added line") && on.0.contains("these words")
+              && on.0.contains("this line"), on.0 + " | " + on.1)
+    let pngs = dir.appendingPathComponent("pages")
+    try? FileManager.default.createDirectory(at: pngs, withIntermediateDirectories: true)
+    let rebuilt = dir.appendingPathComponent("rebuilt.pdf")
+    let bitmaps = (try? Flattener.flatten(source, to: rebuilt, mode: .blackAndWhite, pngDirectory: pngs)) ?? []
+    var settings = Prefs.Snapshot.current()
+    settings.modelArrangement = .fill
+    settings.modelReader = crowd
+    var fellBack: [String] = []
+    let viaHelper = try? Recogniser.recogniseDocument(visible: rebuilt, bitmaps: bitmaps, settings: settings,
+                                                      useHelper: true, onFallback: { fellBack.append($0) })
+    let helperText = (viaHelper?[1] ?? []).map(\.text).joined(separator: " ")
+    check("the helper fills too, without falling back",
+          fellBack.isEmpty && helperText.contains("Model added line"), helperText + " | " + fellBack.joined())
+    resetPrefs()
+}
+
 print("\na helper is only worth it when there is something to overlap with")
 
 do {
