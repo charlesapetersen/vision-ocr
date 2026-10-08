@@ -41,8 +41,10 @@ say so in the commit.
 7. **Attempts and effort.** The daemon counts the sessions it runs on an item that end with the item
    still open and no box ticked; a session that ticks a sub-box for a finished part is not a failed
    attempt, nor is one that opened at 85% or more of the usage window (owner, 2026-10-01). It adds the item's `(attempts: N)` marker, which records failures found later, by the
-   owner or a check. From the third attempt the session runs at `max` effort instead of the default
-   `medium`, with a $140 budget cap instead of $70 and an 8-hour time limit instead of 4. `(effort: <level>)` on an item sets its effort outright. When a ticked item is found not
+   owner or a check. From the third attempt the session escalates to Fable (owner, 2026-10-07): the
+   third attempt runs Fable at `high` effort, the fourth Fable at `xhigh`, and every one after that Fable at
+   `max`, with a $140 budget cap instead of $70 and an 8-hour time limit instead of 4 at `max` only. Before
+   that it is Opus at the default `medium`. `(effort: <level>)` on an item sets its effort outright. When a ticked item is found not
    fixed, reopen it or queue its successor with `(attempts: N)` carried over.
 8. **No `WONTFIX` before two max-effort sessions (owner, 2026-09-26).** An unattended session may close an
    entry `WONTFIX` only if it runs at `max` and an earlier max-effort session has already tried the item.
@@ -1222,9 +1224,11 @@ say so in the commit.
       step plus a real reading order is worth more than a better reader. Churro on regions: 405 s for one 2,631-word page.
       Round 1, session 6, 2026-10-07: session 5's detached Churro run died at page 13 when its worktree was removed under
       it (run-guarded.sh gone); the three unread pages were reread. Measured, Churro 3B on regions: 0.706 / 0.938 in
-      ~650 s a page, peak 3,503 MB: no better than Vision on the same regions and well under PaddleOCR-VL, so Churro is not
-      the newspaper reader. Started, detached: dots.mocr on regions, then Churro, Qwen3.5-4B, Qwen3-VL-8B whole-page
-      (log `/tmp/nb-chain.log`; a detached job must run from a worktree that outlives it).
+      ~650 s a page, peak footprint 6,043 MB: no better than Vision on the same regions and well under PaddleOCR-VL, so Churro is not
+      the newspaper reader. dots.mocr-4bit on regions: 0.746 / 0.980 in 1,654 s for 15 pages, peak footprint 5,415 MB, level
+      with PaddleOCR-VL (604 s for the 15). Still running, detached, from worktree `/private/tmp/vo-20261007-202453-99327`
+      (keep it until the chain ends; log `/tmp/nb-chain.log`): Churro, Qwen3.5-4B, Qwen3-VL-8B whole-page. NEXT: score them
+      (`cd $OCRLAB/newsbench && ../venv/bin/python score.py`), add their rows, then lab3-extras.
 - [ ] **ocr-bakeoff-bits** — run the top three at 4-bit and at 8-bit and compare.
       (blocked-on: ocr-bakeoff-score, ocr-lab-round3)
       The owner's 2026-10-02 request: the same sample through `bakeoff.sh` with the build as the parameter,
