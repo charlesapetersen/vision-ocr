@@ -1229,6 +1229,10 @@ say so in the commit.
       with PaddleOCR-VL (604 s for the 15). Still running, detached, from worktree `/private/tmp/vo-20261007-202453-99327`
       (keep it until the chain ends; log `/tmp/nb-chain.log`): Churro, Qwen3.5-4B, Qwen3-VL-8B whole-page. NEXT: score them
       (`cd $OCRLAB/newsbench && ../venv/bin/python score.py`), add their rows, then lab3-extras.
+      Round 1, session 7, 2026-10-07: that worktree was removed under the chain again; it died after Churro's first
+      whole page. Restarted from a copy of `ops/` outside git, `$OCRLAB/runner-20261007/chain.sh` (log
+      `/tmp/nb-chain2.log`), which no worktree cleanup can reach; newsbench.sh skips pages already read. Run long lab
+      jobs from such a copy, never from a worktree.
 - [ ] **ocr-bakeoff-bits** — run the top three at 4-bit and at 8-bit and compare.
       (blocked-on: ocr-bakeoff-score, ocr-lab-round3)
       The owner's 2026-10-02 request: the same sample through `bakeoff.sh` with the build as the parameter,

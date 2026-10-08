@@ -4,7 +4,13 @@
 # sensitive); bowF1 order-free; gap = bowF1 - overall (reading-order penalty). Measured by running code.
 # apple-vision-wholepage: ops/truth/vision-read.swift (revision 3, accurate, language correction: the app's settings) on
 # each whole JPG (2453-5975 px wide), one process per page, 1-8 s each. Vision scales the page down, so this is the
-# floor, not the app's banded path. Rows owed: Churro 3B, Qwen3-VL-8B, Qwen3.5-4B whole-page.
+# floor, not the app's banded path. Row owed: Qwen3-VL-8B whole-page.
+# qwen3.5-4b-4bit-whole: its fitted row (no prompt or size override; the model's own resize), max 12,000 tokens a
+# page, 2,586 s of reading for 15 pages, peak footprint 5,960 MB; 2 pages cut at max_tokens (kept). The best measured
+# row, by its own reading order (gap 0.074), but weak on the broadsheets (0.570), where regions win. Measured 2026-10-08.
+# churro-3b-8bit-whole: `--churro --max-side 1600`, max 12,000 tokens a page, 4,811 s of reading for 15 pages, peak
+# footprint 6,043 MB; 11 of 15 pages cut at max_tokens (kept). No better than Vision whole-page: the page at 1,600 px
+# is too small for newsprint, and the token cap ends the rest. Measured 2026-10-08.
 # churro-3b-8bit-yolo: `--churro --max-side 1600`, max 3000 tokens a region, 9,742 s of reading for 15 pages (~650 s a page), peak
 # footprint 6,043 MB; 2 pages each have one region cut at max_tokens (kept, as bakeoff.sh keeps them). One earlier try of p.6
 # (mss3413201323-27) died on a Metal GPU timeout after 2,306 s and was reread.
@@ -23,6 +29,8 @@ apple-vision-wholepage	none	0.304	0.334	0.284	0.587	0.624	0.319	15	measured 2026
 vision-yolo	DocLayout-YOLO	0.741	0.847	0.671	0.967	0.938	0.196	15	measured 2026-10-07
 paddleocr-vl-1.6-4bit-yolo	DocLayout-YOLO	0.742	0.853	0.668	0.985	0.982	0.240	15	measured 2026-10-07
 churro-3b-8bit-yolo	DocLayout-YOLO	0.706	0.850	0.611	0.970	0.938	0.232	15	measured 2026-10-07
+churro-3b-8bit-whole	none	0.315	0.296	0.327	0.653	0.552	0.238	15	measured 2026-10-08
+qwen3.5-4b-4bit-whole	none	0.777	0.570	0.915	0.862	0.852	0.074	15	measured 2026-10-08
 dots.mocr-4bit-yolo	DocLayout-YOLO	0.746	0.856	0.672	0.985	0.980	0.234	15	measured 2026-10-07
 glm-ocr-doclayout	DocLayout	0.970	0.976	0.967	0.986	0.986	0.015	15	reference (scoresheet.md)
 tesseract	none	0.677	0.614	0.719	0.866	0.844	0.167	15	reference (scoresheet.md)
