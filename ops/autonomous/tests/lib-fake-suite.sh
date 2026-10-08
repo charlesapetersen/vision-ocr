@@ -6,7 +6,8 @@
 #   run <binary name> build=<n> heavy=<yes|no> label=<heavy-lock holder label>
 # where build=<n> is the compile count at the moment that binary was written, so a run served from the cache
 # shows the build number of the compile that made it. Knobs (environment): FAKE_SWIFT_VERSION, FAKE_SDK,
-# FAKE_SDKPATH, FAKE_BUILD, FAKE_ARCH, FAKE_JBIG2, FAKE_QPDF; FAKE_FAIL=<output name> fails that compile;
+# FAKE_SDKPATH, FAKE_BUILD, FAKE_ARCH, FAKE_JBIG2, FAKE_QPDF, FAKE_LOGIN_DIR (the login shell's tools, with
+# SHELL=$FB/loginsh); FAKE_FAIL=<output name> fails that compile;
 # FAKE_EDIT_DURING=<file> is appended to during each compile; FAKE_TESTS_RC is the suite's exit status;
 # FAKE_RUN_SLEEP delays the suite; FAKE_RUN_EDIT=<file> is appended to during the suite.
 # Needs $T (a scratch directory) and the real run_tests.sh path in $1 of fake_tree.
@@ -46,6 +47,8 @@ EOF
   printf '#!/bin/bash\n[ "$*" = -m ] && { echo "${FAKE_ARCH:-arm64}"; exit 0; }\nexec /usr/bin/uname "$@"\n' > "$b/uname"
   printf '#!/bin/bash\necho "jbig2enc ${FAKE_JBIG2:-0.32}"\n' > "$b/jbig2"
   printf '#!/bin/bash\necho "qpdf version ${FAKE_QPDF:-12.3.2}"\n' > "$b/qpdf"
+  # A login shell for run_tests.sh's `$SHELL -lc "command -v X"`: a startup line, then $FAKE_LOGIN_DIR/X if it is there.
+  printf '#!/bin/bash\necho "Last login: fake"\nn="${2##* }"\n[ -n "${FAKE_LOGIN_DIR:-}" ] && [ -x "$FAKE_LOGIN_DIR/$n" ] && echo "$FAKE_LOGIN_DIR/$n"\nexit 0\n' > "$b/loginsh"
   chmod +x "$b"/*
 }
 

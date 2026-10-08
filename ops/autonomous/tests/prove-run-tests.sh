@@ -4,16 +4,18 @@
 # compiles nothing, runs no suite and touches no real lock, cache or stamp:
 #   [1] the machine-wide heavy lock wraps ./build/tests and not the three compiles; test.lock (through
 #       test-lock.sh run) covers both; a suite queued for the heavy lock keeps test.lock fresh; the holder label
-#       is the caller's; the ledger row says how the run went.
+#       is the caller's; the ledger row says how the run went; a live guarded OCR-model run holds the compiles.
 #   [2] the cache: a warm tree and a second tree compile nothing; every compiled input, the flags and every
 #       toolchain part miss for exactly the binaries they feed; -O stays and -wmo/-Ounchecked never appear; a
 #       failed compile, a source edited during a compile, a corrupted entry and an entry with no `ok` are
 #       never used; VISIONOCR_TEST_CACHE=off and a cache inside the tree write nothing.
 #   [3] the stamp: identical inputs that passed are skipped and say so without a pass count; any input,
-#       jbig2/qpdf and the macOS build miss; a failure deletes the stamp and writes none; an interrupted run and
-#       a run whose inputs changed under it write none; the 24-hour limit holds and cannot be raised.
+#       jbig2/qpdf (on PATH, in build/ and from the login shell) and the macOS build miss; a failure deletes
+#       the stamp and writes none; an interrupted run and a run whose inputs changed under it write none; the
+#       24-hour limit holds and cannot be raised.
 #   [4] the health gate reports a stamped skip as a skip (never ✓) in its step line and its GREEN and RED
-#       verdicts, and a RED verdict carrying the note still names only its failing steps.
+#       verdicts, and a RED verdict carrying the note still names only its failing steps; the gate runs a real
+#       suite past any stamp when its own last real suite is missing or 24 hours old, and records each one.
 # Each section is then re-run against deliberately broken copies, each of which must turn it red; a copy
 # whose anchor is missing or not unique, or that leaves the file unchanged, is a failure, not a pass.
 # ~5 min. USAGE: ops/autonomous/tests/prove-run-tests.sh
@@ -34,7 +36,7 @@ export MAC_HEAVY_LOCK="$T/heavy/mac-heavy.lock" MAC_HEAVY_POLL=1 VISIONOCR_HEAVY
 export AGENT_MANAGER_STATE="$T/am-state" VISIONOCR_MAC_HEAVY="$OPS/mac-heavy-lock.sh"
 unset MAC_HEAVY_HELD VISIONOCR_TEST_LOCK_HELD VISIONOCR_SUITE_NOTE VISIONOCR_TEST_LOCK_DIR VISIONOCR_SUITE_LABEL \
       VISIONOCR_TEST_CACHE VISIONOCR_SUITE_STAMPS VISIONOCR_SUITE_STAMP VISIONOCR_SUITE_FRESH VISIONOCR_SUITE_STAMP_TTL
-FB="$T/fakebin"; fake_bin "$FB"
+FB="$T/fakebin"; fake_bin "$FB"; export SHELL="$FB/loginsh"
 # test-lock.sh asks `pgrep -x tests` about the whole machine, where a real suite may be running; this says none.
 # It also puts the system directories first on PATH, so the fakes are put back in front of them in every bash
 # that starts below it, run_tests.sh included — else the real swiftc would compile the scratch tree.
@@ -84,6 +86,27 @@ check_locks() {
   fi
   wait "$hp"; wait "$tp"
   grep -q '^run tests .*heavy=yes label=queued$' "$FAKE_LOG" || fail "the queued suite never ran: $(tail -3 "$X/out" | tr '\n' ' ')"
+  # A guarded OCR-model run is live (ops/ocrlab/run-guarded.sh holds guard.lock): no compile starts until it
+  # ends, and test.lock is kept fresh meanwhile. A dead pid, or a live one that is not run-guarded, holds nothing.
+  local gl="$HOME/.local/share/visionocr-ocrlab/guard.lock" gp
+  mkdir -p "$gl"; printf '#!/bin/bash\nsleep "$1"\n' > "$T/run-guarded.sh"; chmod +x "$T/run-guarded.sh"
+  : > "$FAKE_LOG"; export VISIONOCR_GUARD_POLL=1
+  bash "$T/run-guarded.sh" 7 & gp=$!; echo "$gp" > "$gl/pid"
+  tlrun guarded & tp=$!
+  sleep 3
+  grep -q '^compile' "$FAKE_LOG" && fail "a compile started while a guarded model run was live"
+  touch -t 202001010000 "$VISIONOCR_TEST_LOCK" 2>/dev/null; sleep 2.5
+  age=$(( $(date +%s) - $(stat -f %m "$VISIONOCR_TEST_LOCK" 2>/dev/null || echo 0) ))
+  [ "$age" -lt 3 ] || fail "test.lock was not kept fresh while the suite waited for a guarded model run (${age}s old)"
+  wait "$gp"; wait "$tp"
+  [ "$(grep -c '^compile' "$FAKE_LOG")" = 3 ] || fail "the suite did not compile once the guarded run ended: $(tail -2 "$X/out" | tr '\n' ' ')"
+  grep -q 'waiting for it before compiling' "$X/out" || fail "the wait for a guarded model run was not reported"
+  : > "$FAKE_LOG"; echo "$gp" > "$gl/pid"; rt
+  grep -q 'waiting for it before compiling' "$X/out" && fail "a dead guard pid held the suite"
+  sleep 4 & gp=$!; : > "$FAKE_LOG"; echo "$gp" > "$gl/pid"; rt
+  grep -q 'waiting for it before compiling' "$X/out" && fail "a live pid that is not run-guarded held the suite"
+  kill "$gp" 2>/dev/null; wait "$gp" 2>/dev/null
+  rm -rf "$gl"; unset VISIONOCR_GUARD_POLL
   unset VISIONOCR_TEST_CACHE VISIONOCR_SUITE_STAMP
 }
 
@@ -190,6 +213,17 @@ check_stamp() {
     l=$(log_lines); env "$what" bash -c 'cd "$1" && PATH="$2:$PATH" ./run_tests.sh' _ "$X/tree" "$FB" > "$X/out" 2>&1
     skipped && fail "$what: skipped on a stamp from different inputs"
   done
+  # jbig2 or qpdf found only where Runner.locateTool looks and this script's PATH does not: build/ (the test
+  # binary's Bundle.main.resourceURL) and the login shell. A change to either copy must miss.
+  rm -rf "$X/v"; cp -R "$X/base" "$X/v"
+  printf '#!/bin/bash\necho "jbig2enc 0.40"\n' > "$X/v/build/jbig2"; chmod +x "$X/v/build/jbig2"
+  TREE="$X/v" rt; TREE="$X/v" rt; TREE=""; skipped || fail "build/jbig2 unchanged: identical inputs were not skipped"
+  printf '#!/bin/bash\necho "jbig2enc 0.41"\n' > "$X/v/build/jbig2"
+  TREE="$X/v" rt; TREE=""; skipped && fail "build/jbig2 changed: skipped on a stamp from a different jbig2"
+  mkdir -p "$X/login"; printf '#!/bin/bash\necho "qpdf version 13.0"\n' > "$X/login/qpdf"; chmod +x "$X/login/qpdf"
+  FAKE_LOGIN_DIR="$X/login" rt; FAKE_LOGIN_DIR="$X/login" rt; skipped || fail "login-shell qpdf unchanged: not skipped"
+  printf '#!/bin/bash\necho "qpdf version 13.1"\n' > "$X/login/qpdf"
+  FAKE_LOGIN_DIR="$X/login" rt; skipped && fail "the login shell's qpdf changed: skipped on a stamp from a different qpdf"
   # A failure (forced past the stamp) writes no stamp and deletes the one it contradicts.
   l=$(log_lines); VISIONOCR_SUITE_FRESH=1 FAKE_TESTS_RC=1 rt && fail "a failing suite exited 0"
   [ "$(runs_since "$l")" = 1 ] || fail "a failing suite did not run (skipped on the stamp?)"
@@ -232,22 +266,37 @@ gate_tree() {   # $1 directory · $2 run_tests.sh body · $3 tools-compile exit 
   chmod +x "$g/ops/autonomous/"*.sh "$g/Tools/check-tools-compile.sh" "$g/run_tests.sh" "$g/build.sh"
   git -C "$g" init -q >/dev/null 2>&1; git -C "$g" config core.hooksPath .githooks
 }
-STAMPED='echo "run_tests: skipped: identical inputs passed at 2026-10-07 09:15:00 (stamp abc, 3 min ago; VISIONOCR_SUITE_FRESH=1 runs it)"'
+# Like run_tests.sh with a stamp for its inputs: a skip, unless VISIONOCR_SUITE_FRESH=1 makes it a real run.
+STAMPED='[ "${VISIONOCR_SUITE_FRESH:-0}" = 1 ] && { echo "3/3 passed"; exit 0; }
+echo "run_tests: skipped: identical inputs passed at 2026-10-07 09:15:00 (stamp abc, 3 min ago; VISIONOCR_SUITE_FRESH=1 runs it)"'
 check_gate() {
-  local g out
-  X="$T/x-gate-$RANDOM"; mkdir -p "$X"
-  gate_tree "$X/g1" "$STAMPED" 0
-  out="$(VISIONOCR_GATE_ROOT="$X/g1" bash "$X/g1/ops/autonomous/health-gate.sh" 2>&1)"
+  local g out w now
+  X="$T/x-gate-$RANDOM"; mkdir -p "$X"; now=$(date +%s)
+  gate() { VISIONOCR_STATE="$X/s-$1" VISIONOCR_GATE_ROOT="$X/$1" bash "$X/$1/ops/autonomous/health-gate.sh" 2>&1; }
+  record() { mkdir -p "$X/s-$1"; echo "$2" > "$X/s-$1/last-gate-real-suite"; }
+  gate_tree "$X/g1" "$STAMPED" 0; record g1 $(( now - 100 ))
+  out="$(gate g1)"
+  [ "$(cat "$X/s-g1/last-gate-real-suite")" = $(( now - 100 )) ] || fail "a stamped skip renewed the gate's record of its own real suite"
   grep -q '✓ suite' <<<"$out" && fail "a stamped skip was reported as ✓ suite"
   grep -q '⊘ suite skipped: identical inputs passed at 2026-10-07 09:15:00' <<<"$out" || fail "the suite step does not name the stamped skip: $(grep -A1 '── suite' <<<"$out" | tail -1)"
   grep -q '^HEALTH GATE: GREEN (.*+ suite (skipped: identical inputs passed at 2026-10-07 09:15:00)' <<<"$out" \
     || fail "the GREEN verdict does not name the stamped skip: $(grep '^HEALTH GATE' <<<"$out")"
   grep -q 'suite (locked)' <<<"$out" && fail "the GREEN verdict claims a locked suite ran"
   gate_tree "$X/g2" 'echo "3/3 passed"' 0
-  out="$(VISIONOCR_GATE_ROOT="$X/g2" bash "$X/g2/ops/autonomous/health-gate.sh" 2>&1)"
+  out="$(gate g2)"
   grep -q '✓ suite' <<<"$out" && grep -q '+ suite (locked)' <<<"$out" || fail "a real suite is no longer reported as ✓ / (locked)"
-  gate_tree "$X/g3" "$STAMPED" 1
-  out="$(VISIONOCR_GATE_ROOT="$X/g3" bash "$X/g3/ops/autonomous/health-gate.sh" 2>&1)"
+  w="$(cat "$X/s-g2/last-gate-real-suite" 2>/dev/null)"
+  [ -n "$w" ] && [ $(( w - now )) -ge 0 ] && [ $(( w - now )) -lt 60 ] || fail "a real, passing gate suite did not record itself: '$w'"
+  # A fresh hook-written stamp does not let the gate skip when its own last real suite is missing, stale,
+  # unreadable or dated in the future: it runs past the stamp, and records that it did.
+  for w in none $(( now - 86401 )) garbage $(( now + 600 )); do
+    rm -rf "$X/g4" "$X/s-g4"; gate_tree "$X/g4" "$STAMPED" 0; [ "$w" = none ] || record g4 "$w"
+    out="$(gate g4)"
+    grep -q '✓ suite' <<<"$out" && ! grep -q '⊘ suite' <<<"$out" || fail "gate record '$w': the gate skipped on a stamp: $(grep -A1 '── suite' <<<"$out" | tail -1)"
+    [ "$(cat "$X/s-g4/last-gate-real-suite" 2>/dev/null)" != "$w" ] || fail "gate record '$w': the forced real suite was not recorded"
+  done
+  gate_tree "$X/g3" "$STAMPED" 1; record g3 $(( now - 86000 ))
+  out="$(gate g3)"
   grep -q '^HEALTH GATE: RED — tools-compile — suite skipped: identical inputs passed at 2026-10-07 09:15:00$' <<<"$out" \
     || fail "the RED verdict does not carry the stamped skip after its steps: $(grep '^HEALTH GATE' <<<"$out")"
 }
@@ -279,6 +328,9 @@ mutant check_locks RT run-unlocked 'if [ -x "$HEAVY" ]; then' 'if false; then'
 mutant check_locks TL heavy-around-everything 'VISIONOCR_TEST_LOCK_HELD=1 VISIONOCR_SUITE_NOTE="$_tl_note" "$@"' \
   'VISIONOCR_TEST_LOCK_HELD=1 VISIONOCR_SUITE_NOTE="$_tl_note" "$(dirname "$0")/mac-heavy-lock.sh" run -- "$@"'
 mutant check_locks RT no-touch 'MAC_HEAVY_TOUCH="${VISIONOCR_TEST_LOCK_DIR:-}" "$HEAVY"' 'MAC_HEAVY_TOUCH= "$HEAVY"'
+mutant check_locks RT no-guard-wait 'if _guard_live; then' 'if false; then'
+mutant check_locks RT guard-wait-without-touch 'touch "$VISIONOCR_TEST_LOCK_DIR" 2>/dev/null' ':'
+mutant check_locks RT guard-any-live-pid "&& ps -p \"\$p\" -o command= 2>/dev/null | grep -q 'run-guarded'" ''
 mutant check_locks TL no-label 'VISIONOCR_SUITE_LABEL="${LABEL:-suite}"' 'VISIONOCR_SUITE_LABEL=suite'
 
 section "[2] the binary cache" check_cache
@@ -303,6 +355,8 @@ mutant check_stamp RT no-ttl '[ "$s_age" -lt "$STAMP_TTL" ]' 'true'
 mutant check_stamp RT ttl-raisable '[ "$STAMP_TTL" -le 86400 ] || STAMP_TTL=86400' ':'
 mutant check_stamp RT no-future-guard '[ "$s_age" -ge 0 ] && ' ''
 mutant check_stamp RT stamp-without-tools "printf '%s\\n%s\\n' \"\$TOOLS_SEEN\" \"\$TOOLCHAIN\"" "printf '%s\\n' \"\$TOOLCHAIN\""
+mutant check_stamp RT stamp-without-build-dir '"$PWD/build/$t" "/opt/homebrew/bin/$t"' '"/opt/homebrew/bin/$t"'
+mutant check_stamp RT stamp-without-login-shell '"/opt/local/bin/$t" "$login" \' '"/opt/local/bin/$t" \'
 mutant check_stamp RT stamp-without-sources 'shasum -a 256 Sources/*.swift run_tests.sh;' 'shasum -a 256 run_tests.sh;'
 mutant check_stamp RT stamp-without-script 'shasum -a 256 Sources/*.swift run_tests.sh;' 'shasum -a 256 Sources/*.swift;'
 mutant check_stamp RT no-recheck-after-run 'if [ "$(TOOLS_SEEN="$(_tools)"; stamp_key)" = "$SKEY" ] \' 'if true \'
@@ -315,6 +369,10 @@ mutant check_gate GATE ticks-a-stamped-skip 'if [ -n "$SUITE_STAMP" ]; then
       echo "  ⊘' 'if false; then
       echo "  ⊘'
 mutant check_gate GATE green-claims-locked 'if [ -n "$SUITE_STAMP" ]; then ran=' 'if false; then ran='
+mutant check_gate GATE gate-never-forces 'if _gate_real_suite_due; then' 'if false; then'
+mutant check_gate GATE gate-no-record 'date +%s > "$GATE_REAL_SUITE"' 'true'
+mutant check_gate GATE gate-record-never-expires '[ "$a" -lt 0 ] || [ "$a" -ge 86400 ]' '[ "$a" -lt 0 ]'
+mutant check_gate GATE gate-record-on-skip '      echo "  ⊘ $name skipped' '      date +%s > "$GATE_REAL_SUITE"; echo "  ⊘ $name skipped'
 mutant check_gate GATE red-without-note '$fails${SUITE_STAMP:+ — suite skipped: identical inputs passed at $SUITE_STAMP}"' '$fails"'
 
 echo ""

@@ -44,7 +44,7 @@ unset MAC_HEAVY_HELD VISIONOCR_TEST_LOCK_HELD HEAVY_LOCK_FILE VISIONOCR_MAC_HEAV
 printf '#!/bin/sh\necho 1\n' > "$T/fake-sysctl"; chmod +x "$T/fake-sysctl"
 L="$MAC_HEAVY_LOCK"
 # A scratch tree run_tests.sh can run in, with a fake swiftc that records which locks each phase held ([5]).
-. "$HERE/lib-fake-suite.sh"; FB="$T/fakebin"; fake_bin "$FB"
+. "$HERE/lib-fake-suite.sh"; FB="$T/fakebin"; fake_bin "$FB"; export SHELL="$FB/loginsh"
 # test-lock.sh puts the system directories first on PATH; this puts the fakes back in front, in every bash below it.
 printf 'pgrep() { return 1; }\nPATH="%s:$PATH"\n' "$FB" > "$T/no-pgrep.sh"
 waitfor() { local end=$(( $(date +%s) + $2 )); while [ "$(date +%s)" -lt "$end" ]; do eval "$1" && return 0; sleep 0.2; done; return 1; }

@@ -233,13 +233,34 @@ _run_suite() {
   # TERM from the daemon's gate watchdog — a lock leaked by a killed gate would block every later suite
   # until MAXAGE (90 min). --label is what `test-lock.sh status` and the daemon's idle explanation show
   # the owner when they wonder who is holding their suite.
-  "$tl" run --label health-gate -- ./run_tests.sh
+  if _gate_real_suite_due; then
+    echo "health-gate: this gate has not itself run a real suite in the last 24 hours — running one past any stamp."
+    VISIONOCR_SUITE_FRESH=1 "$tl" run --label health-gate -- ./run_tests.sh
+  else
+    "$tl" run --label health-gate -- ./run_tests.sh
+  fi
+}
+
+# The owner approved the stamp on the condition that the gate still runs a real suite at least daily. A stamp
+# proves only that SOME caller passed these inputs (every code commit's hook stamps exactly the tree the gate
+# later checks), so the gate keeps its own record: $STATE/last-gate-real-suite, the epoch of its last real,
+# passing suite. Missing, unreadable, dated in the future or 24 hours old, and the suite runs with
+# VISIONOCR_SUITE_FRESH=1.
+GATE_STATE="${VISIONOCR_STATE:-$HOME/.local/state/visionocr-autonomous}"
+GATE_REAL_SUITE="$GATE_STATE/last-gate-real-suite"
+_gate_real_suite_due() {
+  local w a
+  w="$(cat "$GATE_REAL_SUITE" 2>/dev/null)"
+  case "$w" in ''|*[!0-9]*) return 0 ;; esac
+  a=$(( $(date +%s) - w ))
+  [ "$a" -lt 0 ] || [ "$a" -ge 86400 ]
 }
 
 # The suite step. Like step(), except that a run_tests.sh which skipped on a green stamp (identical inputs
 # passed within 24 hours; see run_tests.sh) is reported as that skip, never as a ✓, and named in the verdict
 # line. A stamp lasts 24 hours from the real run that wrote it, so a real suite has run on these exact inputs
-# within the last 24 hours whenever this gate skips one (owner, 2026-10-07: "Yes, with a 24-hour limit").
+# within the last 24 hours whenever this gate skips one (owner, 2026-10-07: "Yes, with a 24-hour limit"), and
+# the gate itself skips only when its own last real suite is under 24 hours old (_gate_real_suite_due).
 SUITE_STAMP=""
 step_suite() {
   local name="$1"; shift
@@ -251,6 +272,8 @@ step_suite() {
       echo "  ⊘ $name skipped: identical inputs passed at $SUITE_STAMP — no check ran in this gate"
     else
       echo "  ✓ $name"
+      { mkdir -p "$GATE_STATE" && date +%s > "$GATE_REAL_SUITE"; } 2>/dev/null \
+        || echo "  (could not record the real suite in $GATE_REAL_SUITE — the next gate will run one again)"
     fi
   else
     local rc=$?

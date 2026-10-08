@@ -68,8 +68,8 @@ HELPER_SOURCES=(Sources/Prefs.swift Sources/Runner.swift Sources/Recogniser.swif
 # VISIONOCR_TEST_CACHE=off compiles every time and writes nothing.
 #
 # STAMP (owner, 2026-10-07: "Yes, with a 24-hour limit"). A run whose exact inputs — the three keys above,
-# every Sources/*.swift (the suite reads some of them at run time), this script, the jbig2 and qpdf found on
-# the paths Runner searches, and the macOS build — passed within the last 24 hours is not run again. It
+# every Sources/*.swift (the suite reads some of them at run time), this script, the jbig2 and qpdf found in
+# the places Runner searches (see _tools), and the macOS build — passed within the last 24 hours is not run again. It
 # prints "run_tests: skipped: identical inputs passed at <time>" and exits 0; it never prints a pass count,
 # so it cannot be read as a fresh run. Only a run that exits 0 with its inputs unchanged writes a stamp; a
 # failure on those inputs deletes it, and an interrupted run never reaches the write. A skip does not renew
@@ -118,12 +118,22 @@ key_tests()  { _key tests  "${TESTS_FLAGS[*]}"  "${SOURCES[@]}" Tests/main.swift
 key_helper() { _key helper "${HELPER_FLAGS[*]}" "${HELPER_SOURCES[@]}" Helper/*; }
 key_plates() { _key plates "${PLATES_FLAGS[*]}" Tools/make-plate-fixtures.swift; }
 
-# _tools — jbig2 and qpdf as the suite will find them: every copy on Runner.locateTool's fixed paths and PATH.
+# _tools — jbig2 and qpdf as the suite will find them: every copy in the places Runner.locateTool looks, in its
+# order — build/ (Bundle.main.resourceURL of build/tests), the three fixed prefixes, then the last line of
+# `$SHELL -lc "command -v"` — and this script's own PATH. A login shell that does not answer within 10 s is
+# recorded as such, so its key cannot match a run whose login shell named a tool.
+_login_tool() {
+  local out rc=0
+  out="$(perl -e 'alarm shift; exec @ARGV' 10 "${SHELL:-/bin/zsh}" -lc "command -v $1" 2>/dev/null)" || rc=$?
+  case $rc in 0|1) printf '%s\n' "$out" | tail -1 ;; *) echo "login-shell-no-answer" ;; esac
+}
 _tools() {
-  local t p seen
+  local t p seen login
   for t in jbig2 qpdf; do
-    seen=""
-    for p in "$(command -v "$t" 2>/dev/null || true)" "/opt/homebrew/bin/$t" "/usr/local/bin/$t" "/opt/local/bin/$t"; do
+    seen=""; login="$(_login_tool "$t")"
+    [ "$login" = login-shell-no-answer ] && printf '%s: the login shell did not answer\n' "$t"
+    for p in "$PWD/build/$t" "/opt/homebrew/bin/$t" "/usr/local/bin/$t" "/opt/local/bin/$t" "$login" \
+             "$(command -v "$t" 2>/dev/null || true)"; do
       [ -n "$p" ] && [ -x "$p" ] || continue
       case " $seen " in *" $p "*) continue ;; esac; seen="$seen $p"
       printf '%s %s: %s\n' "$t" "$p" "$("$p" --version 2>&1 | head -3 | tr '\n' ' ')"
@@ -153,6 +163,25 @@ if [ "$STAMP_ON" = 1 ]; then
       exit 0
     fi
   fi
+fi
+
+# A guarded OCR-model run (ops/ocrlab/run-guarded.sh) holds the heavy lock and measures the model on a quiet
+# machine; the compiles below are outside the heavy lock, so wait for it here rather than compile beside the
+# model, keeping test.lock fresh meanwhile. Only a live pid whose command is run-guarded counts, so a stale
+# lock or a recycled pid does not hold the suite.
+GUARD_LOCK="${OCRLAB:-$HOME/.local/share/visionocr-ocrlab}/guard.lock"
+GUARD_POLL="${VISIONOCR_GUARD_POLL:-5}"
+_guard_live() {
+  local p; p="$(cat "$GUARD_LOCK/pid" 2>/dev/null)"
+  case "$p" in ''|*[!0-9]*) return 1 ;; esac
+  kill -0 "$p" 2>/dev/null && ps -p "$p" -o command= 2>/dev/null | grep -q 'run-guarded'
+}
+if _guard_live; then
+  echo "run_tests: a guarded model run (pid $(cat "$GUARD_LOCK/pid" 2>/dev/null)) is measuring — waiting for it before compiling…" >&2
+  while _guard_live; do
+    [ -n "${VISIONOCR_TEST_LOCK_DIR:-}" ] && [ -e "$VISIONOCR_TEST_LOCK_DIR" ] && touch "$VISIONOCR_TEST_LOCK_DIR" 2>/dev/null
+    sleep "$GUARD_POLL"
+  done
 fi
 
 # _build NAME KEYFN DEST CMD... — copy DEST from the cache, or run CMD and cache what it made.
