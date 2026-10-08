@@ -1347,12 +1347,22 @@ say so in the commit.
       (blocked-on: ocr-hybrid-run, ocr-bakeoff-bits) (effort: medium)
       A route wins when it cuts words wrong or missing by at least a third on old print or on newspapers, runs
       at no more than three times Vision's time per page, and stays under the guard's 12 GB on this Mac.
-      DONE WHEN a new `BUGS.md` entry names the winning arrangement with its gain in words right and its cost in
-      time, memory and download size, and the model and build for each memory limit from about 4 GB to 12 GB;
-      or says that none wins, in which case the three `ocr-integrate-*` items and `ocr-requeue` are ticked
-      with that reason and the queue goes on as before. ESTIMATE: 1 session. BOUND: rule 10.
-      (context: owner request 2026-10-02, split 2026-10-04)
-- [ ] **ocr-integrate-engine** — run the winning arrangement inside the app. (blocked-on: ocr-hybrid-pick) (uses: build,model:12)
+      THE OWNER DECIDES, NOT THIS SESSION (owner, 2026-10-08: "Require that I be informed of the results, given a
+      number of options, and approve next steps when we get to ocr-hybrid-pick"). The rule above is how this
+      session scores each route; it does not choose. This session writes up the results and stops.
+      DONE WHEN `OCR-HYBRID-DECISION-<date>.md` is committed, and a note pointing at it is left on the Desktop
+      as `~/Desktop/OCR-HYBRID-DECISION.txt` (the daemon's other notes to the owner land there). The document
+      has, in plain prose: (1) the results, every route and model scored against the rule, with gain in words
+      right, time per page against Vision's, peak memory and download size, and the build each memory limit from
+      about 4 GB to 12 GB would use; (2) three or four options, each with what it gives and costs, always
+      including "adopt nothing, the queue goes on as before" and, where one exists, the cheapest route that meets
+      the rule; (3) one recommendation and why. It names no winner as decided. It ticks no `ocr-integrate-*` item
+      and writes no `BUGS.md` entry for the choice. ESTIMATE: 1 session. BOUND: rule 10.
+      (context: owner request 2026-10-02, split 2026-10-04; approval step added 2026-10-08)
+- [ ] **ocr-integrate-engine** — run the winning arrangement inside the app. (blocked-on: ocr-hybrid-approve) (uses: build,model:12)
+      Starts from the option the owner approved, recorded in `ocr-hybrid-approve`. Its first step is the `BUGS.md`
+      entry that names that option. If the owner approved "adopt nothing", tick the three `ocr-integrate-*`
+      items and `ocr-requeue` with that reason and do no other work here.
       Built, not left as a recommendation (owner, 2026-10-02). The model runs from the app's helper under the
       guard's limits with the chosen maximum as its cap, and falls back to Vision with a message when memory is
       short or the model fails. If arrangement (a) won, the model replaces Vision as the recogniser in this mode,
@@ -1727,6 +1737,10 @@ These are offered to nobody. `next-item.sh` prints them as `hold` so they stay v
       Night 3 (23:35-07:40) finished Churro 3B, olmOCR-2-7B and Qwen3-VL-8B; Qwen3.5-9B was stopped at 6 of 56
       pages (weak early reads: one whole page 4 characters) and is DROPPED by the owner, not owed another try. No
       further bake-off night is needed for ocr-bakeoff-run; ocr-bakeoff-bits will need its own (4-6 h job).
+- [ ] **ocr-hybrid-approve** — the owner reads `OCR-HYBRID-DECISION-<date>.md` from `ocr-hybrid-pick` and approves an option. Tick
+      it with the date and the owner's words naming the option; `ocr-integrate-engine` and everything after it wait on
+      this. Added 2026-10-08 (owner: informed of the results, given options, approve the next step). An interactive
+      session shows the owner the options as a choice and records the answer here. [hold] needs: owner — the choice of route is the owner's.
 - [ ] **model-night-ok** — the owner says the Mac is free for a night, so a long model job may start: ocr-bakeoff-bits'
       4-6 hours, ocr-hybrid-run's 6-10. Added 2026-10-07 when EFFICIENCY-PLAN item 16 loosened the edges that had kept
       both behind other work. Tick it with the date and the owner's words; untick it when the owner next needs the Mac.
