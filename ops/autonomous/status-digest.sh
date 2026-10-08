@@ -137,7 +137,9 @@ elif [ "$running" = 1 ]; then
   # the empty-stopwatch branch below would print "Working now" over a run that is launching nothing.
   _gwait="$(head -1 "$STATE/grant.wait" 2>/dev/null)"
   grant_wait_state() {
-    STATE_ICON="${AMB}◐${OFF}"; STATE_LINE="Waiting — Agent Manager: $(printf '%s' "$_gwait" | cut -c1-90)"
+    # Cut at 220, not 90: a pace wait's reason runs to about 150 characters with its run-out and reset in a
+    # " (...)" tail that opens near column 60, and a 90 cut left an open parenthesis and dropped both clocks.
+    STATE_ICON="${AMB}◐${OFF}"; STATE_LINE="Waiting — Agent Manager: $(printf '%s' "$_gwait" | cut -c1-220)"
     STATE_HINT="This is NOT out of work; it starts a session by itself once the manager grants."
   }
   case "$since" in

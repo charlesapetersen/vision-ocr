@@ -480,6 +480,14 @@ case "$b" in *"Working now"*) ok "with the wait file gone, an empty stopwatch re
 : > "$VISIONOCR_STATE/grant.wait"
 case "$(state_block)" in *"Agent Manager"*) bad "an EMPTY grant.wait is reported as a wait" ;;
   *) ok "an empty grant.wait is not a wait" ;; esac
+# A pace wait's reason is about 150 characters with its run-out and reset in a " (...)" tail that opens near
+# column 60; the old 90-character cut left an open parenthesis and dropped both clocks.
+echo "Claude's weekly window is ahead of the week's pace (70% used, 40% of the week gone; at this pace it runs out Sat 17 Oct 14:00, before its reset Sun 18 Oct 03:00)" \
+  > "$VISIONOCR_STATE/grant.wait"
+case "$(state_block)" in
+  *"Waiting — Agent Manager: Claude's weekly window is ahead of the week's pace (70% used, 40% of the week gone; at this pace it runs out Sat 17 Oct 14:00, before its reset Sun 18 Oct 03:00)"*)
+    ok "a pace wait shows its whole reason, run-out and reset included" ;;
+  *) bad "a pace wait's reason is cut: $(state_block | grep 'Agent Manager')" ;; esac
 rm -f "$VISIONOCR_STATE/grant.wait"; echo "$_since_saved" > "$VISIONOCR_STATE/idle.since"
 
 printf '\n  %s passed, %s failed\n' "$PASS" "$FAIL"

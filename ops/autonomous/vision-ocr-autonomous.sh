@@ -1810,13 +1810,18 @@ culprits are per-worktree build/ directories and Tools/mutation-out/. Free some 
   #      The helper is bounded by GRANT_TIMEOUT, and its output goes through a file rather than $(…): a killed
   #      shell-script helper can leave a child holding the pipe open, and $(…) would wait for that child.
   if [ -x "$GRANT_CMD" ]; then
-    local g_out g_rc
+    local g_out g_rc g_prev
     perl -e 'alarm shift; exec @ARGV or exit 127' "$GRANT_TIMEOUT" \
       "$GRANT_CMD" --project "$GRANT_PROJECT" --agent claude > "$STATE/grant.out" 2>/dev/null; g_rc=$?
     g_out="$(head -1 "$STATE/grant.out" 2>/dev/null)"; rm -f "$STATE/grant.out"
     if [ "$g_rc" = 75 ]; then
       g_out="${g_out#wait: }"; g_out="${g_out:-no reason given}"
-      [ "$g_out" = "$(cat "$STATE/grant.wait" 2>/dev/null)" ] \
+      # "Once per reason" compares only the part before the first " (": the helper puts every figure that moves
+      # during a wait (used share, share of the window gone, run-out and reset clocks) in that tail, so a whole-line
+      # compare logged a new line on almost every cycle of a pace wait. grant.wait keeps the whole, newest reason
+      # for the status digest.
+      g_prev="$(head -1 "$STATE/grant.wait" 2>/dev/null)"
+      [ "${g_out%% (*}" = "${g_prev%% (*}" ] \
         || log "Agent Manager says wait — $g_out; no session until it grants."
       printf '%s\n' "$g_out" > "$STATE/grant.wait"
       rm -f "$IDLE_SINCE" 2>/dev/null || true

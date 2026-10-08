@@ -1003,7 +1003,9 @@ echo "[19] AGENT MANAGER GRANT (stage 4) — 75 holds the session, 0 lets it sta
 cat > "$T/grant-stub" <<STUB
 #!/bin/sh
 printf '%s|' "\$@" >> "$T/grant.calls"; echo >> "$T/grant.calls"
-[ -f "$T/grant.wait" ] && { echo "wait: Claude's five-hour window is 98% used; it resets at 19:00"; exit 75; }
+# The tail moves on every call, as a pace wait's run-out does: the daemon must log the wait once, not per cycle.
+[ -f "$T/grant.wait" ] && { n=\$(wc -l < "$T/grant.calls" | tr -d ' ')
+  echo "wait: Claude's weekly window is ahead of the week's pace (70% used, 40% of the week gone; at this pace it runs out 14:\$n, before its reset Sun 03:00)"; exit 75; }
 rc=\$(cat "$T/grant.rc" 2>/dev/null || echo 0); [ "\$rc" = 0 ] && echo granted || echo broken >&2
 exit "\$rc"
 STUB
@@ -1012,8 +1014,13 @@ echo "0:no" > "$CTRL"; reset_repo; dfset 999999; reset_state; rm -f "$T/grant.ca
 touch "$T/grant.wait"
 P=$(GRANT="$T/grant-stub" launch 0); sleep 8; L="$STATE/daemon.log"
 [ "$(nsessions "$L")" = 0 ] && ok "no session while the manager says wait" || bad "$(nsessions "$L") session(s) launched during a wait"
-[ "$(grep -c "Agent Manager says wait $EM Claude's five-hour window is 98% used; it resets at 19:00" "$L")" = 1 ] \
-  && ok "the wait is logged once, with the manager's reason" || bad "wait log: $(grep -c 'Agent Manager says wait' "$L")"
+[ "$(grep -c "Agent Manager says wait $EM Claude's weekly window is ahead of the week's pace (70% used" "$L")" = 1 ] \
+  && [ "$(grep -c 'Agent Manager says wait' "$L")" = 1 ] \
+  && ok "the wait is logged once, with the manager's reason, though its (…) tail moved every cycle" \
+  || bad "wait log: $(grep -c 'Agent Manager says wait' "$L") line(s) for one wait whose tail moved"
+case "$(cat "$STATE/grant.wait" 2>/dev/null)" in *"runs out 14:"[0-9]*", before its reset Sun 03:00)")
+    ok "grant.wait keeps the whole reason, tail included, for the status digest" ;;
+  *) bad "grant.wait lost the reason's tail: $(cat "$STATE/grant.wait" 2>/dev/null)" ;; esac
 [ "$(head -1 "$T/grant.calls")" = "--project|Vision OCR|--agent|claude|" ] && ok "asks for Vision OCR on claude" \
   || bad "grant argv: $(head -1 "$T/grant.calls")"
 [ "$(wc -l < "$T/grant.calls" | tr -d ' ')" -ge 2 ] && ok "asks again each cycle" || bad "asked only once"
