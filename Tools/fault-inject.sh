@@ -1650,9 +1650,12 @@ fault_hook_suite_scope() {
       chmod +x "$R/run_tests.sh" "$R/Tools/check-tools-compile.sh"
       printf '.suite-ran\n.typecheck-ran\n' > "$R/.gitignore"
       echo readme > "$R/README.md"
+      echo "// plates" > "$R/Tools/make-plate-fixtures.swift"
       git -C "$R" add -A; git -C "$R" commit -q -m initial >/dev/null 2>&1
       git -C "$R" config core.hooksPath "$sc/h"
       for f in "$@"; do
+        # mv:FROM:TO renames a file the initial commit carries (git mv), so the staged list sees a rename.
+        case "$f" in mv:*) f="${f#mv:}"; git -C "$R" mv "${f%%:*}" "${f#*:}"; continue ;; esac
         case "$f" in *=BROKEN) f="${f%=BROKEN}"; mkdir -p "$R/$(dirname "$f")"; echo BROKEN > "$R/$f" ;;
                      *.sh) echo "# $f" >> "$R/$f" ;;
                      *) mkdir -p "$R/$(dirname "$f")"; echo "// $f" >> "$R/$f" ;; esac
@@ -1674,6 +1677,7 @@ fault_hook_suite_scope() {
     srow no  yes 1 Tools/score-x.swift=BROKEN
     srow yes yes 0 Tools/make-plate-fixtures.swift
     srow no  yes 0 Tools/make-plate-fixtures.swift.orig.swift
+    srow yes yes 0 mv:Tools/make-plate-fixtures.swift:Tools/plates.swift
     srow yes yes 0 Tools/score-x.swift Sources/A.swift
     srow yes no  0 Sources/A.swift
     srow yes no  0 Tests/main.swift
@@ -1682,7 +1686,7 @@ fault_hook_suite_scope() {
     srow yes no  0 run_tests.sh
   }
   local real; real="$(suite_rows "$hook")"
-  if [ -z "$real" ]; then ok "the hook runs the suite for exactly the paths the suite uses (14 rows)"
+  if [ -z "$real" ]; then ok "the hook runs the suite for exactly the paths the suite uses (15 rows)"
   else bad "hook suite scope" "$(echo "$real" | tr '\n' ';')"; fi
   # Each broken copy must fail at least one row. The anchor must occur once and the copy must differ.
   hmut() {
@@ -1695,6 +1699,7 @@ fault_hook_suite_scope() {
   }
   hmut old-pattern 'Tools/make-plate-fixtures\.swift$|build' 'Tools/|build'
   hmut no-typecheck-when-tools-only '  suite_needed=0' '  echo "pre-commit: no code staged, skipping the suite."; exit 0'
+  hmut renames-hide-the-source '--name-only --no-renames)' '--name-only)'
   hmut unanchored-plates 'Tools/make-plate-fixtures\.swift$|' 'Tools/make-plate-fixtures\.swift|'
   rm -rf "$sc"; SC=""
 }

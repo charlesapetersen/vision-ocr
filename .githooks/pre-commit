@@ -10,7 +10,10 @@ cd "$(git rev-parse --show-toplevel)"
 # some editors — swiftc and mac-ocr both go missing and the run reports nonsense.
 export PATH="/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:$PATH"
 
-staged=$(git diff --cached --name-only)
+# --no-renames: with rename detection a `git mv` lists only its destination, so moving
+# Tools/make-plate-fixtures.swift (which run_tests.sh builds) to another name under Tools/
+# read as "only tools staged" and skipped the suite. Both paths are listed this way.
+staged=$(git diff --cached --name-only --no-renames)
 [ -z "$staged" ] && exit 0
 
 touches_sources=$(echo "$staged" | grep -c '^Sources/' || true)
