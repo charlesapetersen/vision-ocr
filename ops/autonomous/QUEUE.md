@@ -1179,7 +1179,7 @@ say so in the commit.
       - [x] **lab3-layout** — DocLayout-YOLO (`juliozhao/DocLayout-YOLO-DocStructBench`, Apache-2.0 weights, AGPL code;
         Core ML or PyTorch MPS) and PP-DocLayoutV3 (Apache-2.0; mlx-vlm `pp_doclayout_v3`): regions and reading order
         on the newspaper test page, timed, as candidates for ocr-hybrid-proto's region step.
-      - [ ] **lab3-newsbench** — fetch NewsBench (github.com/nealcaren/newsbench, MIT; 15 scored Library of Congress
+      - [x] **lab3-newsbench** — fetch NewsBench (github.com/nealcaren/newsbench, MIT; 15 scored Library of Congress
         pages 1850s-1919 with volunteer gold) into the lab, outside git, and score with its own 1−CER scorer: Churro 3B,
         Qwen3-VL-8B, Qwen3.5-4B and Apple Vision whole-page, and Churro and the fitting round-3 readers on DocLayout-YOLO
         regions. Its scoresheet's published rows (GLM-OCR on DocLayout regions 0.970) are the reference.
@@ -1239,6 +1239,10 @@ say so in the commit.
       whole page. Restarted from a copy of `ops/` outside git, `$OCRLAB/runner-20261007/chain.sh` (log
       `/tmp/nb-chain2.log`), which no worktree cleanup can reach; newsbench.sh skips pages already read. Run long lab
       jobs from such a copy, never from a worktree.
+      Round 1, session 8, 2026-10-08: lab3-newsbench TICKED. The chain ended 03:37 (its last page waited ~20 min on
+      mac-heavy.lock). Measured, Qwen3-VL-8B-4bit whole-page: 0.752 / bowF1 0.881, broadsheet 0.863, ordinary page 0.678,
+      5,738 s for 15 pages, peak footprint 9,432 MB, 2 pages cut at max_tokens. It and Qwen3.5-4B (0.570 / 0.915) fail on
+      opposite page types. NEXT: lab3-extras.
 - [ ] **ocr-bakeoff-bits** — run the top three at 4-bit and at 8-bit and compare.
       (blocked-on: ocr-bakeoff-score, model-night-ok) (uses: machine)
       EDGES CHANGED 2026-10-07 (EFFICIENCY-PLAN item 16; `QUEUE-ANALYSIS-2026-10-07.md`, Vision OCR section): no
