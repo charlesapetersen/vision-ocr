@@ -37,7 +37,7 @@ say so in the commit.
    `(uses: light|build|vm|model:N|machine|paid)`, a list if several, names the machine resource the work
    takes: `light` runs no suite, build or model; `build` takes the heavy lock for a suite or build;
    `model:N` a model of about N GB; `machine` the whole Mac for a long job. It is a resource, not a hold,
-   and nothing reads it yet; `side-lane` makes the second lane offer only `light` items (2026-10-07).
+   and nothing reads it yet; the Agent Manager's engine will read it for its slots (2026-10-08).
    `next-item.sh` ends an item at the next checkbox, so a sub-box is an item of its own: give every open
    sub-box its own tag, and never write a whole tag in parentheses inside prose, which would tag that item.
 
@@ -1086,16 +1086,6 @@ say so in the commit.
       spent window) and its claims coordinator; not its two general workers, since two suite-running sessions
       serialise on test.lock and one Vision process at a time is a hard memory rule here. Follow-up:
       `two-sessions-recheck`.
-- [ ] **two-sessions-recheck** — once the larger plan is in use, re-measure and decide whether the side lane pays. (uses: light)
-      (blocked-on: larger-plan-active) (not-before: 2026-10-14)
-      2026-10-07 (round 1, session 1): the plan went live at 16:06 today, so there was no week of readings to
-      measure; `next-item.sh` gained `(not-before:)` (harness `tests/prove-next-item.sh`) and holds this item
-      until 2026-10-14.
-      WHAT. Over the first week on the new plan, rerun two-sessions-design's measurement. Build the side lane it
-      designs pays only if the daemon spent under a tenth of its running time waiting on the window and at least
-      two items tagged light are queued. This item builds nothing: the build is `side-lane` (EFFICIENCY-PLAN item
-      13, 2026-10-07), which waits on this one. DONE WHEN the figures and the decision, build or not, are written
-      here. ESTIMATE: 1 session. BOUND: rule 10. (context: two-sessions-design 2026-10-07)
 - [x] **ocr-bakeoff-run** — read the bake-off sample with every candidate that fits, as one long unattended
       job. (blocked-on: ocr-lab-setup, bakeoff-tonight-ok)
       PAUSED AGAIN 2026-10-06 07:55 (owner needs the Mac): `bakeoff.sh stop` during Churro 3B; see the hold.
@@ -1501,66 +1491,6 @@ say so in the commit.
       Round 1, sessions 1-3, were on 2026-09-28 (ff25f3b, 4657cff, e34fb92), so its next session is round 1's
       fourth (rule 10). (origin: BUGS.md C52)
 
-- [ ] **attempt-on-worked-item** — count a session's attempt against the item it worked, not the queue head. (uses: light)
-      WHY. Owner, 2026-10-05, asking why a model fit test needed a max session: four sessions found
-      ocr-lab-round2 unable to proceed (the disk rule), each took another item, and 3e counted every one against
-      the head item, so it rose to max ($140 cap, 8 h) for work that was never hard. The same happens to a head
-      item whenever a session adopts a rescue (3e's comment already notes that case).
-      WHAT. In `vision-ocr-autonomous.sh` 3e and wherever `attempts.tsv` is written, record the item the session
-      actually worked (from its commits' trailer or the item it ticked or noted), and count the head item only
-      when it was that item. Keep `(attempts: N)` and `(effort: …)` as they are.
-      DONE WHEN: a prove-daemon case where a session works item B while A heads the queue leaves A's count
-      unchanged and adds to B's, and a mutant restoring head-counting turns it red. ESTIMATE: 1 session.
-      BOUND: rule 10. (context: owner request 2026-10-05)
-
-- [ ] **session-policy** — the daemon asks the Agent Manager for each session's model, effort and limits, and its
-      own attempt ladder and fixed time limit stop deciding them. (blocked-on: attempt-on-worked-item) (uses: light)
-      WHY. Agent Manager stage 7 (owner, 2026-10-08). The manager side is on that repo's master (82c75ee): `bin/grant`
-      now takes the item's evidence with the grant request and answers with the session's settings. The reasons are
-      in its design: on 2026-10-07/08 this daemon's 22:48 session was killed at its fixed 4-hour limit while doing
-      model work, and ocr-lab-round3 was counted three attempts while it made steady progress. The interface, its
-      fields and its rules are in `~/Claude/Agent Manager/README.md`, "Session policy"; read it before starting. The
-      progress count below needs the item the session worked, which attempt-on-worked-item records, hence the block.
-      - [ ] **sp-evidence** — send the evidence with the grant request, and give sessions the escalate rule.
-        (blocked-on: attempt-on-worked-item) (uses: light) Move 3e's head-item lookup ahead of step 3d' so the request
-        knows the item, and pass `--evidence FILE --policy-line` (the file in `$STATE`, rewritten each cycle). Its
-        keys: `item` (the head tag, or `gate-fix`); `marker` (the item's effort marker, none for a gate fix); `uses`
-        (the item's raw uses tag); `estimate_sessions` (the ESTIMATE text in the item's own lines); and
-        `sessions_since_progress`, the sessions counted against the item since its last progress plus its attempts
-        marker, where progress is a ticked sub-box or a committed measurement or code change on the item. Today
-        `attempts.tsv` counts only sessions that ticked nothing, so a code commit does not reset the count: write a
-        progress line there and count from the newest one. Also `escalate_requested` and `escalate_reason`, from an
-        `escalate: <reason>` line in the newest SESSION LOG entry in `$RUN` for that item and no older one; and for a
-        gate fix `is_gatefix`, `gatefix_tries` (the try number in `$GATEFIX_TRIES`) and `gatefix_max`. Reading the
-        first line of the answer (granted, wait, anything else) stays exactly as it is. The resume prompt gains one
-        short rule where the session writes its SESSION LOG entry: write `escalate: <reason>` on a line of its own
-        when it has tried an approach twice and judges the problem subtle, and not because the work is long. The
-        launch is unchanged in this box. DONE WHEN `tests/prove-daemon.sh` shows the grant stub receiving each key
-        for a fixture item: the count at two after two sessions without progress, back to zero after a ticked
-        sub-box and after a code commit, the escalate line read from the newest entry and not an older one; the
-        grant argv check is updated; `tests/prove-gate-fix.sh` shows tries one to three sent for a gate fix; and a
-        mutant of each (no reset on a commit, the escalate line read from an older entry, the lookup back after the
-        request) turns it red. ESTIMATE: 1 session.
-      - [ ] **sp-launch** — launch with the manager's answer, and keep today's rules only as the fallback.
-        (blocked-on: sp-evidence) (uses: light) Read the `policy:` line and use its `model`, `fallback_model`,
-        `effort`, `budget_usd` and `wall_limit_seconds` for the claude flags and watchdog A's backstop, honour
-        `wall_excludes=heavy-lock-wait` (watchdog A already leaves heavy-lock queue time uncharged), and give
-        `quiet_limit_seconds` to that session's health watchdog in place of `HB_STALL`. Check each value (a known
-        model, an effort level, positive whole seconds and dollars, fallback not the model). A `policy-omitted` line,
-        no policy line, a bad value, a helper failure or a timeout launches exactly as today, with the attempt ladder,
-        `MAXRUN`, `MAXRUN_MAX` and the budgets, and logs which rule set the session. The ladder and the fixed
-        limits are thereby retired as the deciding rule and survive only as that fallback. `VISIONOCR_SESSION_EFFORT`
-        and the launch line follow whichever rule decided. Amend the ladder sentences in rule 7 and rule 11's
-        sentence on the daemon raising an item, and nothing else in them, plus 3e's comment and
-        `ops/autonomous/README.md`. DONE WHEN `tests/prove-daemon.sh` shows a policy line's values reaching claude's
-        argv, a short wall limit ending a session at that limit with heavy-lock queue time not charged, and the
-        quiet limit reaching the watchdog; each fallback case launching with today's settings (the existing ladder
-        table passes under it); `tests/prove-gate-fix.sh`'s medium, medium, max holding both through an answer and
-        through the fallback; and a mutant of each (the answer ignored, the fallback dropped, a bad value accepted)
-        turns it red. ESTIMATE: 1 session.
-      DONE WHEN the two sub-boxes are ticked. ESTIMATE: 2 sessions. BOUND: rule 10.
-      (context: owner request 2026-10-08, ~/Claude/Agent Manager/PROGRESS.md stage 7)
-
 - [ ] **concurrent-suites** — let two suites run at once from two worktrees without either one wiping the other's
       settings, logs or files, so that `test.lock` limits only what truly conflicts. (uses: build)
       WHY. EFFICIENCY-PLAN item 10 (owner, 2026-10-07: "isolate parts of test suites that create heavy load so we
@@ -1634,31 +1564,6 @@ say so in the commit.
         red. ESTIMATE: 1 session.
       DONE WHEN the four sub-boxes are ticked. ESTIMATE: 4 sessions. BOUND: rule 10.
       (context: owner request 2026-10-07, ~/Claude/Agent Manager/EFFICIENCY-PLAN.md item 11)
-- [ ] **side-lane** — build two-sessions-design's second lane, offering only items tagged light.
-      (blocked-on: attempt-on-worked-item, two-sessions-recheck) (uses: light)
-      WHY. EFFICIENCY-PLAN item 13. The design is written in two-sessions-design: the daemon keeps one product lane
-      and adds one lane for light items; a lane claims its item with `mkdir $STATE/claims/<tag>` holding pid and
-      start, stale when the pid is dead; the resolver skips claimed tags; both lanes pause together on one window
-      reading, with Archive Suite's rule that an older reading never cancels a current spent window. The lane marker
-      is now the light resource tag (rule 5), not `(lane: side)`. attempt-on-worked-item comes first because two lanes
-      charging attempts to the queue head would escalate the wrong item twice as fast. two-sessions-recheck comes
-      first because it decides whether this pays: if it decides not to build, tick this item and both sub-boxes
-      with that reason. Each lane works in its own worktree; one writer per worktree.
-      - [ ] **sl-resolver** — `next-item.sh --lane side` offers only open items tagged light that no live claim
-        holds, the main lane skips claimed tags, and claims are taken and reclaimed as the design says.
-        (blocked-on: attempt-on-worked-item, two-sessions-recheck) (uses: light) DONE WHEN `tests/prove-next-item.sh` shows two
-        lanes never offered one item, a dead holder's claim reclaimed, a non-light item never offered to the side
-        lane, and a mutant of each turns it red. ESTIMATE: 1 session.
-      - [ ] **sl-daemon** — the daemon runs the side lane beside the main one. (blocked-on: sl-resolver)
-        (uses: light) A side session that stages a path the hook runs the suite for stops and hands the item back.
-        DONE WHEN `prove-daemon.sh` shows both lanes pausing on one spent window, a side session refused a
-        suite-path commit, attempts counted per lane on the item worked, and a mutant of each turns it red.
-        ESTIMATE: 1 session.
-      - [ ] **sl-measure** — the first full day with both lanes, measured. (blocked-on: sl-daemon) (uses: light)
-        DONE WHEN sessions per lane, items finished and window share for that day are written here. ESTIMATE:
-        1 session.
-      DONE WHEN the three sub-boxes are ticked, or two-sessions-recheck decided against building. ESTIMATE: 3 sessions.
-      BOUND: rule 10. (context: owner request 2026-10-07, ~/Claude/Agent Manager/EFFICIENCY-PLAN.md item 13)
 - [ ] **queue-notes** — sessions write an item's round notes to a file of its own, not into its `QUEUE.md` body.
       (uses: light)
       WHY. EFFICIENCY-PLAN item 17. Sessions append dated notes into item bodies (ocr-lab-round3 carries six this
