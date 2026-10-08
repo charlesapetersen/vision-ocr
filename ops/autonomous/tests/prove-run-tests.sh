@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# prove-run-tests.sh — run_tests.sh's locking and binary cache (Agent Manager EFFICIENCY-PLAN round
-# 2), proved against the REAL run_tests.sh in scratch trees with a fake swiftc (lib-fake-suite.sh), so it
-# compiles nothing, runs no suite and touches no real lock or cache:
+# prove-run-tests.sh — run_tests.sh's locking, binary cache and green stamp (Agent Manager EFFICIENCY-PLAN rounds
+# 1-2), proved against the REAL run_tests.sh in scratch trees with a fake swiftc (lib-fake-suite.sh), so it
+# compiles nothing, runs no suite and touches no real lock, cache or stamp:
 #   [1] the machine-wide heavy lock wraps ./build/tests and not the three compiles; test.lock (through
 #       test-lock.sh run) covers both; a suite queued for the heavy lock keeps test.lock fresh; the holder label
 #       is the caller's; the ledger row says how the run went.
@@ -9,6 +9,11 @@
 #       toolchain part miss for exactly the binaries they feed; -O stays and -wmo/-Ounchecked never appear; a
 #       failed compile, a source edited during a compile, a corrupted entry and an entry with no `ok` are
 #       never used; VISIONOCR_TEST_CACHE=off and a cache inside the tree write nothing.
+#   [3] the stamp: identical inputs that passed are skipped and say so without a pass count; any input,
+#       jbig2/qpdf and the macOS build miss; a failure deletes the stamp and writes none; an interrupted run and
+#       a run whose inputs changed under it write none; the 24-hour limit holds and cannot be raised.
+#   [4] the health gate reports a stamped skip as a skip (never ✓) in its step line and its GREEN and RED
+#       verdicts, and a RED verdict carrying the note still names only its failing steps.
 # Each section is then re-run against deliberately broken copies, each of which must turn it red; a copy
 # whose anchor is missing or not unique, or that leaves the file unchanged, is a failure, not a pass.
 # ~5 min. USAGE: ops/autonomous/tests/prove-run-tests.sh
@@ -148,6 +153,105 @@ check_cache() {
   unset VISIONOCR_TEST_CACHE VISIONOCR_SUITE_STAMP
 }
 
+# ── [3] the green stamp ───────────────────────────────────────────────────────────────────────────────
+skipped() { grep -q '^run_tests: skipped: identical inputs passed at ' "$X/out"; }
+setwhen() { local f; for f in "$VISIONOCR_STATE"/suite-stamps/*; do sed -i '' "s/^when=.*/when=$1/" "$f"; done; }
+check_stamp() {
+  local l rp w what
+  fresh stamp
+  rt; skipped && fail "the first run was skipped"
+  [ "$(ls "$VISIONOCR_STATE"/suite-stamps 2>/dev/null | wc -l | tr -d ' ')" = 1 ] || fail "a passing run did not write one stamp"
+  l=$(log_lines); rt; rp=$?
+  [ "$rp" = 0 ] || fail "a stamped skip exited $rp"
+  skipped || fail "identical inputs were not skipped: $(tail -1 "$X/out")"
+  [ "$(runs_since "$l")" = 0 ] && [ -z "$(compiles_since "$l")" ] || fail "a stamped skip compiled or ran something"
+  grep -q 'passed$' "$X/out" && fail "a stamped skip printed a pass count"
+  l=$(log_lines); VISIONOCR_SUITE_FRESH=1 rt
+  [ "$(runs_since "$l")" = 1 ] || fail "VISIONOCR_SUITE_FRESH=1 did not run the suite"
+  # Through test-lock.sh, the ledger row says stamp-skip, and a fresh run on cached binaries says cache-hit.
+  TL="$TL" tlrun probe; grep -q "	probe \[stamp-skip\]	" "$VISIONOCR_SUITE_TIMINGS" || fail "the ledger row of a skip does not say [stamp-skip]"
+  VISIONOCR_SUITE_FRESH=1 tlrun probe2; grep -q "	probe2 \[cache-hit\]	" "$VISIONOCR_SUITE_TIMINGS" || fail "the ledger row of a cached run does not say [cache-hit]"
+  cp -R "$X/tree" "$X/base"
+  # $1 what · rest: a command run in a fresh copy of the base tree; the run must be real, and its stamp then hit.
+  real() {
+    local what="$1" l; shift
+    rm -rf "$X/v"; cp -R "$X/base" "$X/v"
+    ( cd "$X/v" && eval "$@" )
+    l=$(log_lines); TREE="$X/v" rt; TREE=""
+    skipped && fail "$what: skipped on a stamp from different inputs"
+    [ "$(runs_since "$l")" = 1 ] || fail "$what: the suite did not run"
+  }
+  real "Sources/App.swift (read at run time, compiled into neither)" 'echo x >> Sources/App.swift'
+  real "Tests/main.swift" 'echo x >> Tests/main.swift'
+  real "Helper/main.swift" 'echo x >> Helper/main.swift'
+  real "Tools/make-plate-fixtures.swift" 'echo x >> Tools/make-plate-fixtures.swift'
+  real "run_tests.sh itself" 'echo "# x" >> run_tests.sh'
+  for what in FAKE_JBIG2=0.33 FAKE_QPDF=12.3.3 FAKE_BUILD=25H1 FAKE_SDK=28.0 FAKE_SWIFT_VERSION=2; do
+    l=$(log_lines); env "$what" bash -c 'cd "$1" && PATH="$2:$PATH" ./run_tests.sh' _ "$X/tree" "$FB" > "$X/out" 2>&1
+    skipped && fail "$what: skipped on a stamp from different inputs"
+  done
+  # A failure (forced past the stamp) writes no stamp and deletes the one it contradicts.
+  l=$(log_lines); VISIONOCR_SUITE_FRESH=1 FAKE_TESTS_RC=1 rt && fail "a failing suite exited 0"
+  [ "$(runs_since "$l")" = 1 ] || fail "a failing suite did not run (skipped on the stamp?)"
+  rt; skipped && fail "a stamp survived a failure on the same inputs"
+  rm -rf "$VISIONOCR_STATE/suite-stamps"
+  FAKE_TESTS_RC=1 rt; rt; skipped && fail "a failing run wrote a stamp"
+  # An interrupted run writes none.
+  rm -rf "$VISIONOCR_STATE/suite-stamps"
+  (cd "$X/tree" && PATH="$FB:$PATH" FAKE_RUN_SLEEP=20 exec ./run_tests.sh) > "$X/out" 2>&1 & rp=$!
+  waitfor 'grep -q "^run " "$FAKE_LOG" && pgrep -f "sleep 20" >/dev/null' 15
+  kill -TERM "$rp" 2>/dev/null; wait "$rp" 2>/dev/null
+  pkill -f "^sleep 20$" 2>/dev/null; waitfor '[ ! -d "$MAC_HEAVY_LOCK" ]' 10
+  [ -z "$(ls "$VISIONOCR_STATE/suite-stamps" 2>/dev/null)" ] || fail "an interrupted run wrote a stamp"
+  # Inputs that change while the suite runs: no stamp.
+  FAKE_RUN_EDIT="$X/tree/Sources/App.swift" rt
+  [ -z "$(ls "$VISIONOCR_STATE/suite-stamps" 2>/dev/null)" ] || fail "a run whose inputs changed under it wrote a stamp"
+  grep -q 'inputs changed during the run' "$X/out" || fail "inputs changing during the run were not reported"
+  # The limit: 24 hours, and it cannot be raised.
+  rt; w=$(date +%s)
+  setwhen $(( w - 86000 )); rt; skipped || fail "a stamp 23.9 hours old was not honoured"
+  setwhen $(( w - 86401 )); l=$(log_lines); rt
+  skipped && fail "a stamp over 24 hours old was honoured"
+  [ "$(runs_since "$l")" = 1 ] || fail "an expired stamp did not run the suite"
+  setwhen $(( w - 86401 )); VISIONOCR_SUITE_STAMP_TTL=999999 rt; skipped && fail "VISIONOCR_SUITE_STAMP_TTL raised the limit past 24 hours"
+  setwhen $(( w + 600 )); rt; skipped && fail "a stamp dated in the future was honoured"
+}
+
+# ── [4] the health gate's report of a stamped skip ────────────────────────────────────────────────────
+gate_tree() {   # $1 directory · $2 run_tests.sh body · $3 tools-compile exit status
+  local g="$1"
+  mkdir -p "$g/ops/autonomous/tests" "$g/Tools"
+  cp "$GATE" "$g/ops/autonomous/health-gate.sh"
+  printf '#!/bin/bash\nshift; while [ "$1" != -- ]; do shift; done; shift; exec "$@"\n' > "$g/ops/autonomous/test-lock.sh"
+  printf '#!/bin/bash\nshift; while [ "$1" != -- ]; do shift; done; shift; exec "$@"\n' > "$g/ops/autonomous/mac-heavy-lock.sh"
+  printf 'exit 0\n' > "$g/ops/autonomous/tests/prove-gate-fix.sh"
+  printf 'exit 0\n' > "$g/ops/autonomous/tests/prove-mac-heavy-lock.sh"
+  printf '#!/bin/bash\nexit %s\n' "$3" > "$g/Tools/check-tools-compile.sh"
+  printf '#!/bin/bash\n%s\n' "$2" > "$g/run_tests.sh"
+  printf '#!/bin/bash\nexit 0\n' > "$g/build.sh"
+  chmod +x "$g/ops/autonomous/"*.sh "$g/Tools/check-tools-compile.sh" "$g/run_tests.sh" "$g/build.sh"
+  git -C "$g" init -q >/dev/null 2>&1; git -C "$g" config core.hooksPath .githooks
+}
+STAMPED='echo "run_tests: skipped: identical inputs passed at 2026-10-07 09:15:00 (stamp abc, 3 min ago; VISIONOCR_SUITE_FRESH=1 runs it)"'
+check_gate() {
+  local g out
+  X="$T/x-gate-$RANDOM"; mkdir -p "$X"
+  gate_tree "$X/g1" "$STAMPED" 0
+  out="$(VISIONOCR_GATE_ROOT="$X/g1" bash "$X/g1/ops/autonomous/health-gate.sh" 2>&1)"
+  grep -q '✓ suite' <<<"$out" && fail "a stamped skip was reported as ✓ suite"
+  grep -q '⊘ suite skipped: identical inputs passed at 2026-10-07 09:15:00' <<<"$out" || fail "the suite step does not name the stamped skip: $(grep -A1 '── suite' <<<"$out" | tail -1)"
+  grep -q '^HEALTH GATE: GREEN (.*+ suite (skipped: identical inputs passed at 2026-10-07 09:15:00)' <<<"$out" \
+    || fail "the GREEN verdict does not name the stamped skip: $(grep '^HEALTH GATE' <<<"$out")"
+  grep -q 'suite (locked)' <<<"$out" && fail "the GREEN verdict claims a locked suite ran"
+  gate_tree "$X/g2" 'echo "3/3 passed"' 0
+  out="$(VISIONOCR_GATE_ROOT="$X/g2" bash "$X/g2/ops/autonomous/health-gate.sh" 2>&1)"
+  grep -q '✓ suite' <<<"$out" && grep -q '+ suite (locked)' <<<"$out" || fail "a real suite is no longer reported as ✓ / (locked)"
+  gate_tree "$X/g3" "$STAMPED" 1
+  out="$(VISIONOCR_GATE_ROOT="$X/g3" bash "$X/g3/ops/autonomous/health-gate.sh" 2>&1)"
+  grep -q '^HEALTH GATE: RED — tools-compile — suite skipped: identical inputs passed at 2026-10-07 09:15:00$' <<<"$out" \
+    || fail "the RED verdict does not carry the stamped skip after its steps: $(grep '^HEALTH GATE' <<<"$out")"
+}
+
 # ── run each section on the real files, then on broken copies ─────────────────────────────────────────
 RT="$RT_REAL"; TL="$TL_REAL"; GATE="$GATE_REAL"
 section() {   # $1 title · $2 check function
@@ -191,6 +295,27 @@ mutant check_cache RT no-inside-tree-guard 'case "$CACHE/" in "$PWD"/*)' 'case "
 mutant check_cache RT Ounchecked 'TESTS_FLAGS=(-O -target' 'TESTS_FLAGS=(-Ounchecked -target'
 # Not mutated, and why: the architecture line of the toolchain is also inside every binary's -target flag,
 # so dropping it is an equivalent mutant (FAKE_ARCH still misses through the flags).
+
+section "[3] the green stamp" check_stamp
+mutant check_stamp RT stamp-on-failure '  if [ "$rc" = 0 ]; then' '  if true; then'
+mutant check_stamp RT no-delete-on-failure '    rm -f "$STAMPS/$SKEY" 2>/dev/null || true' '    :'
+mutant check_stamp RT no-ttl '[ "$s_age" -lt "$STAMP_TTL" ]' 'true'
+mutant check_stamp RT ttl-raisable '[ "$STAMP_TTL" -le 86400 ] || STAMP_TTL=86400' ':'
+mutant check_stamp RT no-future-guard '[ "$s_age" -ge 0 ] && ' ''
+mutant check_stamp RT stamp-without-tools "printf '%s\\n%s\\n' \"\$TOOLS_SEEN\" \"\$TOOLCHAIN\"" "printf '%s\\n' \"\$TOOLCHAIN\""
+mutant check_stamp RT stamp-without-sources 'shasum -a 256 Sources/*.swift run_tests.sh;' 'shasum -a 256 run_tests.sh;'
+mutant check_stamp RT stamp-without-script 'shasum -a 256 Sources/*.swift run_tests.sh;' 'shasum -a 256 Sources/*.swift;'
+mutant check_stamp RT no-recheck-after-run 'if [ "$(TOOLS_SEEN="$(_tools)"; stamp_key)" = "$SKEY" ] \' 'if true \'
+mutant check_stamp RT no-fresh-override '[ "${VISIONOCR_SUITE_FRESH:-0}" != 1 ] && ' ''
+mutant check_stamp RT skip-claims-a-pass 'echo "run_tests: no check ran' 'echo "3/3 passed"; echo "run_tests: no check ran'
+# Not mutated: the toolchain in the stamp key is also inside the three binary keys it carries (equivalent).
+
+section "[4] the health gate names a stamped skip" check_gate
+mutant check_gate GATE ticks-a-stamped-skip 'if [ -n "$SUITE_STAMP" ]; then
+      echo "  ⊘' 'if false; then
+      echo "  ⊘'
+mutant check_gate GATE green-claims-locked 'if [ -n "$SUITE_STAMP" ]; then ran=' 'if false; then ran='
+mutant check_gate GATE red-without-note '$fails${SUITE_STAMP:+ — suite skipped: identical inputs passed at $SUITE_STAMP}"' '$fails"'
 
 echo ""
 echo "=================== $PASS passed, $FAIL failed ==================="

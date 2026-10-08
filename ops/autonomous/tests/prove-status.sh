@@ -457,5 +457,21 @@ printf '%s' "$(run_digest)" | grep -qi "no triage assignment" \
   || bad "NEGATIVE CONTROL FAILED: suppressing during a session also suppressed it afterwards"
 
 session_off; dirty_off
+
+echo "[gate] a suite skipped on a green stamp is not reported as a suite that passed"
+git -C "$VISIONOCR_REPO" rev-parse HEAD > "$VISIONOCR_STATE/last-gate"
+echo 'HEALTH GATE: GREEN (hooks + tools-compile (every tool) + suite (locked) + ./build.sh)' > "$VISIONOCR_STATE/last-gate.log"
+h="$(run_digest | grep -m1 'Health')"
+grep -q 'Build, suite and tool type-check passed, on the current code' <<<"$h" && ok "a real suite: \"Build, suite and tool type-check passed\"" || bad "real suite: $h"
+echo 'HEALTH GATE: GREEN (hooks + tools-compile (every tool) + suite (skipped: identical inputs passed at 2026-10-07 09:15:00) + ./build.sh)' > "$VISIONOCR_STATE/last-gate.log"
+h="$(run_digest | grep -m1 'Health')"
+grep -q 'suite skipped: identical inputs passed at 2026-10-07 09:15:00' <<<"$h" && ! grep -q 'Build, suite and' <<<"$h" \
+  && ok "a stamped skip: the Health line names it and does not claim the suite passed" || bad "stamped skip: $h"
+echo 'HEALTH GATE: RED — staleness — suite skipped: identical inputs passed at 2026-10-07 09:15:00' > "$VISIONOCR_STATE/last-gate.log"
+h="$(run_digest | grep -m1 'Health')"
+grep -q 'FAILED.*staleness — that step is broken now' <<<"$h" && ! grep -q 'identical inputs' <<<"$h" \
+  && ok "a RED carrying the stamp note names only its failing step" || bad "RED with note: $h"
+rm -f "$VISIONOCR_STATE/last-gate" "$VISIONOCR_STATE/last-gate.log"
+
 printf '\n  %s passed, %s failed\n' "$PASS" "$FAIL"
 [ "$FAIL" = 0 ]

@@ -254,6 +254,10 @@ chmod +x "$T/status-stub.sh"
 printf '#!/bin/sh\necho "gate ok"\nexit 0\n' > "$T/gate-green.sh"
 { printf '#!/bin/sh\necho "BUILD FAILED: boom in the OCR path"\n'
   printf 'echo "HEALTH GATE: RED %s reader"\nexit 1\n' "$EM"; } > "$T/gate-red.sh"
+# A document-only RED whose suite was skipped on a green stamp: the note after the step names is not a step.
+{ printf '#!/bin/sh\necho "  ⊘ suite skipped: identical inputs passed at 2026-10-07 09:15:00"\n'
+  printf 'echo "HEALTH GATE: RED %s staleness %s suite skipped: identical inputs passed at 2026-10-07 09:15:00"\nexit 1\n' "$EM" "$EM"; } > "$T/gate-red-stamped.sh"
+chmod +x "$T/gate-red-stamped.sh"
 printf '#!/bin/sh\nexec sleep 987654\n' > "$T/gate-hang.sh"    # unique argv, so the kill is checkable
 cat > "$T/gate-flaky.sh" <<FLAKY
 #!/bin/sh
@@ -484,6 +488,13 @@ L=$(GATE_EVERY=1 GATE_CMD="$T/gate-red.sh" run_daemon 0 14)
 grep -q "health gate RED $EM retrying ONCE" "$L" && ok "RED retries once before parking" || bad "no retry before park"
 grep -q "PARKED (health gate RED (x2) $EM reader" "$L" && ok "parks on a reproducible RED, naming the step" || bad "did not park (or the reason is anonymous)"
 [ "$(nsessions "$L")" = 0 ] && ok "no session launched behind a red gate" || bad "launched a session despite RED"
+
+echo "1:no" > "$CTRL"; reset_repo; dfset 999999; rm -f "$PARKNOTE"
+L=$(GATE_EVERY=1 GATE_CMD="$T/gate-red-stamped.sh" run_daemon 0 14)
+grep -q "PARKED (health gate RED (x2) $EM staleness)" "$L" && ok "a RED carrying a stamped-skip note parks naming only its failing step" \
+  || bad "the stamped-skip note was read as step names: $(grep -o 'PARKED (health gate[^)]*)' "$L" | head -1)"
+grep -q 'NOTHING IS WRONG WITH THE CODE' "$PARKNOTE" 2>/dev/null && ok "…and is classified as a document failure, not a code regression" \
+  || bad "a document-only RED with a stamped-skip note was classified as code: $(grep -m1 'FAILED STEP' "$PARKNOTE" 2>/dev/null)"
 
 echo "0:no" > "$CTRL"; reset_repo; dfset 999999
 L=$(GATE_EVERY=1 GATE_CMD="$T/gate-flaky.sh" run_daemon 0 12)

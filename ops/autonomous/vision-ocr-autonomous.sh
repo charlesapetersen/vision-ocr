@@ -663,6 +663,9 @@ _classify_red() {
   # Strip the prefix plus any separator bytes (the em dash is multi-byte, so a byte-based cut could split
   # it), collapse runs of spaces, and trim.
   steps="$(printf '%s' "$vline" | sed 's/^HEALTH GATE: RED[^A-Za-z0-9]*//' | tr -s ' ' | sed 's/^ *//; s/ *$//')"
+  # The step names end at the next ' — '. What follows is a note, e.g. "suite skipped: identical inputs passed
+  # at <time>" when the suite was skipped on a green stamp; its words are not steps.
+  steps="${steps%% — *}"
   has_code=0; doc_list=""
   # Split on spaces EXPLICITLY. Do NOT rely on the ambient IFS: this can run under an inherited environment
   # (launchd, a sourced profile) where IFS is not the default, and with IFS=$'\n' the loop sees one word
@@ -679,6 +682,13 @@ _classify_red() {
       *)                        has_code=1 ;;
     esac
   done
+  return 0
+}
+
+# " The suite was skipped: identical inputs passed at <time>." when the gate in $glog skipped it on a stamp.
+_gate_stamp_note() {
+  local at; at="$(sed -n 's/^HEALTH GATE: GREEN.*suite (skipped: identical inputs passed at \([^)]*\)).*/\1/p' "$glog" 2>/dev/null | tail -1)"
+  [ -n "$at" ] && printf ' The suite was skipped: identical inputs passed at %s.' "$at"
   return 0
 }
 
@@ -812,7 +822,7 @@ $(printf '%s' "$(cat "$glog" 2>/dev/null)" | tail -20)"
 
   if [ "$GATE_RC" -eq 0 ]; then
     git -C "$REPO" rev-parse HEAD > "$GATE_STATE" 2>/dev/null || true
-    log "health gate GREEN @ $(git -C "$REPO" rev-parse --short HEAD 2>/dev/null)."
+    log "health gate GREEN @ $(git -C "$REPO" rev-parse --short HEAD 2>/dev/null).$(_gate_stamp_note)"
     _gatefix_clear
     return 10
   fi
@@ -825,7 +835,7 @@ $(printf '%s' "$(cat "$glog" 2>/dev/null)" | tail -20)"
   _run_gate_once
   if [ "$GATE_RC" -eq 0 ]; then
     git -C "$REPO" rev-parse HEAD > "$GATE_STATE" 2>/dev/null || true
-    log "health gate GREEN on retry — the first failure was transient (not parking)."
+    log "health gate GREEN on retry — the first failure was transient (not parking).$(_gate_stamp_note)"
     _gatefix_clear
     return 10
   fi

@@ -236,6 +236,30 @@ _run_suite() {
   "$tl" run --label health-gate -- ./run_tests.sh
 }
 
+# The suite step. Like step(), except that a run_tests.sh which skipped on a green stamp (identical inputs
+# passed within 24 hours; see run_tests.sh) is reported as that skip, never as a ✓, and named in the verdict
+# line. A stamp lasts 24 hours from the real run that wrote it, so a real suite has run on these exact inputs
+# within the last 24 hours whenever this gate skips one (owner, 2026-10-07: "Yes, with a 24-hour limit").
+SUITE_STAMP=""
+step_suite() {
+  local name="$1"; shift
+  printf '── %s ──\n' "$name"
+  local out; out="$(mktemp)"
+  if "$@" >"$out" 2>&1; then
+    SUITE_STAMP="$(sed -n 's/^run_tests: skipped: identical inputs passed at \([^(]*[^ (]\) *(.*/\1/p' "$out" | tail -1)"
+    if [ -n "$SUITE_STAMP" ]; then
+      echo "  ⊘ $name skipped: identical inputs passed at $SUITE_STAMP — no check ran in this gate"
+    else
+      echo "  ✓ $name"
+    fi
+  else
+    local rc=$?
+    echo "  ✗ $name (rc=$rc)"; fails="$fails $name"
+    { printf '\n===== %s (rc=%s) =====\n' "$name" "$rc"; tail -40 "$out"; } >>"$LOG"
+  fi
+  rm -f "$out"
+}
+
 # ═════════════════════════════════════════════════════════════════════════════════════════════════════
 # THE STEPS. Ordered CHEAP-AND-HERMETIC FIRST, expensive last, so a RED surfaces in the gate's first
 # seconds rather than after ~10 minutes of build and OCR. (Same reasoning as the sibling's tier-2 block
@@ -308,7 +332,7 @@ if [ "$QUICK" = 1 ]; then
   echo "  ⊘ build SKIPPED — VISIONOCR_GATE_QUICK=1 (./build.sh did NOT run)"
   skips="$skips suite build"
 else
-  step suite _run_suite
+  step_suite suite _run_suite
   # ./build.sh — see (a) above. Note WHY the PATH line at the top of this file is load-bearing here:
   # build.sh runs `python3 Tools/bundle-libs.py "$APP" jbig2 qpdf` and REFUSES the build only when that
   # exits >= 2 ("the audit rejected what I copied"); exit 1 means "not installed" and is treated as
@@ -375,7 +399,9 @@ fi
 # ═════════════════════════════════════════════════════════════════════════════════════════════════════
 echo
 if [ -n "$fails" ]; then
-  echo "HEALTH GATE: RED —$fails"
+  # A stamped suite skip rides after the step names as its own ' — ' field; _classify_red and status-digest.sh
+  # read the step names up to the first ' — ' after the prefix.
+  echo "HEALTH GATE: RED —$fails${SUITE_STAMP:+ — suite skipped: identical inputs passed at $SUITE_STAMP}"
   # Every FAILING step's own tail, each under its own banner — not the tail of a shared transcript,
   # which is the tail of whatever ran last. This text is what the daemon quotes into the park note.
   echo "--- failing output (tail, per failing step) ---"; cat "$LOG"
@@ -390,7 +416,8 @@ fi
 _lane_ran() { case " $skips $warns " in *" $1 "*) return 1 ;; esac; return 0; }
 ran="hooks + tools-compile (every tool)"
 if [ "$QUICK" != 1 ]; then
-  _lane_ran suite && ran="$ran + suite (locked)"
+  if [ -n "$SUITE_STAMP" ]; then ran="$ran + suite (skipped: identical inputs passed at $SUITE_STAMP)"
+  else _lane_ran suite && ran="$ran + suite (locked)"; fi
   _lane_ran build && ran="$ran + ./build.sh"
 fi
 _lane_ran queue-coherence-selftest && _lane_ran staleness && _lane_ran queue-coherence && ran="$ran + document coherence"

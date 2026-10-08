@@ -125,6 +125,16 @@ compiles run under test.lock alone), the gate's build, the hook's UI build and e
 session's time queued there (up to `VISIONOCR_HEAVY_PAUSE_MAX`, 4 h). `tests/prove-mac-heavy-lock.sh` and
 `prove-gate-fix.sh` [8] prove it, and both run in the gate.
 
+**Two things can make `./run_tests.sh` skip work** (2026-10-07, EFFICIENCY-PLAN rounds 1-2; `run_tests.sh`'s
+header is the specification, `tests/prove-run-tests.sh` the proof). Its three binaries are cached in
+`$STATE/test-binary-cache/`, keyed by everything compiled into each plus the flags, toolchain, SDK, architecture
+and macOS build, so an unchanged tree in any worktree compiles nothing. And a run whose exact inputs (those keys,
+every `Sources/*.swift`, the script, jbig2 and qpdf, the macOS build) passed within 24 hours prints
+`run_tests: skipped: identical inputs passed at <time>` and exits 0 without running a check (owner: "Yes, with a
+24-hour limit"). The gate reports that as a skip in its step line and verdict, never as a ✓; the ledger row's
+label ends `[stamp-skip]`, `[cache-hit]` or `[compiled]`. `VISIONOCR_SUITE_FRESH=1` forces a run;
+`VISIONOCR_TEST_CACHE=off` forces the compiles.
+
 Since 2026-10-07 the helper is a thin delegate: when the Agent Manager's shared `bin/heavy-lock` is installed at
 `~/Claude/Agent Manager/bin/heavy-lock` (override: `VISIONOCR_HEAVY_DELEGATE`; empty forces the fallback) it
 `exec`s that with the same arguments, which takes a kernel flock and the mkdir lock above together. Without it,

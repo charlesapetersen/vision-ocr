@@ -325,16 +325,21 @@ fi
 gate_red=""
 if ! pgrep -f 'ops/autonomous/health-gate\.sh' >/dev/null 2>&1; then
   gate_red="$(grep '^HEALTH GATE: RED' "$STATE/last-gate.log" 2>/dev/null | tail -n 1 \
-              | sed 's/^HEALTH GATE: RED[^A-Za-z0-9]*//' | tr -s ' ' | sed 's/^ *//; s/ *$//')"
+              | sed 's/^HEALTH GATE: RED[^A-Za-z0-9]*//' | tr -s ' ' | sed 's/^ *//; s/ *$//; s/ — .*//')"
 fi
 gate_last="$(cat "$STATE/last-gate" 2>/dev/null)"
+# A green gate whose suite was skipped on a stamp (identical inputs passed within 24 hours) says so.
+gate_stamp="$(grep '^HEALTH GATE: GREEN' "$STATE/last-gate.log" 2>/dev/null | tail -n 1 \
+              | sed -n 's/.*suite (skipped: identical inputs passed at \([^)]*\)).*/\1/p')"
+if [ -n "$gate_stamp" ]; then gate_what="Build and tool type-check passed (suite skipped: identical inputs passed at $gate_stamp)"
+else gate_what="Build, suite and tool type-check passed"; fi
 if [ -n "$gate_red" ]; then
   HEALTH="${RED}The last full check FAILED${OFF}: $(clip "$gate_red" 48) — that step is broken now"
 elif [ -n "$gate_last" ] && [ "$HAVE_GIT" = 1 ] && g cat-file -e "${gate_last}^{commit}"; then
   gate_behind="$(num "$(g rev-list --count "$gate_last..HEAD")")"
   case "$gate_behind" in
-    0) HEALTH="Build, suite and tool type-check passed, on the current code" ;;
-    *) HEALTH="Build, suite and tool type-check passed, $(plural "$gate_behind" commit) ago" ;;
+    0) HEALTH="$gate_what, on the current code" ;;
+    *) HEALTH="$gate_what, $(plural "$gate_behind" commit) ago" ;;
   esac
 elif [ -n "$gate_last" ]; then
   HEALTH="Last passed at ${gate_last:0:7} — a commit this checkout does not have, so how stale is unknown"

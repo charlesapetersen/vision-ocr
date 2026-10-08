@@ -96,7 +96,9 @@ STEP 3 — DO IT.
     `Tests/main.swift`.
   * Only one test suite may run at a time on this machine, in any worktree. Run yours as
         ops/autonomous/test-lock.sh run --label session -- ./run_tests.sh
-    and tell every subagent not to run the suite, `./build.sh` or `Tools/mutate.py`.
+    and tell every subagent not to run the suite, `./build.sh` or `Tools/mutate.py`. A run whose exact
+    inputs passed in the last 24 hours prints "skipped: identical inputs passed at <time>" and runs no
+    check; that is a pass of this tree, not a fresh run. `VISIONOCR_SUITE_FRESH=1` forces one.
   * Anything that may exceed a few minutes (the suite takes about 5; a commit that touches code runs it)
     goes in the background with output to a file and an explicit
     `PATH="/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:$PATH"`, then you poll for the

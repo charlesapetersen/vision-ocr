@@ -57,7 +57,7 @@ PLATES_FLAGS=(-target "$TARGET")
 HELPER_SOURCES=(Sources/Prefs.swift Sources/Runner.swift Sources/Recogniser.swift
   Sources/SearchableWriter.swift Sources/Flattener.swift Sources/JBIG2.swift Helper/main.swift)
 
-# ── The compiled-binary cache (Agent Manager EFFICIENCY-PLAN round 2) ─────────────────────────────────
+# ── The compiled-binary cache and the green stamp (Agent Manager EFFICIENCY-PLAN rounds 1-2) ──────────
 # CACHE. Each of the three binaries is keyed by the sha-256 of everything that goes into compiling it: the
 # file names and contents it compiles, its swiftc flags, `swiftc --version`, the SDK version and path, the
 # architecture and the macOS build. A key that matches a finished entry is copied into build/ instead of
@@ -66,17 +66,32 @@ HELPER_SOURCES=(Sources/Prefs.swift Sources/Runner.swift Sources/Recogniser.swif
 # and renamed, and its `ok` file (written last) records the binary's own sha-256, checked on every use. The
 # key is computed again after the compile and the entry is not written if a source changed meanwhile.
 # VISIONOCR_TEST_CACHE=off compiles every time and writes nothing.
+#
+# STAMP (owner, 2026-10-07: "Yes, with a 24-hour limit"). A run whose exact inputs — the three keys above,
+# every Sources/*.swift (the suite reads some of them at run time), this script, the jbig2 and qpdf found on
+# the paths Runner searches, and the macOS build — passed within the last 24 hours is not run again. It
+# prints "run_tests: skipped: identical inputs passed at <time>" and exits 0; it never prints a pass count,
+# so it cannot be read as a fresh run. Only a run that exits 0 with its inputs unchanged writes a stamp; a
+# failure on those inputs deletes it, and an interrupted run never reaches the write. A skip does not renew
+# the stamp, so a real suite runs at least once per 24 hours of unchanged inputs; the limit cannot be raised
+# above 24 hours. VISIONOCR_SUITE_FRESH=1 runs the suite regardless.
 STATE_DIR="${VISIONOCR_STATE:-$HOME/.local/state/visionocr-autonomous}"
 CACHE="${VISIONOCR_TEST_CACHE:-$STATE_DIR/test-binary-cache}"
+STAMPS="${VISIONOCR_SUITE_STAMPS:-$STATE_DIR/suite-stamps}"
+STAMP_TTL="${VISIONOCR_SUITE_STAMP_TTL:-86400}"
+case "$STAMP_TTL" in ''|*[!0-9]*) STAMP_TTL=86400 ;; esac
+[ "$STAMP_TTL" -le 86400 ] || STAMP_TTL=86400
 CACHE_ON=1; [ "$CACHE" = off ] && CACHE_ON=0
-# A cache directory inside this tree could be staged; refuse it rather than write there.
+STAMP_ON=1; [ "${VISIONOCR_SUITE_STAMP:-}" = off ] && STAMP_ON=0
+# A cache or stamp directory inside this tree could be staged; refuse it rather than write there.
 case "$CACHE/" in "$PWD"/*) echo "run_tests: the binary cache $CACHE is inside the tree — not using it." >&2; CACHE_ON=0 ;; esac
+case "$STAMPS/" in "$PWD"/*) echo "run_tests: the stamp directory $STAMPS is inside the tree — not using it." >&2; STAMP_ON=0 ;; esac
 
-# _note WORD — tell test-lock.sh how this run went (compiled / cache-hit), for its timing ledger.
+# _note WORD — tell test-lock.sh how this run went (compiled / cache-hit / stamp-skip), for its timing ledger.
 _note() { [ -n "${VISIONOCR_SUITE_NOTE:-}" ] && printf '%s\n' "$1" > "$VISIONOCR_SUITE_NOTE" 2>/dev/null; return 0; }
 _sha() { shasum -a 256 | cut -c1-64; }
 
-# The toolchain, once. If any part cannot be read, the cache is off: a key missing a part
+# The toolchain, once. If any part cannot be read, the cache and the stamp are off: a key missing a part
 # could match across a change to that part.
 TOOLCHAIN=""
 _toolchain() {
@@ -87,10 +102,10 @@ _toolchain() {
   v="$(uname -m)" && [ -n "$v" ] || return 1;          printf 'arch: %s\n' "$v"
   v="$(sw_vers -buildVersion 2>/dev/null)" && [ -n "$v" ] || return 1;   printf 'macos build: %s\n' "$v"
 }
-if [ "$CACHE_ON" = 1 ]; then
+if [ "$CACHE_ON$STAMP_ON" != 00 ]; then
   if ! TOOLCHAIN="$(_toolchain)"; then
-    echo "run_tests: could not read the toolchain versions — compiling everything." >&2
-    CACHE_ON=0
+    echo "run_tests: could not read the toolchain versions — compiling everything, no stamp." >&2
+    CACHE_ON=0; STAMP_ON=0
   fi
 fi
 
@@ -102,6 +117,43 @@ _key() {
 key_tests()  { _key tests  "${TESTS_FLAGS[*]}"  "${SOURCES[@]}" Tests/main.swift; }
 key_helper() { _key helper "${HELPER_FLAGS[*]}" "${HELPER_SOURCES[@]}" Helper/*; }
 key_plates() { _key plates "${PLATES_FLAGS[*]}" Tools/make-plate-fixtures.swift; }
+
+# _tools — jbig2 and qpdf as the suite will find them: every copy on Runner.locateTool's fixed paths and PATH.
+_tools() {
+  local t p seen
+  for t in jbig2 qpdf; do
+    seen=""
+    for p in "$(command -v "$t" 2>/dev/null || true)" "/opt/homebrew/bin/$t" "/usr/local/bin/$t" "/opt/local/bin/$t"; do
+      [ -n "$p" ] && [ -x "$p" ] || continue
+      case " $seen " in *" $p "*) continue ;; esac; seen="$seen $p"
+      printf '%s %s: %s\n' "$t" "$p" "$("$p" --version 2>&1 | head -3 | tr '\n' ' ')"
+    done
+    [ -n "$seen" ] || printf '%s: missing\n' "$t"
+  done
+}
+TOOLS_SEEN=""
+stamp_key() {
+  { printf 'stamp format 1\n%s %s %s\n' "$(key_tests)" "$(key_helper)" "$(key_plates)"
+    shasum -a 256 Sources/*.swift run_tests.sh; printf '%s\n%s\n' "$TOOLS_SEEN" "$TOOLCHAIN"; } | _sha
+}
+
+SKEY=""
+if [ "$STAMP_ON" = 1 ]; then
+  TOOLS_SEEN="$(_tools)"
+  SKEY="$(stamp_key)"
+  if [ "${VISIONOCR_SUITE_FRESH:-0}" != 1 ] && [ -f "$STAMPS/$SKEY" ]; then
+    s_when="$(sed -n 's/^when=//p' "$STAMPS/$SKEY" | head -1)"
+    s_at="$(sed -n 's/^at=//p' "$STAMPS/$SKEY" | head -1)"
+    case "$s_when" in ''|*[!0-9]*) s_when=0 ;; esac
+    s_age=$(( $(date +%s) - s_when ))
+    if [ "$s_age" -ge 0 ] && [ "$s_age" -lt "$STAMP_TTL" ]; then
+      _note stamp-skip
+      echo "run_tests: no check ran — this tree's code, tools and macOS are byte-identical to a run that passed."
+      echo "run_tests: skipped: identical inputs passed at ${s_at:-?} (stamp ${SKEY:0:12}, $(( s_age / 60 )) min ago; VISIONOCR_SUITE_FRESH=1 runs it)"
+      exit 0
+    fi
+  fi
+fi
 
 # _build NAME KEYFN DEST CMD... — copy DEST from the cache, or run CMD and cache what it made.
 BUILT=""
@@ -194,5 +246,21 @@ if [ -x "$HEAVY" ]; then
 else
   echo "run_tests: $HEAVY is missing — running WITHOUT the machine-wide heavy lock." >&2
   "${RUN[@]}" || rc=$?
+fi
+
+if [ "$STAMP_ON" = 1 ]; then
+  if [ "$rc" = 0 ]; then
+    if [ "$(TOOLS_SEEN="$(_tools)"; stamp_key)" = "$SKEY" ] \
+       && mkdir -p "$STAMPS" 2>/dev/null \
+       && printf 'when=%s\nat=%s\nworktree=%s\n' "$(date +%s)" "$(date '+%F %T')" "$PWD" > "$STAMPS/.$SKEY.$$" 2>/dev/null \
+       && mv -f "$STAMPS/.$SKEY.$$" "$STAMPS/$SKEY"; then
+      find "$STAMPS" -type f -mtime +2 -delete 2>/dev/null || true
+    else
+      rm -f "$STAMPS/.$SKEY.$$" 2>/dev/null
+      echo "run_tests: passed, but its inputs changed during the run (or the stamp could not be written) — no stamp." >&2
+    fi
+  else
+    rm -f "$STAMPS/$SKEY" 2>/dev/null || true
+  fi
 fi
 exit "$rc"
