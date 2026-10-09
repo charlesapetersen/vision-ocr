@@ -3107,8 +3107,9 @@ enum Recogniser {
     }
 
     /// Where a line read across `g` is cut: the middle of a run of blank paper under its
-    /// row `b`, within a line height of the gutter, at least as wide as the gutter and a
-    /// third of a line, and covering half of it or more; of several, the one covering
+    /// row `b`, within a line height of the gutter, at least as wide as the gutter (half
+    /// as wide when it holds a rule) and a third of a line, and covering half of it or
+    /// more; of several, the one covering
     /// most. Nil when there is none: the row has ink across the gutter, as a heading
     /// does, whose word spaces are narrower than the gutter between its columns. The
     /// left half ends at `left` and the right begins at `right`, which are the same
@@ -3185,10 +3186,16 @@ enum Recogniser {
             // The run `start..<column`, in widths of the page.
             let from = Double(x0 + start) / Double(w), to = Double(x0 + column) / Double(w)
             let covering = min(to, g.to) - max(from, g.from)
-            if to - from >= max(lineX / 3, gutter), covering >= gutter / 2,
-               covering > (best?.covering ?? 0) {
-                if let first = (start..<column).first(where: { rule[$0] }),
-                   let last = (start..<column).last(where: { rule[$0] }) {
+            let first = (start..<column).first(where: { rule[$0] })
+            let last = (start..<column).last(where: { rule[$0] })
+            // A run holding a rule is asked for half the gutter's width: the gutter found
+            // from the boxes is wider than its paper where the columns' boxes stop short of
+            // their ink, and the comic page's ruled bridge rows had 8 + 2 + 7 px against a
+            // 23 px gutter (C41). Two runs cannot both cover half the gutter and differ, so
+            // this never takes a ruled run over a wider one.
+            if to - from >= max(lineX / 3, first == nil ? gutter : gutter / 2),
+               covering >= gutter / 2, covering > (best?.covering ?? 0) {
+                if let first, let last {
                     let margin = (line / 8).rounded(.up) + 1
                     best = (max(from, (Double(x0 + first) - margin) / Double(w)),
                             min(to, (Double(x0 + last + 1) + margin) / Double(w)), covering)

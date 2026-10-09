@@ -17,7 +17,8 @@ an older entry mentions "Window ▸ Vision Reader Window", the menu item is now
 - The run report has a `Model reader` row. It reads `off`: the setting that takes words from a stronger OCR
   model is being built, is not yet in the panel, and changes nothing unless it is set.
 - On newspaper scans with a rule printed down the gap between columns, a line the recogniser read on into the
-  next column is now split into its two columns, so it selects and searches as printed (C41).
+  next column is now split into its two columns, so it selects and searches as printed (C41). This now also
+  holds where the gap is narrower than the columns' text suggests, and the halves often read better.
 - On scanned pages that hold only text, dark marks the recogniser did not read as words (a rule, a stamp,
   ink handwriting, a missed word) stay sharp instead of being blurred into the background, except in the
   page's outer margins (C28).

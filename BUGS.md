@@ -18900,6 +18900,64 @@ above for the rest.
 aligned onto Vision's lines, on Helena 1931 / Helena 1941 (`ux-harness --truth`): drag wrong 2355 -> 1692 /
 1190 -> 826, layerMiss 0.290 -> 0.155 / 0.195 -> 0.126. Off by default, a lab reader; `QUEUE.md` hp-regions.)*
 
+#### 2026-10-08, round 1 session 4: Vision gains nothing from layout regions; ruled gutters narrower than their boxes now split
+
+Regions first, as the queue asked [measured: scratch tools, page 1 rendered at 300 dpi, DocLayout-YOLO regions
+deduped as `reader-regions.sh` does, Vision on each crop padded 12 px, app settings; `/usr/share/dict/words`]:
+
+| page | published | Vision on YOLO regions |
+|---|---|---|
+| October 1960 | 84.7% (4,054 words) | 85.7% (4,193) |
+| Billings 1926 | 79.0% (4,367) | 78.5% (4,470) |
+| Kalispell 1939 | 76.9% (2,582) | 75.8% (2,611) |
+| Helena 1941 | 77.9% (3,011) | 78.5% (3,069) |
+| Comic 1950 | 83.3% (2,117) | 83.6% (1,606: regions miss a quarter of its text) |
+
+Within a point either way. NewsBench's 0.304 -> 0.741 compared regions with ONE whole-page Vision request, which
+the app never makes (it reads in bands, session 1). So a layout cut is not a gain for Vision on these pages;
+it is one for a model reader (hp-regions above), which is the accurate mode's route. Rejected: a Vision region
+reader.
+
+Fixed: `blankGutter` asks a run holding a printed rule for half the gutter's width, not all of it. The gutter
+found from the boxes is wider than its paper where boxes stop short of the ink: the comic's bridge rows have
+8 + 2 + 7 px of paper and rule against a 23 px gutter, Helena 1928 16 against 22 (session 3). Two disjoint runs
+cannot both cover half the gutter, so no row cut before is cut differently [reasoned; measured below]. The
+recogniser's own observations, old vs new helper on the production bitmaps [measured]: Helena 1941 splits three
+rows (`letter, ne praised a recent substructure at Fort Peck was`, `raried Fand ear the the New Line Leased`,
+`Many ornamental and shade Mo`) and reads text read nowhere before (`armored fighting teams`, `spearhead;
+Immediately the third`); Helena 1928 splits two (`ole a good start has been ler lown of Heigate…` -> `…has been`
++ `her town of Hellgate and the ancient`); Billings one string `for ta` -> `for t`; October 1960, Kalispell,
+Comic, Helena 1931 identical. `ux-regression.sh`: only Helena 1941 moves, truth copyErr 3.62 -> 3.20, recall
+0.07 -> 0.14, welds 9 -> 7; worse, accepted: inside 0.08 -> 0.02, prec 0.72 -> 0.67, wer 2.74 -> 3.35, splits
+7 -> 9, truth hyph 6 -> 7, all drag-text measures (C39 `WONTFIX`, out of scope here). Baseline refreshed.
+`page.string` joins some split halves onto one line again (`former grade school teacher of now, and the…`):
+PDFKit grouping runs on a row, not the recogniser; those halves are separate in its output.
+
+The comic is still not reached in production. Its bridge rows sit in a slab (y 0.542-0.991, 623 boxes) whose
+crossing allowance is 62, and the gutter `columnGutters` takes there is 0.168-0.172, inside the bridge column;
+the candidates tie on a few marginal lines, and which wins changes with Vision's reading (a scratch run with
+empty settings found 0.211-0.391, then the real 0.123-0.130 under it). Tried and rejected: letting a section
+cut off by a line across the outer gutter take the nearest same-side section's gutter, as slabs do (C52). It
+found the comic's gutter on that reading, did nothing on the production reading, and reordered Helena 1941's
+text (an ad's `SHERWIN- WILLIAMS PAINTS` into a story). Reworking the candidate ranking risks C34/C52's pages
+for two rows of bridge small print; not done. Review note, speculative: a lone `I` that passes the rule test
+now needs 11.5 px of paper, not 23, before its ink is cut from both halves.
+
+DONE WHEN verifier [measured by subagent]: misreads in Helena 1941's `Faculty Changes` paragraph FAIL, about
+12-14 in 95 words before and after (`Fledler`, `protessor`, `Celifornia`), and `Leslie Aaron Fledler of Wis-
+To Aid Defense` is still one run; fused rows FAIL, improved on Helena 1941 only; dictionary share flat (77.91
+-> 77.93% on 1941, the rest equal); ordinary pages PASS; invariant 3 not re-measured (`SearchableWriter`
+untouched; the change only alters which lines reach it, as session 3's did); new check PASS. Its rough count
+of runs over 1.45 column widths (it matched only 55% of runs to text) read 80 / 30 / 40 / 22 / 8 on October
+1960 / Billings / Kalispell / Helena 1941 / Comic, with plainly fused rows among them (Kalispell `Mr. and'Mrs,
+Mitchell Ratty of the Friday evening, January 6, ut the`). Session 2's count of about five fused rows asked
+for a blank strip in a gutter `columnGutters` found, so it may be an undercount; round 2 should count fused
+runs against the source's columns before judging the case for closing below.
+
+The case for closing (session 2): the published text is at Vision's own ceiling on these pages, and the
+misreads left are the model reader's to fix (accurate mode). It now hangs on that recount. At medium effort
+this session cannot close it (rule 8).
+
 ### C42 · A page whose crop box is not centred on its media box gets its text layer shifted off the ink, 81 pt on a two-page book spread — FIXED
 
 *(found 2026-09-27 by `ux-read`, from `UX-RUN-2026-09-27-pages.tsv`: Boltanski p51/p102/p153 red on

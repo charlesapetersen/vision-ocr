@@ -10808,7 +10808,7 @@ do {
     // still cuts a row read across it, and each half stops clear of the rule. A stroke
     // as thin whose ink stops with its row is a letter, not a rule; so is one at the edge
     // of a column whose lines above and below have letters at its x.
-    enum GutterInk { case ruled, lone, letter }
+    enum GutterInk { case ruled, lone, letter, blank }
     func gutterRow(_ ink: GutterInk) -> CGImage? {
         guard let ctx = CGContext(data: nil, width: 1000, height: 600, bitsPerComponent: 8,
                                   bytesPerRow: 1000, space: CGColorSpaceCreateDeviceGray(),
@@ -10832,6 +10832,8 @@ do {
         case .letter:
             // `… as I`, the `I` at x 484-486 with the gutter's paper after it.
             ctx.fill(CGRect(x: 484, y: 285, width: 2, height: 30))
+        case .blank:
+            break
         }
         return ctx.makeImage()
     }
@@ -10853,6 +10855,21 @@ do {
                                             lineX: 0.026)
         check("C41: …nor a letter at a column's edge under and over the column's text",
               beside.map { $0.left >= 0.4865 } ?? false, "\(String(describing: beside))")
+        // The gutter found from the boxes is wider than the paper and rule (28 against
+        // 20 pixels): the comic page's bridge rows, 17 against 23 at production's
+        // resolution. A rule is still a gutter at half the width; paper alone is not.
+        let wider = SearchableWriter.Gutter(from: 0.490, to: 0.518)
+        let ruledWider = Recogniser.blankGutter(under: fusedRow, near: wider, of: ruled, level: 128,
+                                                lineX: 0.026)
+        check("C41: a ruled gutter narrower than the boxes' gutter still cuts the row at its rule",
+              ruledWider.map { $0.left >= 0.491 && $0.left <= 0.4965 && $0.right >= 0.5055
+                  && $0.right <= 0.511 } ?? false,
+              "\(String(describing: ruledWider))")
+        check("C41: …and blank paper as narrow, with no rule, does not",
+              gutterRow(.blank).map {
+                  Recogniser.blankGutter(under: fusedRow, near: wider, of: $0, level: 128,
+                                         lineX: 0.026) == nil
+              } ?? false)
     } else {
         check("C41: the ruled-gutter fixture draws", false)
     }

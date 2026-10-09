@@ -1470,34 +1470,6 @@ say so in the commit.
       2026-10-06: round 1, session 3. Pencil gets a mark layer at 1/3; Ford p1 and Former p2 read; the
       22 sample documents +5.5% (`BUGS.md` C28, session 3).
       (origin: BUGS.md C28)
-- [ ] **c41-newspaper-scans** — read whole-page scans of small-town newspapers as well as their print
-      allows (`BUGS.md` C41, split from C39) (uses: build) (blocked-on: hp-regions).
-      2026-10-07 (owner asked whether this still makes sense beside the accurate-mode work): it waits for
-      hp-regions. ocr-lab-round3 measured Apple Vision on NewsBench at 1-CER 0.304 reading the whole page and
-      0.741 reading DocLayout-YOLO regions, so cutting a newspaper page by layout region is a far larger gain on
-      exactly these pages than finding column gutters from the bitmap, and hp-regions builds that cut. When it
-      unblocks, the first step is to measure the five pages below with the region arrangement, Vision as the
-      reader (`modelArrangement=regions` exists; `reader-regions.sh` reads with PaddleOCR-VL, and Vision as the
-      region reader is still to write): close the item on that measurement if it meets DONE WHEN, otherwise keep only the defects the
-      regions leave. If ocr-hybrid-pick finds no route wins and hp-regions is dropped, remove this edge and
-      resume from session 3's record. Start from the band swap parked at
-      `$STATE/rescue/PARKED-c39-dense-band-swap-2026-09-26.patch` and the eight defects C41 lists; fix
-      them, or show that the swap cannot be made safe and try something else. Read C39's record of what
-      was tried before starting.
-      THE PAGES: the five whole-page scans C41 names. Work on all five; they differ in difficulty, and a
-      gain on some of them ships on its own.
-      DONE WHEN, on the published PDF, through PDFKit, for each of the five pages before and after: misread
-      words in the paragraph C39's table used, counted by hand; rows fused across columns; words in the
-      dictionary. Every page that can be improved is, and each that cannot is named with what was tried;
-      ordinary pages across a corpus sample are unchanged; invariant 3 holds; a new check goes red without
-      the change. Drag selection is not in scope (C39 closed it).
-      BOUND: rule 10.
-      2026-10-06: round 1, session 1 (opened at 89% of the window). Measured: the published pages are
-      within 1.3 points of Vision's best band reading, so the band swap is dropped; fused rows remain (C41).
-      Session 2 (docs only): few fused rows in the recogniser's own boxes. 2026-10-07: session 3: rows read
-      across a printed column rule now split (Helena 1941 0 -> 4, 1931 1 -> 4). Left: the comic page's gutter
-      is not found from its bitmap's lines (`columnGutters`); Billings, Oct 1960 and 1928 as C41 says.
-      (origin: BUGS.md C41)
 - [ ] **c52-column-jumps** — make a drag down one column stay in it on the pages C34 still misses. (uses: build)
       Riesman p2 is fixed (ff25f3b, 4657cff); Marth p2 and Cong p16 are not. The first bound was spent
       by those two commits, and the item was moved here on 2026-09-28 so the unattempted items above go
@@ -1631,6 +1603,38 @@ say so in the commit.
       (Gowan 1.03); Xin Qu's 1.06 is PDFKit's drawing of a stencil source, see C56's case for closing.
       Session 4: `mrcStencil`'s lift pinned by a check; round 1 spent, so moved behind the untried
       items. Round 2 is at max: judge C56's case for closing (Xin Qu's 2x 1.06 is PDFKit's stencil draw).
+- [ ] **c41-newspaper-scans** — read whole-page scans of small-town newspapers as well as their print
+      allows (`BUGS.md` C41, split from C39) (uses: build) (blocked-on: hp-regions).
+      2026-10-07 (owner asked whether this still makes sense beside the accurate-mode work): it waits for
+      hp-regions. ocr-lab-round3 measured Apple Vision on NewsBench at 1-CER 0.304 reading the whole page and
+      0.741 reading DocLayout-YOLO regions, so cutting a newspaper page by layout region is a far larger gain on
+      exactly these pages than finding column gutters from the bitmap, and hp-regions builds that cut. When it
+      unblocks, the first step is to measure the five pages below with the region arrangement, Vision as the
+      reader (`modelArrangement=regions` exists; `reader-regions.sh` reads with PaddleOCR-VL, and Vision as the
+      region reader is still to write): close the item on that measurement if it meets DONE WHEN, otherwise keep only the defects the
+      regions leave. If ocr-hybrid-pick finds no route wins and hp-regions is dropped, remove this edge and
+      resume from session 3's record. Start from the band swap parked at
+      `$STATE/rescue/PARKED-c39-dense-band-swap-2026-09-26.patch` and the eight defects C41 lists; fix
+      them, or show that the swap cannot be made safe and try something else. Read C39's record of what
+      was tried before starting.
+      THE PAGES: the five whole-page scans C41 names. Work on all five; they differ in difficulty, and a
+      gain on some of them ships on its own.
+      DONE WHEN, on the published PDF, through PDFKit, for each of the five pages before and after: misread
+      words in the paragraph C39's table used, counted by hand; rows fused across columns; words in the
+      dictionary. Every page that can be improved is, and each that cannot is named with what was tried;
+      ordinary pages across a corpus sample are unchanged; invariant 3 holds; a new check goes red without
+      the change. Drag selection is not in scope (C39 closed it).
+      BOUND: rule 10. (effort: max)
+      2026-10-06: round 1, session 1 (opened at 89% of the window). Measured: the published pages are
+      within 1.3 points of Vision's best band reading, so the band swap is dropped; fused rows remain (C41).
+      Session 2 (docs only): few fused rows in the recogniser's own boxes. 2026-10-07: session 3: rows read
+      across a printed column rule now split (Helena 1941 0 -> 4, 1931 1 -> 4). Left: the comic page's gutter
+      is not found from its bitmap's lines (`columnGutters`); Billings, Oct 1960 and 1928 as C41 says.
+      2026-10-08: session 4. Vision on DocLayout-YOLO regions is within a point of the published pages, so
+      no Vision region reader; ruled gutters narrower than their boxes now split (Helena 1941 +3 rows, 1928
+      +2). The comic's outer gutter choice is left (C41). Round 1 spent, so moved behind the untried items.
+      Round 2 is at max: judge C41's case for closing, the misreads pointed at the accurate mode.
+      (origin: BUGS.md C41)
 
 ## Parked
 
