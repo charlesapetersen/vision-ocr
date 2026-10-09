@@ -1268,13 +1268,21 @@ say so in the commit.
         looping, where 8 bits reads s03 as bf16 does (rough recall 0.838, 7.9 s, 3.2 GB MLX peak against 3.7).
         Smoke reads of s03, rough recall the same as the fitted builds' 0.838: LightOnOCR 8-bit 11.7 s, 7.45 GB;
         Chandra oQ4 69 s, 5.45 GB MLX peak against oQ8's 86 s, 7.19 GB. Weights: about 4.6 GB more, 72 GB free.
+      - [ ] **bits-cwd** — the night of 2026-10-08 the job read nothing: its session worktree in /private/tmp was
+        removed at about 22:35 while the job ran, and every read after that failed with `FileNotFoundError` in
+        `posixpath.abspath`. The scripts were safe (`start` already copies them to `$J/scripts`); the job's working
+        directory was not, because the detached process inherits the caller's. Make `start` change to `$J` before
+        it detaches, and add a test that starts the job from a scratch directory, removes that directory, and sees a
+        read succeed. Also find out why the 8-bit LightOnOCR rows after 22:38 say `guard refused for 4 hours`
+        (same cause, or the heavy lock) and record it here. The job was stopped by the owner 2026-10-09 07:39.
+        Added 2026-10-09 by the Agent Manager. ESTIMATE: 1 session. (uses: light) (context: ocr-bakeoff-bits)
       - [ ] **bits-score** — once the job's log says `all models done`, score with `score-bakeoff.py` (it scores
         every label in `readings/`), write `OCR-BITS-<date>.tsv` as the parent's DONE WHEN says, with the 4 GB to
         12 GB memory-limit builds, and tick this and the parent. This is the parent's remaining work, not a second
         item. If `bakeoff.sh status` says running, the job is not done: record that and stop, start nothing. If it
         stopped short, run `bakeoff.sh start --build bits` again only while model-night-ok is ticked: it resumes
         from the saved readings. ESTIMATE: 1 session. (uses: light)
-        (context: ocr-bakeoff-bits) (blocked-on: bits-job)
+        (context: ocr-bakeoff-bits) (blocked-on: bits-job, bits-cwd)
 - [x] **ocr-hybrid-proto** — build the ways of putting a better reader's words into the text layer, behind a
       setting that is off by default. (blocked-on: ocr-bakeoff-score) (uses: build,model:12)
       EDGE CHANGED 2026-10-07 (EFFICIENCY-PLAN item 16; `QUEUE-ANALYSIS-2026-10-07.md`): it waited on
