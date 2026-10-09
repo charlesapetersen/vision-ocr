@@ -17,6 +17,11 @@
 # cap and it reads 0.12-0.20 of the words; on DocLayout-YOLO regions it read 0.852. Its set is `fitted-regions`, not `fitted`, so
 # `--build fitted` (whole pages and truth crops) does not score the cap as the model; ocr-hybrid-proto gives it regions.
 # nara-qwen-3.5-2b-4bit (lab3-extras) reads with its own prompt.txt, copied into its build directory, which --prompt-file finds there.
+# Set `bits` (ocr-bakeoff-bits): the top three's other build. Falcon-OCR-8bit is convert-mlx.py's -q --q-bits 8 then
+# falcon-w13.py (without it every converted Falcon build reads noise). Falcon-OCR at 4 bits is `failed`: g64, g32, and 4 bits
+# with embeddings, head and projector at 8 all read 0.000 of s01 and s03 and loop, so no run reads it. chandra-ocr-2-oQ4 is the
+# same quantizer as the fitted oQ8, mostly 4-bit with some layers at 5-6. lightonocr-2-1b-4bit-1540-quiet is the fitted 4-bit
+# read again, the same row under a new label: its first readings were timed on the busy night (ocr-bakeoff-score).
 label	set	runtime	repo	prompt	extra	need_gb
 deepseek-ocr-2-4bit	fitted	mlx	mlx-community/DeepSeek-OCR-2-4bit	Free OCR.	--no-remote-code	4
 lightonocr-2-1b-4bit-1540	fitted	mlx	mlx-community/LightOnOCR-2-1B-4bit	""	--max-side 1540	5
@@ -36,3 +41,8 @@ olmocr-2-7b-4bit	fitted	mlx	mlx-community/olmOCR-2-7B-1025-4bit	-	-	8
 dots.mocr-4bit	fitted	mlx	mlx-community/dots.mocr-4bit	Extract the text content from this image.	--max-side 2000	6
 paddleocr-vl-1.6-4bit	fitted-regions	mlx	mlx-community/PaddleOCR-VL-1.6-4bit	OCR:	-	4
 nara-qwen-3.5-2b-4bit	fitted	mlx	local/nara-qwen-3.5-2b-4bit	-	--prompt-file prompt.txt --repetition-penalty 1.1	5
+falcon-ocr-8bit	bits	mlx	local/Falcon-OCR-8bit	plain	-	4
+falcon-ocr-4bit	failed	mlx	local/Falcon-OCR-4bit	plain	-	4
+lightonocr-2-1b-4bit-1540-quiet	bits	mlx	mlx-community/LightOnOCR-2-1B-4bit	""	--max-side 1540	5
+lightonocr-2-1b-8bit-1540	bits	mlx	mlx-community/LightOnOCR-2-1B-8bit	""	--max-side 1540	8
+chandra-ocr-2-oQ4	bits	mlx	beaupi/chandra-ocr-2-oQ4	-	-	6

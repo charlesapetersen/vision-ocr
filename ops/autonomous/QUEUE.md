@@ -1257,6 +1257,24 @@ say so in the commit.
       quiet timing.
       ESTIMATE: 1-2 sessions, plus about 4-6 hours of unattended job. Sub-boxes: job started, scored.
       BOUND: rule 10. (context: owner request 2026-10-02)
+      2026-10-08: round 1 session 1 (the 2026-10-07 attempt counted against this item was ocr-bakeoff-score's).
+      - [x] **bits-job** — build the other bit width of each of the three and start `bakeoff.sh start --build bits`.
+        (context: ocr-bakeoff-bits) DONE 2026-10-08 22:23, rows set `bits` in `bakeoff-models.tsv`: falcon-ocr-8bit
+        (converted here), lightonocr-2-1b-8bit-1540 (mlx-community), chandra-ocr-2-oQ4 (beaupi, the oQ8's quantizer),
+        and lightonocr-2-1b-4bit-1540-quiet, the quiet re-time. Every converted Falcon build read noise, the
+        unquantized one too: mlx_vlm's `sanitize` de-interleaves `.w13.` rows again on reload; `falcon-w13.py`
+        undoes it (unquantized build then equal to the source, max difference 0.0). Falcon at 4 bits fails anyway, a
+        stated reason: g64, g32 and 4 bits with embeddings, head and projector at 8 all read 0.000 of s01 and s03,
+        looping, where 8 bits reads s03 as bf16 does (rough recall 0.838, 7.9 s, 3.2 GB MLX peak against 3.7).
+        Smoke reads of s03, rough recall the same as the fitted builds' 0.838: LightOnOCR 8-bit 11.7 s, 7.45 GB;
+        Chandra oQ4 69 s, 5.45 GB MLX peak against oQ8's 86 s, 7.19 GB. Weights: about 4.6 GB more, 72 GB free.
+      - [ ] **bits-score** — once the job's log says `all models done`, score with `score-bakeoff.py` (it scores
+        every label in `readings/`), write `OCR-BITS-<date>.tsv` as the parent's DONE WHEN says, with the 4 GB to
+        12 GB memory-limit builds, and tick this and the parent. This is the parent's remaining work, not a second
+        item. If `bakeoff.sh status` says running, the job is not done: record that and stop, start nothing. If it
+        stopped short, run `bakeoff.sh start --build bits` again only while model-night-ok is ticked: it resumes
+        from the saved readings. ESTIMATE: 1 session. (uses: light)
+        (context: ocr-bakeoff-bits) (blocked-on: bits-job)
 - [x] **ocr-hybrid-proto** — build the ways of putting a better reader's words into the text layer, behind a
       setting that is off by default. (blocked-on: ocr-bakeoff-score) (uses: build,model:12)
       EDGE CHANGED 2026-10-07 (EFFICIENCY-PLAN item 16; `QUEUE-ANALYSIS-2026-10-07.md`): it waited on
