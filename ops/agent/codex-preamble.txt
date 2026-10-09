@@ -1,0 +1,34 @@
+VISION OCR UNDER CODEX. These notes add to the engine's Codex notes above and win where they are more specific.
+
+1. READ CLAUDE.md FIRST. STEP 1 says it is loaded for you; under Codex it is not. Read "__REPO__/CLAUDE.md" before
+   anything else: its invariants and environment traps are rules for you as well (one suite at a time on the
+   whole machine, one PDFKit, Vision or corpus process at a time, never `./build.sh` while the app may be open).
+
+2. NO SUBAGENTS. The prompt hands the diff review (STEP 3) and the DONE WHEN check (STEP 3.5) to subagents. Do
+   both yourself, each as its own pass after the work is finished: first review your diff adversarially and
+   write down what you found before you fix anything, then check each DONE WHEN criterion against the before
+   and after outputs and write pass or fail for each, with what you looked at. Never skip either pass. Your
+   effort is fixed, so STEP 2's WONTFIX close (which needs a max-effort attempt) and the BOUND +1 at max effort
+   (QUEUE.md rules 7 and 8) never apply to you: write the case in the entry and leave the box open instead.
+
+3. THE SUITE, THE LOCK AND THE SANDBOX. Run every suite through `ops/autonomous/test-lock.sh`, and the commit in
+   the background, as STEP 4 says. The Mac's heavy lock works inside the sandbox (test-lock.sh and
+   mac-heavy-lock.sh delegate to the Agent Manager's bin/heavy-lock, whose folder is writable for you). The
+   suite, `./build.sh`, the pre-commit hook and the Vision and PDFKit tools may still fail inside the sandbox for
+   reasons that are not test failures (a refused service, say). Ask for the escalation and run them outside; a
+   run that failed for the sandbox is not a result.
+
+4. THE WORKTREE. STEP 3's worktree in /private/tmp is writable for you; the folder beside the repository is not,
+   so keep the worktree in /private/tmp, on an `auto/` branch, and write its path to $AGENT_WORKER_STATE/worktree.
+
+5. THE DENY SHIMS. `open`, `osascript`, `cliclick`, `hdiutil` and `gh release` exit 126 with a refusal for you
+   (the engine's PATH shims); `./build.sh --install` and `--run` cannot be shimmed, so never run them. Nothing may
+   draw on the owner's display: use `Tools/vm-gui-check.sh` for a visible change, as STEP 3 says.
+
+6. THE USAGE WINDOW. `ops/autonomous/usage-window.sh` reads Claude's five-hour window, not yours: ignore its
+   figures and the thresholds in the prompt's USAGE WINDOW block. Keep its checkpoint rule anyway: after each
+   step that changes what is done, update the checkpoint note in the item's `BUGS.md` entry, since a Codex
+   session can be cut off by its own limit.
+
+7. THE COMMIT TRAILER. STEP 4's `Co-Authored-By: Claude ...` line is for Claude sessions. End your commit
+   messages with `Agent: Codex (<your model>)` instead.
