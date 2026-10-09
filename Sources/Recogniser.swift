@@ -952,6 +952,11 @@ enum Recogniser {
             return try replacedReading(of: fitted, on: fitOn, shown: shown, reader: settings.modelReader,
                                        isCancelled: isCancelled)
         }
+        if settings.modelArrangement == .regions {
+            return try regionedReading(of: fitted, shown: shown, reader: settings.modelReader,
+                                       aspect: Double(fitOn.height) / Double(fitOn.width),
+                                       isCancelled: isCancelled)
+        }
         let reading = try modelReading(of: shown, reader: settings.modelReader, isCancelled: isCancelled)
         // Nothing, over a page Vision read lines on, is a reader that failed quietly.
         if modelWords(reading).isEmpty && !fitted.isEmpty {
@@ -2155,6 +2160,69 @@ enum Recogniser {
             }
             return drawn ? (grey, pw, y0, x0) : nil
         }
+    }
+
+    // MARK: - A model's reading region by region, on Vision's lines (`hp-regions`)
+
+    /// `lines` with each layout region's words aligned onto the Vision lines inside it
+    /// (`alignedReading`), region by region: the queue's arrangement (b) cut by layout,
+    /// which is how (c)'s newspaper bands are read too. A broadsheet is too large for one
+    /// whole-page reading (`alignmentCells`; a model cut off at its token cap), and its
+    /// columns run in an order a model's whole-page reading and Vision's need not share;
+    /// within one region they do. On NewsBench a page cut into DocLayout-YOLO regions read
+    /// by PaddleOCR-VL scores 0.742, against at most 0.82 for any whole-page model reading
+    /// and Vision's own on these scans (`OCR-BAKEOFF`; C41).
+    ///
+    /// A line is a region's when its centre is in the region and three quarters of its
+    /// width are too, and no earlier region took it: a line Vision fused across a gutter
+    /// has half its width in each column's region and keeps Vision's words. Its height is
+    /// not asked: a detector's box sits on the ink, and Vision's line reaches over the
+    /// ascenders and descenders of a region's first and last lines. A region whose words
+    /// do not agree with its lines' (`alignedReading`'s half-anchored guard) keeps Vision's,
+    /// so a picture's caption read as text, or a region the model looped on, changes
+    /// nothing; nor does a region holding no Vision line add one. Boxes, order, turns and
+    /// regions are unchanged; only text changes.
+    static func regionAligned(_ lines: [SearchableWriter.Observation], blocks: [ModelBlock],
+                              aspect: Double) -> [SearchableWriter.Observation] {
+        func inside(_ b: SearchableWriter.BoundingBox, _ o: SearchableWriter.Observation) -> Bool {
+            let l = o.boundingBox
+            let cx = l.x + l.width / 2, cy = l.y + l.height / 2
+            guard cx >= b.x, cx <= b.x + b.width, cy >= b.y, cy <= b.y + b.height else { return false }
+            return min(l.x + l.width, b.x + b.width) - max(l.x, b.x) >= 0.75 * l.width
+        }
+        var out = lines
+        var taken = Set<Int>()
+        for block in blocks {
+            let words = modelWords(block.text)
+            guard !words.isEmpty else { continue }
+            let members = lines.indices.filter { !taken.contains($0) && inside(block.box, lines[$0]) }
+            guard !members.isEmpty else { continue }
+            taken.formUnion(members)
+            for (i, o) in zip(members, alignedReading(of: members.map { lines[$0] }, from: words, aspect: aspect)) {
+                out[i] = o
+            }
+        }
+        return out
+    }
+
+    /// `regionAligned` over the page: the reader writes the regions of `shown` and each
+    /// one's text as blocks (`modelBlocks`; `ops/ocrlab/reader-regions.sh` cuts them with
+    /// DocLayout-YOLO and reads each with PaddleOCR-VL). A reader writing what does not
+    /// parse fails the file, and so does one that writes blocks, none with words, on a page
+    /// Vision read lines on, as under `replace`. One that writes no block found no text
+    /// region (a page of advertisements, a photograph), and the page keeps Vision's lines,
+    /// which this arrangement only ever rewrites.
+    static func regionedReading(of lines: [SearchableWriter.Observation], shown: URL, reader: String,
+                                aspect: Double, isCancelled: () -> Bool = { false })
+        throws -> [SearchableWriter.Observation] {
+        let raw = try modelReading(of: shown, reader: reader, isCancelled: isCancelled)
+        guard let blocks = modelBlocks(raw) else {
+            throw Failure.modelReader("\(reader) wrote something other than blocks")
+        }
+        if !lines.isEmpty && !blocks.isEmpty && !blocks.contains(where: { !modelWords($0.text).isEmpty }) {
+            throw Failure.modelReader("\(reader) read no block on a page holding \(lines.count) lines")
+        }
+        return regionAligned(lines, blocks: blocks, aspect: aspect)
     }
 
     /// The regions `flatten` wrote beside the bitmap at `image`, or nil when it wrote

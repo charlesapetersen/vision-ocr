@@ -18896,6 +18896,10 @@ changed), pages named PASS, ordinary pages PASS (on this record), hand count of 
 3 not re-measured: `SearchableWriter` is untouched. Remaining: the comic's gutter finding, then the rule-8 case
 above for the rest.
 
+*(2026-10-08, `hp-regions` [measured]: `modelArrangement=regions`, PaddleOCR-VL reading DocLayout-YOLO regions
+aligned onto Vision's lines, on Helena 1931 / Helena 1941 (`ux-harness --truth`): drag wrong 2355 -> 1692 /
+1190 -> 826, layerMiss 0.290 -> 0.155 / 0.195 -> 0.126. Off by default, a lab reader; `QUEUE.md` hp-regions.)*
+
 ### C42 · A page whose crop box is not centred on its media box gets its text layer shifted off the ink, 81 pt on a two-page book spread — FIXED
 
 *(found 2026-09-27 by `ux-read`, from `UX-RUN-2026-09-27-pages.tsv`: Boltanski p51/p102/p153 red on

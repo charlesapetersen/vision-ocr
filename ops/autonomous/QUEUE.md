@@ -1257,7 +1257,7 @@ say so in the commit.
       quiet timing.
       ESTIMATE: 1-2 sessions, plus about 4-6 hours of unattended job. Sub-boxes: job started, scored.
       BOUND: rule 10. (context: owner request 2026-10-02)
-- [ ] **ocr-hybrid-proto** — build the ways of putting a better reader's words into the text layer, behind a
+- [x] **ocr-hybrid-proto** — build the ways of putting a better reader's words into the text layer, behind a
       setting that is off by default. (blocked-on: ocr-bakeoff-score) (uses: build,model:12)
       EDGE CHANGED 2026-10-07 (EFFICIENCY-PLAN item 16; `QUEUE-ANALYSIS-2026-10-07.md`): it waited on
       ocr-bakeoff-bits, but the arrangements are built for the top model, and ocr-bakeoff-score already named the
@@ -1282,9 +1282,25 @@ say so in the commit.
       the model reading each line's crop and its words placed in Vision's boxes (the truth set's crop-and-align
       method); (c) Vision as now, the model only on lines Vision skipped or read with low confidence and on
       newspaper bands. Each needs a check that goes red without it, and invariant 3's four properties hold.
-      - [ ] **hp-regions** — the layout-region arrangement and (c)'s newspaper bands, with the region reader
+      - [x] **hp-regions** — the layout-region arrangement and (c)'s newspaper bands, with the region reader
         ocr-lab-round3 named. (blocked-on: ocr-lab-round3) (uses: build,model:12) DONE WHEN as the parent's, for
         these two, on two newspaper sample pages. ESTIMATE: 1 session.
+        DONE 2026-10-08: `modelArrangement=regions` (`Recogniser.regionedReading`) with `ops/ocrlab/reader-regions.sh`
+        (DocLayout-YOLO regions, deduped, each read by PaddleOCR-VL-1.6-4bit, written as `replace`'s blocks). Each
+        region's words are aligned onto the Vision lines inside it (`regionAligned`: centre in, 3/4 of the width in);
+        (c)'s newspaper bands are these regions, the model's words taken only where they agree with Vision's line.
+        A line fused across a gutter, a line in no region and a region read as other text keep Vision's words.
+        Measured (score-gate, then `ux-harness --truth`, off vs regions, same build), Helena 1931 / Helena 1941:
+        drag wrong 2355 -> 1692 / 1190 -> 826, layerMiss 0.290 -> 0.155 / 0.195 -> 0.126, find 0.52 -> 0.76 /
+        0.85 -> 0.93, splits/welds 6/1 -> 2/1 / 11/10 -> 6/7, inside/cover unchanged; 120 and 182 regions, about
+        90 s more a page. The drag's `missing` rises (102 -> 149, 96 -> 184): words the off layer's drag paired with
+        another column's text (`wrong` there) and the regions drag leaves unpaired; the layer holds them
+        (`body can make proper use of it`, where off has `we`). First built with 9/10 of the height in as well,
+        which left each region's first and last lines out (drag wrong 1709 / 844); dropped.
+        Rejected: rebuilding lines from the ink in regions Vision read nothing in, as `replace` does; on these
+        pages the losses are misreads, not skipped regions (C41), and a photograph read as text would add words.
+        Line counts unchanged (1125, 749); `ux-regression` 0 worse / 0 better (43 pages). Left as found, in
+        `alignedReading` (shared with `align`): Helena 1931's `| like lips` became `lips lips`.
       DONE WHEN each arrangement runs on two sample pages through the production pipeline and its check is in
       the suite. ESTIMATE: 2-3 sessions. Sub-boxes: one per arrangement. BOUND: rule 10.
       (context: owner request 2026-10-02, split 2026-10-04)
@@ -1299,6 +1315,7 @@ say so in the commit.
       unsure lines first in its 80-crop cap. Left: hp-replace (a) and hp-regions.
       Round 1, session 3, 2026-10-08: arrangement (a) built and measured; sub-box hp-replace TICKED. `replace` takes
       `<reader> <image> <out.tsv>` writing layout blocks (`Prefs.modelReader`). Left: hp-regions.
+      Round 1, session 4, 2026-10-08: hp-regions built and measured; every sub-box ticked, so the parent is too.
 - [x] **hp-align** — arrangement (b): one whole-page Falcon-OCR reading aligned word by word onto Vision's
       lines (`Recogniser.alignedReading`). Measured (score-gate, then `ux-harness --truth`, off vs align, same
       build): Briefer Book Notes p1 wrong 11 -> 2, copyErr 0.0228 -> 0.0098; p3 10 -> 1, 0.0168 -> 0.0031; 1954 -
@@ -1460,7 +1477,8 @@ say so in the commit.
       0.741 reading DocLayout-YOLO regions, so cutting a newspaper page by layout region is a far larger gain on
       exactly these pages than finding column gutters from the bitmap, and hp-regions builds that cut. When it
       unblocks, the first step is to measure the five pages below with the region arrangement, Vision as the
-      reader: close the item on that measurement if it meets DONE WHEN, otherwise keep only the defects the
+      reader (`modelArrangement=regions` exists; `reader-regions.sh` reads with PaddleOCR-VL, and Vision as the
+      region reader is still to write): close the item on that measurement if it meets DONE WHEN, otherwise keep only the defects the
       regions leave. If ocr-hybrid-pick finds no route wins and hp-regions is dropped, remove this edge and
       resume from session 3's record. Start from the band swap parked at
       `$STATE/rescue/PARKED-c39-dense-band-swap-2026-09-26.patch` and the eight defects C41 lists; fix

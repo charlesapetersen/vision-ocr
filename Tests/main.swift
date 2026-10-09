@@ -12105,6 +12105,115 @@ do {
     resetPrefs()
 }
 
+print("\na model's reading of each layout region takes the words of Vision's lines in it (hp-regions)")
+
+do {
+    func line(_ text: String, x: Double, y: Double, width: Double = 0.4) -> SearchableWriter.Observation {
+        .init(boundingBox: .init(x: x, y: y, width: width, height: 0.02), text: text, confidence: 0.9)
+    }
+    func block(_ x0: Double, _ y0: Double, _ x1: Double, _ y1: Double, _ text: String) -> Recogniser.ModelBlock {
+        .init(box: .init(x: x0, y: y0, width: x1 - x0, height: y1 - y0), label: "plain text", text: text)
+    }
+    let vision = [line("Tbe quick brown f0x", x: 0.05, y: 0.1), line("jumps ovcr the lazy dog.", x: 0.05, y: 0.13),
+                  line("Mayor Smitb said that", x: 0.55, y: 0.1), line("tbe new bridge opens.", x: 0.55, y: 0.13),
+                  line("Farm prices fcll sharply", x: 0.05, y: 0.5, width: 0.9),
+                  line("Page 4", x: 0.45, y: 0.95, width: 0.1)]
+    // The model reads the right-hand column first, as a detector's order may.
+    let blocks = [block(0.54, 0.08, 0.96, 0.16, "Mayor Smith said that the new bridge opens."),
+                  block(0.04, 0.08, 0.46, 0.16, "The quick brown fox jumps over the lazy dog."),
+                  block(0.04, 0.48, 0.5, 0.53, "Farm prices fell")]
+    let read = Recogniser.regionAligned(vision, blocks: blocks, aspect: 1.3).map(\.text)
+    check("each region's words go on the Vision lines inside it, whatever order the regions come in",
+          Array(read.prefix(4)) == ["The quick brown fox", "jumps over the lazy dog.", "Mayor Smith said that",
+                                    "the new bridge opens."], read.joined(separator: " / "))
+    check("…a line reaching out of its region, as one fused across a gutter does, and a line in no region keep "
+          + "Vision's words", read.count == 6 && read[4] == vision[4].text && read[5] == vision[5].text,
+          read.joined(separator: " / "))
+    // A detector's box sits on the ink; Vision's line reaches past it above and below.
+    let tight = Recogniser.regionAligned([line("Tbe quick brown f0x", x: 0.05, y: 0.1)],
+                                         blocks: [block(0.04, 0.105, 0.46, 0.115, "The quick brown fox")],
+                                         aspect: 1.3).map(\.text)
+    check("a line taller than the region holding its centre is the region's", tight == ["The quick brown fox"],
+          tight.joined())
+    let reaching = Recogniser.regionAligned([line("Tbe quick brown f0x", x: 0.05, y: 0.1)],
+                                            blocks: [block(0.04, 0.08, 0.34, 0.16, "The quick brown fox")],
+                                            aspect: 1.3).map(\.text)
+    check("…and one with over a quarter of its width outside it is not", reaching == ["Tbe quick brown f0x"],
+          reaching.joined())
+    let other = Recogniser.regionAligned(vision, blocks: [block(0.04, 0.08, 0.46, 0.16,
+                                                                "Minutes of the annual meeting held in March")],
+                                         aspect: 1.3)
+    check("a region read as other text leaves its lines as Vision read them",
+          other.map(\.text) == vision.map(\.text), other.map(\.text).joined(separator: " / "))
+    let boxes = Recogniser.regionAligned(vision, blocks: blocks, aspect: 1.3).map(\.boundingBox)
+    check("…and every line keeps its box", boxes.count == vision.count && zip(boxes, vision).allSatisfy { b, v in
+        b.x == v.boundingBox.x && b.y == v.boundingBox.y && b.width == v.boundingBox.width
+            && b.height == v.boundingBox.height })
+
+    let dir = tmp.appendingPathComponent("model-regions")
+    try? FileManager.default.removeItem(at: dir)
+    try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+    func reader(_ name: String, _ body: String) -> String {
+        let url = dir.appendingPathComponent(name)
+        try? ("#!/bin/sh\n" + body + "\n").write(to: url, atomically: true, encoding: .utf8)
+        try? FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: url.path)
+        return url.path
+    }
+    let shown = dir.appendingPathComponent("page.png")
+    var why = ""
+    do { _ = try Recogniser.regionedReading(of: vision, shown: shown,
+                                            reader: reader("plain.sh", "echo 'The quick' > \"$2\""),
+                                            aspect: 1.3) } catch {
+        why = error.localizedDescription
+    }
+    check("a regions reader that writes plain text, not blocks, fails the page, saying so",
+          why.contains("something other than blocks"), why)
+    why = ""
+    do { _ = try Recogniser.regionedReading(of: vision, shown: shown,
+                                            reader: reader("wordless.sh", "printf '0.1\\t0.1\\t0.9\\t0.9\\tregion\\t\\n' > \"$2\""),
+                                            aspect: 1.3) } catch {
+        why = error.localizedDescription
+    }
+    check("…and so does one that writes blocks with no words, where Vision read lines", why.contains("read no block"), why)
+    let noRegion = try? Recogniser.regionedReading(of: vision, shown: shown,
+                                                   reader: reader("none.sh", ": > \"$2\""), aspect: 1.3)
+    check("…while one that found no text region leaves the page as Vision read it",
+          noRegion?.map(\.text) == vision.map(\.text), noRegion?.map(\.text).joined(separator: " / ") ?? "threw")
+
+    // Through the production pipeline, in the app and in the helper.
+    resetPrefs()
+    let source = dir.appendingPathComponent("scan.pdf")
+    makeScannedPDF(at: source, lines: ["Vision reads these words", "and then this line"], bars: [])
+    let whole = reader("regions.sh", "[ $# -eq 2 ] || exit 4\n"
+                       + "printf '0\\t0\\t1\\t1\\tplain text\\tVision reads those words and then this line\\n' > \"$2\"")
+    d.set(Prefs.ModelArrangement.regions.rawValue, forKey: Prefs.modelArrangement)
+    d.set(whole, forKey: Prefs.modelReader)
+    let out = dir.appendingPathComponent("regions.ocr.pdf")
+    var outcome: Runner.Result.Outcome?, message = ""
+    OCRModel.makeSearchablePDF(file: source, output: out, rebuild: true, rebuildMode: .auto,
+                               password: nil, control: RunControl(), progress: { _, _ in },
+                               report: { o, m in outcome = o; message = m })
+    let published = embeddedText(of: out)
+    check("with regions on the published layer holds the region's reading of Vision's lines",
+          outcome == .succeeded && published.contains("those words") && published.contains("this line")
+              && !published.contains("these words"), published + " | " + message)
+    let pngs = dir.appendingPathComponent("pages")
+    try? FileManager.default.createDirectory(at: pngs, withIntermediateDirectories: true)
+    let rebuilt = dir.appendingPathComponent("rebuilt.pdf")
+    let bitmaps = (try? Flattener.flatten(source, to: rebuilt, mode: .blackAndWhite, pngDirectory: pngs)) ?? []
+    var settings = Prefs.Snapshot.current()
+    settings.modelArrangement = .regions
+    settings.modelReader = whole
+    var fellBack: [String] = []
+    let viaHelper = try? Recogniser.recogniseDocument(visible: rebuilt, bitmaps: bitmaps, settings: settings,
+                                                      useHelper: true, onFallback: { fellBack.append($0) })
+    let helperText = (viaHelper?[1] ?? []).map(\.text).joined(separator: " ")
+    check("the helper aligns by region too, without falling back",
+          fellBack.isEmpty && helperText.contains("those words") && !helperText.contains("these words"),
+          helperText + " | " + fellBack.joined())
+    resetPrefs()
+}
+
 print("\na helper is only worth it when there is something to overlap with")
 
 do {
