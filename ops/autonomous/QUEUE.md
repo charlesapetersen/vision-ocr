@@ -1289,6 +1289,12 @@ say so in the commit.
         stopped short, run `bakeoff.sh start --build bits` again only while model-night-ok is ticked: it resumes
         from the saved readings. ESTIMATE: 1 session. (uses: light)
         (context: ocr-bakeoff-bits) (blocked-on: bits-job, bits-cwd)
+        2026-10-11, interim: `ops/ocrlab/bits-table.py <score-bakeoff --pages output>` writes the table and the
+        4-12 GB builds. Finished builds [measured, 65 scored pages]: Falcon-OCR 8-bit misses as bf16 does (0.47% vs
+        0.44%) but loops (`1 1 1 …`): 29 reads cut at max_tokens vs 1, words added 54.8% vs 6.1%, 84.5 s a whole page
+        vs 12.1; bf16 stays. LightOnOCR on the 63 pages both read misses 0.66% at 8 bits vs 0.92% at 4, adds 11.0% vs
+        17.0%, 13.9 s vs 12.2 s whole (the 4-bit's quiet re-time; its busy 13.3 s was near), whole peak 9.2 vs 8.9 GB;
+        crops pass the 12 GB guard on 5 pages at 8 bits and 1 at 4. Chandra oQ4 was at s29 of 67 at 06:20.
 - [x] **ocr-hybrid-proto** — build the ways of putting a better reader's words into the text layer, behind a
       setting that is off by default. (blocked-on: ocr-bakeoff-score) (uses: build,model:12)
       EDGE CHANGED 2026-10-07 (EFFICIENCY-PLAN item 16; `QUEUE-ANALYSIS-2026-10-07.md`): it waited on
