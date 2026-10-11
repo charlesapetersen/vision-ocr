@@ -1268,7 +1268,7 @@ say so in the commit.
         looping, where 8 bits reads s03 as bf16 does (rough recall 0.838, 7.9 s, 3.2 GB MLX peak against 3.7).
         Smoke reads of s03, rough recall the same as the fitted builds' 0.838: LightOnOCR 8-bit 11.7 s, 7.45 GB;
         Chandra oQ4 69 s, 5.45 GB MLX peak against oQ8's 86 s, 7.19 GB. Weights: about 4.6 GB more, 72 GB free.
-      - [ ] **bits-cwd** — the night of 2026-10-08 the job read nothing: its session worktree in /private/tmp was
+      - [x] **bits-cwd** — the night of 2026-10-08 the job read nothing: its session worktree in /private/tmp was
         removed at about 22:35 while the job ran, and every read after that failed with `FileNotFoundError` in
         `posixpath.abspath`. The scripts were safe (`start` already copies them to `$J/scripts`); the job's working
         directory was not, because the detached process inherits the caller's. Make `start` change to `$J` before
@@ -1276,6 +1276,12 @@ say so in the commit.
         read succeed. Also find out why the 8-bit LightOnOCR rows after 22:38 say `guard refused for 4 hours`
         (same cause, or the heavy lock) and record it here. The job was stopped by the owner 2026-10-09 07:39.
         Added 2026-10-09 by the Agent Manager. ESTIMATE: 1 session. (uses: light) (context: ocr-bakeoff-bits)
+        DONE 2026-10-11: `start` and `run` change to `$J` first; `ops/ocrlab/test-bakeoff-cwd.sh` (a fake one-page job
+        started from a scratch directory removed before its read) fails on the old script with the night's
+        `os.getcwd()` FileNotFoundError and passes now [measured]. The refusals were memory, not the cwd or the heavy
+        lock: s01's last refusal reads `only 7303 MB reclaimable (need 8 GB)` (run-guarded logs no refused row, so
+        only each page's last try is known). The 129 cwd and refusal `.reason` files were moved to
+        `$J/stale-reasons-2026-10-08/` so the restarted job reads those pages.
       - [ ] **bits-score** — once the job's log says `all models done`, score with `score-bakeoff.py` (it scores
         every label in `readings/`), write `OCR-BITS-<date>.tsv` as the parent's DONE WHEN says, with the 4 GB to
         12 GB memory-limit builds, and tick this and the parent. This is the parent's remaining work, not a second

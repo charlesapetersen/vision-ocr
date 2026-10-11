@@ -34,6 +34,10 @@ J="$STATE/ocrlab"
 here="$(cd "$(dirname "$0")" && pwd)"
 py="$OCRLAB/venv/bin/python"
 TESTDOCS="${TESTDOCS:-$HOME/Claude/vision-ocr/testdocs}"
+# Absolute, because `start` and `run` change to $J before using them.
+case "$STATE" in /*) ;; *) STATE="$PWD/$STATE"; J="$STATE/ocrlab"; export VISIONOCR_STATE="$STATE" ;; esac
+case "$OCRLAB" in /*) ;; *) OCRLAB="$PWD/$OCRLAB"; py="$OCRLAB/venv/bin/python"; export OCRLAB HF_HOME="$OCRLAB/hf" ;; esac
+case "$TESTDOCS" in /*) ;; *) TESTDOCS="$PWD/$TESTDOCS" ;; esac
 cmd="${1:-status}"; [ $# -gt 0 ] && shift
 build=fitted
 while [ $# -gt 0 ]; do
@@ -74,6 +78,9 @@ start)
         [ -x "$J/bin/$t" ] || swiftc -O -o "$J/bin/$t" "$here/../truth/$t.swift" || exit 1
     done
     # Detached for real: a new session, so the end of the starting shell or of its session cannot take it.
+    # From $J, not the caller's directory: the job inherits it, and on 2026-10-08 the session worktree it was
+    # started from was removed mid-run and every read after that failed in os.path.abspath (bits-cwd).
+    cd "$J" || exit 1
     "$py" -c '
 import os, sys
 if os.fork(): sys.exit(0)
@@ -90,6 +97,7 @@ run) ;;
 esac
 
 alive && { echo "bakeoff: already running" >&2; exit 1; }
+cd "$J" || exit 1   # `run` by hand too: a directory removed under the job breaks every reader (bits-cwd)
 busy && { echo "bakeoff: a suite runs or test.lock is held; not starting" >&2; exit 75; }
 echo $$ > "$J/bakeoff.pid"
 ( while kill -0 $$ 2>/dev/null; do touch "$STATE/engine.lock"; sleep 20; done ) &
