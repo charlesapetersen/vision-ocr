@@ -1,0 +1,37 @@
+# OCR-BITS: ocr-bakeoff-bits, 2026-10-11. The top three of OCR-BAKEOFF-2026-10-07.tsv, each at its other bit width,
+# read by `bakeoff.sh start --build bits` (2026-10-11 00:42-07:43, quiet machine, model-night-ok; Falcon 8-bit's
+# s01-s07 on 2026-10-08) over OCR-SAMPLE-2026-10-04.tsv, scored by `score-bakeoff.py --pages` and tabled by
+# `ops/ocrlab/bits-table.py` [measured]. 65 scored pages (s01, s05 under 20 words).
+# miss / added: score-bakeoff's measure over every scored page, an unread page all missing; *_both_read: over the
+# pages both builds of the model read. Seconds are the mean per read; peaks the guard's (larger of RSS and footprint,
+# whole process), so above read-mlx's MLX peak. killed: crops reads the guard stopped twice at 12 GB. Every LightOnOCR
+# crops read of every night logs exactly 11273 MB, which looks like a ceiling of the measure, not a reading.
+# The fitted builds (Falcon bf16, Chandra oQ8) were timed on 2026-10-05/06 after the owner quit everything; the bits
+# builds on 2026-10-11. Both quiet, not the same night.
+# Falcon-OCR at 4 bits has no row: every 4-bit build (g64, g32, 8-bit head) loops on s01 and s03 (bakeoff-models.tsv
+# `failed`), so bf16 is its pair. Falcon 8-bit misses as bf16 does but loops (`1 1 1 ...`: 29 reads cut at max_tokens).
+# LightOnOCR 4-bit is the fitted build's first quiet timing (busy night: 13.3 s whole, 52.1 s crops; the busy machine
+# barely slowed it). Its newspaper miss here counts s45, killed this time, as all missing; on the 63 pages both read
+# 8 bits misses fewer words (0.66% vs 0.92%) and adds fewer (12.3% vs 18.7%). Chandra oQ4 misses within 0.02 points of
+# oQ8 and adds within 0.13, at 73-82% of the time and 1.8-2.5 GB less memory.
+# Memory-limit table: per limit, the build with the fewest miss_both_read + added_both_read among those whose peak
+# fits; `(whole)` = only whole pages fit (crops peak over the limit, or a crops read killed at 12 GB). LightOnOCR
+# 8-bit's whole-page peak, 9,171 MB, is 45 MB under 9 GB.
+model	build	bits	miss	added	miss_both_read	added_both_read	both_pages	cut	unread	whole_s	crops_s	whole_peak_mb	crops_peak_mb	killed
+Falcon-OCR	falcon-ocr-bf16	bf16	0.0044	0.0612	0.0044	0.0612	65	1	0	12.1	30.2	3169	4516	0
+Falcon-OCR	falcon-ocr-8bit	8	0.0047	0.5479	0.0047	0.5479	65	29	0	84.5	84.9	4481	3847	0
+LightOnOCR-2-1B	lightonocr-2-1b-4bit-1540-quiet	4	0.0835	0.1696	0.0092	0.1873	63	2	1	12.2	48.0	8882	11273	1
+LightOnOCR-2-1B	lightonocr-2-1b-8bit-1540	8	0.1108	0.1103	0.0066	0.1232	63	2	2	13.9	50.4	9171	11273	5
+Chandra-OCR-2	chandra-ocr-2-oQ4	oQ4	0.0051	0.0935	0.0051	0.0935	65	0	0	66.6	119.0	6288	6077	0
+Chandra-OCR-2	chandra-ocr-2-oQ8	oQ8	0.0049	0.0922	0.0049	0.0922	65	0	0	81.6	163.2	8805	7911	0
+
+memory_limit_gb	Falcon-OCR	LightOnOCR-2-1B	Chandra-OCR-2
+4	falcon-ocr-bf16 (whole)	none fits	none fits
+5	falcon-ocr-bf16	none fits	none fits
+6	falcon-ocr-bf16	none fits	none fits
+7	falcon-ocr-bf16	none fits	chandra-ocr-2-oQ4
+8	falcon-ocr-bf16	none fits	chandra-ocr-2-oQ4
+9	falcon-ocr-bf16	lightonocr-2-1b-8bit-1540 (whole)	chandra-ocr-2-oQ8
+10	falcon-ocr-bf16	lightonocr-2-1b-8bit-1540 (whole)	chandra-ocr-2-oQ8
+11	falcon-ocr-bf16	lightonocr-2-1b-8bit-1540 (whole)	chandra-ocr-2-oQ8
+12	falcon-ocr-bf16	lightonocr-2-1b-8bit-1540 (whole)	chandra-ocr-2-oQ8

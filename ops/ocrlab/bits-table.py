@@ -3,12 +3,13 @@
 
 <pages.tsv> is `score-bakeoff.py --pages`'s output. For each build: words missed and words added over every
 scored page (a page the build could not read counts as all missing, as score-bakeoff.py counts it), words
-missed over the pages BOTH builds of the model read (so a guard kill does not pass for a misreading), reads
+missed and added over the pages BOTH builds of the model read (so a guard kill neither passes for a misreading
+nor, adding nothing, for a clean read), reads
 cut at a limit, pages unread, mean seconds per whole and per crops read and the peak memory of any read, from
 the job's log (the guard's figures: the larger of RSS and physical footprint), whole and crops apart, and the reads
 the guard killed twice for passing 12 GB (`killed`, from the readings' .reason files). Then, for each memory limit
-from 4 to 12 GB, the build each model should use: among those whose peak fits, the one with the fewest words missed (on the pages both read) plus words
-added (a looping build adds hundreds of words a page while missing few: Falcon-OCR 8-bit). A build with a killed
+from 4 to 12 GB, the build each model should use: among those whose peak fits, the one with the fewest words missed plus
+words added on the pages both read (a looping build adds hundreds of words a page while missing few: Falcon-OCR 8-bit). A build with a killed
 read needs more than 12 GB on some crops, so like a build whose crops peak passes the limit it is offered for whole
 pages only, marked `(whole)`.
 """
@@ -33,7 +34,7 @@ for l in open(f"{STATE}/ocrlab/bakeoff.log", encoding="utf-8"):
 
 def mean(xs): return sum(xs) / len(xs) if xs else float("nan")
 out, best = [], {}
-print("model\tbuild\tbits\tmiss\tadded\tmiss_both_read\tboth_pages\tcut\tunread\twhole_s\tcrops_s\twhole_peak_mb\tcrops_peak_mb\tkilled")
+print("model\tbuild\tbits\tmiss\tadded\tmiss_both_read\tadded_both_read\tboth_pages\tcut\tunread\twhole_s\tcrops_s\twhole_peak_mb\tcrops_peak_mb\tkilled")
 for model, builds in PAIRS:
     both = set.intersection(*[{i for i, r in rows[b].items() if not r[4]} for b, _ in builds])
     for b, bits in builds:
@@ -42,12 +43,13 @@ for model, builds in PAIRS:
         added = sum(x[0] * x[2] for x in r.values()) / n
         nb = sum(r[i][0] for i in both)
         mb = sum(r[i][0] * r[i][1] for i in both) / nb
+        ab = sum(r[i][0] * r[i][2] for i in both) / nb
         s = speed.get(b, [])
         wp = max((x[2] for x in s if x[0] == "whole"), default=0); cp = max((x[2] for x in s if x[0] == "crops"), default=0)
         d = f"{STATE}/ocrlab/readings/{b}"
         killed = sum(1 for x in os.listdir(d) if x.endswith(".reason") and "guard killed" in open(f"{d}/{x}").read())
-        best.setdefault(model, []).append((b, mb + added, wp, cp, killed))
-        print(f"{model}\t{b}\t{bits}\t{miss:.4f}\t{added:.4f}\t{mb:.4f}\t{len(both)}\t{sum(x[3] for x in r.values())}\t"
+        best.setdefault(model, []).append((b, mb + ab, wp, cp, killed))
+        print(f"{model}\t{b}\t{bits}\t{miss:.4f}\t{added:.4f}\t{mb:.4f}\t{ab:.4f}\t{len(both)}\t{sum(x[3] for x in r.values())}\t"
               f"{sum(1 for x in r.values() if x[4])}\t{mean([x[1] for x in s if x[0] == 'whole']):.1f}\t"
               f"{mean([x[1] for x in s if x[0] == 'crops']):.1f}\t{wp}\t{cp}\t{killed}")
 print()

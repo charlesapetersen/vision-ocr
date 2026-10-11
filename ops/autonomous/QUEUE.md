@@ -1242,7 +1242,7 @@ say so in the commit.
       DONE WHEN verifier caught that a fitting reader owed this row). NuMarkdown-8B-Thinking not run: its smallest MLX build (5,391 MB) would take the lab past 50 GB. THE REGION
       READER for hp-regions is PaddleOCR-VL-1.6-4bit: level with dots.mocr on NewsBench regions (0.742 / 0.746) in 604 s
       against 1,654 s, and peaking at 2,211 MB against 5,628 MB in the fit tests; Churro (0.706) is not it.
-- [ ] **ocr-bakeoff-bits** — run the top three at 4-bit and at 8-bit and compare.
+- [x] **ocr-bakeoff-bits** — run the top three at 4-bit and at 8-bit and compare.
       (blocked-on: ocr-bakeoff-score, model-night-ok) (uses: machine)
       EDGES CHANGED 2026-10-07 (EFFICIENCY-PLAN item 16; `QUEUE-ANALYSIS-2026-10-07.md`, Vision OCR section): no
       longer blocked on ocr-lab-round3. That edge was soft: this item runs the top three that ocr-bakeoff-score
@@ -1282,7 +1282,7 @@ say so in the commit.
         lock: s01's last refusal reads `only 7303 MB reclaimable (need 8 GB)` (run-guarded logs no refused row, so
         only each page's last try is known). The 129 cwd and refusal `.reason` files were moved to
         `$J/stale-reasons-2026-10-08/` so the restarted job reads those pages.
-      - [ ] **bits-score** — once the job's log says `all models done`, score with `score-bakeoff.py` (it scores
+      - [x] **bits-score** — once the job's log says `all models done`, score with `score-bakeoff.py` (it scores
         every label in `readings/`), write `OCR-BITS-<date>.tsv` as the parent's DONE WHEN says, with the 4 GB to
         12 GB memory-limit builds, and tick this and the parent. This is the parent's remaining work, not a second
         item. If `bakeoff.sh status` says running, the job is not done: record that and stop, start nothing. If it
@@ -1295,6 +1295,11 @@ say so in the commit.
         vs 12.1; bf16 stays. LightOnOCR on the 63 pages both read misses 0.66% at 8 bits vs 0.92% at 4, adds 11.0% vs
         17.0%, 13.9 s vs 12.2 s whole (the 4-bit's quiet re-time; its busy 13.3 s was near), whole peak 9.2 vs 8.9 GB;
         crops pass the 12 GB guard on 5 pages at 8 bits and 1 at 4. Chandra oQ4 was at s29 of 67 at 06:20.
+        DONE 2026-10-11: the job ended `all models done` at 07:43; `OCR-BITS-2026-10-11.tsv` [measured]. Chandra oQ4
+        misses 0.51% vs oQ8's 0.49%, adds 9.4% vs 9.2%, 66.6 s vs 81.6 s whole, 119 s vs 163 s crops, peak 6.3 vs 8.8 GB.
+        Builds by limit: Falcon bf16 from 5 GB (whole pages from 4); Chandra oQ4 at 7-8 GB, oQ8 from 9; LightOnOCR 8-bit
+        whole pages only from 9 GB (its crops pass 12 GB on some pages at either width). Rejected: ranking by miss
+        alone, which would pick Falcon 8-bit's loops on old print.
 - [x] **ocr-hybrid-proto** — build the ways of putting a better reader's words into the text layer, behind a
       setting that is off by default. (blocked-on: ocr-bakeoff-score) (uses: build,model:12)
       EDGE CHANGED 2026-10-07 (EFFICIENCY-PLAN item 16; `QUEUE-ANALYSIS-2026-10-07.md`): it waited on
