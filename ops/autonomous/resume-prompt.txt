@@ -84,7 +84,12 @@ STEP 2 — PICK ONE ITEM.
   open. The pre-commit hook refuses a commit that breaks this. Technical decisions are yours to make: the owner has said they are not in a position
   to judge them and will take whatever is recommended. Record the option you rejected. Escalate to
   RUN.md's `## NEEDS OWNER` only for authority you lack: publishing a release, writing the Zotero
-  library, destroying work with no durable copy.
+  library, destroying work with no durable copy, spending more than $3.
+  MONEY: never spend more than $3 of real money (API keys, paid batches, purchases) on one piece of work, an
+  item across all its sessions, without asking the owner first (owner, 2026-10-11; authority: ~/Claude/CLAUDE.md,
+  "Spending money"). Before a paid run, add what the item has already spent to what the run will cost; if the
+  total would pass $3, do not run it: write the question under RUN.md's `## NEEDS OWNER` and move on.
+  Subscription usage is not money.
 
 STEP 3 — DO IT.
   * Never force past a git or tool refusal, and never `checkout`, `restore`, `stash` or delete changes you
