@@ -1298,8 +1298,11 @@ say so in the commit.
         DONE 2026-10-11: the job ended `all models done` at 07:43; `OCR-BITS-2026-10-11.tsv` [measured]. Chandra oQ4
         misses 0.51% vs oQ8's 0.49%, adds 9.4% vs 9.2%, 66.6 s vs 81.6 s whole, 119 s vs 163 s crops, peak 6.3 vs 8.8 GB.
         Builds by limit: Falcon bf16 from 5 GB (whole pages from 4); Chandra oQ4 at 7-8 GB, oQ8 from 9; LightOnOCR 8-bit
-        whole pages only from 9 GB (its crops pass 12 GB on some pages at either width). Rejected: ranking by miss
-        alone, which would pick Falcon 8-bit's loops on old print.
+        whole pages only from 9 GB (its crops pass 12 GB on some pages at either width). The interim's added figures
+        counted unread pages as adding nothing; on the 63 pages both read LightOnOCR adds 12.3% (8-bit) vs 18.7%.
+        Rejected: ranking by miss alone (the same picks here, but blind to a loop that misses few words, as Falcon
+        8-bit's 0.19% vs 0.23% on old print). One line of doubt, not pursued: every LightOnOCR crops read logs exactly
+        11,273 MB, likely a ceiling of the guard's measure.
 - [x] **ocr-hybrid-proto** — build the ways of putting a better reader's words into the text layer, behind a
       setting that is off by default. (blocked-on: ocr-bakeoff-score) (uses: build,model:12)
       EDGE CHANGED 2026-10-07 (EFFICIENCY-PLAN item 16; `QUEUE-ANALYSIS-2026-10-07.md`): it waited on
