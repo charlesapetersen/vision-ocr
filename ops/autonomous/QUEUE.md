@@ -1414,6 +1414,24 @@ say so in the commit.
       `OCR-HYBRID-<date>.tsv`: every combination scored or a logged reason. ESTIMATE: 1-2 sessions, plus about
       6-10 hours of unattended job. Sub-boxes: job started, finished and scored. BOUND: rule 10.
       (context: owner request 2026-10-02, split 2026-10-04)
+      THE JOB, 2026-10-11: `ops/ocrlab/hybrid-run.sh` (start/status/stop, state in `$STATE/ocrlab/hybrid`), each
+      sample page cut with `qpdf --pages` and published alone by `score-gate` with the arrangement and a
+      `reader-hybrid.sh` wrapper in its defaults, then `ux-harness --truth`. Twelve combinations: Vision alone;
+      align and fill with Falcon-OCR bf16, LightOnOCR-2 8-bit and Chandra oQ8 (the bits item's best builds);
+      replace with Chandra; regions on the 11 newspapers with PaddleOCR-VL (the named region reader, as reference)
+      and each of the three. Not run, said in the table: replace for Falcon and LightOnOCR (no text boxes);
+      align and replace on newspapers (whole newspaper pages loop or trip the guard: ocr-lab-setup); regions off
+      newspapers. Time is the app's own per file (`timings.tsv`): the gate's start and pixel check add ~19 s a
+      page whatever the arrangement, and counted in they made Falcon align look 1x Vision instead of 10x
+      (the diff review found it). `hybrid-table.py <H> OCR-HYBRID-<date>.tsv <pages.tsv>` makes the table.
+      Smoke run, same build [measured]: falcon-align s04 wrong 9 -> 3, falcon-fill 9 -> 1, paddle-regions s46
+      2355 -> 1692, each as the proto sessions recorded.
+      - [x] **hybrid-run-started** — the job started on the whole sample, alive when the session ended.
+            2026-10-11 09:28, pid 95141, tools from 6dbc22c; holds engine.lock. LightOnOCR waits for 9 GB
+            reclaimable (8 for the guard, 1 for the gate's page), which a daytime Mac with sessions open lacks.
+      - [ ] **hybrid-run-finished** — `hybrid.log` says `all combinations done`. A session that finds it dead
+            restarts it with `hybrid-run.sh start` (it resumes; a page with a `status` is not run again).
+      - [ ] **hybrid-run-scored** — `OCR-HYBRID-<date>.tsv` and its pages file committed.
 - [ ] **ocr-hybrid-pick** — choose the arrangement, model and build for each memory limit. (uses: light)
       (blocked-on: ocr-hybrid-run, ocr-bakeoff-bits) (effort: medium)
       A route wins when it cuts words wrong or missing by at least a third on old print or on newspapers, runs

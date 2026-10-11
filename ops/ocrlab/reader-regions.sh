@@ -29,7 +29,13 @@ trap 'rm -rf "$work"' EXIT
 # No text region: no block, and the app keeps Vision's reading.
 if [ "$(/usr/bin/awk 'END {print NR}' "$work/crops.tsv")" -lt 2 ]; then : > "$2"; exit 0; fi
 # 540 s of reading, as reader-chandra.sh: the app's own bound is 600 s for the whole page.
-stats="$("$py" -I "$here/read-mlx.py" mlx-community/PaddleOCR-VL-1.6-4bit "$1" "$work/read.txt" --prompt "OCR:" \
+# VISIONOCR_REGION_MODEL and VISIONOCR_REGION_PROMPT read the regions with another model (ocr-hybrid-run's
+# reader-hybrid.sh), with VISIONOCR_REGION_EXTRA's read-mlx.py options; prompt `""` is none, as LightOnOCR takes,
+# and `-` read-mlx.py's own. Unset, the region reader is PaddleOCR-VL's.
+rp=(--prompt "${VISIONOCR_REGION_PROMPT:-OCR:}"); [ "${VISIONOCR_REGION_PROMPT:-}" = '""' ] && rp=(--prompt "")
+[ "${VISIONOCR_REGION_PROMPT:-}" = - ] && rp=()
+stats="$("$py" -I "$here/read-mlx.py" "${VISIONOCR_REGION_MODEL:-mlx-community/PaddleOCR-VL-1.6-4bit}" "$1" "$work/read.txt" \
+    ${rp[@]+"${rp[@]}"} ${VISIONOCR_REGION_EXTRA:-} \
     --crops "$work/crops.tsv" --one-line-each --max-tokens 3000 --seconds 540)" || exit 1
 case "$stats" in *'"cut": "seconds"'*) echo "reader-regions.sh: reading cut short: $stats" >&2; exit 1;; esac
 # For measuring: VISIONOCR_READER_KEEP=<dir> keeps each page's regions and readings beside a copy of the image.
