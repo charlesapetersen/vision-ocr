@@ -1466,6 +1466,23 @@ say so in the commit.
       Options A (adopt nothing), B (Falcon-OCR bf16: align off newspapers, regions on them; 4.0x / 0.28 miss the
       rule), C (PaddleOCR-VL regions, newspapers only), D (B plus Chandra at 9 GB+). Recommended B, which needs the
       rule relaxed. Nothing chosen; `ocr-hybrid-approve` is the owner's.
+- [ ] **ocr-newspaper-detect** — tell newspaper pages from the rest by themselves, page by page, so the accurate
+      mode can pick its arrangement without the user labelling anything. (uses: build) (effort: medium)
+      Owner, 2026-10-12, at the walkthrough: users add a wide variety of material and will not specify a model per
+      item, so the route for newspapers must be chosen automatically. The app has no such test now: the options in
+      `OCR-HYBRID-DECISION-2026-10-12.md` lean on the Newspaper preset, and `Flattener.mosaic` recognises only a
+      ProQuest-style paste-up. Decide per page, not per document (a scrapbook or a book with clippings mixes both).
+      Build the classifier from signals the app already has or gets cheaply before any model runs: the page's
+      physical size, `Flattener.mosaic`, and the shape of Vision's own reading (narrow columns side by side, line
+      count, line length); DocLayout-YOLO's region count only if those fail. Measure it on the 67 labelled pages of
+      `OCR-SAMPLE-2026-10-04.tsv` (56 other, 11 newspaper) and on newspaper and print pages outside the sample
+      (NewsBench's 15, `BUGS.md` C39's and C41's pages, magazine pages with columns), and report each direction of
+      error separately: a newspaper read as print sends a whole broadsheet to a model (earlier tests: loops or the
+      memory guard), and print read as a newspaper gets cut into regions, which is unmeasured on print.
+      DONE WHEN the classifier is in `Sources/` behind a test that goes red without it, and a TSV and a short
+      paragraph in `OCR-HYBRID-DECISION-2026-10-12.md` (or a dated follow-up) give its misreads both ways on both
+      sets. It changes no setting and no arrangement; the choice stays with `ocr-hybrid-approve`, which the owner
+      deferred until this result is in. ESTIMATE: 1-2 sessions. BOUND: rule 10. (context: owner request 2026-10-12)
 - [ ] **ocr-integrate-engine** — run the winning arrangement inside the app. (blocked-on: ocr-hybrid-approve) (uses: build,model:12)
       Starts from the option the owner approved, recorded in `ocr-hybrid-approve`. Its first step is the `BUGS.md`
       entry that names that option. If the owner approved "adopt nothing", tick the three `ocr-integrate-*`
@@ -1767,7 +1784,9 @@ These are offered to nobody. `next-item.sh` prints them as `hold` so they stay v
       further bake-off night is needed for ocr-bakeoff-run; ocr-bakeoff-bits will need its own (4-6 h job).
 - [ ] **ocr-hybrid-approve** — the owner reads `OCR-HYBRID-DECISION-<date>.md` from `ocr-hybrid-pick` and approves an option. (blocked-on: ocr-hybrid-pick) Tick
       it with the date and the owner's words naming the option; `ocr-integrate-engine` and everything after it wait on
-      this. Added 2026-10-08 (owner: informed of the results, given options, approve the next step). An interactive
+      this. Added 2026-10-08 (owner: informed of the results, given options, approve the next step). 2026-10-12
+      walkthrough: the owner deferred the choice ("Let's come back to this decision") and asked for
+      `ocr-newspaper-detect` first; bring its result with the options next time. An interactive
       session shows the owner the options as a choice and records the answer here. [hold] needs: owner — the choice of route is the owner's.
 - [x] **model-night-ok** — the owner says the Mac is free for a night, so a long model job may start: ocr-bakeoff-bits'
       4-6 hours, ocr-hybrid-run's 6-10. Added 2026-10-07 when EFFICIENCY-PLAN item 16 loosened the edges that had kept
