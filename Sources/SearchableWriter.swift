@@ -389,7 +389,7 @@ enum SearchableWriter {
         let lines = strips.flatMap {
             columnOrdered(byStrip[$0] ?? [], aspect: aspect, clearingGutters: true)
         }
-        guard joinHyphenated else { return lines }
+        guard joinHyphenated else { return gridded(lines, in: region) }
         // The next page's topmost lines, so a word carried over a page break can
         // be joined. The caller already holds them — no extra render, no extra
         // recognition. In column order, so the first column's top line comes before
@@ -398,7 +398,10 @@ enum SearchableWriter {
         let next = columnOrdered(usable(nextPage).sorted { $0.boundingBox.y < $1.boundingBox.y },
                                  aspect: region.width > 0 ? Double(region.height / region.width) : 1)
             .prefix(SearchableWriter.continuationCandidates)
-        return joiningHyphenatedWords(lines, in: region, continuation: Array(next))
+        // Last, so the rows moved onto their column's pitch are the joined ones, and every
+        // instrument that starts here measures the layer at the places it is drawn (C52).
+        return gridded(joiningHyphenatedWords(lines, in: region, continuation: Array(next)),
+                       in: region)
     }
 
     // MARK: - Turned lines (C36)
@@ -1697,6 +1700,251 @@ enum SearchableWriter {
             ceilings[i] = min(ceilings[i], max(cap, floor))
         }
         return ceilings
+    }
+
+    /// How far a row may stand from its column's pitch and still be moved onto it, as
+    /// a share of the pitch. `Marth_1982` p2's two rows needed 0.17 and 0.14; a row set
+    /// with space under a sub-heading stands half a pitch off and stays.
+    static var gridTolerance: CGFloat = 0.3
+
+    /// The least a row is moved, as a share of the pitch: a row within this of the fit is
+    /// left where Vision put it. Every column's rows jitter by a few tenths of a point, and
+    /// moving all of them changed PDFKit's reading of `Raskin` p1, a newspaper page whose
+    /// columns stand 4.5 pt apart: four columns that read whole came back cut into bands
+    /// of three or four lines [measured]. Marth p2's two rows stood 0.14 and 0.17 off.
+    static var gridMinimumMove: CGFloat = 0.07
+
+    /// The narrowest gutter, as a share of the column's median box height, beside which a
+    /// column's rows are still moved. Where columns stand closer than this PDFKit's own
+    /// reading of the page is fragile either way: on `Raskin` p1 (4.5 pt between columns
+    /// of 7.8 pt boxes, 0.58) one row moved 1.6 pt and PDFKit read the two columns beside
+    /// it line by line, four columns 1.00 -> 0.2-0.4; on the 1969 `Wall Street Journal`
+    /// page (2.5 pt) seven columns fell and its blocks went 41 -> 145 [measured]. Marth
+    /// p2's columns stand 7.8 pt apart over 9.5 pt boxes (0.82).
+    static var gridGutterMinimum: CGFloat = 0.7
+
+    /// How far apart, as a share of the pitch, the steps above and below a row must be,
+    /// one short and one long, for the row to count as standing off the line its
+    /// neighbours define. Those rows alone are moved: that is the defect, a row Vision
+    /// placed off its line (Marth p2's `more."`, steps 7.4 and 10.1 over a pitch of 8.7;
+    /// `Motorola took to learn…`, 8.1 and 9.9). Rows that merely jitter are left as read.
+    static var gridDisplacement: CGFloat = 0.15
+
+    /// `lines` with each column's rows that stand off their line moved onto the column's
+    /// baseline pitch (C52).
+    ///
+    /// PDFKit groups a page's lines into blocks before it orders them, and a column
+    /// whose baselines fall at uneven steps is cut where a step is long. On
+    /// `Marth_1982` p2 a short line Vision boxed without descenders (`more."`, its
+    /// baseline 1.2 pt high) and a hyphen-joined one (`wanted from their jobs.`) each
+    /// opened a gap of 4.5 pt under the line above against the column's 3, each column
+    /// read as two blocks with the neighbour's between them, and a drag down either
+    /// copied the other. The source's own layer, set at one pitch, reads each as one
+    /// block. With the rows moved onto the pitch their steps agree on, both columns read
+    /// whole; drawn at one height but left at their own steps, one still broke; and
+    /// closing only the two widest steps moved the breaks to other rows [all measured
+    /// through PDFKit's reading order on the published page].
+    ///
+    /// A row is a column's fragments on one visual line (`isSameVisualLine`). A row over
+    /// one and a half of its column's median height is a heading (`ceilings`): it keeps
+    /// its place and does not vote. The pitch is the median step between a column's body
+    /// rows, refined by least squares over each run of rows within a fifth of that step,
+    /// and only a row standing off the line its neighbours define (`gridDisplacement`),
+    /// which is the defect, is moved onto it; a
+    /// row further than `gridTolerance` of a pitch from the fit, or nearer than
+    /// `gridMinimumMove`, or sharing a grid line with another, stays where it was, and so
+    /// does one whose move would leave a step to the line above or below less regular than
+    /// Vision left it. (A lone row more than a fifth off its neighbours opens a run of its
+    /// own and is never moved; only a drifting run of rows reaches the full tolerance.) A
+    /// column standing nearer than `gridGutterMinimum` to a column beside it, a
+    /// column of fewer than four
+    /// body rows, or whose steps do not agree (fewer than half within a quarter of the
+    /// median), is left alone, and so is every line outside a column: this runs after the
+    /// gutters are found, in `prepared`, so `headroom` and `placement` see the moved boxes
+    /// and no run is drawn into a neighbour it would have cleared.
+    static func gridded(_ lines: [Observation], in box: CGRect) -> [Observation] {
+        guard box.height > 0, lines.count >= 4, allFinite(lines) else { return lines }
+        let columns = columnMembers(of: lines,
+                                    aspect: box.width > 0 ? Double(box.height / box.width) : 1)
+        var out = lines
+        var members: [Int: [Int]] = [:]
+        for (i, column) in columns.enumerated() { if let column { members[column, default: []].append(i) } }
+        func span(_ o: Observation) -> (left: Double, right: Double) {
+            (o.boundingBox.x, o.boundingBox.x + o.boundingBox.width)
+        }
+        // Each column's extent over its body-height lines, in points, for the gutter test.
+        var extents: [Int: (left: CGFloat, right: CGFloat, top: CGFloat, bottom: CGFloat, height: CGFloat)] = [:]
+        for (column, indices) in members {
+            let heights = indices.map { CGFloat(lines[$0].boundingBox.height) * box.height }.sorted()
+            let median = heights[heights.count / 2]
+            let body = indices.filter { CGFloat(lines[$0].boundingBox.height) * box.height <= 1.5 * median }
+            guard !body.isEmpty else { continue }
+            extents[column] = (
+                body.map { CGFloat(span(lines[$0]).left) * box.width }.min()!,
+                body.map { CGFloat(span(lines[$0]).right) * box.width }.max()!,
+                body.map { drawnBaseline(lines[$0], in: box) + CGFloat(lines[$0].boundingBox.height) * box.height }.max()!,
+                body.map { drawnBaseline(lines[$0], in: box) }.min()!,
+                median)
+        }
+        for column in members.keys.sorted() {
+            let indices = members[column]!
+            guard indices.count >= 4, let extent = extents[column] else { continue }
+            let narrow = extents.contains { other, e in
+                guard other != column, e.top > extent.bottom, e.bottom < extent.top else { return false }
+                let gap = max(e.left - extent.right, extent.left - e.right)
+                return gap < gridGutterMinimum * extent.height
+            }
+            guard !narrow else { continue }
+            // Rows: fragments on one visual line, keyed by the widest fragment's baseline.
+            var rows: [(baseline: CGFloat, height: CGFloat, members: [Int])] = []
+            for i in indices.sorted(by: { drawnBaseline(lines[$0], in: box) > drawnBaseline(lines[$1], in: box) }) {
+                if let r = rows.indices.last(where: { r in
+                    rows[r].members.contains { m in isSameVisualLine(lines[m], lines[i], in: box) }
+                }) {
+                    rows[r].members.append(i)
+                    if lines[i].boundingBox.width > lines[rows[r].members[0]].boundingBox.width {
+                        rows[r].baseline = drawnBaseline(lines[i], in: box)
+                        rows[r].members.swapAt(0, rows[r].members.count - 1)
+                    }
+                    rows[r].height = max(rows[r].height, CGFloat(lines[i].boundingBox.height) * box.height)
+                } else {
+                    rows.append((drawnBaseline(lines[i], in: box),
+                                 CGFloat(lines[i].boundingBox.height) * box.height, [i]))
+                }
+            }
+            // A row's baseline is its widest fragment's, which can arrive after a row below
+            // it was opened, so sort before taking steps.
+            rows.sort { $0.baseline > $1.baseline }
+            let heights = rows.map(\.height).sorted()
+            let median = heights[heights.count / 2]
+            let bodyRows = rows.indices.filter { rows[$0].height <= 1.5 * median }
+            let body = bodyRows.map { rows[$0] }
+            guard body.count >= 4 else { continue }
+            let steps = zip(body, body.dropFirst()).map { $0.baseline - $1.baseline }
+            let sorted = steps.sorted()
+            let pitch = sorted[sorted.count / 2]
+            guard pitch > 0.5,
+                  steps.filter({ abs($0 - pitch) <= 0.25 * pitch }).count * 2 >= steps.count
+            else { continue }
+            let tolerance = min(gridTolerance * pitch, 0.35 * median)
+            // Runs of rows at the column's step; a step a fifth off it (a paragraph set
+            // with space, a sub-heading, an entry gap in a list) starts a new run with its
+            // own phase. Counted as one step, `Bird` p5's entry gaps of 1.25 pitches put
+            // every row after them a quarter pitch off the fit, and two rows were moved
+            // toward each other by 2.7 pt and drawn squashed [measured].
+            var segments: [[Int]] = [[0]]
+            for (k, step) in steps.enumerated() {
+                if step < 0.8 * pitch || step > 1.2 * pitch { segments.append([k + 1]) }
+                else { segments[segments.count - 1].append(k + 1) }
+            }
+            let segmentOf = Dictionary(uniqueKeysWithValues: segments.enumerated()
+                .flatMap { n, segment in segment.map { ($0, n) } })
+            // Which of this column's body rows, and which run, a line belongs to, for the
+            // neighbours a move must respect.
+            var bodyOfLine: [Int: Int] = [:]
+            for (s, r) in bodyRows.enumerated() { for i in rows[r].members { bodyOfLine[i] = s } }
+            for (n, segment) in segments.enumerated() where segment.count >= 3 {
+                // Only the rows off the line their neighbours define are moved, onto the
+                // pitch the whole run is fitted to; the rows around them keep their jitter.
+                // Fitting the run entire mended Marth too, but on `Donahue` p1 moved two
+                // rows beside a drop cap by 1.1 and 1.2 pt and PDFKit cut the column at a
+                // paragraph gap whose own geometry had not changed (1.00 -> 0.49), where
+                // moving the out-of-line rows alone leaves it whole [measured].
+                let displaced = segment.dropFirst().dropLast().filter { s in
+                    let before = body[s - 1].baseline - body[s].baseline
+                    let after = body[s].baseline - body[s + 1].baseline
+                    return (before - pitch) * (after - pitch) < 0
+                        && abs(before - after) >= gridDisplacement * pitch
+                }
+                guard !displaced.isEmpty else { continue }
+                let first = body[segment[0]].baseline
+                let ks = segment.map { ((first - body[$0].baseline) / pitch).rounded() }
+                // Least squares over (k, baseline) when there are rows enough to trust
+                // the slope, else the column's pitch and this run's median phase.
+                var slope = pitch
+                let count = CGFloat(segment.count)
+                let meanK = ks.reduce(0, +) / count
+                let meanB = segment.map { body[$0].baseline }.reduce(0, +) / count
+                if segment.count >= 6 {
+                    var num: CGFloat = 0, den: CGFloat = 0
+                    for (k, s) in zip(ks, segment) {
+                        num += (k - meanK) * (body[s].baseline - meanB)
+                        den += (k - meanK) * (k - meanK)
+                    }
+                    if den > 0 { slope = -num / den }
+                    if abs(slope - pitch) > 0.1 * pitch { slope = pitch }
+                }
+                let phases = zip(ks, segment).map { body[$1].baseline + slope * $0 }.sorted()
+                let phase = phases[phases.count / 2]
+                for (k, s) in zip(ks, segment) where displaced.contains(s) {
+                    let residual = body[s].baseline - (phase - slope * k)
+                    guard abs(residual) <= tolerance, abs(residual) >= gridMinimumMove * pitch,
+                          zip(ks, segment).filter({ $0.0 == k }).count == 1 else { continue }
+                    // No move may leave a step to the nearest line above or below that
+                    // shares horizontal space less regular than it was, every line measured
+                    // where Vision put it: against a row of this run the step must come no
+                    // further from the pitch, and against anything else (a heading, a
+                    // caption, a line of no column, a row across a long step) it must not
+                    // shrink below what it was, or below a pitch. A row whose grid line lies
+                    // the wrong side of a neighbour stays, whatever the fit says.
+                    let target = body[s].baseline - residual
+                    var above: (gap: CGFloat, line: Int)?, below: (gap: CGFloat, line: Int)?
+                    for j in lines.indices where !body[s].members.contains(j) {
+                        let (l, r) = span(lines[j])
+                        guard body[s].members.contains(where: { m in
+                            let (ml, mr) = span(lines[m])
+                            return (min(mr, r) - max(ml, l)) * box.width > 1
+                        }) else { continue }
+                        let gap = drawnBaseline(lines[j], in: box) - body[s].baseline
+                        if gap > 0.5, gap < above?.gap ?? .infinity { above = (gap, j) }
+                        if gap < -0.5, -gap < below?.gap ?? .infinity { below = (-gap, j) }
+                    }
+                    let regular = [above, below].compactMap { $0 }.allSatisfy { neighbour in
+                        let before = neighbour.gap
+                        let after = abs(target - drawnBaseline(lines[neighbour.line], in: box))
+                        if let b = bodyOfLine[neighbour.line], segmentOf[b] == n {
+                            return abs(after - pitch) <= abs(before - pitch) + 0.05
+                        }
+                        return after >= min(before, pitch) - 0.05
+                    }
+                    guard regular else { continue }
+                    let moved = body[s].members.map { i -> Observation in
+                        let o = out[i]
+                        var m = Observation(
+                            boundingBox: BoundingBox(x: o.boundingBox.x,
+                                                     y: o.boundingBox.y + Double(residual / box.height),
+                                                     width: o.boundingBox.width,
+                                                     height: o.boundingBox.height),
+                            text: o.text, confidence: o.confidence)
+                        m.quarterTurns = o.quarterTurns
+                        m.region = o.region
+                        return m
+                    }
+                    // A move that makes a line share a visual line with one it did not,
+                    // or part it from one it did, is refused: `headroom` would then stop
+                    // counting the neighbour and draw both runs tall into each other. On
+                    // `Marth_1982` p2 the row under a drop cap, moved 0.34 pt toward it,
+                    // came within the tolerance (3.89 pt against 3.92) and the two were
+                    // drawn 8.4 and 5.8 pt tall over a 3.9 pt step [measured].
+                    let flips = zip(body[s].members, moved).contains { i, m in
+                        out.indices.contains { j in
+                            guard j != i, !body[s].members.contains(j) else { return false }
+                            let o = out[j]
+                            let overlap = min(m.boundingBox.x + m.boundingBox.width,
+                                              o.boundingBox.x + o.boundingBox.width)
+                                - max(m.boundingBox.x, o.boundingBox.x)
+                            guard overlap * box.width > 1 else { return false }
+                            return isSameVisualLine(out[i], o, in: box) != isSameVisualLine(m, o, in: box)
+                                || isSameVisualLine(out[i], o, in: box, .taller)
+                                    != isSameVisualLine(m, o, in: box, .taller)
+                        }
+                    }
+                    guard !flips else { continue }
+                    for (i, m) in zip(body[s].members, moved) { out[i] = m }
+                }
+            }
+        }
+        return out
     }
 
     /// How tall this line's glyphs may be before they collide with the nearest

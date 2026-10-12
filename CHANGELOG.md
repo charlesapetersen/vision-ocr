@@ -14,6 +14,9 @@ an older entry mentions "Window ▸ Vision Reader Window", the menu item is now
 
 ## Unreleased
 
+- A drag down one column of a scanned magazine or journal page stays in that column where it used to jump
+  into the next one partway down: the text layer now sets each column's lines at one line pitch, which is
+  what Preview's reading order follows (C52, `Marth_1982` p2).
 - The run report has a `Model reader` row. It reads `off`: the setting that takes words from a stronger OCR
   model is being built, is not yet in the panel, and changes nothing unless it is set.
 - On newspaper scans with a rule printed down the gap between columns, a line the recogniser read on into the

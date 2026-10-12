@@ -1552,7 +1552,7 @@ say so in the commit.
       2026-10-06: round 1, session 3. Pencil gets a mark layer at 1/3; Ford p1 and Former p2 read; the
       22 sample documents +5.5% (`BUGS.md` C28, session 3).
       (origin: BUGS.md C28)
-- [ ] **c52-column-jumps** — make a drag down one column stay in it on the pages C34 still misses. (uses: build)
+- [x] **c52-column-jumps** — make a drag down one column stay in it on the pages C34 still misses. (uses: build)
       Riesman p2 is fixed (ff25f3b, 4657cff); Marth p2 and Cong p16 are not. The first bound was spent
       by those two commits, and the item was moved here on 2026-09-28 so the unattempted items above go
       first. Start from C52's recommended next approach (one height and pitch per column).
@@ -1560,8 +1560,9 @@ say so in the commit.
       `_1953_99 Cong_ 2` p16 copies that column's lines in order and nothing from its neighbour, checked
       against the source's own text layer's drag; C34's pages are no worse.
       BOUND: rule 10. 
-      Round 1, sessions 1-3, were on 2026-09-28 (ff25f3b, 4657cff, e34fb92), so its next session is round 1's
-      fourth (rule 10). (origin: BUGS.md C52)
+      Round 1, sessions 1-3, were on 2026-09-28 (ff25f3b, 4657cff, e34fb92). Round 1 session 4 on 2026-10-12
+      moved each column's rows onto one baseline pitch (`gridded`): Marth p2's two lower columns 0.51/0.61 ->
+      1.00, Cong p16 already 1.00 on main. (origin: BUGS.md C52)
 
 - [ ] **concurrent-suites** — let two suites run at once from two worktrees without either one wiping the other's
       settings, logs or files, so that `test.lock` limits only what truly conflicts. (uses: build)

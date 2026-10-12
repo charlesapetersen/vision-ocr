@@ -11276,6 +11276,187 @@ do {
     check("C52: a row read in two pieces starts where its first piece does",
           Recogniser.rowStart(of: 1, in: named, lineX: 0.013) == 0.17
               && Recogniser.rowStart(of: 1, in: alongside, lineX: 0.013) == 0.363)
+
+    // A magazine page whose two lower columns PDFKit cut into blocks (`Marth_1982` p2:
+    // Vision's boxes as `prepared` orders them, the text replaced by filler of the same
+    // length; the whole page, because PDFKit groups blocks over the page, and the two
+    // columns alone read whole without help). Two rows stood off their column's pitch, a
+    // short line Vision boxed without descenders (1.2 pt high) and a hyphen-joined one, and
+    // PDFKit started a block at each, so a drag down the middle column copied four of the
+    // right column's lines and a drag down the right copied eleven of the middle's. Moved
+    // onto their columns' pitch (`gridded`), each column is one block [measured].
+    let marthBoxes: [Double] = [   // x, y, w, h (normalised, top-left origin, as Vision gave them), text length
+        0.0000, 0.0116, 0.3207, 0.0176, 42,  0.0000, 0.0260, 0.3188, 0.0191, 34,
+        -0.0003, 0.0412, 0.3211, 0.0209, 38,  -0.0000, 0.0566, 0.3188, 0.0190, 33,
+        -0.0000, 0.0727, 0.3188, 0.0160, 37,  0.0000, 0.0884, 0.2334, 0.0177, 27,
+        0.0167, 0.1023, 0.3023, 0.0227, 32,  0.0000, 0.1206, 0.3207, 0.0160, 38,
+        -0.0000, 0.1337, 0.3207, 0.0218, 34,  0.0000, 0.1495, 0.3207, 0.0176, 30,
+        -0.0000, 0.1671, 0.3188, 0.0146, 37,  0.0000, 0.1801, 0.3188, 0.0163, 33,
+        0.0000, 0.1962, 0.3207, 0.0177, 35,  0.0000, 0.2120, 0.3207, 0.0177, 39,
+        0.0000, 0.2267, 0.3207, 0.0177, 42,  0.0000, 0.2442, 0.3207, 0.0160, 29,
+        0.0000, 0.2587, 0.3207, 0.0189, 43,  -0.0000, 0.2747, 0.1442, 0.0174, 9,
+        0.0171, 0.2892, 0.3036, 0.0176, 34,  0.0000, 0.3067, 0.3207, 0.0160, 41,
+        0.0000, 0.3212, 0.3207, 0.0176, 33,  -0.0001, 0.3349, 0.3210, 0.0198, 39,
+        0.0000, 0.3517, 0.3207, 0.0176, 34,  0.0000, 0.3661, 0.3226, 0.0177, 36,
+        0.0000, 0.3823, 0.3226, 0.0176, 40,  -0.0000, 0.3997, 0.3207, 0.0160, 38,
+        0.0000, 0.4142, 0.2391, 0.0163, 30,  0.0076, 0.4460, 0.3150, 0.0267, 33,
+        0.0417, 0.4608, 0.2789, 0.0174, 27,  -0.0000, 0.4753, 0.3207, 0.0176, 39,
+        0.0209, 0.4927, 0.2998, 0.0145, 33,  0.0000, 0.5072, 0.3207, 0.0176, 35,
+        0.0000, 0.5218, 0.3226, 0.0192, 36,  -0.0000, 0.5390, 0.3207, 0.0177, 36,
+        -0.0000, 0.5538, 0.3207, 0.0160, 37,  -0.0001, 0.5670, 0.3219, 0.0206, 36,
+        0.0000, 0.5843, 0.1708, 0.0174, 19,  0.1689, 0.5843, 0.0474, 0.0145, 4,
+        0.2201, 0.5884, 0.1025, 0.0119, 13,  0.0000, 0.6001, 0.3226, 0.0150, 35,
+        0.0000, 0.6148, 0.3150, 0.0191, 33,  0.0209, 0.6320, 0.3017, 0.0177, 36,
+        -0.0000, 0.6468, 0.3226, 0.0177, 32,  -0.0000, 0.6642, 0.3226, 0.0160, 39,
+        -0.0000, 0.6788, 0.3226, 0.0176, 36,  0.0000, 0.6948, 0.3226, 0.0174, 38,
+        0.0019, 0.7107, 0.3207, 0.0163, 34,  0.0000, 0.7250, 0.2789, 0.0178, 33,
+        0.0190, 0.7412, 0.3036, 0.0163, 36,  -0.0000, 0.7573, 0.3226, 0.0145, 39,
+        0.0019, 0.7718, 0.3207, 0.0176, 37,  0.0019, 0.7861, 0.1518, 0.0191, 19,
+        0.0209, 0.8036, 0.3009, 0.0176, 32,  0.0019, 0.8183, 0.3215, 0.0191, 41,
+        0.0019, 0.8342, 0.3207, 0.0176, 20,  -0.0003, 0.8464, 0.3237, 0.0224, 46,
+        0.0000, 0.8648, 0.3234, 0.0176, 32,  -0.0001, 0.8805, 0.3235, 0.0180, 34,
+        -0.0000, 0.8966, 0.2713, 0.0176, 32,  0.0209, 0.9113, 0.3026, 0.0191, 35,
+        0.0017, 0.9278, 0.3209, 0.0182, 38,  0.3393, 0.0130, 0.3173, 0.0176, 40,
+        0.3397, 0.0291, 0.1594, 0.0160, 20,  0.3548, 0.0422, 0.3017, 0.0190, 34,
+        0.3401, 0.0579, 0.3164, 0.0267, 37,  0.3401, 0.0733, 0.2050, 0.0199, 19,
+        0.5597, 0.0761, 0.0971, 0.0161, 9,  0.3401, 0.0837, 0.3151, 0.0278, 35,
+        0.3401, 0.1060, 0.3183, 0.0176, 40,  0.3401, 0.1206, 0.3183, 0.0160, 31,
+        0.3401, 0.1320, 0.3149, 0.0228, 34,  0.3401, 0.1508, 0.1893, 0.0163, 23,
+        0.3545, 0.1639, 0.3023, 0.0206, 38,  0.3397, 0.1814, 0.3188, 0.0163, 34,
+        0.3397, 0.1962, 0.3194, 0.0177, 39,  0.6791, 0.0102, 0.3135, 0.0209, 37,
+        0.6774, 0.0273, 0.3188, 0.0177, 38,  0.6772, 0.0413, 0.3173, 0.0199, 36,
+        0.6755, 0.0579, 0.3188, 0.0192, 35,  0.6773, 0.0738, 0.0742, 0.0166, 8,
+        0.6964, 0.0884, 0.2979, 0.0177, 33,  0.6793, 0.1060, 0.3169, 0.0176, 37,
+        0.6774, 0.1206, 0.2258, 0.0174, 27,  0.6774, 0.1365, 0.2144, 0.0190, 23,
+        0.6774, 0.1526, 0.1594, 0.0160, 20,  0.6964, 0.1671, 0.1727, 0.0163, 18,
+        0.9336, 0.1613, 0.0417, 0.0160, 3,  0.6774, 0.1831, 0.1803, 0.0160, 18,
+        0.6755, 0.1962, 0.1708, 0.0177, 16,  0.5028, 0.2587, 0.3302, 0.0235, 23,
+        0.9564, 0.2762, 0.0342, 0.0145, 2,  0.5009, 0.2994, 0.2144, 0.0146, 26,
+        0.5009, 0.3125, 0.2144, 0.0132, 34,  0.5009, 0.3270, 0.2144, 0.0145, 26,
+        0.8615, 0.3358, 0.0323, 0.0131, 3,  0.5541, 0.3414, 0.1613, 0.0150, 21,
+        0.5731, 0.3544, 0.1423, 0.0137, 18,  0.7381, 0.3692, 0.1157, 0.0131, 14,
+        0.5750, 0.3692, 0.1404, 0.0145, 19,  0.4383, 0.4113, 0.0873, 0.0349, 4,
+        0.6243, 0.4695, 0.0398, 0.0160, 2,  0.5617, 0.4956, 0.0474, 0.0174, 3,
+        0.6034, 0.5392, 0.0361, 0.0160, 2,  0.5332, 0.5509, 0.0285, 0.0160, 2,
+        0.5142, 0.5901, 0.0417, 0.0145, 3,  0.5825, 0.5915, 0.0418, 0.0132, 4,
+        0.7590, 0.3836, 0.0760, 0.0148, 9,  0.8937, 0.4157, 0.0380, 0.0145, 3,
+        0.7173, 0.4767, 0.0380, 0.0145, 3,  0.8121, 0.4884, 0.0474, 0.0160, 4,
+        0.6603, 0.5174, 0.0361, 0.0160, 3,  0.7514, 0.5291, 0.0361, 0.0145, 2,
+        0.8140, 0.5305, 0.1157, 0.0160, 15,  0.8329, 0.5463, 0.0798, 0.0164, 8,
+        0.7287, 0.5916, 0.0436, 0.0131, 4,  0.8026, 0.5914, 0.0419, 0.0134, 4,
+        0.9488, 0.5916, 0.0417, 0.0131, 4,  0.6546, 0.5916, 0.0417, 0.0131, 4,
+        0.3397, 0.6495, 0.3202, 0.0163, 37,  0.3416, 0.6642, 0.3183, 0.0174, 39,
+        0.3397, 0.6801, 0.3211, 0.0176, 45,  0.3416, 0.6962, 0.3183, 0.0177, 29,
+        0.3397, 0.7120, 0.3202, 0.0163, 32,  0.3416, 0.7253, 0.0588, 0.0160, 6,
+        0.3586, 0.7425, 0.3013, 0.0163, 36,  0.3397, 0.7573, 0.3202, 0.0178, 40,
+        0.3397, 0.7718, 0.3202, 0.0189, 24,  0.3416, 0.7878, 0.3183, 0.0191, 38,
+        0.3416, 0.8049, 0.2732, 0.0163, 33,  0.3601, 0.8156, 0.3005, 0.0230, 34,
+        0.3416, 0.8387, 0.3169, 0.0131, 34,  0.3416, 0.8503, 0.3192, 0.0177, 42,
+        0.3413, 0.8642, 0.3194, 0.0198, 30,  0.3397, 0.8808, 0.3207, 0.0191, 36,
+        0.3416, 0.8968, 0.0626, 0.0160, 7,  0.3548, 0.9142, 0.3055, 0.0176, 34,
+        0.3415, 0.9278, 0.3192, 0.0182, 38,  0.8729, 0.5916, 0.0436, 0.0145, 3,
+        0.7438, 0.6073, 0.2315, 0.0137, 37,  0.9184, 0.6261, 0.0759, 0.0078, 16,
+        0.6791, 0.6450, 0.3192, 0.0215, 44,  0.6793, 0.6642, 0.3169, 0.0174, 30,
+        0.6793, 0.6788, 0.3188, 0.0189, 30,  0.6793, 0.6948, 0.3188, 0.0160, 40,
+        0.6793, 0.7107, 0.2486, 0.0190, 22,  0.6983, 0.7267, 0.2998, 0.0177, 37,
+        0.6793, 0.7425, 0.3188, 0.0163, 39,  0.6812, 0.7587, 0.3150, 0.0163, 36,
+        0.6812, 0.7731, 0.2846, 0.0176, 32,  0.6983, 0.7892, 0.2998, 0.0160, 32,
+        0.6812, 0.8049, 0.3169, 0.0163, 30,  0.6811, 0.8194, 0.3152, 0.0181, 33,
+        0.6812, 0.8342, 0.3169, 0.0176, 33,  0.6812, 0.8503, 0.3169, 0.0160, 34,
+        0.6793, 0.8677, 0.1404, 0.0160, 18,  0.7002, 0.8823, 0.2979, 0.0163, 34,
+        0.6827, 0.8954, 0.3119, 0.0284, 34,  0.6812, 0.9128, 0.1670, 0.0160, 19,
+        0.9013, 0.9285, 0.0949, 0.0137, 10,  0.0133, 0.9532, 0.9545, 0.0177, 102,
+    ]
+    let filler = Array("lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor "
+                       + "incididunt ut labore et dolore magna aliqua ut enim ad minim veniam quis ")
+    var fillerAt = 0
+    let marthLayer: [Obs] = stride(from: 0, to: marthBoxes.count, by: 5).map { i in
+        var t = ""
+        while t.count < Int(marthBoxes[i + 4]) { t.append(filler[fillerAt % filler.count]); fillerAt += 1 }
+        return o(t.trimmingCharacters(in: .whitespaces), x: marthBoxes[i], y: marthBoxes[i + 1],
+                 w: marthBoxes[i + 2], h: marthBoxes[i + 3])
+    }
+    let marthPage = CGRect(x: 0, y: 0, width: 429.45, height: 561.342)
+    // The lower blocks of the middle and right columns: PDF points, bottom-left origin.
+    let lowerTop: CGFloat = 200
+    let middle: ClosedRange<CGFloat> = 140...289, right: ClosedRange<CGFloat> = 289...440
+    /// The steps between the middle column's lower rows, and the two drop-cap rows'
+    /// baselines, as `prepared` leaves them at this tolerance.
+    func rows(at tolerance: CGFloat) -> (steps: [CGFloat], dropCap: [CGFloat]) {
+        let was = SearchableWriter.gridTolerance
+        SearchableWriter.gridTolerance = tolerance
+        defer { SearchableWriter.gridTolerance = was }
+        let lines = SearchableWriter.prepared(marthLayer, in: marthPage)
+        func baseline(_ o: Obs) -> CGFloat { SearchableWriter.drawnBaseline(o, in: marthPage) }
+        let baselines = lines.filter {
+            middle.contains(CGFloat($0.boundingBox.x) * marthPage.width) && baseline($0) < lowerTop
+        }.map(baseline).sorted(by: >)
+        let dropCap = lines.filter { $0.boundingBox.height > 0.025 && $0.boundingBox.x < 0.02 }
+            .flatMap { cap in [cap] + lines.filter { abs(baseline($0) - baseline(cap) + 4.2) < 1 } }
+            .map(baseline)
+        return (zip(baselines, baselines.dropFirst()).map { $0 - $1 }.filter { $0 > 2 }, dropCap)
+    }
+    let loose = rows(at: 0), snapped = rows(at: SearchableWriter.gridTolerance)
+    /// Rows standing off the line their neighbours define: a step short on one side and
+    /// long on the other, `gridDisplacement` of the pitch apart.
+    func offLine(_ steps: [CGFloat]) -> Int {
+        guard steps.count >= 3 else { return -1 }
+        let pitch = steps.sorted()[steps.count / 2]
+        return zip(steps, steps.dropFirst()).filter { before, after in
+            (before - pitch) * (after - pitch) < 0
+                && abs(before - after) >= SearchableWriter.gridDisplacement * pitch
+        }.count
+    }
+    let changed = zip(loose.steps, snapped.steps).filter { abs($0 - $1) > 0.01 }.count
+    check("C52: the rows of a column that stand off their line are moved onto its pitch, and no other row",
+          loose.steps.count >= 15 && offLine(loose.steps) >= 2 && offLine(snapped.steps) == 0
+              && changed <= 2 * offLine(loose.steps),
+          "off their line: \(offLine(loose.steps)) before, \(offLine(snapped.steps)) after; \(changed) steps changed")
+    check("C52: …a drop cap's row keeps its place, and so does the row under it that a move would make its visual line",
+          loose.dropCap.count == 2 && loose.dropCap == snapped.dropCap,
+          "\(loose.dropCap) -> \(snapped.dropCap)")
+    /// A drag down each lower column of the page composed at `tolerance`, through PDFKit:
+    /// the column's lines, how many the drag took, and how many lines from outside it.
+    func drags(at tolerance: CGFloat) -> [(lines: Int, taken: Int, outside: Int)] {
+        let was = SearchableWriter.gridTolerance
+        SearchableWriter.gridTolerance = tolerance
+        defer { SearchableWriter.gridTolerance = was }
+        let dir = tmp.appendingPathComponent("c52-grid")
+        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        let src = dir.appendingPathComponent("blank.pdf")
+        var box = marthPage
+        if let c = CGContext(src as CFURL, mediaBox: &box, nil) { c.beginPDFPage(nil); c.endPDFPage(); c.closePDF() }
+        let out = dir.appendingPathComponent("grid-\(tolerance).pdf")
+        _ = try? SearchableWriter.compose(visible: src, observations: [1: marthLayer], to: out, drawImages: false)
+        guard let page = PDFDocument(url: out)?.page(at: 0),
+              let all = page.selection(for: page.bounds(for: .mediaBox))?.selectionsByLine() else { return [] }
+        return [middle, right].map { column in
+            // The drag runs from the column's first full line to its last; a short line
+            // below the last (the author's name under the right column) is not dragged over.
+            let inColumn = all.map { $0.bounds(for: page) }
+                .filter { column.contains($0.minX) && $0.maxY < lowerTop }
+            let full = inColumn.filter { $0.width > 60 }
+            guard let top = full.max(by: { $0.maxY < $1.maxY }),
+                  let bottom = full.min(by: { $0.minY < $1.minY }),
+                  let drag = page.selection(from: CGPoint(x: top.minX + 1, y: top.midY),
+                                            to: CGPoint(x: bottom.maxX - 1, y: bottom.midY))
+            else { return (inColumn.count, 0, 0) }
+            func dragged(_ b: CGRect) -> Bool {
+                column.contains(b.minX) && b.minY >= bottom.minY - 1 && b.maxY <= top.maxY + 1
+            }
+            let mine = inColumn.filter(dragged)
+            let got = drag.selectionsByLine().map { $0.bounds(for: page) }
+            let inside = got.filter(dragged)
+            return (mine.count, inside.count, got.count - inside.count)
+        }
+    }
+    let looseDrags = drags(at: 0), snappedDrags = drags(at: SearchableWriter.gridTolerance)
+    check("C52: the fixture reproduces the report: at their own steps, a drag down a lower column takes the neighbour's lines",
+          looseDrags.count == 2 && looseDrags.contains { $0.outside > 0 },
+          "\(looseDrags)")
+    check("C52: …and on their column's pitch, a drag down each lower column copies that column's lines and nothing from its neighbour, as PDFKit selects",
+          snappedDrags.count == 2 && snappedDrags.allSatisfy { $0.lines >= 15 && $0.taken == $0.lines && $0.outside == 0 },
+          "\(snappedDrags)")
     resetPrefs()
 }
 

@@ -19463,7 +19463,7 @@ decimal point Vision does not see, which is C50's question on the same page. Tha
 `c50-typewriter-reads`'s DONE WHEN rather than holding C51 open. Rejected: a second code commit here to
 re-read the cell from the grey source, which is exactly C50's experiment and exceeds this item's bound.
 
-### C52 · A drag down one column still jumps into the next partway down — OPEN
+### C52 · A drag down one column still jumps into the next partway down — FIXED 2026-10-12
 
 *(found 2026-09-27 by `ux-read`; C34 is FIXED and is not reopened.)*
 
@@ -19585,6 +19585,80 @@ first. It comes back with a new bound when it reaches the head of the queue agai
 2026-10-01, `truth-read` [measured by subagent, from TRUTH-RUN final5]: drags that jump columns add 411 words
 to `_1967_Yearly` p1, 210 to `Berendzen_1981` p1, 100 to `Davis_2005` p3 and 45 to `Berger_2013` p18, pages the
 old measures passed.
+
+#### 2026-10-12, round 1 session 4 (high effort): each column's rows on one baseline pitch
+
+**Where it stood.** Cong p16 already read 1.00 on all eleven of its columns on main before this session
+(the C41 column-rule work of 6e33178 and 9d5b877 reached it); Marth p2 still read 0.51 [measured, ux-harness].
+
+**Cause** [measured through PDFKit's reading order on the published page, `order` scratch tool]. Marth p2's
+lower middle column broke into two blocks after `more."`, a short line Vision boxed without descenders so its
+baseline sat 1.2 pt high, and the lower right column after the hyphen-joined `wanted from their jobs.`; the
+drawn gap under each was 4.4-4.5 pt against the column's 3, and PDFKit put the neighbour's block between the
+two halves. The source's own layer, set at one 8.9 pt pitch, reads each as one block. Rewriting the output's
+text matrices by hand: rows moved onto one pitch per column, heights kept -> each lower column one block; one
+height per column, baselines kept -> one break left (a 10.3 pt step); only the two widest steps closed -> the
+breaks moved to other rows. A synthetic two-column page with one row displaced up to 5 pt never broke, and the
+two lower columns alone on a blank page read whole without help: PDFKit decides blocks over the whole page.
+
+**Fix.** `gridded`, at the end of `prepared`: in each column, the body rows (fragments on one visual line; a
+row over 1.5x the column's median height is a heading and stays) that stand off the line their neighbours
+define (`gridDisplacement`: a step short on one side and long on the other, 0.15 pitch apart, the defect's own
+signature) are moved onto the pitch the column's steps agree on, fitted by least squares over each run of
+rows within a fifth of the median step; the rows around them keep their jitter. A row more than `gridTolerance`
+(0.3 pitch, at most 0.35 of the median height) off the fit stays, as does one nearer than `gridMinimumMove`
+(0.07 pitch), one sharing a grid line with another, one whose move would leave a step to the nearest line
+above or below less regular than Vision left it, and one whose move would flip an `isSameVisualLine` relation
+with an overlapping line (the row under Marth's drop cap, moved 0.34 pt, came within 3.89 pt of it against a
+3.92 tolerance, and both were drawn tall into each other). A column standing nearer than `gridGutterMinimum`
+(0.7 of its median box height) to a column beside it is left alone, and so is a run of rows holding no row
+that stands off the line its neighbours define (`gridDisplacement`: a step short on one side and long on the
+other, 0.15 pitch apart), which is the defect's own signature. Boxes move, not runs, so `headroom` and
+`placement` see the moved rows. Five intermediate versions were measured and rejected: without the flip guard
+the drop-cap pair above; with segments split only at steps outside 0.55-1.45 pitch, `Bird` p5's 1.25-pitch
+entry gaps skewed the fit and two rows were moved toward each other by 2.7 pt and drawn 4.2 pt tall (truth
+copyErr 0.006 -> 0.50, the drag ending on the page number); with every row moved however little, `Raskin` p1
+(columns 4.5 pt apart) read four whole columns as bands of three or four lines (1.00 -> 0.21-0.35) and the 1969
+`Wall Street Journal` page (2.5 pt) read seven columns line by line (its blocks 41 -> 145), while `Peters_1989`
+p1 went 0.60 -> 1.00 and `Lemann_1977` pp1-2 0.39/0.35 -> 0.51/0.39; with a minimum move alone no setting
+kept Marth whole without still cutting two of Raskin's columns (0.07: Marth 1.00/1.00, Raskin 1.00 -> 0.39
+and 0.55; 0.12: Raskin partly back, Marth 0.51 again); and with the gutter rule but every row of a run
+holding an out-of-line row fitted, `Donahue` p1 lost one column (1.00 -> 0.49) after two rows beside a drop
+cap moved 1.1 and 1.2 pt onto the fit, PDFKit then cutting the column at a paragraph gap whose own geometry
+had not changed. Moving the out-of-line rows alone mends Marth the same (1.00/1.00) and leaves Donahue whole
+(1.00 on all seven columns), while keeping `Peters_1989` p1's gain (0.60 -> 1.00) and `Lemann_1977` p2's
+(0.35 -> 0.39). Where columns stand close, PDFKit's reading is fragile in both directions and the layer is
+left as Vision read it.
+
+**Measured** (production outputs, c3c91d0 -> this, ux-harness and PDFKit):
+- Marth_1982 p2: worst column 0.51 -> 0.65 (its left column, which the source's own layer leaks at 0.73,
+  across a drop cap the source breaks at too); the two lower columns 0.51 and 0.61 -> 1.00 and 1.00, the
+  other three 1.00 unchanged; copy WER 0.54 -> 0.34, truth copyErr 0.50 -> 0.25.
+- _1953_99 Cong_ 2 p16: eleven columns 1.00 -> 1.00; Riesman_1949 p2: six columns 1.00 -> 1.00.
+- ux-regression (43 pages, 30 documents): 4 better, all Marth p2 (inside, wer, truth copyErr 0.50 -> 0.25),
+  1 worse, Marth p2's `prec` 0.92 -> 0.87, accepted and the baseline refreshed: the harness judges a copied
+  word against readings whose line lies within half a line height of the drawn run, and the moved rows now
+  sit up to 1.5 pt off their ink; the copied words are the same. Every other page and document identical.
+- C34's pages (16, through the harness, base -> this): Hughes pp2/3/7/8, Fairchild 1950 p22, `What We're
+  About` pp1-3, Lemann p1/p3 and Peters pp2-3 identical; Peters p1 0.60 -> 1.00; Lemann p2 0.35 -> 0.39
+  (one of its columns 0.70 -> 0.61); Donahue p1 1.00 -> 1.00; WSJ 1969 p1 0.59 -> 0.59 (its 2.5 pt gutters
+  keep it out). Hughes, Fairchild and `What We're About` were measured identical under the first, fuller
+  version of the change; every rule added since only removes moves, so they are identical under this one
+  [reasoned]. Raskin p1 (C34/C39, in the regression set) identical, its 4.5 pt gutters keeping it out.
+- The left column of Marth p2 stays 0.64: it breaks at the drop cap, where the source's own layer breaks too
+  (0.73); its first row's box is 15 pt tall and the row under it is squashed to 2.8 pt beside it. Not this
+  item's: C52 names the columns that jump partway down, not the drop cap, and a drag from a drop cap on the
+  source behaves the same.
+- DONE WHEN, checked by a separate subagent on these outputs and the sources' own layers: Riesman p2 PASS (six
+  columns 1.00 before and after; the source's own layer leaks at 0.52); Marth p2 PASS (its two lower columns
+  one block each in PDFKit's order, 1.00, as the source; the left column 0.64, the source 0.73, both broken at
+  the same drop cap); Cong p16 PASS (eleven columns 1.00 before, after and in the source); C34's pages no
+  worse PASS (Donahue p1 re-measured identical). Its caveat, recorded: Riesman and Cong already passed on
+  main, so this commit mends Marth alone. Suite 1863/1863. **Box ticked.**
+- Invariant 3 on Marth, by a separate subagent, before -> after: `score-run-width` minshare 0.743 -> 0.743,
+  squash 0.210 -> 0.210; `score-line-separation` merged 3/112 -> 3/112, runaway 0 -> 0, welded 0/184 -> 0/184;
+  `score-corpus` start/end 100%, off +0.00, words 96% unchanged; `probe-text-offset` p2 on the finished
+  files median 0.00, range 0.00-0.20 both. All four properties the same.
 
 ### C53 · Single lines and line tails on clean print are missing from the text layer, and nothing says so — FIXED
 
