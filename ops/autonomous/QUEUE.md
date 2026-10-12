@@ -1483,25 +1483,86 @@ say so in the commit.
       paragraph in `OCR-HYBRID-DECISION-2026-10-12.md` (or a dated follow-up) give its misreads both ways on both
       sets. It changes no setting and no arrangement; the choice stays with `ocr-hybrid-approve`, which the owner
       deferred until this result is in. ESTIMATE: 1-2 sessions. BOUND: rule 10. (context: owner request 2026-10-12)
-- [ ] **ocr-integrate-engine** — run the winning arrangement inside the app. (blocked-on: ocr-hybrid-approve) (uses: build,model:12)
-      Starts from the option the owner approved, recorded in `ocr-hybrid-approve`. Its first step is the `BUGS.md`
-      entry that names that option. If the owner approved "adopt nothing", tick the three `ocr-integrate-*`
-      items and `ocr-requeue` with that reason and do no other work here.
-      Built, not left as a recommendation (owner, 2026-10-02). The model runs from the app's helper under the
-      guard's limits with the chosen maximum as its cap, and falls back to Vision with a message when memory is
-      short or the model fails. If arrangement (a) won, the model replaces Vision as the recogniser in this mode,
-      Vision kept only as that fallback. Integrate each model `ocr-hybrid-pick` named for a memory limit.
-      DONE WHEN the helper produces `ocr-hybrid-run`'s figures for the winner on the sample, the suite passes,
-      and nothing crashes on this Mac. ESTIMATE: 2-4 sessions. Sub-boxes: the runtime in the helper, the guard
-      and fallback, one per model wired in. BOUND: rule 10. (context: owner request 2026-10-02, split 2026-10-04)
-- [ ] **ocr-integrate-settings** — give the accurate mode its settings and downloads. (uses: build)
+
+      THE APPROACH (owner, 2026-10-12, at the walkthrough; replaces the single-winner pick for what gets built).
+      The accurate mode offers Vision, PaddleOCR-VL 1.6 4-bit and Falcon-OCR bf16, and the user chooses which reads
+      each kind of page, from a table of measured speed and accuracy per kind. The app tells the kinds apart by
+      itself (`ocr-newspaper-detect`). A memory slider defaults to 5 GB on Macs with 16 GB or more and lower
+      below that. A small timing run on the user's own Mac refreshes the speed figures; it cannot measure accuracy,
+      which needs truth text, so the accuracy figures are ours and ship with the app. The owner's aim: "fully
+      compare Vision, PaddleOCR, Falcon-OCR, and make sure we're getting real advantages and providing users with
+      a real sense of the differences." So the three are measured on both kinds of page in the same arrangements
+      before anything is built, and Vision reading DocLayout-YOLO regions is a candidate standard for newspapers
+      with no model at all (lab: NewsBench 1−CER 0.304 whole page against 0.741 on regions, `ocr-lab-round3`).
+- [ ] **ocr-vision-regions** — make Vision a region reader, so `modelArrangement=regions` runs with no model.
+      (uses: build) (effort: medium)
+      `hp-regions` built the regions arrangement with a model reading each region (`reader-regions.sh`); Vision
+      as the reader is still to write (`c41` notes the same gap). Read each deduped DocLayout-YOLO region with the
+      app's own Vision request at its settings, and write the words as the arrangement already writes a model's.
+      The layout model may stay the lab's ONNX build for measuring; the Core ML or other in-app form is
+      `ocr-integrate-engine`'s. DONE WHEN Vision-on-regions publishes the two `hp-regions` pages (Helena 1931,
+      Helena 1941) through `score-gate` and `ux-harness --truth`, with figures beside `hp-regions`' PaddleOCR-VL
+      ones, behind a test that goes red without it. ESTIMATE: 1 session. BOUND: rule 10. (context: owner request 2026-10-12)
+- [ ] **ocr-compare-run** — run Vision, PaddleOCR-VL and Falcon-OCR in every arrangement that suits each, on both
+      kinds of page, as one job. (blocked-on: ocr-vision-regions, model-night-ok) (uses: machine)
+      `ocr-hybrid-run` left the comparison uneven: PaddleOCR-VL read newspapers only, nothing read regions off
+      newspapers, and Vision never read regions. Run with `ops/ocrlab/hybrid-run.sh` over the same 67 pages and
+      scoring, reusing `OCR-HYBRID-2026-10-12.tsv`'s rows where the build and tools are unchanged, and add:
+      Vision on regions (newspapers and other pages); PaddleOCR-VL on regions off newspapers (its 1 MP cap rules
+      out whole pages, so regions is its only print arrangement); Falcon-OCR on regions off newspapers; and
+      PaddleOCR-VL fill on both kinds if its region crops serve fill's lines. Record time per page, peak memory and
+      download for each, and say in the table why any cell is empty. If NewsBench's 15 pages can be scored the
+      same way, run them too, since 11 newspaper pages is a small set. DONE WHEN, committed as
+      `OCR-COMPARE-<date>.tsv`: every one of the three readers has a scored row on both kinds of page, or a logged
+      reason. ESTIMATE: 1-2 sessions, plus a night of unattended job. Sub-boxes: job started, finished and scored.
+      BOUND: rule 10. (context: owner request 2026-10-12)
+- [ ] **ocr-compare-report** — write the full comparison for the owner and for the app's settings table.
+      (blocked-on: ocr-compare-run, ocr-newspaper-detect) (uses: light)
+      A dated `OCR-COMPARE-DECISION-<date>.md` in the plain prose of `OCR-HYBRID-DECISION-2026-10-12.md`: for each
+      kind of page, Vision, PaddleOCR-VL and Falcon-OCR in their best arrangement side by side (words wrong or
+      missing, Copy, Find, time per page against Vision whole-page, peak memory, download), the detector's misreads
+      both ways, and what each reader would cost a user on a 300-page book and a 20-page newspaper. Say plainly
+      where a model gives no real advantage over Vision (on regions or whole) for a kind of page, so the owner can
+      leave it out of that kind's choices, and whether Vision on regions should become the standard newspaper
+      route. Draft the table the settings will show: per kind, per reader, the accuracy figure, the speed figure
+      and the memory it needs, in words a user reads. A note on the Desktop as `ocr-hybrid-pick` left. DONE WHEN
+      committed with the note. It decides nothing. ESTIMATE: 1 session. BOUND: rule 10. (context: owner request 2026-10-12)
+- [ ] **ocr-integrate-engine** — run the readers the owner approved inside the app. (blocked-on: ocr-hybrid-approve) (uses: build,model:12)
+      Starts from what the owner approved in `ocr-hybrid-approve` after `ocr-compare-report`: under THE APPROACH
+      above, which of Vision-on-regions, PaddleOCR-VL and Falcon-OCR are offered for which kind of page. Its first
+      step is the `BUGS.md` entry that names it. If the owner approved "adopt nothing", tick the three
+      `ocr-integrate-*` items and `ocr-requeue` with that reason and do no other work here.
+      Built, not left as a recommendation (owner, 2026-10-02). Each model runs from the app's helper under the
+      guard's limits with the slider's maximum as its cap, and falls back to Vision with a message when memory is
+      short or the model fails. The page classifier from `ocr-newspaper-detect` sends each page to the reader and
+      arrangement the settings name for its kind. DocLayout-YOLO runs in the app (Core ML or another form the
+      helper can load; not the lab's Python). The models share one runtime in the helper; packaging it is the
+      largest part, so its first sub-box is a written plan with the runtime's size on disk and how it loads
+      in an unnotarized app (installed through System Settings, Privacy & Security, Open Anyway).
+      DONE WHEN the helper reproduces `ocr-compare-run`'s figures for every approved reader on the sample, the
+      suite passes, and nothing crashes on this Mac. ESTIMATE: 3-5 sessions. Sub-boxes: the runtime plan, the
+      runtime in the helper, the layout model in the app, the guard and fallback, one per reader wired in.
+      BOUND: rule 10. (context: owner request 2026-10-02, split 2026-10-04, approach 2026-10-12)
+- [ ] **ocr-integrate-settings** — give the accurate mode its settings, figures, timing run and downloads. (uses: build)
       (blocked-on: ocr-integrate-engine)
-      Off by default until the owner decides. A maximum-memory setting with steps from about 4 GB to 12 GB and a
-      default chosen from the Mac's installed memory, and under it a choice among the integrated models and
-      builds that fit that limit (owner, 2026-10-02). Each model downloads on first use with its size stated.
-      DONE WHEN the settings and downloads work in the built app, `ux-regression.sh` is no worse with the mode
-      off, and the suite passes. No release: that stays the owner's. ESTIMATE: 1-2 sessions. Sub-boxes: the
-      settings, the downloads. BOUND: rule 10. (context: owner request 2026-10-02, split 2026-10-04)
+      Off by default. Under THE APPROACH above (owner, 2026-10-12):
+      - An "Accurate mode" switch; with it on, one choice of reader per kind of page (newspapers, and everything
+        else until the classifier tells more kinds apart), offering only the readers approved for that kind and
+        only the builds that fit the memory slider.
+      - Beside the choices, the table `ocr-compare-report` drafted: per kind and reader, how accurate and how fast,
+        and the memory and download it needs. Accuracy is ours and labelled as measured on our sample; speed is
+        ours until the user runs the timing run.
+      - "Measure on this Mac": a short run (a few bundled sample pages per reader and kind, minutes, not hours)
+        that times each downloaded reader on the user's machine and replaces the speed column, saying when it
+        ran. It does not claim to measure accuracy.
+      - A memory slider from about 4 GB to 12 GB, defaulting to 5 GB on Macs with 16 GB or more and to a lower
+        step, with a warning, below that.
+      - Falcon-OCR bf16 and PaddleOCR-VL 1.6 4-bit, with the shared runtime and the layout model, each download on
+        first use with its size stated; nothing downloads while the mode is off.
+      DONE WHEN the settings, the table, the timing run and the downloads work in the built app, `ux-regression.sh`
+      is no worse with the mode off, and the suite passes. No release: that stays the owner's. ESTIMATE: 2-3
+      sessions. Sub-boxes: the settings and table, the timing run, the downloads. BOUND: rule 10.
+      (context: owner request 2026-10-02, split 2026-10-04, approach 2026-10-12)
 - [ ] **ocr-requeue** — make the rest of the queue build on the accurate mode. (uses: build,model:12)
       (blocked-on: ocr-integrate-settings) (effort: medium)
       Re-measure every later open item's named pages with the mode on. Close an item whose DONE WHEN the mode
@@ -1782,11 +1843,14 @@ These are offered to nobody. `next-item.sh` prints them as `hold` so they stay v
       Night 3 (23:35-07:40) finished Churro 3B, olmOCR-2-7B and Qwen3-VL-8B; Qwen3.5-9B was stopped at 6 of 56
       pages (weak early reads: one whole page 4 characters) and is DROPPED by the owner, not owed another try. No
       further bake-off night is needed for ocr-bakeoff-run; ocr-bakeoff-bits will need its own (4-6 h job).
-- [ ] **ocr-hybrid-approve** — the owner reads `OCR-HYBRID-DECISION-<date>.md` from `ocr-hybrid-pick` and approves an option. (blocked-on: ocr-hybrid-pick) Tick
+- [ ] **ocr-hybrid-approve** — the owner reads `OCR-HYBRID-DECISION-<date>.md` from `ocr-hybrid-pick` and approves an option. (blocked-on: ocr-hybrid-pick, ocr-compare-report) Tick
       it with the date and the owner's words naming the option; `ocr-integrate-engine` and everything after it wait on
       this. Added 2026-10-08 (owner: informed of the results, given options, approve the next step). 2026-10-12
       walkthrough: the owner deferred the choice ("Let's come back to this decision") and asked for
-      `ocr-newspaper-detect` first; bring its result with the options next time. An interactive
+      `ocr-newspaper-detect` first; bring its result with the options next time. The owner then set THE APPROACH
+      (above `ocr-vision-regions`): users choose among Vision, PaddleOCR-VL and Falcon-OCR per kind of page from
+      measured figures, so the question here becomes which readers give a real advantage for which kind, answered
+      from `OCR-COMPARE-DECISION-<date>.md` (blocked-on: ocr-compare-report). An interactive
       session shows the owner the options as a choice and records the answer here. [hold] needs: owner — the choice of route is the owner's.
 - [x] **model-night-ok** — the owner says the Mac is free for a night, so a long model job may start: ocr-bakeoff-bits'
       4-6 hours, ocr-hybrid-run's 6-10. Added 2026-10-07 when EFFICIENCY-PLAN item 16 loosened the edges that had kept
