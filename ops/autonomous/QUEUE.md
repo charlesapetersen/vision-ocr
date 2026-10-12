@@ -1466,6 +1466,15 @@ say so in the commit.
       Options A (adopt nothing), B (Falcon-OCR bf16: align off newspapers, regions on them; 4.0x / 0.28 miss the
       rule), C (PaddleOCR-VL regions, newspapers only), D (B plus Chandra at 9 GB+). Recommended B, which needs the
       rule relaxed. Nothing chosen; `ocr-hybrid-approve` is the owner's.
+- [ ] **ocr-vision-regions** — make Vision a region reader, so `modelArrangement=regions` runs with no model.
+      (uses: build) (effort: medium) Ahead of ocr-newspaper-detect so ocr-compare-run can start the night of 2026-10-12 (owner).
+      `hp-regions` built the regions arrangement with a model reading each region (`reader-regions.sh`); Vision
+      as the reader is still to write (`c41` notes the same gap). Read each deduped DocLayout-YOLO region with the
+      app's own Vision request at its settings, and write the words as the arrangement already writes a model's.
+      The layout model may stay the lab's ONNX build for measuring; the Core ML or other in-app form is
+      `ocr-integrate-engine`'s. DONE WHEN Vision-on-regions publishes the two `hp-regions` pages (Helena 1931,
+      Helena 1941) through `score-gate` and `ux-harness --truth`, with figures beside `hp-regions`' PaddleOCR-VL
+      ones, behind a test that goes red without it. ESTIMATE: 1 session. BOUND: rule 10. (context: owner request 2026-10-12)
 - [ ] **ocr-newspaper-detect** — tell newspaper pages from the rest by themselves, page by page, so the accurate
       mode can pick its arrangement without the user labelling anything. (uses: build) (effort: medium)
       Owner, 2026-10-12, at the walkthrough: users add a wide variety of material and will not specify a model per
@@ -1494,15 +1503,6 @@ say so in the commit.
       a real sense of the differences." So the three are measured on both kinds of page in the same arrangements
       before anything is built, and Vision reading DocLayout-YOLO regions is a candidate standard for newspapers
       with no model at all (lab: NewsBench 1−CER 0.304 whole page against 0.741 on regions, `ocr-lab-round3`).
-- [ ] **ocr-vision-regions** — make Vision a region reader, so `modelArrangement=regions` runs with no model.
-      (uses: build) (effort: medium)
-      `hp-regions` built the regions arrangement with a model reading each region (`reader-regions.sh`); Vision
-      as the reader is still to write (`c41` notes the same gap). Read each deduped DocLayout-YOLO region with the
-      app's own Vision request at its settings, and write the words as the arrangement already writes a model's.
-      The layout model may stay the lab's ONNX build for measuring; the Core ML or other in-app form is
-      `ocr-integrate-engine`'s. DONE WHEN Vision-on-regions publishes the two `hp-regions` pages (Helena 1931,
-      Helena 1941) through `score-gate` and `ux-harness --truth`, with figures beside `hp-regions`' PaddleOCR-VL
-      ones, behind a test that goes red without it. ESTIMATE: 1 session. BOUND: rule 10. (context: owner request 2026-10-12)
 - [ ] **ocr-compare-run** — run Vision, PaddleOCR-VL and Falcon-OCR in every arrangement that suits each, on both
       kinds of page, as one job. (blocked-on: ocr-vision-regions, model-night-ok) (uses: machine)
       `ocr-hybrid-run` left the comparison uneven: PaddleOCR-VL read newspapers only, nothing read regions off
@@ -1852,12 +1852,14 @@ These are offered to nobody. `next-item.sh` prints them as `hold` so they stay v
       measured figures, so the question here becomes which readers give a real advantage for which kind, answered
       from `OCR-COMPARE-DECISION-<date>.md` (blocked-on: ocr-compare-report). An interactive
       session shows the owner the options as a choice and records the answer here. [hold] needs: owner — the choice of route is the owner's.
-- [x] **model-night-ok** — the owner says the Mac is free for a night, so a long model job may start: ocr-bakeoff-bits'
+- [ ] **model-night-ok** — the owner says the Mac is free for a night, so a long model job may start: ocr-bakeoff-bits'
       4-6 hours, ocr-hybrid-run's 6-10. Added 2026-10-07 when EFFICIENCY-PLAN item 16 loosened the edges that had kept
       both behind other work. Tick it with the date and the owner's words; untick it when the owner next needs the Mac.
       [hold] needs: owner — only the owner knows when the Mac is free for the night.
       TICKED 2026-10-10 ~13:20 (owner, in chat: "I'm not using the computer the rest of the day. The bake-off etc.
       can run."); until the owner next needs the Mac. Untick by hand when they do.
+      UNTICKED 2026-10-12 ~08:45 (owner, in chat: "Untick that the mac is free. We'll have to do the compare-run
+      tonight"). ocr-compare-run is meant for the night of 2026-10-12; the owner ticks this again when the Mac is free.
       Last ticked for the night of 2026-10-08 (owner: "Assume the mac is free at 10pm"); unticked 2026-10-09 08:00.
 - [ ] **taborder** — the tab-order walk is still by hand. [hold] needs: owner — accepted by the owner
       as a known gap on 2026-08-13.
