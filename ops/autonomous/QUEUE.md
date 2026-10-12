@@ -1446,7 +1446,7 @@ say so in the commit.
             read pages 0.29 at 18.8x; fill 0.04-0.05.
             Against the pick rule (cut >= 1/3, <= 3x, < 12 GB) no route passes both edges as run: off newspapers
             the cut comes only at 4x or more, and on newspapers no region reader reaches a third. For ocr-hybrid-pick.
-- [ ] **ocr-hybrid-pick** — choose the arrangement, model and build for each memory limit. (uses: light)
+- [x] **ocr-hybrid-pick** — choose the arrangement, model and build for each memory limit. (uses: light)
       (blocked-on: ocr-hybrid-run, ocr-bakeoff-bits) (effort: medium)
       A route wins when it cuts words wrong or missing by at least a third on old print or on newspapers, runs
       at no more than three times Vision's time per page, and stays under the guard's 12 GB on this Mac.
@@ -1462,6 +1462,10 @@ say so in the commit.
       the rule; (3) one recommendation and why. It names no winner as decided. It ticks no `ocr-integrate-*` item
       and writes no `BUGS.md` entry for the choice. ESTIMATE: 1 session. BOUND: rule 10.
       (context: owner request 2026-10-02, split 2026-10-04; approval step added 2026-10-08)
+      DONE 2026-10-12: `OCR-HYBRID-DECISION-2026-10-12.md`, note on the Desktop. No route passes the rule as run.
+      Options A (adopt nothing), B (Falcon-OCR bf16: align off newspapers, regions on them; 4.0x / 0.28 miss the
+      rule), C (PaddleOCR-VL regions, newspapers only), D (B plus Chandra at 9 GB+). Recommended B, which needs the
+      rule relaxed. Nothing chosen; `ocr-hybrid-approve` is the owner's.
 - [ ] **ocr-integrate-engine** — run the winning arrangement inside the app. (blocked-on: ocr-hybrid-approve) (uses: build,model:12)
       Starts from the option the owner approved, recorded in `ocr-hybrid-approve`. Its first step is the `BUGS.md`
       entry that names that option. If the owner approved "adopt nothing", tick the three `ocr-integrate-*`
