@@ -60,7 +60,14 @@ for line in open(os.path.join(H, "sample.rows"), encoding="utf-8"):
     if len(f) >= 6:
         sample[f[0]] = {"doc": f[1], "page": f[2], "route": f[3], "why": f[4], "class": f[5]}
 
-combos = [l.split("\t")[0] for l in open(os.path.join(H, "combos.tsv"), encoding="utf-8").read().splitlines() if l]
+combo_rows = [l.split("\t") for l in open(os.path.join(H, "combos.tsv"), encoding="utf-8").read().splitlines() if l]
+combos = [r[0] for r in combo_rows]
+# A combination run on one page group only (the last column of combos.tsv) gets a row saying why not the other.
+SCOPE_WHY = {
+    "other": "whole newspaper pages loop or trip the guard (ocr-lab-setup)",
+    "newspaper": "regions is the arrangement for newspapers only (ocr-hybrid-proto)",
+}
+scope = {r[0]: r[-1] for r in combo_rows if len(r) >= 8}
 not_run = [l.split("\t", 1) for l in open(os.path.join(H, "not-run.tsv"), encoding="utf-8").read().splitlines() if l]
 
 
@@ -190,6 +197,8 @@ with open(OUT, "w", encoding="utf-8") as f:
             r = summarise(c, g)
             if r:
                 f.write("\t".join(fmt(r[k]) for k in COLS) + "\n")
+            elif g != "all" and scope.get(c) in SCOPE_WHY and scope[c] != g:
+                f.write("\t".join([c, g] + ["-"] * (len(COLS) - 3) + [f"not run: {SCOPE_WHY[scope[c]]}"]) + "\n")
     for label, why in not_run:
         f.write("\t".join([label, "all"] + ["-"] * (len(COLS) - 3) + [f"not run: {why}"]) + "\n")
 print(f"hybrid-table: {OUT}")

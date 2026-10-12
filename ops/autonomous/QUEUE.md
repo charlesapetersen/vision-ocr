@@ -1404,7 +1404,7 @@ say so in the commit.
       (the print says `Water`). Falcon read rule-only crops as HTML tables of 1..100; the length bound rejected
       every one. Review and DONE WHEN check: blank readers now fail the file, a held line's figures must survive,
       lines under three letters keep Vision's.
-- [ ] **ocr-hybrid-run** — run every arrangement with each of the top three over the sample, as one job. (uses: machine)
+- [x] **ocr-hybrid-run** — run every arrangement with each of the top three over the sample, as one job. (uses: machine)
       (blocked-on: ocr-hybrid-proto, model-night-ok)
       2026-10-07: model-night-ok added when ocr-hybrid-proto stopped waiting on the bits item (EFFICIENCY-PLAN
       item 16), since this job too needs the whole Mac for a night and that edge had kept it behind one.
@@ -1429,9 +1429,23 @@ say so in the commit.
       - [x] **hybrid-run-started** — the job started on the whole sample, alive when the session ended.
             2026-10-11 09:28, pid 95141, tools from 6dbc22c; holds engine.lock. LightOnOCR waits for 9 GB
             reclaimable (8 for the guard, 1 for the gate's page), which a daytime Mac with sessions open lacks.
-      - [ ] **hybrid-run-finished** — `hybrid.log` says `all combinations done`. A session that finds it dead
+      - [x] **hybrid-run-finished** — `hybrid.log` says `all combinations done`. A session that finds it dead
             restarts it with `hybrid-run.sh start` (it resumes; a page with a `status` is not run again).
-      - [ ] **hybrid-run-scored** — `OCR-HYBRID-<date>.tsv` and its pages file committed.
+            2026-10-12 04:07, ~19 h. Every page ok but 5 of Chandra regions' 11 newspapers: each reader call hit
+            read-mlx.py's `--seconds 540` bound (guard rows: exit 1 at 545-547 s, 6.1-7.1 GB), so the app failed
+            the page as it should rather than publish part of it. Logged per page in the pages file.
+      - [x] **hybrid-run-scored** — `OCR-HYBRID-<date>.tsv` and its pages file committed.
+            DONE 2026-10-12: `OCR-HYBRID-2026-10-12.tsv` and `-pages.tsv`. hybrid-table.py now also writes a
+            `not run` row for each group a combination skips by design. Measured, wrong+missing share vs Vision,
+            time ratio (app's time a page), largest guard peak:
+            other pages (56; Vision 1.20%, 3.5 s): chandra-replace 0.52% (cut 0.57) 19.6x 9.8 GB, but added words
+            852 -> 4024; falcon-align 0.63% (0.47) 4.0x 4.5 GB; chandra-align 0.66% (0.44) 16.1x 8.1 GB;
+            lighton-align 0.71% (0.41) 4.1x 8.9 GB; fill with any model 1.11% (0.07) 1.2-1.5x.
+            newspapers (11; Vision 29.6%, 24 s): falcon-regions 21.4% (0.28) 2.8x 3.9 GB; paddle-regions 21.8%
+            (0.26) 2.4x 2.5 GB; lighton-regions 22.0% (0.26) 5.3x 10.2 GB; chandra-regions 5 failed, on its 6
+            read pages 0.29 at 18.8x; fill 0.04-0.05.
+            Against the pick rule (cut >= 1/3, <= 3x, < 12 GB) no route passes both edges as run: off newspapers
+            the cut comes only at 4x or more, and on newspapers no region reader reaches a third. For ocr-hybrid-pick.
 - [ ] **ocr-hybrid-pick** — choose the arrangement, model and build for each memory limit. (uses: light)
       (blocked-on: ocr-hybrid-run, ocr-bakeoff-bits) (effort: medium)
       A route wins when it cuts words wrong or missing by at least a third on old print or on newspapers, runs
