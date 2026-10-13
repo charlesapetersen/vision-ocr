@@ -222,6 +222,38 @@ let tmp = URL(fileURLWithPath: NSTemporaryDirectory())
 try? FileManager.default.createDirectory(at: tmp, withIntermediateDirectories: true)
 defer { try? FileManager.default.removeItem(at: tmp) }
 
+// concurrent-suites (cs-paths). The run reports the batch tests write go under this
+// run's own directory, not `~/Library/Logs/VisionOCR`, where every suite wrote one
+// second-stamped name. And the run says it is isolated: test-lock.sh reads a `tests`
+// process with a marker here as one that cannot collide with another suite, and one
+// without as an older binary that still could. The marker is made after the domain
+// and the directories it vouches for, and removed at exit.
+// The marker directory is the per-user one `getconf DARWIN_USER_TEMP_DIR` names, not
+// NSTemporaryDirectory(), which follows $TMPDIR and so could disagree with the script.
+RunReport.directory = tmp.appendingPathComponent("run-reports", isDirectory: true)
+let isolatedSuitesDir: URL = {
+    if let named = ProcessInfo.processInfo.environment["VISIONOCR_SUITE_MARKS"], !named.isEmpty {
+        return URL(fileURLWithPath: named, isDirectory: true)
+    }
+    var buf = [CChar](repeating: 0, count: Int(PATH_MAX))
+    let n = confstr(_CS_DARWIN_USER_TEMP_DIR, &buf, buf.count)
+    let base = n > 0 && n <= buf.count ? String(cString: buf) : NSTemporaryDirectory()
+    return URL(fileURLWithPath: base, isDirectory: true)
+        .appendingPathComponent("visionocr-isolated-suites", isDirectory: true)
+}()
+let isolatedSuiteMarker = isolatedSuitesDir
+    .appendingPathComponent(String(ProcessInfo.processInfo.processIdentifier))
+try? FileManager.default.createDirectory(at: isolatedSuitesDir, withIntermediateDirectories: true)
+for name in (try? FileManager.default.contentsOfDirectory(atPath: isolatedSuitesDir.path)) ?? [] {
+    guard let pid = Int32(name), kill(pid, 0) != 0, errno == ESRCH else { continue }
+    try? FileManager.default.removeItem(at: isolatedSuitesDir.appendingPathComponent(name))
+}
+let suitePaths = "domain=\(testDomain) tmp=\(tmp.path) reports=\(RunReport.directory.path)"
+try? (suitePaths + "\n").write(to: isolatedSuiteMarker, atomically: true, encoding: .utf8)
+atexit { try? FileManager.default.removeItem(at: isolatedSuiteMarker) }
+print("suite paths: \(suitePaths)")
+fflush(stdout)   // prove-concurrent-suites.sh reads this line while the run goes on
+
 /// An image-only PDF: no embedded text, so anything we read back came from OCR.
 /// Fraction of a given page that is not paper, rendered through PDFKit.
 ///
@@ -18817,6 +18849,13 @@ do {
         if let report = m.lastReport {
             check("the run report exists on disk",
                   FileManager.default.fileExists(atPath: report.path), report.path)
+            // concurrent-suites: in this run's directory, where a second suite's
+            // report of the same second cannot land or be removed by this one.
+            check("…in this run's own report directory, not ~/Library/Logs",
+                  report.deletingLastPathComponent().standardizedFileURL.path
+                      == RunReport.directory.standardizedFileURL.path
+                      && report.path.hasPrefix(tmp.path + "/"),
+                  report.path)
             let body = (try? String(contentsOf: report, encoding: .utf8)) ?? ""
             check("…and it carries the whole log",
                   body.contains("Done —") && body.contains("one.pdf"),

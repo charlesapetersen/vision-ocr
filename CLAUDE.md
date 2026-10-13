@@ -51,7 +51,7 @@ lets anything else through in seconds.
 ```sh
 ./build.sh            # build -> build/VisionOCR.app
 ./build.sh --install  # + install to /Applications
-./run_tests.sh        # 1,881 checks, no skips
+./run_tests.sh        # 1,882 checks, no skips
 ```
 
 The count on the `./run_tests.sh` line stays undated and current, because `check-staleness.sh` reads it
@@ -154,8 +154,9 @@ Never report a change as working without `./run_tests.sh` passing. Add a test th
   `Tools/mutate.py` says to stay sequential and blames *timing*; the real hazard
   is shared preferences, and it fails checks for reasons unrelated to load. This
   includes suites started by review agents you launched. Since cs-domains
-  (2026-10-13) each run has its own domain, `local.visionocr-tests.<pid>`; the rule
-  stands until `concurrent-suites` also separates the logs and `/tmp` paths.
+  (2026-10-13) each run has its own domain, `local.visionocr-tests.<pid>`, and since
+  cs-paths its own run-report directory, with a marker `test-lock.sh` reads; the rule
+  stands until cs-narrow-lock shrinks `test.lock` to what two suites still share.
 - **Backgrounded shell commands have essentially no `PATH`** — `basename`, `cut`,
   `timeout` fail silently and loops report bogus results. Use absolute paths.
 - **A suite's log lags by up to 4 KB when redirected to a file** — `print` is

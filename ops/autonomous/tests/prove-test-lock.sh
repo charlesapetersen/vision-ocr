@@ -31,12 +31,12 @@
 # the interposition works and aborts if it does not.
 #
 # USAGE:  ops/autonomous/tests/prove-test-lock.sh [path/to/test-lock.sh]
-# EXPECTED RESULT: 71 passed, 0 failed, 0 skipped — on an IDLE machine with a working process tree.
+# EXPECTED RESULT: 78 passed, 0 failed, 0 skipped — on an IDLE machine with a working process tree.
 # ⚠️ THERE ARE THREE SKIP ARMS, not one, and this line used to name only the first while the count beside it
 # had been updated twice. They are: [10]'s converse ("with no suite on the machine, the real detector reports
 # free"), which is undecidable while a real suite runs; [12]'s pid-chain arm, if the three-deep helper chain
 # cannot be built; and [12]'s real end-to-end arm, if the real `pgrep` cannot see both `exec -a tests`
-# processes. Each emits ONE skip per assertion it stands in for, named the same, so the total is 71 either way
+# processes. Each emits ONE skip per assertion it stands in for, named the same, so the total is 78 either way
 # — see the note on [12]'s `else`. A skip is a loud SKIP, never a quiet pass.
 set -uo pipefail
 
@@ -77,6 +77,7 @@ export HOME="$T/home"; mkdir -p "$HOME"
 BIN="$T/bin"; mkdir -p "$BIN"
 export PATH="$BIN:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
 export VISIONOCR_TEST_LOCK="$T/test.lock"
+export VISIONOCR_SUITE_MARKS="$T/marks"
 LOCKDIR="$T/test.lock"
 
 # Scriptable `pgrep` stub: $T/pgrepctl holds `none`, `live`, `pids N N N…`, or `flip` (a suite on the first
@@ -559,6 +560,50 @@ case "$(printf '%s' "$OUT" | grep '^suite')" in
 esac
 printf '%s' "$OUT" | grep -qE 'RUNNING.*(0 suite|\(pids? \))' \
   && bad "reported RUNNING over an empty pid set" || ok "never reports RUNNING over an empty pid set"
+pgset none; clear_lock
+
+# ---- [12d] ISOLATED SUITES (concurrent-suites, cs-paths) -------------------------------------------------------
+# A suite since cs-paths writes a marker named by its pid, and cannot collide with another suite, so the
+# out-of-band check must not count it; a `tests` process without one, or with one older than the process (a
+# recycled pid), still counts. Real processes, so `ps -o lstart=` has something to read; the stubbed `pgrep`
+# names them, so a real suite elsewhere on the machine cannot change the answer.
+echo "[12d] a suite that marks itself isolated is not an out-of-band suite; an unmarked or stale one is"
+( exec -a tests /bin/sleep 765435 ) & ISO1=$!; note_pid "$ISO1" "tests 765435"
+( exec -a tests /bin/sleep 765436 ) & ISO2=$!; note_pid "$ISO2" "tests 765436"
+sleep 1; clear_lock; rm -rf "$VISIONOCR_SUITE_MARKS"; mkdir -p "$VISIONOCR_SUITE_MARKS"
+pgset "pids $ISO1"
+OUT=$(VISIONOCR_TEST_LOCK_PID=$$ tl acquire --label iso --wait 0 2>&1); RC=$?
+[ "$RC" = 4 ] && ok "an unmarked tests process still makes acquire yield (rc 4)" || bad "unmarked: rc=$RC ('$OUT')"
+clear_lock
+touch "$VISIONOCR_SUITE_MARKS/$ISO1"
+OUT=$(VISIONOCR_TEST_LOCK_PID=$$ tl acquire --label iso --wait 0 2>&1); RC=$?
+[ "$RC" = 0 ] && ok "a marked one does not (acquired, rc 0)" || bad "marked: rc=$RC ('$OUT')"
+clear_lock
+OUT=$(tl status 2>&1); printf "%s" "$OUT" | grep -q "1 suite (pid $ISO1), isolated" \
+  && ok "…and status names it as one isolated suite" || bad "status: '$(tl status 2>&1 | grep '^suite')'"
+touch -t 200001010000 "$VISIONOCR_SUITE_MARKS/$ISO1"
+OUT=$(VISIONOCR_TEST_LOCK_PID=$$ tl acquire --label iso --wait 0 2>&1); RC=$?
+[ "$RC" = 4 ] && ok "a marker older than its process (a recycled pid) does not count (rc 4)" || bad "stale marker: rc=$RC ('$OUT')"
+clear_lock
+touch "$VISIONOCR_SUITE_MARKS/$ISO1"; pgset "pids $ISO1 $ISO2"
+OUT=$(tl status 2>&1 | grep '^suite')
+printf '%s' "$OUT" | grep -q '2 SUITES AT ONCE' \
+  && ok "one marked and one unmarked are still two suites, loudly" || bad "mixed: '$OUT'"
+touch "$VISIONOCR_SUITE_MARKS/$ISO2"
+OUT=$(tl status 2>&1 | grep '^suite')
+printf '%s' "$OUT" | grep -q "2 isolated suites at once (pids $ISO1 $ISO2)" && ! printf '%s' "$OUT" | grep -q 'SUITES AT ONCE' \
+  && ok "two marked ones are reported as isolated, not as corruption" || bad "two isolated: '$OUT'"
+kill -9 "$ISO1" "$ISO2" 2>/dev/null; wait "$ISO1" "$ISO2" 2>/dev/null
+# A marked suite's probe child carries no marker of its own (probes exit before writing one); it must not make
+# the suite read as out-of-band.
+( exec -a tests /bin/bash -c "/bin/sleep 765437 & printf '%s' \$! > '$T/isokid.pid'; wait" ) & ISOP=$!
+note_pid "$ISOP" "sleep 765437"
+W=0; while [ ! -s "$T/isokid.pid" ] && [ "$W" -lt 5 ]; do sleep 1; W=$(( W + 1 )); done
+ISOKID="$(cat "$T/isokid.pid" 2>/dev/null)"; note_pid "$ISOKID" "sleep 765437"
+sleep 1; touch "$VISIONOCR_SUITE_MARKS/$ISOP"; pgset "pids $ISOP $ISOKID"
+OUT=$(VISIONOCR_TEST_LOCK_PID=$$ tl acquire --label iso --wait 0 2>&1); RC=$?
+[ "$RC" = 0 ] && ok "a marked suite with an unmarked probe child still acquires (rc 0)" || bad "probe child: rc=$RC ('$OUT')"
+kill -9 "$ISOKID" "$ISOP" 2>/dev/null; wait "$ISOP" 2>/dev/null
 pgset none; clear_lock
 
 # ---- [13] THE WAITING NOTICE — one assertion per REASON _try_acquire can be busy for -------------------------

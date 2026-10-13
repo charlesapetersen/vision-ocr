@@ -145,7 +145,10 @@ The lock is a `mkdir`-atomic directory recording the **caller's** pid, so a hold
 lid, a watchdog TERM) is reclaimable the instant its pid is gone rather than after a timeout. It also
 consults `pgrep -x tests`, which catches a suite started by something that never heard of the lock — and it
 is `-x`, never `-f build/tests`, because the `-f` form matches every waiter including its own shell, which is
-how four loops once sat waiting on each other while nothing ran.
+how four loops once sat waiting on each other while nothing ran. A suite built since cs-paths has its own
+settings domain, report and temporary directories, and leaves a marker named by its pid in
+`$(getconf DARWIN_USER_TEMP_DIR)visionocr-isolated-suites`; `test-lock.sh` does not count a marked suite as
+out-of-band. `ops/ocrlab/run-guarded.sh` still refuses beside any suite, marked or not: it guards memory.
 
 ## How long things actually take — and why one number was never going to do
 
@@ -517,6 +520,8 @@ ops/autonomous/tests/prove-test-lock.sh   # mutual exclusion, reentrancy, stale 
                                           #   and that both caller shapes write the same ledger row
 ops/autonomous/tests/prove-status.sh      # STATE 1: one branch per answer the run-state lib can give
 ops/autonomous/tests/prove-stop.sh        # `daemon.sh stop`: tree teardown, the lock verdicts, engine.lock
+ops/autonomous/tests/prove-concurrent-suites.sh  # HEAVY: two full suites at once from two copies of the tree;
+                                          #   disjoint paths, both green. Run under mac-heavy-lock.sh.
 ops/autonomous/tests/mutate-test-lock.sh  # puts each of test-lock.sh's guards back as a defect, on a copy,
                                           #   and proves prove-test-lock.sh objects. --only, --out TSV.
 ```

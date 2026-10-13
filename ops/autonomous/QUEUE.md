@@ -1710,7 +1710,7 @@ say so in the commit.
         owner's real old-name domain); mutants `store` left on `.standard` and one `Model.swift` site reverted turn
         three checks red. cfprefsd can put an empty 42 B plist back after the exit delete; the next run sweeps
         dead pids' files and a named domain is cleared at start.
-      - [ ] **cs-paths** — per-run logs and temporary paths, and a suite guard that sees two suites.
+      - [x] **cs-paths** — per-run logs and temporary paths, and a suite guard that sees two suites.
         (blocked-on: cs-domains) (uses: build) Parameterise `~/Library/Logs/VisionOCR` (`Sources/RunReport.swift`
         50-61) so the three report tests write to a per-run directory; give fixed `/tmp` names a per-run directory
         (`Tests/main.swift` 1722-1724 writes `/tmp/c29-*.pdf`; find the rest). Change `test-lock.sh`'s suite
@@ -1721,6 +1721,18 @@ say so in the commit.
         `test.lock` for the test), both pass, their domains, log directories and temporary paths are disjoint,
         run-guarded refuses while either runs, and a mutant restoring a shared path turns the harness red.
         ESTIMATE: 1 session.
+        DONE 2026-10-13. `RunReport.directory` is settable and the suite points it at `<tmp>/run-reports` (`tmp` was
+        already per pid); the fixed `/tmp/c29-*`, `/tmp/a.pdf` names are argument strings and dictionary keys, never
+        written, and every scratch path in `Sources/` is UUID-named. The suite leaves a marker
+        `$(getconf DARWIN_USER_TEMP_DIR)visionocr-isolated-suites/<pid>`; `test-lock.sh`'s `_suite_live` skips probe
+        children and marked roots whose marker is no older than the process (a recycled pid's stale marker fails),
+        and `status` says "N isolated suites at once". run-guarded is unchanged: any `tests` still refuses it.
+        Rejected: telling suites apart by argv or env, which an older binary run the same way would share.
+        Measured: `prove-concurrent-suites.sh` ran two suites at once from two copies, both 1882/1882, disjoint
+        domains, tmp and report directories, `~/Library/Logs/VisionOCR` and `tests.plist` untouched, run-guarded
+        75 with both running; `MUTANT=shared-reports` turns it red. prove-test-lock 71 -> 78, a mutant dropping the
+        probe-child skip caught. Left as they are: `run-state-lib.sh` `suite_blocking` and the daemon's wedge check
+        still treat any suite as busy, which is safe; cs-narrow-lock decides whether they should change.
       - [ ] **cs-narrow-lock** — shrink `test.lock` to what two suites still share. (blocked-on: cs-paths) (uses: build)
         Audit what remains shared once cs-domains is in (`build/` is per worktree; candidates: appends to
         `$STATE/suite-timings.tsv`, the binary cache's temp-then-rename, the green stamp's record) and hold the

@@ -55,11 +55,14 @@ enum RunReport {
     /// output folder, and writing a report into each of five source directories
     /// is litter. The run log names the path it wrote, and the Help menu opens
     /// the directory, so it is discoverable without being underfoot.
-    static var directory: URL {
+    ///
+    /// Settable so the test suite can give each run a directory of its own
+    /// (concurrent-suites); the app never changes it.
+    nonisolated(unsafe) static var directory: URL = {
         let base = FileManager.default.urls(for: .libraryDirectory, in: .userDomainMask).first
             ?? URL(fileURLWithPath: NSHomeDirectory()).appendingPathComponent("Library")
         return base.appendingPathComponent("Logs/VisionOCR", isDirectory: true)
-    }
+    }()
 
     /// A stable, sortable file name. Colons are legal in HFS+ file names and
     /// display as slashes in Finder, so the time uses hyphens.

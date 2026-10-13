@@ -30,6 +30,12 @@
 # waiting on each other while nothing ran, and the guard they fed refused to start the real run. `-x`
 # matches the process NAME, which for build/tests is exactly `tests`.
 #
+# ISOLATED SUITES (concurrent-suites, cs-paths). A suite built since cs-paths has its own preferences domain,
+# report directory and temporary directory, and says so with a marker file named by its pid in
+# $VISIONOCR_SUITE_MARKS (default `$(getconf DARWIN_USER_TEMP_DIR)visionocr-isolated-suites`). Such a suite
+# cannot collide with another, so the out-of-band check no longer counts it; a `tests` process with no marker,
+# or with one older than the process (a recycled pid), is an older binary and still counts.
+#
 # USAGE
 #   test-lock.sh run [--label L] [--wait S] -- <cmd> [args…]   acquire, run <cmd>, release (the main form)
 #   test-lock.sh acquire [--label L] [--wait S]                 acquire and return (caller must release)
@@ -106,10 +112,41 @@ _holder_alive() {
   kill -0 "$p" 2>/dev/null
 }
 
-# Is a suite running that did NOT come through this lock? See the -x note in the header.
-# A probe child (below) is only ever forked BY a suite, so as a boolean this stays exactly right and is
-# deliberately left as the cheap one-process question. Only the REPORT needs to tell the two apart.
-_suite_live() { pgrep -x tests >/dev/null 2>&1; }
+SUITE_MARKS="${VISIONOCR_SUITE_MARKS:-$(getconf DARWIN_USER_TEMP_DIR 2>/dev/null)visionocr-isolated-suites}"
+
+# _start_of PID — the process's start time in epoch seconds, or nothing.
+_start_of() {
+  # UTC on both sides: a local time in the autumn fall-back hour reads an hour early, which would let a
+  # stale marker pass for a process that reused its pid.
+  local s; s="$(TZ=UTC0 LC_ALL=C ps -p "$1" -o lstart= 2>/dev/null | sed 's/ *$//')"
+  [ -n "$s" ] && TZ=UTC0 LC_ALL=C date -j -f '%a %b %d %T %Y' "$s" +%s 2>/dev/null
+}
+
+# _is_isolated PID — 0 if PID carries an isolation marker written no earlier than the process started. A
+# marker left by a dead suite whose pid an older binary then reused predates that process, so it does not count.
+_is_isolated() {
+  local mt st
+  [ -f "$SUITE_MARKS/$1" ] || return 1
+  mt="$(stat -f %m "$SUITE_MARKS/$1" 2>/dev/null)"; st="$(_start_of "$1")"
+  case "$mt" in ''|*[!0-9]*) return 1 ;; esac
+  case "$st" in ''|*[!0-9]*) return 1 ;; esac
+  [ "$mt" -ge "$st" ]
+}
+
+# Is a suite running that did NOT come through this lock and could collide with one? See the -x note and
+# ISOLATED SUITES in the header. Probe children are skipped, as the report skips them; a set in which no
+# member reads as parentless is busy, the safe side (see _suite_report). Isolated suites do not count.
+_suite_live() {
+  local pids p roots=0
+  pids="$(pgrep -x tests 2>/dev/null | tr '\n' ' ')"
+  [ -n "${pids// /}" ] || return 1
+  for p in $pids; do
+    _is_probe_child "$p" "$pids" && continue
+    roots=$(( roots + 1 ))
+    _is_isolated "$p" || return 0
+  done
+  [ "$roots" = 0 ]
+}
 
 # ---- reporting the `tests` set: one suite, or two, or one and its own probe children ----------------------
 # `pgrep -x tests` matches the suite's OWN CHILDREN. Tests/main.swift re-executes build/tests with
@@ -187,12 +224,20 @@ _suite_report() {
       "$(_count $pids)" "$(_pidlist $pids)"
     return 0
   fi
-  if [ "$nroots" -gt 1 ]; then
+  local iso="" niso
+  for p in $roots; do _is_isolated "$p" && iso="${iso:+$iso }$p"; done
+  niso="$(_count $iso)"
+  if [ "$nroots" -gt 1 ] && [ "$niso" = "$nroots" ]; then
+    # Every one has its own settings, reports and temporary files (ISOLATED SUITES in the header).
+    msg="$nroots isolated suites at once ($(_pidlist $roots)), each with its own settings and files"
+  elif [ "$nroots" -gt 1 ]; then
     # No "two" and no "BOTH": with three roots this line used to read "3 SUITES AT ONCE — two suites corrupt
     # BOTH runs", and "of it" below had no antecedent once there was more than one suite.
     msg="⚠️ $nroots SUITES AT ONCE ($(_pidlist $roots)) — concurrent suites corrupt ALL of them"
+    [ "$niso" -gt 0 ] && msg="$msg (isolated: $(_pidlist $iso))"
   else
     msg="$nroots suite ($(_pidlist $roots))"
+    [ "$niso" = 1 ] && msg="$msg, isolated"
   fi
   if [ "$nkids" = 1 ]; then
     msg="$msg, plus 1 probe child ($(_pidlist $kids))"
