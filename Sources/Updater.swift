@@ -149,8 +149,8 @@ enum Updater {
 
     /// Whether an automatic check is due. Forced checks ignore all of this.
     static func isDue(now: Date = Date(),
-                      last: TimeInterval = UserDefaults.standard.double(forKey: Prefs.lastUpdateCheck),
-                      enabled: Bool = UserDefaults.standard.bool(forKey: Prefs.checkForUpdates)) -> Bool {
+                      last: TimeInterval = Prefs.store.double(forKey: Prefs.lastUpdateCheck),
+                      enabled: Bool = Prefs.store.bool(forKey: Prefs.checkForUpdates)) -> Bool {
         guard enabled else { return false }
         guard last > 0 else { return true }
         // A clock that has gone backwards must not disable checking for ever.
@@ -161,7 +161,7 @@ enum Updater {
     /// Whether to actually tell the user about this one.
     static func shouldAnnounce(_ release: Release,
                                current: String = currentVersion,
-                               skipped: String? = UserDefaults.standard
+                               skipped: String? = Prefs.store
                                    .string(forKey: Prefs.skippedVersion)) -> Bool {
         guard isNewer(release.version, than: current) else { return false }
         // "Skip this version" means this one, not updates for ever.
@@ -202,7 +202,7 @@ enum Updater {
             /// reliably the offline one would never be told about a fix at all
             /// (U26). A real answer still spends the full interval.
             func spend(_ seconds: TimeInterval) {
-                UserDefaults.standard.set(Date().timeIntervalSince1970 - interval + seconds,
+                Prefs.store.set(Date().timeIntervalSince1970 - interval + seconds,
                                           forKey: Prefs.lastUpdateCheck)
             }
             let retryAfterFailure: TimeInterval = 15 * 60
@@ -222,14 +222,14 @@ enum Updater {
                 found = r
             case .notAnOffer:
                 // A complete answer. Spend the full interval and say so.
-                UserDefaults.standard.set(Date().timeIntervalSince1970,
+                Prefs.store.set(Date().timeIntervalSince1970,
                                           forKey: Prefs.lastUpdateCheck)
                 completion(.upToDate); return
             case .unreadable:
                 spend(retryAfterFailure)
                 completion(.failed("could not read the release list")); return
             }
-            UserDefaults.standard.set(Date().timeIntervalSince1970, forKey: Prefs.lastUpdateCheck)
+            Prefs.store.set(Date().timeIntervalSince1970, forKey: Prefs.lastUpdateCheck)
 
             // A forced check answers about reality, not about what was skipped.
             // Otherwise "Check Now" says "Up to date" on a version the user can

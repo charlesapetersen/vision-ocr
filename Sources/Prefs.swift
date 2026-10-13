@@ -7,6 +7,19 @@ import Foundation
 /// --image-downsample-dpi) only affect *image* inputs and --roi needs a visual
 /// picker to be usable, so they're deliberately left out.
 enum Prefs {
+    /// Where every setting is read and written. The app leaves it at `.standard`,
+    /// its own domain, which `@AppStorage` in the views also uses.
+    ///
+    /// The test suite points it at a domain of its own per run (concurrent-suites).
+    /// `build/tests` has no bundle identifier, so `.standard` there is `tests.plist`,
+    /// one file shared by every worktree's suite, and a second suite's
+    /// `resetPrefs()` wiped the first one's settings mid-run.
+    nonisolated(unsafe) static var store: UserDefaults = .standard
+    /// The pre-rename domain `migrateFromPreviousName` reads from and empties. A
+    /// variable so that the suite runs the migration against a domain of its own
+    /// rather than the owner's real `com.cp1.VisionReaderGUI`.
+    nonisolated(unsafe) static var previousDomain = "com.cp1.VisionReaderGUI"
+
     enum Mode: String, CaseIterable, Identifiable {
         // Order is the segmented control's order, and searchable PDF is the
         // reason most people open this app — extracting plain text is the
@@ -176,7 +189,7 @@ enum Prefs {
         /// for values the panel below already owns, and it would go stale the
         /// moment anyone touched one of them. The defect was feedback, not state.
         @discardableResult
-        func apply(to d: UserDefaults = .standard) -> [String] {
+        func apply(to d: UserDefaults = Prefs.store) -> [String] {
             // Snapshotted before anything is written, and compared by
             // description rather than by `isEqual:` — these are Bool, String and
             // Double read back as `Any?`, where nil (never set) has to compare
@@ -432,7 +445,7 @@ enum Prefs {
         var modelReader: String = ""
 
         /// Reads the live settings. Call on the main actor, once per batch.
-        static func current(_ d: UserDefaults = .standard) -> Snapshot {
+        static func current(_ d: UserDefaults = Prefs.store) -> Snapshot {
             Snapshot(
                 mode: Mode(rawValue: d.string(forKey: Prefs.mode) ?? "") ?? .searchablePDF,
                 textFormat: TextFormat(rawValue: d.string(forKey: Prefs.textFormat) ?? "")
@@ -491,11 +504,13 @@ enum Prefs {
     /// the *registration* domain too, so once `register()` has run every key
     /// looks present. Caught by the test, which is the only reason this works.
     static func migrateFromPreviousName() {
-        let d = UserDefaults.standard
+        let d = Prefs.store
         guard !d.bool(forKey: migratedFromOldName) else { return }
-        // A suite has its own (empty) registration domain, so this reads only
-        // what the old app actually persisted.
-        if let old = UserDefaults(suiteName: "com.cp1.VisionReaderGUI") {
+        // The registration domain is process-wide, so a suite sees registered
+        // defaults too (measured 2026-10-13; this said each suite had its own). The
+        // app migrates before `register()` registers anything, which is what keeps
+        // this to what the old app actually persisted.
+        if let old = UserDefaults(suiteName: previousDomain) {
             for key in allKeys {
                 if let value = old.object(forKey: key) { d.set(value, forKey: key) }
             }
@@ -542,7 +557,7 @@ enum Prefs {
     /// nothing at all. Every tool passes false; only the app migrates.
     static func register(migrate: Bool = true) {
         if migrate { migrateFromPreviousName() }
-        UserDefaults.standard.register(defaults: [
+        Prefs.store.register(defaults: [
             mode: Mode.searchablePDF.rawValue,
             besideOriginal: false,
             openWhenDone: true,

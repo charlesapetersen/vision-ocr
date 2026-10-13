@@ -1689,7 +1689,7 @@ say so in the commit.
       BASE. Rounds 1-2 (branch `efficiency`: the Tools skip, the run-phase-only heavy lock, the shared binary cache,
       the green stamp) rewrote `run_tests.sh` and `test-lock.sh`. Work from them as they are on main.
       Nothing lets two suites run together until cs-narrow-lock, so the first two boxes can land apart.
-      - [ ] **cs-domains** — give the suite a preferences domain of its own that two suites do not share, and
+      - [x] **cs-domains** — give the suite a preferences domain of its own that two suites do not share, and
         inject the rename domain. (uses: build) The shared binary cache must still hit across worktrees, so the
         domain cannot be compiled in per worktree; choose the mechanism (an embedded test-only `CFBundleIdentifier`
         plus a run-time domain the `Prefs` layer takes, or another) and record the option rejected. The id must
@@ -1700,6 +1700,16 @@ say so in the commit.
         two runs given different domains write disjoint preferences files, the app's own preferences file is
         byte-identical before and after a run, the migration checks still run (check count unchanged), and a
         mutant restoring the shared domain turns the check red. ESTIMATE: 1 session.
+        DONE 2026-10-13. `Prefs.store` (the app keeps `.standard`) and `Prefs.previousDomain`; the suite sets them
+        at run time to `local.visionocr-tests.<pid>` (or `$VISIONOCR_TEST_DOMAIN`, prefix enforced) and
+        `<that>.previous-name`, so the binary and its cache key are unchanged and the process stays `tests`. Rejected:
+        an embedded test `CFBundleIdentifier`, which is compiled in, so every worktree would share it again unless
+        the cache missed per worktree. Measured: a run under `proveA` wrote only `proveA.plist` and
+        `proveA.previous-name.plist`; `com.cp1.VisionOCR.plist`, `com.cp1.VisionReaderGUI.plist` and `tests.plist`
+        byte-identical before and after; 1,877 -> 1,881 checks (the migration block was already running, on the
+        owner's real old-name domain); mutants `store` left on `.standard` and one `Model.swift` site reverted turn
+        three checks red. cfprefsd can put an empty 42 B plist back after the exit delete; the next run sweeps
+        dead pids' files and a named domain is cleared at start.
       - [ ] **cs-paths** — per-run logs and temporary paths, and a suite guard that sees two suites.
         (blocked-on: cs-domains) (uses: build) Parameterise `~/Library/Logs/VisionOCR` (`Sources/RunReport.swift`
         50-61) so the three report tests write to a per-run directory; give fixed `/tmp` names a per-run directory

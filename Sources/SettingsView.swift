@@ -644,7 +644,7 @@ struct SettingsView: View {
     }
 
     private var savedOutputFolder: URL? {
-        let path = UserDefaults.standard.string(forKey: Prefs.outputFolder) ?? ""
+        let path = Prefs.store.string(forKey: Prefs.outputFolder) ?? ""
         return path.isEmpty ? nil : URL(fileURLWithPath: path)
     }
 
@@ -675,7 +675,7 @@ struct SettingsView: View {
     }
 
     private func resetAll() {
-        let d = UserDefaults.standard
+        let d = Prefs.store
         // A10.6. `skippedVersion` is in `allKeys` — it has to be, or `resetAll`'s
         // own enumeration check would flag it — but it is not a *setting*. It is a
         // record of something the user already told the app once ("don't offer me

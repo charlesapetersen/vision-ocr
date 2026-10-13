@@ -84,7 +84,7 @@ struct ContentView: View {
                 .buttonStyle(.link).font(.caption)
             Button("Download") { NSWorkspace.shared.open(release.url) }
             Button {
-                UserDefaults.standard.set(release.version, forKey: Prefs.skippedVersion)
+                Prefs.store.set(release.version, forKey: Prefs.skippedVersion)
                 update = nil
             } label: {
                 Image(systemName: "xmark")

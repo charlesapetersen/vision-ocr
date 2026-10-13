@@ -421,7 +421,7 @@ enum Runner {
     /// most likely to be wrong (the tool paths, U9) could not be checked against
     /// the one place in the UI that exists for checking settings.
     static func previewLines(file: URL, outputFolder: URL?) -> [String] {
-        let d = UserDefaults.standard
+        let d = Prefs.store
         let mode = Prefs.Mode(rawValue: d.string(forKey: Prefs.mode) ?? "") ?? .searchablePDF
         func leaf(_ path: String) -> String { (path as NSString).lastPathComponent }
 

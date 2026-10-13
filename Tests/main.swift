@@ -110,7 +110,54 @@ func check(_ label: String, _ condition: Bool, _ detail: String = "") {
     }
 }
 
-let d = UserDefaults.standard
+// concurrent-suites. Every run gets a preferences domain of its own. `build/tests`
+// has no bundle identifier, so `UserDefaults.standard` here is `tests.plist`, one
+// file for every worktree's suite, and a second suite's `resetPrefs()` wiped the
+// first's settings mid-run. The domain is chosen at run time, not compiled in, so
+// the shared binary cache still hits across worktrees. VISIONOCR_TEST_DOMAIN names
+// it; the default is per process. The rename migration runs against a domain
+// derived from it, never the owner's real `com.cp1.VisionReaderGUI`.
+let testDomainPrefix = "local.visionocr-tests."
+let testDomain = ProcessInfo.processInfo.environment["VISIONOCR_TEST_DOMAIN"]
+    ?? testDomainPrefix + String(ProcessInfo.processInfo.processIdentifier)
+// Only a name under the suite's own prefix: `resetPrefs()` removes every key and the
+// exit handler deletes the file, so a name like the app's would wipe the owner's settings.
+let testDomainTail = testDomain.dropFirst(testDomainPrefix.count)
+if !testDomain.hasPrefix(testDomainPrefix) || testDomainTail.isEmpty
+    || !testDomainTail.allSatisfy({ $0.isASCII && ($0.isLetter || $0.isNumber || $0 == "-") }) {
+    print("refusing the preferences domain '\(testDomain)': it must be \(testDomainPrefix)"
+          + " followed by letters, digits and hyphens")
+    exit(2)
+}
+guard let testStore = UserDefaults(suiteName: testDomain) else {
+    print("could not open the preferences domain '\(testDomain)'"); exit(2)
+}
+Prefs.store = testStore
+Prefs.previousDomain = testDomain + ".previous-name"
+let testPrefsDir = FileManager.default.homeDirectoryForCurrentUser
+    .appendingPathComponent("Library/Preferences")
+/// Removes this run's two domains and their files, however the run ends.
+func removeTestDomains() {
+    for name in [testDomain, Prefs.previousDomain] {
+        UserDefaults.standard.removePersistentDomain(forName: name)
+        CFPreferencesAppSynchronize(name as CFString)
+        try? FileManager.default.removeItem(at: testPrefsDir.appendingPathComponent(name + ".plist"))
+    }
+}
+// cfprefsd writes asynchronously and can put an empty plist back after the delete
+// (measured 2026-10-13, 42 bytes), so a named domain is cleared at the start too.
+removeTestDomains()
+atexit { removeTestDomains() }
+// A run that was killed leaves its files behind; clear those of dead processes.
+for name in (try? FileManager.default.contentsOfDirectory(atPath: testPrefsDir.path)) ?? []
+where name.hasPrefix(testDomainPrefix) && name.hasSuffix(".plist") {
+    let pidText = name.dropFirst(testDomainPrefix.count).prefix { $0.isNumber }
+    guard let pid = Int32(pidText), pid != ProcessInfo.processInfo.processIdentifier,
+          kill(pid, 0) != 0, errno == ESRCH else { continue }
+    try? FileManager.default.removeItem(at: testPrefsDir.appendingPathComponent(name))
+}
+
+let d = Prefs.store
 let allKeys = Prefs.allKeys
 func resetPrefs() {
     for k in allKeys { d.removeObject(forKey: k) }
@@ -132,6 +179,41 @@ func resetPrefs() {
     d.set(false, forKey: Prefs.writeRunReport)
 }
 resetPrefs()
+
+print("\nthe suite's preferences domain is its own")
+do {
+    // Written through the store, read back by domain name: a store left on
+    // `.standard` puts the sentinel in `tests.plist`, where every suite writes.
+    let sentinel = "concurrentSuitesSentinel"
+    let value = "run \(ProcessInfo.processInfo.processIdentifier)"
+    Prefs.store.set(value, forKey: sentinel)
+    CFPreferencesAppSynchronize(testDomain as CFString)
+    check("settings land in this run's domain, \(testDomain)",
+          CFPreferencesCopyAppValue(sentinel as CFString, testDomain as CFString) as? String == value)
+    check("…and not in the domain every suite shares",
+          Prefs.store !== UserDefaults.standard && UserDefaults.standard.object(forKey: sentinel) == nil)
+    check("the rename migration reads a domain of this run's, not the owner's",
+          Prefs.previousDomain.hasPrefix(testDomain) && !Prefs.previousDomain.contains("com.cp1"),
+          Prefs.previousDomain)
+    // The checks above see only the store itself; one call site left on `.standard`
+    // would read and write the shared file again. `@AppStorage` is the views' own.
+    var offenders: [String] = []
+    for name in ((try? FileManager.default.contentsOfDirectory(atPath: "Sources")) ?? []).sorted()
+    where name.hasSuffix(".swift") {
+        let text = (try? String(contentsOfFile: "Sources/" + name, encoding: .utf8)) ?? ""
+        for line in text.components(separatedBy: "\n") {
+            let code = line.components(separatedBy: "//")[0]
+            if code.range(of: #"\.standard\b"#, options: .regularExpression) != nil
+                || code.contains("suiteName: \"") {
+                offenders.append(name + ": " + code.trimmingCharacters(in: .whitespaces))
+            }
+        }
+    }
+    check("nothing in Sources reads or writes settings around Prefs.store",
+          offenders == ["Prefs.swift: nonisolated(unsafe) static var store: UserDefaults = .standard"],
+          offenders.joined(separator: " | "))
+    Prefs.store.removeObject(forKey: sentinel)
+}
 
 // MARK: - Fixtures
 
@@ -1010,7 +1092,7 @@ print("\npresets")
 
 do {
     resetPrefs()
-    let d = UserDefaults.standard
+    let d = Prefs.store
 
     // The property that matters: a preset sets what the material implies and
     // leaves the user's own choices alone. A preset that reset where files are
@@ -1226,7 +1308,7 @@ do {
     // *adds* a layer to whatever is there); it rebuilds the pages as images, so
     // there is nothing left to read back. That default is what must hold.
     check("the rebuild that forces re-OCR is on by default",
-          UserDefaults.standard.bool(forKey: Prefs.rebuildImages))
+          Prefs.store.bool(forKey: Prefs.rebuildImages))
     resetPrefs()
 }
 
@@ -1283,7 +1365,7 @@ do {
     check("searchable output isn't doubled",
           finalText.components(separatedBy: "HELLO").count - 1 == 1, finalText)
 
-    check("rebuild is on by default", UserDefaults.standard.bool(forKey: Prefs.rebuildImages))
+    check("rebuild is on by default", Prefs.store.bool(forKey: Prefs.rebuildImages))
     resetPrefs()
 }
 
@@ -1436,7 +1518,7 @@ func makeDarkPDF(at url: URL) {
 do {
     resetPrefs()
     check("automatic is the default rebuild mode",
-          UserDefaults.standard.string(forKey: Prefs.rebuildMode) == Flattener.Mode.auto.rawValue)
+          Prefs.store.string(forKey: Prefs.rebuildMode) == Flattener.Mode.auto.rawValue)
     check("automatic can still use JBIG2", Flattener.Mode.auto.canUseJBIG2)
     check("forced greyscale cannot", !Flattener.Mode.grayscale.canUseJBIG2)
 
@@ -4682,7 +4764,7 @@ print("\nJBIG2 compression of the page images")
 
 do {
     resetPrefs()
-    check("JBIG2 is on by default", UserDefaults.standard.bool(forKey: Prefs.useJBIG2))
+    check("JBIG2 is on by default", Prefs.store.bool(forKey: Prefs.useJBIG2))
 
     if !JBIG2.isAvailable {
         skipBlock("JBIG2 compression of the page images", checks: 14,
@@ -13841,16 +13923,16 @@ do {
     // argument and let the default read UserDefaults — that is the code path
     // that ships (U26).
     do {
-        let saved = UserDefaults.standard.object(forKey: Prefs.checkForUpdates)
+        let saved = Prefs.store.object(forKey: Prefs.checkForUpdates)
         defer {
-            if let saved { UserDefaults.standard.set(saved, forKey: Prefs.checkForUpdates) }
-            else { UserDefaults.standard.removeObject(forKey: Prefs.checkForUpdates) }
+            if let saved { Prefs.store.set(saved, forKey: Prefs.checkForUpdates) }
+            else { Prefs.store.removeObject(forKey: Prefs.checkForUpdates) }
         }
-        UserDefaults.standard.set(false, forKey: Prefs.checkForUpdates)
-        UserDefaults.standard.set(0.0, forKey: Prefs.lastUpdateCheck)
+        Prefs.store.set(false, forKey: Prefs.checkForUpdates)
+        Prefs.store.set(0.0, forKey: Prefs.lastUpdateCheck)
         check("with the preference off, no automatic check is due",
               !Updater.isDue(now: now, last: 0))
-        UserDefaults.standard.set(true, forKey: Prefs.checkForUpdates)
+        Prefs.store.set(true, forKey: Prefs.checkForUpdates)
         check("…and with it on, one is",
               Updater.isDue(now: now, last: 0))
     }
@@ -14318,7 +14400,7 @@ print("\na retry declined at the alert puts the batch back")
 
 do {
     resetPrefs()
-    let d = UserDefaults.standard
+    let d = Prefs.store
     let dir = tmp.appendingPathComponent("a52-\(UUID().uuidString)")
     try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
     defer {
@@ -18535,7 +18617,7 @@ do {
         // Extract Text with the rebuild off. If the pre-flight does not fire here
         // the whole predicate is decoration.
         resetPrefs()
-        let d2 = UserDefaults.standard
+        let d2 = Prefs.store
         d2.set(true, forKey: Prefs.warnDigitalText)
         d2.set(false, forKey: Prefs.rebuildImages)
         d2.set(Prefs.Mode.text.rawValue, forKey: Prefs.mode)
@@ -18639,7 +18721,7 @@ do {
     d.removeObject(forKey: Prefs.warnDigitalText)
     Prefs.register()
     check("asking is on by default",
-          UserDefaults.standard.bool(forKey: Prefs.warnDigitalText),
+          Prefs.store.bool(forKey: Prefs.warnDigitalText),
           "the registered default, not the value resetPrefs forces off for the suite")
     resetPrefs()
 }
@@ -18672,7 +18754,7 @@ do {
     // Read from the registration domain, not from `resetPrefs`, which turns
     // this one off so the suite does not write into ~/Library/Logs. Asserting
     // the value the suite itself set would test nothing (T4).
-    let registered = UserDefaults.standard.volatileDomain(
+    let registered = Prefs.store.volatileDomain(
         forName: UserDefaults.registrationDomain)
     check("the run report is written by default",
           registered[Prefs.writeRunReport] as? Bool == true,
@@ -20960,7 +21042,7 @@ print("\nsettings survive the rename")
 
 do {
     resetPrefs()
-    let oldDomain = "com.cp1.VisionReaderGUI"
+    let oldDomain = Prefs.previousDomain
     guard let old = UserDefaults(suiteName: oldDomain) else {
         check("the previous domain is reachable", false); exit(1)
     }
@@ -21990,7 +22072,7 @@ do {
     /// Runs the shipped pipeline with the setting at `keep`, and returns how many
     /// marks the published file carries.
     func marksAfterRun(keep: Bool, tag: String) -> (outcome: Runner.Result.Outcome?, marks: Int) {
-        UserDefaults.standard.set(keep, forKey: Prefs.preserveAnnotations)
+        Prefs.store.set(keep, forKey: Prefs.preserveAnnotations)
         let out = dir.appendingPathComponent("out-\(tag).pdf")
         var outcome: Runner.Result.Outcome?
         OCRModel.makeSearchablePDF(

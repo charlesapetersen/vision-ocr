@@ -301,21 +301,21 @@ final class OCRModel: ObservableObject {
     // back out of UserDefaults — one owner, written on every change.
     @Published var outputFolder: URL? {
         didSet {
-            UserDefaults.standard.set(outputFolder?.path ?? "", forKey: Prefs.outputFolder)
+            Prefs.store.set(outputFolder?.path ?? "", forKey: Prefs.outputFolder)
         }
     }
     @Published var besideOriginal: Bool {
-        didSet { UserDefaults.standard.set(besideOriginal, forKey: Prefs.besideOriginal) }
+        didSet { Prefs.store.set(besideOriginal, forKey: Prefs.besideOriginal) }
     }
 
     init() {
-        let saved = UserDefaults.standard.string(forKey: Prefs.outputFolder) ?? ""
+        let saved = Prefs.store.string(forKey: Prefs.outputFolder) ?? ""
         var isDir: ObjCBool = false
         if !saved.isEmpty,
            FileManager.default.fileExists(atPath: saved, isDirectory: &isDir), isDir.boolValue {
             outputFolder = URL(fileURLWithPath: saved)
         }
-        besideOriginal = UserDefaults.standard.bool(forKey: Prefs.besideOriginal)
+        besideOriginal = Prefs.store.bool(forKey: Prefs.besideOriginal)
     }
 
     /// Re-reads the destination from `UserDefaults`.
@@ -324,12 +324,12 @@ final class OCRModel: ObservableObject {
     /// values and writes them straight back on the next change — so without this
     /// the reset silently failed for the two settings the main window shows.
     func reloadDestination() {
-        let saved = UserDefaults.standard.string(forKey: Prefs.outputFolder) ?? ""
+        let saved = Prefs.store.string(forKey: Prefs.outputFolder) ?? ""
         var isDir: ObjCBool = false
         outputFolder = (!saved.isEmpty
                         && FileManager.default.fileExists(atPath: saved, isDirectory: &isDir)
                         && isDir.boolValue) ? URL(fileURLWithPath: saved) : nil
-        besideOriginal = UserDefaults.standard.bool(forKey: Prefs.besideOriginal)
+        besideOriginal = Prefs.store.bool(forKey: Prefs.besideOriginal)
     }
 
     @Published var isRunning = false
@@ -1108,7 +1108,7 @@ final class OCRModel: ObservableObject {
         // in `warnsAboutDigitalText` rather than here, because the settings panel
         // has to draw the toggle under exactly this condition and used not to
         // (A10.1).
-        let d = UserDefaults.standard
+        let d = Prefs.store
         let mode = Prefs.Mode(rawValue: d.string(forKey: Prefs.mode) ?? "") ?? .searchablePDF
         guard Self.warnsAboutDigitalText(
                   mode: mode, rebuildImages: d.bool(forKey: Prefs.rebuildImages)),
@@ -1193,7 +1193,7 @@ final class OCRModel: ObservableObject {
     /// there is a strictly better answer available — read the text out — so
     /// that is offered, and made the default.
     private func askAboutDigitalText(_ digital: [URL], of total: Int) -> DigitalTextChoice {
-        let d = UserDefaults.standard
+        let d = Prefs.store
         let mode = Prefs.Mode(rawValue: d.string(forKey: Prefs.mode) ?? "") ?? .searchablePDF
         let format = Prefs.TextFormat(rawValue: d.string(forKey: Prefs.textFormat) ?? "") ?? .text
         // Only plain text can be read out honestly: json and jsonl are Vision's
@@ -1275,7 +1275,7 @@ final class OCRModel: ObservableObject {
         // OperationQueue rather than a TaskGroup because the per-file work
         // blocks on children, and blocking Swift-concurrency's cooperative
         // threads is exactly what it asks you not to do.
-        let limit = max(1, min(UserDefaults.standard.integer(forKey: Prefs.concurrency),
+        let limit = max(1, min(Prefs.store.integer(forKey: Prefs.concurrency),
                                Prefs.maxConcurrency))
 
         // **Where the ~3x actually comes from.** It was never threads: Vision
@@ -1341,9 +1341,9 @@ final class OCRModel: ObservableObject {
         // mid-batch change apply to some files and not others.
         let settings = Prefs.Snapshot.current()
         let isSearchable = settings.mode == .searchablePDF
-        let needsRebuild = UserDefaults.standard.bool(forKey: Prefs.rebuildImages) && isSearchable
+        let needsRebuild = Prefs.store.bool(forKey: Prefs.rebuildImages) && isSearchable
         let rebuildMode = Flattener.Mode(
-            rawValue: UserDefaults.standard.string(forKey: Prefs.rebuildMode) ?? "")
+            rawValue: Prefs.store.string(forKey: Prefs.rebuildMode) ?? "")
             ?? .auto
         let besideOriginal = self.besideOriginal
         let password = settings.password.isEmpty ? nil : settings.password
@@ -1483,7 +1483,7 @@ final class OCRModel: ObservableObject {
                              destination: destination)
 
             if ok > 0,
-               UserDefaults.standard.bool(forKey: Prefs.openWhenDone),
+               Prefs.store.bool(forKey: Prefs.openWhenDone),
                let folder = OCRModel.folderToReveal(destination: destination,
                                                     inputs: batch) {
                 NSWorkspace.shared.open(folder)
@@ -3315,7 +3315,7 @@ final class OCRModel: ObservableObject {
                              recognitionFallbacks: Int, jbig2Files: Int,
                              destination: URL?) {
         lastReport = nil
-        guard UserDefaults.standard.bool(forKey: Prefs.writeRunReport) else { return }
+        guard Prefs.store.bool(forKey: Prefs.writeRunReport) else { return }
         let finished = Date()
         let elapsed = runStartedMonotonic.map {
             Double(DispatchTime.now().uptimeNanoseconds &- $0.uptimeNanoseconds) / 1_000_000_000
