@@ -12456,6 +12456,51 @@ do {
     resetPrefs()
 }
 
+print("\nocr-newspaper-detect: a newspaper page is told from print by Vision's lines alone")
+
+do {
+    typealias Box = SearchableWriter.BoundingBox
+    // Columns of lines filling the page top to bottom, as Vision reads a page of each kind.
+    func page(columns: Int, rows: Int, width: Double, text: String = "some words here",
+              turned: Bool = false) -> [SearchableWriter.Observation] {
+        (0..<columns).flatMap { c in
+            (0..<rows).map { r in
+                SearchableWriter.Observation(
+                    boundingBox: Box(x: 0.05 + Double(c) * 0.9 / Double(columns),
+                                     y: 0.95 - 0.9 * Double(r + 1) / Double(rows), width: width,
+                                     height: 0.5 * 0.9 / Double(rows)),
+                    text: text, confidence: 1, quarterTurns: turned ? 1 : nil)
+            }
+        }
+    }
+    let broadsheet = page(columns: 7, rows: 60, width: 0.12)
+    check("a broadsheet's seven narrow columns of 420 lines are a newspaper's",
+          Recogniser.pageKind(of: broadsheet, pasteUp: false) == .newspaper,
+          "\(Recogniser.pageShape(of: broadsheet))")
+    let wide = page(columns: 4, rows: 205, width: 0.224)
+    check("…and so are 820 lines in four wide columns, more than any page of print holds",
+          Recogniser.pageKind(of: wide, pasteUp: false) == .newspaper, "\(Recogniser.pageShape(of: wide))")
+    check("…and a paste-up of a few strips, whatever its lines",
+          Recogniser.pageKind(of: page(columns: 2, rows: 20, width: 0.4), pasteUp: true) == .newspaper)
+    check("…and five columns of 300 lines, a fifth of the page wide or less",
+          Recogniser.pageKind(of: page(columns: 6, rows: 50, width: 0.12), pasteUp: false) == .newspaper)
+    let record = page(columns: 3, rows: 113, width: 0.209)
+    check("the Congressional Record's three columns of 339 lines are print",
+          Recogniser.pageKind(of: record, pasteUp: false) == .other, "\(Recogniser.pageShape(of: record))")
+    check("…and so are 300 lines in three columns just over a fifth of the page",
+          Recogniser.pageKind(of: page(columns: 3, rows: 100, width: 0.21), pasteUp: false) == .other)
+    check("…and so are a magazine's three columns and a book's one measure",
+          Recogniser.pageKind(of: page(columns: 3, rows: 60, width: 0.28), pasteUp: false) == .other
+              && Recogniser.pageKind(of: page(columns: 1, rows: 40, width: 0.8), pasteUp: false) == .other)
+    check("…and a sparse page of short lines, narrow as they are",
+          Recogniser.pageKind(of: page(columns: 6, rows: 30, width: 0.1), pasteUp: false) == .other)
+    check("lines of under four characters besides spaces are not counted, nor turned ones",
+          Recogniser.pageKind(of: page(columns: 7, rows: 90, width: 0.12, text: "1 2 3"), pasteUp: false) == .other
+              && Recogniser.pageKind(of: page(columns: 7, rows: 90, width: 0.12, turned: true),
+                                     pasteUp: false) == .other)
+    check("…and a page with no lines is print", Recogniser.pageKind(of: [], pasteUp: false) == .other)
+}
+
 print("\na helper is only worth it when there is something to overlap with")
 
 do {

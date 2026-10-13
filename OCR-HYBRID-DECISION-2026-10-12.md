@@ -164,3 +164,30 @@ Not offered as options (the recommendation's reasons, not decisions):
   runtime.
 - **LightOnOCR-2.** It is as fast as Falcon off newspapers, but nearly twice as slow on them, needs twice the
   memory, and cuts fewer errors.
+
+## 4. Telling newspaper pages apart (`ocr-newspaper-detect`, added 2026-10-12)
+
+The options above lean on the user labelling newspapers. The app can now tell them itself, page by page, from
+what it already has before any model runs: whether the page is a paste-up of scanned strips (`Flattener.mosaic`),
+and the shape of Vision's own reading. A page is called a newspaper when it is a paste-up, when it holds 600
+lines or more, or when it holds 200 or more and its widest lines (the widest tenth) reach less than a fifth of
+the page, which is five columns or more. `Recogniser.pageKind`; nothing calls it yet, and it changes no setting.
+
+Measured on 152 pages (`PAGE-KIND-2026-10-12.tsv`): the 67 of the sample, and 85 more (the other newspapers in
+the corpus, C39's Raskin and C41's 1960 page, NewsBench's 19 pages, the first two pages of each magazine,
+the Congressional Record).
+
+- **Print called a newspaper: 0 of 105** (56 in the sample, 49 outside). The closest is the Congressional
+  Record, three columns at 0.209 of the page and 340 lines, against the edge at 0.2. That margin is thin.
+- **Newspaper called print: 6 of 47** (4 of 11 in the sample, 2 of 36 outside). All six are clippings, one
+  article cut to a page in two to four wide columns, which is what print looks like. Every whole newspaper page
+  was called a newspaper, 36 of 36, NewsBench's 19 included. The widest one under 600 lines reaches 0.182.
+
+So the error that matters, a broadsheet sent whole to a model, did not happen. A clipping read as print goes to
+the print route, which is how Vision reads it now. On the sample's four, regions read better (fewer words wrong
+or missing: Falcon 14 against Vision's 26 on s17), but no whole-page model has been measured on them.
+
+Page size was not used. Women's Wear Daily of 1947 is a full newspaper page scanned at A4, filed in Zotero as a
+magazine; clippings come on letter paper; NewsBench's pages are photographs with no size. The figures come from
+the no-rebuild route's reading of a plain render. The app reads the rebuilt bitmap, which gives slightly
+different lines.

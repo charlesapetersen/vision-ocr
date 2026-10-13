@@ -4774,3 +4774,64 @@ enum Recogniser {
             .split(separator: "\n").last.map(String.init) ?? ""
     }
 }
+
+// MARK: - Newspaper pages told from the rest (ocr-newspaper-detect)
+
+extension Recogniser {
+    /// What a page is, for choosing how a model reads it. Judged page by page, since a
+    /// scrapbook or a book with clippings holds both.
+    enum PageKind: String { case newspaper, other }
+
+    /// The shape of Vision's reading of a page, the signals `pageKind` judges by. Both
+    /// are taken from the page alone, so they hold for a photograph with no physical size.
+    struct PageShape: Equatable {
+        /// Upright lines of four or more characters, the only ones counted.
+        var lines = 0
+        /// The width, as a fraction of the page's, that the widest tenth of those lines
+        /// reach: a book's full measure, a magazine's column, a newspaper's narrower one.
+        var wideWidth = 0.0
+    }
+
+    static func pageShape(of observations: [SearchableWriter.Observation]) -> PageShape {
+        let widths = observations
+            .filter { $0.text.filter { !$0.isWhitespace }.count >= 4 && ($0.quarterTurns ?? 0) == 0 }
+            .map(\.boundingBox.width)
+            .filter { $0 > 0 }
+            .sorted()
+        guard !widths.isEmpty else { return PageShape() }
+        return PageShape(lines: widths.count, wideWidth: widths[widths.count * 9 / 10])
+    }
+
+    /// Whether a page is a newspaper's: a paste-up (`Flattener.mosaic`), 200 lines or
+    /// more set five or more columns across, or more lines than a page of print holds.
+    ///
+    /// Measured on 67 sample pages and 85 others (`PAGE-KIND-2026-10-12.tsv`): every
+    /// full newspaper page reaches no wider than 0.182 of the page in its widest lines
+    /// but one, which holds 822 lines; the narrowest print is the Congressional Record's
+    /// three columns at 0.209 and 340 lines, the most lines on a print page. The page's
+    /// size in points was left out: a newspaper page scanned to A4 and a clipping pasted
+    /// on letter paper are both common. Line height and the number of columns sharing a
+    /// row were measured and separated nothing these two do not.
+    ///
+    /// A single article clipped onto a page reads as print, which is what its two to four
+    /// wide columns are; the route a broadsheet needs is what this is for.
+    static func pageKind(shape: PageShape, pasteUp: Bool) -> PageKind {
+        if pasteUp { return .newspaper }
+        if shape.lines >= newspaperLines { return .newspaper }
+        if shape.lines >= newspaperColumnLines && shape.wideWidth < newspaperColumnWidth {
+            return .newspaper
+        }
+        return .other
+    }
+
+    static func pageKind(of observations: [SearchableWriter.Observation], pasteUp: Bool) -> PageKind {
+        pageKind(shape: pageShape(of: observations), pasteUp: pasteUp)
+    }
+
+    /// `pageKind`'s three edges. Print's most is 340 lines; a fifth of the page is five
+    /// columns, and 200 lines keeps a sparse page of short lines (a contents page, a
+    /// table) out.
+    static let newspaperLines = 600
+    static let newspaperColumnLines = 200
+    static let newspaperColumnWidth = 0.2
+}

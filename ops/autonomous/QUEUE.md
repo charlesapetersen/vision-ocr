@@ -1479,7 +1479,7 @@ say so in the commit.
       `layout`) and the app reads each on the grey render (`Recogniser.visionRegionText`); `hybrid-run.sh`'s
       combination `vision-regions`. Helena 1931 / 1941, wrong 2355 -> 2179 / 1011 -> 930 against PaddleOCR-VL's
       1692 / 827; the rest in `BUGS.md` C41.
-- [ ] **ocr-newspaper-detect** — tell newspaper pages from the rest by themselves, page by page, so the accurate
+- [x] **ocr-newspaper-detect** — tell newspaper pages from the rest by themselves, page by page, so the accurate
       mode can pick its arrangement without the user labelling anything. (uses: build) (effort: medium)
       Owner, 2026-10-12, at the walkthrough: users add a wide variety of material and will not specify a model per
       item, so the route for newspapers must be chosen automatically. The app has no such test now: the options in
@@ -1496,6 +1496,10 @@ say so in the commit.
       paragraph in `OCR-HYBRID-DECISION-2026-10-12.md` (or a dated follow-up) give its misreads both ways on both
       sets. It changes no setting and no arrangement; the choice stays with `ocr-hybrid-approve`, which the owner
       deferred until this result is in. ESTIMATE: 1-2 sessions. BOUND: rule 10. (context: owner request 2026-10-12)
+      DONE 2026-10-12: `Recogniser.pageKind`: a paste-up, 600+ lines, or 200+ lines whose widest tenth reach < 0.2
+      of the page. On `PAGE-KIND-2026-10-12.tsv` (67 sample + 85 others, NewsBench's 19 included): print called a
+      newspaper 0/56 and 0/49; newspaper called print 4/11 and 2/36, all six clippings (one article on a page); whole
+      newspaper pages 36/36. Thin margin: Congressional Record 0.209 against 0.2. Section 4 of the decision document.
 
       THE APPROACH (owner, 2026-10-12, at the walkthrough; replaces the single-winner pick for what gets built).
       The accurate mode offers Vision, PaddleOCR-VL 1.6 4-bit and Falcon-OCR bf16, and the user chooses which reads

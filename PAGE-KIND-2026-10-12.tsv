@@ -1,0 +1,158 @@
+# PAGE-KIND: ocr-newspaper-detect, Recogniser.pageKind measured by Tools/score-page-kind on 67 sample pages (OCR-SAMPLE-2026-10-04.tsv)
+# and 85 others (newspaper pages outside the sample, C39 Raskin, C41 October 2 1960, NewsBench 19, magazine pages 1-2, Congressional Record, Donahue).
+# label: the sample's route, else the Zotero item type; xm02 (Women's Wear Daily 1947, a full newspaper page filed as a magazine) relabelled by looking.
+# layout: page = a whole newspaper page, clipping = one article cut to a page (judged from size and lines; s44, xn02, xn12 viewed).
+# wPt/hPt 0: an image, no physical size. wideW: the 90th-percentile line width as a fraction of the page.
+id	set	document	page	label	layout	call	wPt	hPt	mosaic	lines	wideW
+s01	sample	owner/1954 - Why.pdf	2	other	-	other	612	792	0	5	0.370
+s02	sample	owner/1954 - Why.pdf	6	other	-	other	792	612	0	55	0.400
+s03	sample	owner/1954 - Why.pdf	8	other	-	other	792	612	0	58	0.401
+s04	sample	owner/1954 - Why.pdf	9	other	-	other	792	612	0	60	0.400
+s05	sample	owner/1954 - Why.pdf	10	other	-	other	612	792	0	0	0.000
+s06	sample	owner/1951 - Briefer Book Notes.pdf	1	other	-	other	595	808	0	81	0.688
+s07	sample	owner/1951 - Briefer Book Notes.pdf	3	other	-	other	595	794	0	69	0.689
+s08	sample	owner/Hughes - The Knitting of Racial Groups in Industry (Desktop copy 2026-09-26).pdf	1	other	-	other	612	800	0	18	0.844
+s09	sample	owner/Hughes - The Knitting of Racial Groups in Industry (Desktop copy 2026-09-26).pdf	6	other	-	other	480	680	0	51	0.395
+s10	sample	owner/Bird - 1963 - More Room at the Top Company Experiences in Employing Negroes in Professional and Management Jobs.pdf	3	other	-	other	595	794	0	88	0.289
+s11	sample	owner/Bird - 1963 - More Room at the Top Company Experiences in Employing Negroes in Professional and Management Jobs.pdf	5	other	-	other	595	794	0	88	0.289
+s12	sample	owner/Leland - 1952 - We Believe in Employment on Merit, but.pdf	2	other	-	other	431	649	0	53	0.672
+s13	sample	owner/Leland - 1952 - We Believe in Employment on Merit, but.pdf	5	other	-	other	431	649	0	45	0.672
+s14	sample	owner/Leland - 1952 - We Believe in Employment on Merit, but.pdf	6	other	-	other	431	649	0	44	0.670
+s15	sample	owner/Delton - 2007 - Before the EEOC How Management Integrated the Workplace.pdf	2	other	-	other	390	632	0	38	0.791
+s16	sample	thesis/Zarifa_2008_Emerging Forms of Stratification in Higher Education_.pdf	92	other	-	other	549	752	0	41	0.785
+s17	sample	newspaperArticle/Berendzen_1981_The Soaring Lesson of America in Space_Newsday (1940-1990), Nassau ed.; Long Island, N.Y..pdf	1	newspaper	clipping	other	598	965	0	191	0.310
+s18	sample	document/2013 - Silicon Valley Program Transcript.pdf	10	other	-	other	612	792	0	37	0.763
+s19	sample	journalArticle/Surani et al. - AI for Scaling Legal Reform Mapping and Redacting Racial Covenants in Santa Clara County.pdf	10	other	-	other	612	792	0	61	0.650
+s20	sample	bookSection/Berger_2013_Toward a Third Industrial Divide_.pdf	18	other	-	other	509	646	0	78	0.618
+s21	sample	magazineArticle/Glazer_2002_Higher Ed_New Republic.pdf	1	other	-	other	572	783	0	188	0.284
+s22	sample	newspaperArticle/___ 2.pdf	1	newspaper	page	newspaper	767	1251	0	571	0.182
+s23	sample	bookSection/Hyman_2012_Rethinking the Postwar Corporation_Oxford University Press.pdf	8	other	-	other	860	645	0	84	0.381
+s24	sample	journalArticle/Riesman_1949_Men, Women, and Marriage_Nation.pdf	2	other	-	other	618	797	0	191	0.266
+s25	sample	magazineArticle/Marth_1982_Why Unions Lose At Many Companies_Nation's Business (pre-1986); Washington.pdf	2	other	-	other	429	561	0	151	0.322
+s26	sample	document/_1953_99 Cong_ 2.pdf	16	other	-	other	675	796	0	301	0.217
+s27	sample	thesis/Ries_Marshall_1955_web.pdf	54	other	-	other	569	772	0	33	0.753
+s28	sample	magazineArticle/Kristol_1960_High, Low, and Modern_Encounter.pdf	1	other	-	other	475	723	0	74	0.409
+s29	sample	report/AI 2027.pdf	54	other	-	other	595	842	0	53	0.657
+s30	sample	newspaperArticle/_1941_Fiedler's hiring at UM announced_Helena Independent.pdf	1	newspaper	page	newspaper	1040	1598	0	853	0.121
+s31	sample	bookSection/Allen_2011_The Origins of Political Philosophy_Oxford University Press.pdf	8	other	-	other	425	670	0	44	0.859
+s32	sample	owner/1954 - Why.pdf	3	other	-	other	792	612	0	39	0.404
+s33	sample	owner/1954 - Why.pdf	4	other	-	other	792	612	0	61	0.402
+s34	sample	owner/1954 - Why.pdf	7	other	-	other	792	612	0	60	0.400
+s35	sample	owner/1951 - Briefer Book Notes.pdf	2	other	-	other	595	794	0	62	0.686
+s36	sample	owner/1951 - Briefer Book Notes.pdf	5	other	-	other	595	794	0	63	0.689
+s37	sample	owner/1951 - Briefer Book Notes.pdf	6	other	-	other	595	794	0	78	0.686
+s38	sample	owner/Hughes - The Knitting of Racial Groups in Industry (Desktop copy 2026-09-26).pdf	2	other	-	other	480	680	0	98	0.391
+s39	sample	owner/Hughes - The Knitting of Racial Groups in Industry (Desktop copy 2026-09-26).pdf	8	other	-	other	480	680	0	105	0.389
+s40	sample	newspaperArticle/Glazer_2003_Neoconservatives, Then and Now_New York Times.pdf	1	newspaper	clipping	other	252	340	0	40	0.434
+s41	sample	newspaperArticle/Gitlin_2000_How Our Crowd Got Lonely_New York Times.pdf	1	newspaper	clipping	other	460	615	0	201	0.310
+s42	sample	newspaperArticle/Zipkin_2000_Management.pdf	1	newspaper	clipping	newspaper	394	628	1	81	0.292
+s43	sample	newspaperArticle/_1926_Cox resigns, following most severe public criticism that ever has been_Anaconda Standard.pdf	1	newspaper	page	newspaper	963	1278	0	1068	0.129
+s44	sample	newspaperArticle/Williams_1958_DEMOCRACY OR MERITOCRACY_The Manchester Guardian (1901-1959); Manchester (UK).pdf	1	newspaper	clipping	other	436	702	0	280	0.529
+s45	sample	newspaperArticle/___.pdf	1	newspaper	page	newspaper	1176	1786	0	1013	0.141
+s46	sample	newspaperArticle/_1931_Again, press most excited about Frontier's history section_Helena Daily Independent.pdf	1	newspaper	page	newspaper	1094	1376	0	1378	0.118
+s47	sample	newspaperArticle/___ 4.pdf	1	newspaper	page	newspaper	553	994	0	445	0.149
+s48	sample	book/Morgan_1975_American Slavery, American Freedom_Norton.pdf	1	other	-	other	595	878	0	20	0.848
+s49	sample	thesis/NAYLOR_Arthur E.pdf	67	other	-	other	620	798	0	59	0.673
+s50	sample	report/AI 2027.pdf	1	other	-	other	595	842	0	13	0.491
+s51	sample	thesis/Schwaller - 2026 - Silicon Valley Landscapes Architecture and the Soft Power of Big Tech.pdf	75	other	-	other	612	792	0	34	0.709
+s52	sample	journalArticle/Burke - The Expansion of American Higher Education.pdf	1	other	-	other	595	842	0	49	0.588
+s53	sample	owner/Sewell - 1999 - Contracting racial equality Affirmative action policy and practice in the United States, 1945-1970.pdf	244	other	-	other	592	798	0	32	0.724
+s54	sample	journalArticle/Wilson_1975_Review of The Welfare State and Equality_Journal of Economic Literature.pdf	1	other	-	other	612	800	0	19	0.846
+s55	sample	thesis/Drumright - 2005 - A river for war, a watershed to change The Tennessee Valley Authority during World War II.pdf	60	other	-	other	612	821	0	28	0.676
+s56	sample	bookSection/Krippner__The political economy of financial exuberance_Emerald Group Publishing Limited.pdf	30	other	-	other	365	581	0	41	0.887
+s57	sample	journalArticle/Batzell - Free Labor, Capitalism and the Antislavery Origins of Chinese Labor Exclusion in 1870s California.pdf	14	other	-	other	612	792	0	31	0.814
+s58	sample	book/Westad_2005_The Global Cold War_Cambridge University Press.pdf	1	other	-	other	595	878	0	22	0.844
+s59	sample	owner/Hughes - The Knitting of Racial Groups in Industry (Desktop copy 2026-09-26).pdf	3	other	-	other	480	680	0	105	0.389
+s60	sample	owner/Hughes - The Knitting of Racial Groups in Industry.pdf	1	other	-	other	612	800	0	18	0.844
+s61	sample	document/_1979_Ideology of American Neo-Conservatism_.pdf	4	other	-	other	478	573	0	50	0.891
+s62	sample	book/Riesman - 1954 - Individualism reconsidered, and other essays.pdf	16	other	-	other	385	485	0	48	0.683
+s63	sample	journalArticle/Batzell - Free Labor, Capitalism and the Antislavery Origins of Chinese Labor Exclusion in 1870s California.pdf	1	other	-	other	612	792	0	20	0.808
+s64	sample	owner/1954 - Why.pdf	1	other	-	other	612	792	0	19	0.919
+s65	sample	owner/1957 - Employment on Merit The Continuing Challenge to Business (Joseph J. Morrow).pdf	2	other	-	other	595	794	0	103	0.287
+s66	sample	book/Cohen_1990_Making a New Deal_Cambridge University Press.pdf	1	other	-	other	595	878	0	20	0.822
+s67	sample	thesis/Koh - 2008 - Essays on stock options expensing and stock option.pdf	1	other	-	other	614	792	0	16	0.433
+xn01	outside	newspaperArticle/1976_Results of Trading in Stock Options.pdf	1	newspaper	page	newspaper	502	1002	0	390	0.047
+xn02	outside	newspaperArticle/JOURNAL_1969_Giving the Boss a Raise_Wall Street Journal (1923 - Current file); New York, N.Y..pdf	1	newspaper	clipping	other	625	1105	0	324	0.328
+xn03	outside	newspaperArticle/Zipkin_2000_Management.pdf	2	newspaper	clipping	newspaper	458	572	1	267	0.238
+xn04	outside	newspaperArticle/_1926_Clapp defends Cox_Billings Gazette.pdf	1	newspaper	page	newspaper	1245	1847	0	1299	0.132
+xn05	outside	newspaperArticle/_1926_English dept summer school_Havre Daily News Promoter.pdf	1	newspaper	page	newspaper	1212	1571	0	825	0.123
+xn06	outside	newspaperArticle/_1928_Creative writing a featured course at Summer School_Helena Daily Independent.pdf	1	newspaper	page	newspaper	1091	1380	0	1153	0.118
+xn07	outside	newspaperArticle/_1939_Kalispell resident offering private creative writing courses, out of her home_Kalispell Daily Inter Lake.pdf	1	newspaper	page	newspaper	1159	1528	0	616	0.171
+xn08	outside	newspaperArticle/_1950_Comic_Independent Record.pdf	1	newspaper	page	newspaper	1243	1727	0	837	0.113
+xn09	outside	newspaperArticle/_1973_Other 67 -- No Title_Newsday (1940-1988), Nassau ed.; Long Island, N.Y..pdf	1	newspaper	clipping	newspaper	326	496	1	148	0.240
+xn10	outside	newspaperArticle/_1973_Other 67 -- No Title_Newsday (1940-1988), Nassau ed.; Long Island, N.Y..pdf	2	newspaper	clipping	newspaper	544	456	1	199	0.142
+xn11	outside	newspaperArticle/_1973_Other 67 -- No Title_Newsday (1940-1988), Nassau ed.; Long Island, N.Y..pdf	3	newspaper	clipping	newspaper	541	462	1	202	0.145
+xn12	outside	newspaperArticle/_1973_Other 67 -- No Title_Newsday (1940-1988), Nassau ed.; Long Island, N.Y..pdf	4	newspaper	clipping	other	338	459	0	150	0.221
+xn13	outside	newspaperArticle/___ 3.pdf	1	newspaper	page	newspaper	1119	1659	0	1139	0.129
+xn14	outside	newspaperArticle/___ 5.pdf	1	newspaper	page	newspaper	858	1367	0	502	0.136
+xn15	outside	document/October_2,_1960_(Page_24_of_25.pdf	1	newspaper	page	newspaper	1083	1898	0	822	0.222
+xn16	outside	owner-supplied/Raskin - 1956 - New Jobs Opening to Negro in North.pdf	1	newspaper	page	newspaper	1067	1547	1	931	0.145
+nb01	outside	newsbench/mss3413200223-28.jpg	1	newspaper	page	newspaper	0	0	0	957	0.151
+nb02	outside	newsbench/mss3413201283-24.jpg	1	newspaper	page	newspaper	0	0	0	615	0.116
+nb03	outside	newsbench/mss3413201309-4.jpg	1	newspaper	page	newspaper	0	0	0	650	0.119
+nb04	outside	newsbench/mss3413201315-4.jpg	1	newspaper	page	newspaper	0	0	0	518	0.179
+nb05	outside	newsbench/mss3413201322-4.jpg	1	newspaper	page	newspaper	0	0	0	999	0.177
+nb06	outside	newsbench/mss3413201323-27.jpg	1	newspaper	page	newspaper	0	0	0	1088	0.121
+nb07	outside	newsbench/mss3413201417-17.jpg	1	newspaper	page	newspaper	0	0	0	767	0.138
+nb08	outside	newsbench/mss3413201417-20.jpg	1	newspaper	page	newspaper	0	0	0	802	0.141
+nb09	outside	newsbench/mss3413201417-25.jpg	1	newspaper	page	newspaper	0	0	0	879	0.142
+nb10	outside	newsbench/mss3413201417-29.jpg	1	newspaper	page	newspaper	0	0	0	777	0.138
+nb11	outside	newsbench/mss3413201573-36.jpg	1	newspaper	page	newspaper	0	0	0	935	0.171
+nb12	outside	newsbench/mss3413201628-41.jpg	1	newspaper	page	newspaper	0	0	0	722	0.139
+nb13	outside	newsbench/mss3413201776-3.jpg	1	newspaper	page	newspaper	0	0	0	745	0.128
+nb14	outside	newsbench/mss3413201819-6.jpg	1	newspaper	page	newspaper	0	0	0	735	0.109
+nb15	outside	newsbench/mss3413201856-23.jpg	1	newspaper	page	newspaper	0	0	0	2470	0.116
+nb16	outside	newsbench/mss3413201856-40.jpg	1	newspaper	page	newspaper	0	0	0	2138	0.115
+nb17	outside	newsbench/mss3413201879-7.jpg	1	newspaper	page	newspaper	0	0	0	984	0.105
+nb18	outside	newsbench/mss425490669-55.jpg	1	newspaper	page	newspaper	0	0	0	448	0.119
+nb19	outside	newsbench/mss83434402-9.jpg	1	newspaper	page	newspaper	0	0	0	1147	0.138
+xm01	outside	magazineArticle/1947_Corporation Tax Study Due By House Body.pdf	1	other	-	other	595	842	0	12	0.836
+xm02	outside	magazineArticle/1947_Corporation Tax Study Due By House Body.pdf	2	newspaper	page	newspaper	597	843	0	1278	0.113
+xm03	outside	magazineArticle/Astin__The Challenge of Open Admissions by Alexander W_UNZ.org.pdf	1	other	-	other	612	792	0	179	0.265
+xm04	outside	magazineArticle/Astin__The Challenge of Open Admissions by Alexander W_UNZ.org.pdf	2	other	-	other	612	792	0	199	0.267
+xm05	outside	magazineArticle/Black_0000_The Scandal of Educational Testing.pdf	1	other	-	other	490	668	0	99	0.230
+xm06	outside	magazineArticle/Black_0000_The Scandal of Educational Testing.pdf	2	other	-	other	490	668	0	268	0.228
+xm07	outside	magazineArticle/Bullitt_1959_The Future American Class System_Horizon.pdf	1	other	-	other	614	800	0	43	0.273
+xm08	outside	magazineArticle/Bullitt_1959_The Future American Class System_Horizon.pdf	2	other	-	other	556	781	0	7	0.682
+xm09	outside	magazineArticle/Davis_2005_Optimism of the Will_Nation.pdf	1	other	-	other	585	783	0	63	0.290
+xm10	outside	magazineArticle/Davis_2005_Optimism of the Will_Nation.pdf	2	other	-	other	585	783	0	179	0.286
+xm11	outside	magazineArticle/Ehrenreich_2000_Maid to order_Harper's Magazine.pdf	1	other	-	other	582	796	0	17	0.769
+xm12	outside	magazineArticle/Ehrenreich_2000_Maid to order_Harper's Magazine.pdf	2	other	-	other	578	794	0	39	0.493
+xm13	outside	magazineArticle/Glazer_2002_Higher Ed_New Republic.pdf	1	other	-	other	572	783	0	188	0.284
+xm14	outside	magazineArticle/Glazer_2002_Higher Ed_New Republic.pdf	2	other	-	other	612	792	0	3	0.846
+xm15	outside	magazineArticle/Glazer_2003_Kith and Kin_Commentary; New York.pdf	1	other	-	other	570	856	0	102	0.262
+xm16	outside	magazineArticle/Glazer_2003_Kith and Kin_Commentary; New York.pdf	2	other	-	other	565	805	0	175	0.265
+xm17	outside	magazineArticle/HarpersMagazine-1938-05-0019577.pdf	1	other	-	other	434	649	0	52	0.615
+xm18	outside	magazineArticle/HarpersMagazine-1938-05-0019577.pdf	2	other	-	other	432	648	0	107	0.390
+xm19	outside	magazineArticle/Kelly_2014_Orders of Magnitude_TLS.pdf	1	other	-	other	806	1026	0	186	0.227
+xm20	outside	magazineArticle/Kelly_2014_Orders of Magnitude_TLS.pdf	2	other	-	other	806	1026	0	315	0.227
+xm21	outside	magazineArticle/Kristol_1960_High, Low, and Modern_Encounter.pdf	1	other	-	other	475	723	0	74	0.409
+xm22	outside	magazineArticle/Kristol_1960_High, Low, and Modern_Encounter.pdf	2	other	-	other	478	723	0	102	0.409
+xm23	outside	magazineArticle/Lasky et al. - 1949 - Letters from readers.pdf	1	other	-	other	410	657	0	100	0.449
+xm24	outside	magazineArticle/Lasky et al. - 1949 - Letters from readers.pdf	2	other	-	other	420	667	0	124	0.439
+xm25	outside	magazineArticle/Lemann, Nicholas_1977_Success In America_Washington Monthly.pdf	1	other	-	other	448	675	0	119	0.407
+xm26	outside	magazineArticle/Lemann, Nicholas_1977_Success In America_Washington Monthly.pdf	2	other	-	other	448	675	0	136	0.407
+xm27	outside	magazineArticle/Lipset_Luethy_1955_European traditions and American sociology_Commentary (pre-1986); New York.pdf	1	other	-	other	397	578	0	79	0.655
+xm28	outside	magazineArticle/Lipset_Luethy_1955_European traditions and American sociology_Commentary (pre-1986); New York.pdf	2	other	-	other	385	543	0	113	0.418
+xm29	outside	magazineArticle/Luethy_1955_Social mobility again--And elites_Commentary (pre-1986); New York.pdf	1	other	-	other	389	583	0	87	0.416
+xm30	outside	magazineArticle/Luethy_1955_Social mobility again--And elites_Commentary (pre-1986); New York.pdf	2	other	-	other	374	535	0	113	0.430
+xm31	outside	magazineArticle/Marth_1982_Why Unions Lose At Many Companies_Nation's Business (pre-1986); Washington.pdf	1	other	-	other	468	691	0	157	0.318
+xm32	outside	magazineArticle/Marth_1982_Why Unions Lose At Many Companies_Nation's Business (pre-1986); Washington.pdf	2	other	-	other	429	561	0	151	0.322
+xm33	outside	magazineArticle/Merriam_1913_Clutter of Things_The Independent.pdf	1	other	-	other	434	674	0	151	0.418
+xm34	outside	magazineArticle/Merriam_1913_Clutter of Things_The Independent.pdf	2	other	-	other	434	674	0	164	0.420
+xm35	outside	magazineArticle/Part Two.pdf	1	other	-	other	612	792	0	35	0.353
+xm36	outside	magazineArticle/Part Two.pdf	2	other	-	other	612	792	0	21	0.581
+xm37	outside	magazineArticle/Peters_1989_Tilting at Windmilss_Washington Monthly.pdf	1	other	-	other	485	708	0	88	0.267
+xm38	outside	magazineArticle/Peters_1989_Tilting at Windmilss_Washington Monthly.pdf	2	other	-	other	485	708	0	156	0.267
+xm39	outside	magazineArticle/Sherman_1986_elite institutions_The Public Interest; New York.pdf	1	other	-	other	595	808	0	43	0.549
+xm40	outside	magazineArticle/Sherman_1986_elite institutions_The Public Interest; New York.pdf	2	other	-	other	595	794	0	52	0.552
+xm41	outside	magazineArticle/Stone_1965_England’s Revolution_The New York Review of Books.pdf	1	other	-	other	612	792	0	44	0.938
+xm42	outside	magazineArticle/Stone_1965_England’s Revolution_The New York Review of Books.pdf	2	other	-	other	612	792	0	51	0.930
+xm43	outside	magazineArticle/_1958_Executive Pay_Nation's Business (pre-1986); Washington.pdf	1	other	-	other	486	565	0	9	0.982
+xm44	outside	magazineArticle/_1958_Executive Pay_Nation's Business (pre-1986); Washington.pdf	2	other	-	other	455	618	0	95	0.477
+xm45	outside	magazineArticle/_1967_Yearly Increase of 15% Expected by Ampex_Boxoffice (Archive 1920-2000); New York.pdf	1	other	-	other	596	809	0	225	0.264
+xm46	outside	magazineArticle/_1977_What We're About_Washington Monthly.pdf	1	other	-	other	441	704	0	64	0.413
+xm47	outside	magazineArticle/_1977_What We're About_Washington Monthly.pdf	2	other	-	other	441	704	0	64	0.412
+xm48	outside	document/_1953_99 Cong_.pdf	1	other	-	other	693	793	0	340	0.209
+xm49	outside	document/_1953_99 Cong_.pdf	2	other	-	other	693	793	0	329	0.211
+xm50	outside	journalArticle/Donahue - 2001 - Time to Get Serious About Talent Management.pdf	1	other	-	other	558	776	0	144	0.289
