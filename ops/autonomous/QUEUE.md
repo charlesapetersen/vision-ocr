@@ -1524,6 +1524,19 @@ say so in the commit.
       `OCR-COMPARE-<date>.tsv`: every one of the three readers has a scored row on both kinds of page, or a logged
       reason. ESTIMATE: 1-2 sessions, plus a night of unattended job. Sub-boxes: job started, finished and scored.
       BOUND: rule 10. (context: owner request 2026-10-12)
+      THE JOB, 2026-10-12: `hybrid-run.sh` with `HYBRID_DIR=$STATE/ocrlab/compare` and `HYBRID_COMBOS` naming
+      seven combinations, all re-run on tools from 5a46b22 (c52's `gridded` changed the layer since
+      OCR-HYBRID-2026-10-12's 6dbc22c, so no row is reused): vision-off, vision-regions, paddle-regions,
+      falcon-regions and the new paddle-fill on all 67 pages; falcon-align on the 56 others; falcon-fill on all.
+      Not run, in the table: paddle-align (1 MP cap), paddle-replace and falcon-replace (no boxes), vision
+      align/fill/replace (they mend Vision's reading). NewsBench is not scored: its gold has no line boxes, which
+      `ux-harness --truth` needs. Smoke run on s04, same build [measured], wrong/missing of 440: vision-regions 5/6,
+      paddle-regions 5/6, falcon-regions 4/6, paddle-fill 1/0.
+      - [x] **compare-run-started** — 2026-10-12 20:17, pid 97459; holds engine.lock.
+      - [ ] **compare-run-finished** — `hybrid.log` says `all combinations done`. Restart a dead job with the same
+            `HYBRID_DIR` and `HYBRID_COMBOS`; it resumes.
+      - [ ] **compare-run-scored** — `OCR-COMPARE-<date>.tsv` and its pages file committed
+            (`hybrid-table.py $STATE/ocrlab/compare OCR-COMPARE-<date>.tsv OCR-COMPARE-<date>-pages.tsv`).
 - [ ] **ocr-compare-report** — write the full comparison for the owner and for the app's settings table.
       (blocked-on: ocr-compare-run, ocr-newspaper-detect) (uses: light)
       A dated `OCR-COMPARE-DECISION-<date>.md` in the plain prose of `OCR-HYBRID-DECISION-2026-10-12.md`: for each
