@@ -1579,6 +1579,19 @@ say so in the commit.
       suite passes, and nothing crashes on this Mac. ESTIMATE: 3-5 sessions. Sub-boxes: the runtime plan, the
       runtime in the helper, the layout model in the app, the guard and fallback, one per reader wired in.
       BOUND: rule 10. (context: owner request 2026-10-02, split 2026-10-04, approach 2026-10-12)
+      `BUGS.md` C57.
+      - [x] **ie-plan** — the runtime plan. Done 2026-10-13: `OCR-RUNTIME-PLAN-2026-10-13.md`, `ops/ocrlab/make-runtime.sh`.
+            Standalone Python + MLX + mlx-vlm, 439-445 MB on disk, 134 MB to download; Falcon whole-page on s01 and s46
+            and PaddleOCR-VL on s46's 181 regions byte-identical to the lab venv's, moved or rebuilt. DocLayout-YOLO
+            to Core ML in the helper.
+      - [ ] **ie-runtime** — the runtime in the helper. (blocked-on: ocr-hybrid-approve) (uses: build,model:12)
+            `modelReading` with an interpreter and a reader script in `Resources/`, each model's reading of a sample page equal to the lab's, behind a test.
+      - [ ] **ie-layout** — DocLayout-YOLO as Core ML in the helper. (blocked-on: ocr-hybrid-approve) (uses: build)
+            Its pre- and post-processing and dedupe in Swift, giving the lab's regions on the sample.
+      - [ ] **ie-guard** — the memory guard and fallback. (blocked-on: ie-runtime) (uses: build,model:12)
+            The guard and the fallback to Vision with a message, behind a test that overruns the cap.
+      - [ ] **ie-readers** — wire in the approved readers. (blocked-on: ie-layout, ie-guard) (uses: build,model:12)
+            Vision regions, PaddleOCR-VL regions, Falcon align and regions wired in by page kind, each reproducing its `OCR-COMPARE-2026-10-13.tsv` row through the helper.
 - [ ] **ocr-integrate-settings** — give the accurate mode its settings, figures, timing run and downloads. (uses: build)
       (blocked-on: ocr-integrate-engine)
       Off by default. Under THE APPROACH above (owner, 2026-10-12):

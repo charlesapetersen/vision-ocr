@@ -20107,6 +20107,30 @@ and the two leg1 points also still fail as written. Closing on that case is a `W
 which rule 8 allows only at max after an earlier max attempt, so the box stays open and the item moved
 behind the untried ones with `(effort: max)` for its second round.
 
+### C57 · Old print and newspapers are read with more words wrong or missing than the approved on-device models leave — OPEN
+
+*(opened 2026-10-13 for `ocr-integrate-engine`, after the owner approved `OCR-COMPARE-DECISION-2026-10-13.md`'s
+recommendations. C41 is the newspaper half of the same defect, measured on whole pages.)*
+
+On the 67-page sample (`OCR-COMPARE-2026-10-13.tsv`, measured), Vision alone leaves 1.20% of the words wrong or
+missing on print and 29.6% on newspapers. Falcon-OCR bf16 on align leaves 0.63% on print; PaddleOCR-VL 1.6 4-bit
+and Falcon-OCR on regions leave 21.8% and 21.3% on newspapers. The app can run these only through the lab's
+shell readers in `ops/ocrlab/`, which no user has. Approved to build: print offers Vision, PaddleOCR-VL regions and
+Falcon align; newspapers offer Vision, Vision on regions, PaddleOCR-VL regions and Falcon regions; no fill.
+
+#### Sub-box 1, the runtime plan (2026-10-13)
+
+`OCR-RUNTIME-PLAN-2026-10-13.md`. A standalone CPython 3.12.13 with MLX 0.32.3 and mlx-vlm 0.7.4 and only their
+read-time imports, built by `ops/ocrlab/make-runtime.sh`: 439-445 MB on disk, 134 MB as a `.tgz` [measured], against
+the lab venv's 829 MB; the models are 1.08 GB (Falcon-OCR) and 0.70 GB (PaddleOCR-VL). Falcon-OCR's whole-page reading and PaddleOCR-VL's 181-region reading of sample `s46`, and
+Falcon's of `s01`, are byte-identical to the lab venv's, from a copy moved to a path with a space in it and from a
+fresh build [measured]. Every Mach-O in it is linker-signed ad hoc and the app has no hardened runtime, so the
+helper can start it as a child process with nothing re-signed; that a self-downloaded file is not quarantined is
+reasoned, to be tested in a VM with the downloads. DocLayout-YOLO goes to Core ML, run by the helper, so Vision on
+regions needs no runtime. Rejected: an MLX Swift port (would not reproduce the figures; whether MLX Swift has the two
+architectures was not checked), the runtime inside the app (+134 MB for everyone), the lab venv as it is.
+Next: sub-box 2, the runtime in the helper.
+
 ## Robustness and correctness of reporting
 
 ### R1 · jbig2 and qpdf children are never registered for cancellation — FIXED
