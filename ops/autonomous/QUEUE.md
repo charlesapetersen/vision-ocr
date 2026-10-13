@@ -1953,7 +1953,7 @@ These are offered to nobody. `next-item.sh` prints them as `hold` so they stay v
       Night 3 (23:35-07:40) finished Churro 3B, olmOCR-2-7B and Qwen3-VL-8B; Qwen3.5-9B was stopped at 6 of 56
       pages (weak early reads: one whole page 4 characters) and is DROPPED by the owner, not owed another try. No
       further bake-off night is needed for ocr-bakeoff-run; ocr-bakeoff-bits will need its own (4-6 h job).
-- [ ] **ocr-hybrid-approve** — the owner reads `OCR-HYBRID-DECISION-<date>.md` from `ocr-hybrid-pick` and approves an option. (blocked-on: ocr-hybrid-pick, ocr-compare-report) Tick
+- [x] **ocr-hybrid-approve** — the owner reads `OCR-HYBRID-DECISION-<date>.md` from `ocr-hybrid-pick` and approves an option. (blocked-on: ocr-hybrid-pick, ocr-compare-report) Tick
       it with the date and the owner's words naming the option; `ocr-integrate-engine` and everything after it wait on
       this. Added 2026-10-08 (owner: informed of the results, given options, approve the next step). 2026-10-12
       walkthrough: the owner deferred the choice ("Let's come back to this decision") and asked for
@@ -1966,6 +1966,16 @@ These are offered to nobody. `next-item.sh` prints them as `hold` so they stay v
       OUT OF DATE; the owner had commissioned further items (THE APPROACH, `ocr-newspaper-detect`, `ocr-compare-*`) and
       FILED it. Do not re-pose that version. Pose it once, from `OCR-COMPARE-DECISION-2026-10-13.md`, when the commissioned
       items are all done.
+      APPROVED 2026-10-13 (owner, in an interactive session: "Let's move forward with the recommendations in
+      OCR-COMPARE-DECISION-2026-10-13"). What that approves, from sections 2, 3 and 6 of that document:
+      - Books, articles and everything else: Vision whole page (the default), PaddleOCR-VL 1.6 4-bit on regions,
+        Falcon-OCR bf16 on align. Vision on regions is not offered for this kind.
+      - Newspapers: Vision whole page (the default), Vision on regions (the choice for a user who downloads no
+        model), PaddleOCR-VL on regions, Falcon-OCR on regions. Vision on regions does not become the standard route.
+      - Fill is not offered with either model, on either kind.
+      - The settings table is section 6's draft. The document left open whether newspapers offer both models; no
+        recommendation was made there, so both are offered, as THE APPROACH set. The owner may narrow it later.
+      Unmeasured and left to the integration's own check: Falcon align on the clippings the detector calls print.
 - [x] **model-night-ok** — the owner says the Mac is free for a night, so a long model job may start: ocr-bakeoff-bits'
       4-6 hours, ocr-hybrid-run's 6-10. Added 2026-10-07 when EFFICIENCY-PLAN item 16 loosened the edges that had kept
       both behind other work. Tick it with the date and the owner's words; untick it when the owner next needs the Mac.
