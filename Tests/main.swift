@@ -10719,21 +10719,9 @@ do {
 }
 }  // end of section
 
-// lt-sections. Everything above runs in named sections; lt-sections-rest wraps the rest
-// and moves this check to the end of the file.
-check("every check so far ran inside a named section",
-      checksOutsideSections == 0, "\(checksOutsideSections) outside")
-if let url = sectionTimings {
-    let rows = ((try? String(contentsOf: url, encoding: .utf8)) ?? "")
-        .split(separator: "\n").dropFirst()
-    check("…and the timing file has one row per section that ran, with its checks",
-          rows.count == sectionsRun && rows.allSatisfy { $0.split(separator: "\t").count == 4 },
-          "\(rows.count) rows for \(sectionsRun) sections at \(url.path)")
-}
-
 // MARK: - C34: the text layer reads down each column
 
-print("\nthe text layer reads down each column, not across them (C34)")
+section("the text layer reads down each column, not across them (C34)") {
 
 do {
     resetPrefs()
@@ -11096,10 +11084,11 @@ do {
           !Recogniser.readElsewhere(1, in: elsewhere))
     resetPrefs()
 }
+}  // end of section
 
 // MARK: - C52: a drag down one column stays in it
 
-print("\na drag down one column stays in it, as PDFKit selects (C52)")
+section("a drag down one column stays in it, as PDFKit selects (C52)") {
 
 do {
     resetPrefs()
@@ -11662,8 +11651,9 @@ do {
           "\(snappedDrags)")
     resetPrefs()
 }
+}  // end of section
 
-print("\nthe revision we pin is the revision Vision uses")
+section("the revision we pin is the revision Vision uses") {
 
 do {
     // `Recogniser.revision` is pinned to 3 because that is what the corpus was
@@ -11677,7 +11667,7 @@ do {
     let settings = Prefs.Snapshot.current()
     guard let doc = Flattener.open(page, password: nil), let first = doc.page(at: 0),
           let image = Recogniser.render(first, settings: settings) else {
-        check("the revision fixture renders", false); resetPrefs(); exit(0)
+        check("the revision fixture renders", false); resetPrefs(); exit(1)
     }
     let request = Recogniser.makeRequest(settings)
     let handler = VNImageRequestHandler(cgImage: image, options: [:])
@@ -11691,8 +11681,9 @@ do {
           "saw \(Set(observed).sorted()), pinned \(Recogniser.revision)")
     resetPrefs()
 }
+}  // end of section
 
-print("\ncancelling recognition is a cancellation, not a short document")
+section("cancelling recognition is a cancellation, not a short document") {
 
 do {
     // Returning the pages recognised so far would hand `compose` something that
@@ -11728,8 +11719,9 @@ do {
     }
     resetPrefs()
 }
+}  // end of section
 
-print("\nrecognition from several threads at once agrees with itself")
+section("recognition from several threads at once agrees with itself") {
 
 do {
     // The batch runs up to eight files concurrently, so `handler.perform` is
@@ -11752,7 +11744,7 @@ do {
           let image = Recogniser.render(first, settings: settings) else {
         check("the concurrency fixture renders", false)
         resetPrefs()
-        exit(0)
+        exit(1)
     }
     func signature(_ o: [SearchableWriter.Observation]) -> String {
         o.map { "\($0.text)@\(String(format: "%.4f,%.4f", $0.boundingBox.x, $0.boundingBox.y))" }
@@ -11778,8 +11770,9 @@ do {
           "\(answers.filter { $0 != serial }.count) of \(threads) differed")
     resetPrefs()
 }
+}  // end of section
 
-print("\nevery recognition setting reaches the request")
+section("every recognition setting reaches the request") {
 
 do {
     // CONTRIBUTING 4d — enumerate, do not reason about pairs. The forty checks on
@@ -11860,8 +11853,9 @@ do {
           !Recogniser.makeRequest(named).automaticallyDetectsLanguage)
     resetPrefs()
 }
+}  // end of section
 
-print("\nevery recognition setting reaches the helper")
+section("every recognition setting reaches the helper") {
 
 do {
     // The sibling of the block above, and it exists for the same reason. R40
@@ -11959,8 +11953,9 @@ do {
           Recogniser.helperSettings(from: Recogniser.helperArguments(base)) != nil)
     resetPrefs()
 }
+}  // end of section
 
-print("\na model's reading takes Vision's lines' words where the two agree (ocr-hybrid-proto)")
+section("a model's reading takes Vision's lines' words where the two agree (ocr-hybrid-proto)") {
 
 do {
     func line(_ text: String, y: Double, x: Double = 0.1, width: Double = 0.8) -> SearchableWriter.Observation {
@@ -12115,8 +12110,9 @@ do {
     }
     resetPrefs()
 }
+}  // end of section
 
-print("\na model reads only the lines Vision was unsure of and the ones it skipped (ocr-hybrid-proto, fill)")
+section("a model reads only the lines Vision was unsure of and the ones it skipped (ocr-hybrid-proto, fill)") {
 
 do {
     // A 1000 x 1300 page of four inked lines, 30 px tall, with Vision's reading of three:
@@ -12289,8 +12285,9 @@ do {
           fellBack.isEmpty && helperText.contains("Model added line"), helperText + " | " + fellBack.joined())
     resetPrefs()
 }
+}  // end of section
 
-print("\na model's own blocks and words replace Vision's reading (ocr-hybrid-proto, replace)")
+section("a model's own blocks and words replace Vision's reading (ocr-hybrid-proto, replace)") {
 
 do {
     let blocks = Recogniser.modelBlocks("0.1\t0.15\t0.8\t0.3\tText\t<p>one two</p>\n"
@@ -12505,8 +12502,9 @@ do {
           helperText + " | " + fellBack.joined())
     resetPrefs()
 }
+}  // end of section
 
-print("\na model's reading of each layout region takes the words of Vision's lines in it (hp-regions)")
+section("a model's reading of each layout region takes the words of Vision's lines in it (hp-regions)") {
 
 do {
     func line(_ text: String, x: Double, y: Double, width: Double = 0.4) -> SearchableWriter.Observation {
@@ -12658,8 +12656,9 @@ do {
           empty ?? "threw")
     resetPrefs()
 }
+}  // end of section
 
-print("\nocr-newspaper-detect: a newspaper page is told from print by Vision's lines alone")
+section("ocr-newspaper-detect: a newspaper page is told from print by Vision's lines alone") {
 
 do {
     typealias Box = SearchableWriter.BoundingBox
@@ -12703,8 +12702,9 @@ do {
                                      pasteUp: false) == .other)
     check("…and a page with no lines is print", Recogniser.pageKind(of: [], pasteUp: false) == .other)
 }
+}  // end of section
 
-print("\na helper is only worth it when there is something to overlap with")
+section("a helper is only worth it when there is something to overlap with") {
 
 do {
     // The decision `start()` makes. Checked here rather than by driving a batch,
@@ -12722,8 +12722,9 @@ do {
           !Recogniser.helperIsWorthIt(concurrency: 1, files: 255))
     check("…nor an empty batch", !Recogniser.helperIsWorthIt(concurrency: 6, files: 0))
 }
+}  // end of section
 
-print("\nthe helper recognises exactly what the app would")
+section("the helper recognises exactly what the app would") {
 
 do {
     // The property the whole change rests on. R40's fix is only safe because the
@@ -12862,8 +12863,9 @@ do {
           colourDifferences == 0 && colourCompared > 0,
           "\(colourDifferences) of \(colourCompared) differ")
 }
+}  // end of section
 
-print("\na helper that misbehaves costs time, never content")
+section("a helper that misbehaves costs time, never content") {
 
 do {
     // CONTRIBUTING 4c — the error branches only exist if something makes them
@@ -13127,8 +13129,9 @@ do {
         }
     }
 }
+}  // end of section
 
-print("\nthe engine assumptions two declined features rest on")
+section("the engine assumptions two declined features rest on") {
 
 // Labelled so the fixture guard below can give up on *this block* rather than on
 // the process. It called `exit()` first, which would have ended the whole suite
@@ -13598,8 +13601,9 @@ assumptions: do {
         check("the skewed fixture rendered", false, "it did not")
     }
 }
+}  // end of section
 
-print("\na photograph that says it is sideways is read as sideways")
+section("a photograph that says it is sideways is read as sideways") {
 
 do {
     // Recognition honours EXIF orientation. In the searchable pipeline this
@@ -13659,7 +13663,7 @@ do {
           let image = CGImageSourceCreateImageAtIndex(source, 0, nil) else {
         check("the orientation fixture was written", false)
         resetPrefs()
-        exit(0)
+        exit(1)
     }
     check("the fixture really carries an orientation flag, or nothing below means anything",
           Recogniser.exifOrientation(of: source) == .right,
@@ -13684,8 +13688,9 @@ do {
     }
     resetPrefs()
 }
+}  // end of section
 
-print("\nevery control VoiceOver cannot name from its own label has one")
+section("every control VoiceOver cannot name from its own label has one") {
 
 do {
     // The question "are the controls named for VoiceOver" sat open from
@@ -13865,8 +13870,9 @@ do {
     }
     resetPrefs()
 }
+}  // end of section
 
-print("\ntelling a new version from an old one")
+section("telling a new version from an old one") {
 
 do {
     // The classic way an updater goes quiet is string comparison: "1.10.0" is
@@ -14058,8 +14064,9 @@ do {
               Updater.isDue(now: now, last: 0))
     }
 }
+}  // end of section
 
-print("\nwhat each file's row shows")
+section("what each file's row shows") {
 
 do {
     // The per-file status the list draws. It lives in the model rather than in
@@ -14149,8 +14156,9 @@ do {
     }
     resetPrefs()
 }
+}  // end of section
 
-print("\nevery door into a committed batch is shut")
+section("every door into a committed batch is shut") {
 
 do {
     // U23, and the control for the fourth way fixes produce bugs: two changes
@@ -14250,6 +14258,7 @@ do {
     // narrowing is inseparable from `start()` — for coverage that already exists.
     resetPrefs()
 }
+}  // end of section
 
 // MARK: - The import interlock counts, and every door respects it (A5.3)
 
@@ -14264,7 +14273,7 @@ do {
 // view: `start()` never checked it at all, and `clearFiles()` was not interlocked
 // either. U19 and U23 are the two entries about exactly that shape.
 
-print("\nthe import interlock counts imports, not drops")
+section("the import interlock counts imports, not drops") {
 
 do {
     resetPrefs()
@@ -14365,8 +14374,9 @@ do {
     }
     resetPrefs()
 }
+}  // end of section
 
-print("\nretrying the failures from a finished batch")
+section("retrying the failures from a finished batch") {
 
 do {
     // The model already knows which files failed; without this a four-file
@@ -14500,6 +14510,7 @@ do {
     }
     resetPrefs()
 }
+}  // end of section
 
 // MARK: - A declined retry puts the batch back, on the path that actually declines (A5.2)
 
@@ -14517,7 +14528,7 @@ do {
 // record is unrecoverable — under a log line reading "Start cancelled — nothing
 // was changed."
 
-print("\na retry declined at the alert puts the batch back")
+section("a retry declined at the alert puts the batch back") {
 
 do {
     resetPrefs()
@@ -14595,6 +14606,7 @@ do {
     OCRModel.digitalTextDecisionForTesting = nil
     resetPrefs()
 }
+}  // end of section
 
 // MARK: - A retry cannot publish over a file the batch protected (R60)
 
@@ -14611,7 +14623,7 @@ do {
 // attempt at this carried only the earlier attempt's *outputs* forward and failed
 // its own test twice over.
 
-print("\na retry cannot claim a path the batch it came from protected")
+section("a retry cannot claim a path the batch it came from protected") {
 
 do {
     resetPrefs()
@@ -14733,12 +14745,13 @@ do {
             + "\(a3[original]?.lastPathComponent ?? "nil")")
     resetPrefs()
 }
+}  // end of section
 
 // And the same sequence through the real model, because the unit checks above
 // prove the *rule* and this proves the model applies it. The recorded harm is a
 // user's file replaced, so the assertion is on the user's file, byte for byte.
 
-print("\nthe retried batch really does protect the earlier one's files")
+section("the retried batch really does protect the earlier one's files") {
 
 do {
     resetPrefs()
@@ -14835,8 +14848,9 @@ do {
     }
     resetPrefs()
 }
+}  // end of section
 
-print("\nthe batch stays frozen while the alert is up")
+section("the batch stays frozen while the alert is up") {
 
 do {
     // U21. start() froze the batch, ran the pre-flight, then cleared
@@ -14996,8 +15010,9 @@ do {
     OCRModel.digitalTextDecisionForTesting = nil
     resetPrefs()
 }
+}  // end of section
 
-print("\nimporting a folder does not block the main actor")
+section("importing a folder does not block the main actor") {
 
 do {
     // U20. add(_:) is @MainActor and filesInFolder enumerates a whole subtree,
@@ -15080,6 +15095,7 @@ do {
           "\(MainActor.assumeIsolated { n.files.count })")
     resetPrefs()
 }
+}  // end of section
 
 // MARK: - The progress bar does not invent a number
 
@@ -15089,7 +15105,7 @@ do {
 // fraction is how a stage says "working, no idea", and the bar goes
 // indeterminate instead of showing a number nobody measured.
 
-print("\nindeterminate progress")
+section("indeterminate progress") {
 
 do {
     resetPrefs()
@@ -15167,6 +15183,7 @@ do {
     }
     resetPrefs()
 }
+}  // end of section
 
 // MARK: - Outline destinations follow the ink
 
@@ -15176,7 +15193,7 @@ do {
 // page y=700 falls off a 612-tall box entirely. Copied verbatim the bookmark
 // lands hundreds of points away and nothing is out of range, so no guard fires.
 
-print("\noutline destinations survive the page rewrite")
+section("outline destinations survive the page rewrite") {
 
 do {
     resetPrefs()
@@ -15285,8 +15302,9 @@ do {
     }
     resetPrefs()
 }
+}  // end of section
 
-print("\na pathological outline cannot take the batch down")
+section("a pathological outline cannot take the batch down") {
 
 do {
     // convert recurses once per level on a 512 KB worker stack — about 1,200
@@ -15384,6 +15402,7 @@ do {
           depth(items) == SearchableWriter.maximumOutlineDepth,
           "\(depth(items)) against \(SearchableWriter.maximumOutlineDepth)")
 }
+}  // end of section
 
 // MARK: - Every destination form, not just the convenient one
 
@@ -15394,7 +15413,7 @@ do {
 // was given one pointing at page 1. Both are worse than losing the outline,
 // because they look like they work.
 
-print("\noutline destinations of every form")
+section("outline destinations of every form") {
 
 do {
     resetPrefs()
@@ -15457,10 +15476,11 @@ do {
     }
     resetPrefs()
 }
+}  // end of section
 
 // MARK: - Backend robustness: leaks, unbounded waits, self-overwriting batches
 
-print("\nthe backend does not leak or wedge")
+section("the backend does not leak or wedge") {
 
 do {
     resetPrefs()
@@ -15553,6 +15573,7 @@ do {
           failed.message)
 
 }
+}  // end of section
 
 // MARK: - A page the recogniser skipped is caught
 
@@ -15561,7 +15582,7 @@ do {
 // `produced == expected`, and publishes as a success — a silently untextable
 // page in the middle of a book.
 
-print("\na skipped page is not mistaken for a blank one")
+section("a skipped page is not mistaken for a blank one") {
 
 do {
     resetPrefs()
@@ -15633,6 +15654,7 @@ do {
           outcome == .succeeded, detail)
     resetPrefs()
 }
+}  // end of section
 
 // MARK: - Wrapping a dropped image
 
@@ -15642,7 +15664,7 @@ do {
 // orientation — CGImageSourceCreateImageAtIndex hands back the stored pixels —
 // so a phone photo shot in portrait was wrapped as a landscape page.
 
-print("\nwrapping a dropped image")
+section("wrapping a dropped image") {
 
 do {
     resetPrefs()
@@ -15739,10 +15761,11 @@ do {
     }
     resetPrefs()
 }
+}  // end of section
 
 // MARK: - Small correctness fixes
 
-print("\nopen-when-finished picks a folder in every configuration")
+section("open-when-finished picks a folder in every configuration") {
 
 do {
     // R7 was recorded as fixed but was not: the guard was `let folder =
@@ -15761,8 +15784,9 @@ do {
     check("nothing to open when there were no inputs",
           OCRModel.folderToReveal(destination: nil, inputs: []) == nil)
 }
+}  // end of section
 
-print("\nassembling no pages is refused")
+section("assembling no pages is refused") {
 
 do {
     // assemble([]) wrote a /Count 0 page tree that qpdf --check rejects, and
@@ -15775,6 +15799,7 @@ do {
     check("…and writes no file at all",
           !FileManager.default.fileExists(atPath: empty.path))
 }
+}  // end of section
 
 // MARK: - Crop box
 
@@ -15784,7 +15809,7 @@ do {
 // box, and mapping them onto the media box offset and rescaled every one of them.
 // Guards that the whole geometry chain agrees on the crop box. See BUGS.md C7.
 
-print("\ncrop box differing from media box")
+section("crop box differing from media box") {
 
 do {
     resetPrefs()
@@ -16173,6 +16198,7 @@ do {
 
     resetPrefs()
 }
+}  // end of section
 
 // MARK: - Invariant 5: differing page sizes AND a rotated page, end to end
 
@@ -16215,7 +16241,7 @@ func mixedPage(_ url: URL, w: CGFloat, h: CGFloat, text: String) {
     ctx.beginPDFPage(nil); ctx.draw(cg, in: box); ctx.endPDFPage(); ctx.closePDF()
 }
 
-print("\nmixed page sizes and rotation through the whole pipeline")
+section("mixed page sizes and rotation through the whole pipeline") {
 
 do {
     resetPrefs()
@@ -16333,6 +16359,7 @@ do {
     }
     resetPrefs()
 }
+}  // end of section
 
 // MARK: - Not publishing partial results
 
@@ -16359,7 +16386,7 @@ do {
 // What replaces them drives the real functions, with a real good file at the
 // destination, and goes red when either gate is removed.
 
-print("\npartial results are never published")
+section("partial results are never published") {
 
 do {
     resetPrefs()
@@ -16522,6 +16549,7 @@ do {
             + "\((try? Data(contentsOf: inside))?.count ?? -1) after")
     resetPrefs()
 }
+}  // end of section
 
 // MARK: - Cancel reaches grandchildren, not just the child
 
@@ -16532,7 +16560,6 @@ do {
 // child that *ignores* SIGTERM — the only case escalation exists for — was also
 // the only case that leaked its descendants.
 
-print("\ncancel reaches the whole process tree")
 
 /// A shell that holds a backgrounded `sleep` and reports its pid.
 /// A bare `sh -c '/bin/sleep 45'` is no good: sh execs straight into sleep and
@@ -16555,6 +16582,8 @@ func gone(_ pid: pid_t, within seconds: TimeInterval = 5) -> Bool {
     while kill(pid, 0) == 0, Date() < deadline { Thread.sleep(forTimeInterval: 0.05) }
     return kill(pid, 0) != 0
 }
+
+section("cancel reaches the whole process tree") {
 
 do {
     // The group is what makes one signal reach the tree, so check it exists
@@ -16598,6 +16627,7 @@ do {
           "pid \(grandchild) survived — kill(pid) reaches one process, kill(-pgid) reaches the tree")
     if !cleared { kill(grandchild, SIGKILL) }
 }
+}  // end of section
 
 // MARK: - Publishing is the step that touches the user's disk
 
@@ -16605,7 +16635,7 @@ do {
 // the move, and it had no test of its own — the branch that replaces a previous
 // run's output was covered by nothing at all.
 
-print("\npublishing")
+section("publishing") {
 
 do {
     let dir = tmp.appendingPathComponent("publish-unit")
@@ -16637,6 +16667,7 @@ do {
     check("…with the staged copy consumed",
           !FileManager.default.fileExists(atPath: second.path))
 }
+}  // end of section
 
 // MARK: - makeSearchablePDF's failure and cancel branches
 
@@ -16644,7 +16675,7 @@ do {
 // user actually hits: a file that is neither PDF nor image, a binary that will
 // not run, and Cancel.
 
-print("\nsearchable pipeline: the unhappy branches")
+section("searchable pipeline: the unhappy branches") {
 
 do {
     resetPrefs()
@@ -16707,12 +16738,13 @@ do {
     check("…and publishes nothing", !FileManager.default.fileExists(atPath: output.path))
     resetPrefs()
 }
+}  // end of section
 
 // MARK: - The non-rebuild path
 
 // `rebuild: false` is where C7 and C10 both bit, and nothing covered it.
 
-print("\nsearchable pipeline without the rebuild")
+section("searchable pipeline without the rebuild") {
 
 do {
     resetPrefs()
@@ -16811,13 +16843,14 @@ do {
     check("…and on the rotated one", text.contains("WIDE"), text.prefix(120).description)
     resetPrefs()
 }
+}  // end of section
 
 // MARK: - Encrypted input, end to end
 
 // The password paths exist — `Flattener.open` unlocks, `Prefs.Snapshot` carries
 // the password down to `--password` — and had never been run.
 
-print("\nencrypted input")
+section("encrypted input") {
 
 do {
     resetPrefs()
@@ -16876,6 +16909,7 @@ do {
           !FileManager.default.fileExists(atPath: dir.appendingPathComponent("wrong.pdf").path))
     resetPrefs()
 }
+}  // end of section
 
 // MARK: - Colour pages
 
@@ -16885,7 +16919,6 @@ do {
 // ink, gets called text, and is thresholded to blotches — 99% of one real page
 // was lost that way.
 
-print("\ncolour pages")
 
 func makeTintedPDF(at url: URL) {
     var box = CGRect(x: 0, y: 0, width: 612, height: 792)
@@ -16904,6 +16937,8 @@ func makeTintedPDF(at url: URL) {
     pdf.endPDFPage()
     pdf.closePDF()
 }
+
+section("colour pages") {
 
 do {
     resetPrefs()
@@ -16947,6 +16982,7 @@ do {
     check("…and publishes its page", PDFDocument(url: output)?.pageCount == 1)
     resetPrefs()
 }
+}  // end of section
 
 // MARK: - A short text layer cannot hide behind the page count
 
@@ -16956,7 +16992,7 @@ do {
 // stopped short published a full-length, perfectly valid PDF whose later pages
 // simply had no text. Invariant 1: page count is not sufficient verification.
 
-print("\na short text layer is caught")
+section("a short text layer is caught") {
 
 do {
     resetPrefs()
@@ -16999,6 +17035,7 @@ do {
     }
     resetPrefs()
 }
+}  // end of section
 
 // MARK: - Concurrent searchable runs
 
@@ -17006,7 +17043,7 @@ do {
 // race lived on had no multi-file coverage at all. Two searchable files at once,
 // asserting both outputs are complete *and* attributed to the right input.
 
-print("\nconcurrent searchable batch")
+section("concurrent searchable batch") {
 
 do {
     resetPrefs()
@@ -17078,6 +17115,7 @@ do {
     }
     resetPrefs()
 }
+}  // end of section
 
 // MARK: - Real digital text is not an OCR layer
 
@@ -17087,7 +17125,6 @@ do {
 // of it is measurably worse. The two cases both "have text", so the test that
 // separates them is whether the text sits on a page-sized image.
 
-print("\ntelling real digital text from an OCR layer")
 
 /// A born-digital page: real drawn text, no raster anywhere.
 func makeDigitalPDF(at url: URL, lines: [String], pages: Int = 3) {
@@ -17410,6 +17447,8 @@ func copyPDFRasterisingAllBut(
     }
     pdf.closePDF()
 }
+
+section("telling real digital text from an OCR layer") {
 
 do {
     resetPrefs()
@@ -18846,6 +18885,7 @@ do {
           "the registered default, not the value resetPrefs forces off for the suite")
     resetPrefs()
 }
+}  // end of section
 
 // MARK: - What the window is for
 
@@ -18854,7 +18894,7 @@ do {
 // so the enum's declaration order IS the UI order — a detail that is easy to
 // undo by tidying the enum.
 
-print("\ndefaults and ordering")
+section("defaults and ordering") {
 
 do {
     resetPrefs()
@@ -18882,12 +18922,13 @@ do {
           "\(String(describing: registered[Prefs.writeRunReport]))")
     resetPrefs()
 }
+}  // end of section
 
 // The log used to open with the pipeline's steps — the mac-ocr command line,
 // the rebuild, the JBIG2 merge. Honest, and a developer's view of a run. The
 // window shows progress; the steps live in Settings' command preview.
 
-print("\nthe run log carries outcomes, not pipeline steps")
+section("the run log carries outcomes, not pipeline steps") {
 
 do {
     resetPrefs()
@@ -18957,10 +18998,11 @@ do {
     }
     resetPrefs()
 }
+}  // end of section
 
 // MARK: - Recognition languages come from the machine
 
-print("\nrecognition languages this Mac actually has")
+section("recognition languages this Mac actually has") {
 
 do {
     resetPrefs()
@@ -19103,10 +19145,11 @@ do {
                                 floodTook))
     resetPrefs()
 }
+}  // end of section
 
 // MARK: - The written run report
 
-print("\nthe written run report")
+section("the written run report") {
 
 do {
     resetPrefs()
@@ -19380,6 +19423,7 @@ do {
     try? FileManager.default.removeItem(at: blocked)
     resetPrefs()
 }
+}  // end of section
 
 // MARK: - Side-by-side fragments of one line keep their space
 
@@ -19398,7 +19442,7 @@ do {
 // the words weld, and the check for that runs first so a silently-ineffective
 // guard cannot pass.
 
-print("\ncalibrated constants have not drifted")
+section("calibrated constants have not drifted") {
 
 do {
     // T5. Tools/mutate.py moved each of these far enough to change behaviour and
@@ -19454,8 +19498,9 @@ do {
     // moved, so this block cannot be fooled by ordering.
     SearchableWriter.reserveEms = 0.25
 }
+}  // end of section
 
-print("\nresolution decisions the corpus rests on")
+section("resolution decisions the corpus rests on") {
 
 do {
     // Behavioural cover for two constants the drift guard only pins by value.
@@ -19492,8 +19537,9 @@ do {
                      Flattener.rebuildDPI(of: page), Flattener.fallbackRebuildDPI))
     }
 }
+}  // end of section
 
-print("\nsafeInt cannot be handed something that traps")
+section("safeInt cannot be handed something that traps") {
 
 do {
     // T5. Mutating `guard value.isFinite` to `guard true` survived: nothing
@@ -19508,6 +19554,7 @@ do {
               && Flattener.safeInt(-1e30) == Int(-9.0e18))
     check("an ordinary value is unchanged", Flattener.safeInt(1234.7) == 1234)
 }
+}  // end of section
 
 // MARK: - The two conversions safeInt did not cover (A7.1, A3.2)
 
@@ -19518,7 +19565,7 @@ do {
 // reads the markers it prints: exit 0 alone would only say nothing crashed, and
 // the behaviour matters as much as the survival.
 
-print("\nthe declared-geometry conversions cannot trap")
+section("the declared-geometry conversions cannot trap") {
 
 do {
     // Reachability first, because a bound on an unreachable value is not a fix.
@@ -19628,10 +19675,11 @@ do {
           windowDrift.isEmpty,
           "\(windowDrift.count) drifted, e.g. \(windowDrift.prefix(3).joined(separator: ", "))")
 }
+}  // end of section
 
 // MARK: - inkCoverage's two halves come from one population (A7.2)
 
-print("\nink coverage cannot exceed one")
+section("ink coverage cannot exceed one") {
 
 do {
     // The one fraction in Flattener whose numerator and denominator were
@@ -19659,8 +19707,9 @@ do {
     check("an empty buffer is zero, not a division by zero",
           Flattener.inkCoverage(of: [], width: 20, height: 20, threshold: 128) == 0)
 }
+}  // end of section
 
-print("\nrepeated text in a column is not a duplicate")
+section("repeated text in a column is not a duplicate") {
 
 do {
     // C22. `deduplicated` drops an observation repeating an already-kept one's
@@ -19721,8 +19770,9 @@ do {
           SearchableWriter.deduplicated(head, in: box).count == 2,
           "kept \(SearchableWriter.deduplicated(head, in: box).count) of 2")
 }
+}  // end of section
 
-print("\nadjacent fragments of one line keep their space")
+section("adjacent fragments of one line keep their space") {
 
 do {
     resetPrefs()
@@ -19926,8 +19976,9 @@ do {
           aloneText.contains("no neighbour"), aloneText.prefix(60).description)
     resetPrefs()
 }
+}  // end of section
 
-print("\na box sitting on top of a run is not the next fragment of its line")
+section("a box sitting on top of a run is not the next fragment of its line") {
 
 do {
     // BUGS.md R81 / REVIEW-2026-08-14.md A1.2. `rightLimit` accepted any
@@ -20058,8 +20109,9 @@ do {
                  swallowed, againstTheWider))
     resetPrefs()
 }
+}  // end of section
 
-print("\na squashed run sits in the middle of its line's ink (C55)")
+section("a squashed run sits in the middle of its line's ink (C55)") {
 
 do {
     // BUGS.md C55. `1951 - Briefer Book Notes` p1, four lines as Vision boxed them on
@@ -20140,8 +20192,9 @@ do {
         check("…and an unsquashed run still sits on drawnBaseline", false, "refused")
     }
 }
+}  // end of section
 
-print("\na short fragment beside a tall one is one line, and keeps its space")
+section("a short fragment beside a tall one is one line, and keeps its space") {
 
 do {
     // BUGS.md R82 / REVIEW-2026-08-14.md A1.1. `rightLimit` asked
@@ -20283,8 +20336,9 @@ do {
             && text.contains("female") && text.contains("criminals"),
           "unplaced \(unplaced?.count ?? -1): '\(text.prefix(60))'")
 }
+}  // end of section
 
-print("\n\"one visual line\" means the same thing to the writer and to its instrument")
+section("\"one visual line\" means the same thing to the writer and to its instrument") {
 
 do {
     // `isSameVisualLine` and `drawnBaseline` stopped being `private` so that
@@ -20361,6 +20415,7 @@ do {
           drawnGap < boxBottomGap,
           String(format: "drawn gap %.2f pt, box-bottom gap %.2f pt", drawnGap, boxBottomGap))
 }
+}  // end of section
 
 // MARK: - The rename must not cost anyone their settings
 
@@ -20368,7 +20423,7 @@ do {
 // OCR moves it — and without a migration everyone silently loses their output
 // folder, language list and mac-ocr path on a release that only changed a name.
 
-print("\nsaying what the confidence setting means")
+section("saying what the confidence setting means") {
 
 do {
     // "Min. confidence — 0.00" is a label, a number and no information: no
@@ -20429,8 +20484,9 @@ do {
     check("the widest readout the slider can produce fits its column",
           widest <= 96, String(format: "\"%@\" is %.0f pt", widestText, widest))
 }
+}  // end of section
 
-print("\nwhat the rebuild does, and to which files")
+section("what the rebuild does, and to which files") {
 
 do {
     // The Settings panel used to say the rebuild is "only applied to files that
@@ -21165,8 +21221,9 @@ do {
     try? FileManager.default.removeItem(at: dir)
     resetPrefs()
 }
+}  // end of section
 
-print("\nsettings survive the rename")
+section("settings survive the rename") {
 
 do {
     resetPrefs()
@@ -21273,10 +21330,11 @@ do {
     d.removeObject(forKey: Prefs.migratedFromOldName)
     resetPrefs()
 }
+}  // end of section
 
 // MARK: - Tool lookup is cached
 
-print("\ntool lookup")
+section("tool lookup") {
 
 do {
     // The fallback spawns a login shell (~85 ms). SwiftUI calls these from inside
@@ -21301,8 +21359,9 @@ do {
     }(), "a negative result must not re-shell every time")
     check("the cache still finds a real tool", Runner.locateTool("sh") != nil)
 }
+}  // end of section
 
-print("\nan input named after a scratch intermediate")
+section("an input named after a scratch intermediate") {
 
 do {
     // R27. The rebuilt page images keep the input's own name inside the scratch
@@ -21340,8 +21399,9 @@ do {
               embeddedText(of: out).isEmpty ? "<none>" : embeddedText(of: out))
     }
 }
+}  // end of section
 
-print("\nhostile page dimensions")
+section("hostile page dimensions") {
 
 do {
     // R24. R20 added maximumPageMegapixels so an impossible page is refused
@@ -21535,8 +21595,9 @@ do {
 
     try? FileManager.default.removeItem(at: dir)
 }
+}  // end of section
 
-print("\nshared form resources")
+section("shared form resources") {
 
 do {
     // R25. `walk` recurses into every Form XObject's /Resources, bounded only by
@@ -22152,6 +22213,7 @@ do {
 
     resetPrefs()
 }
+}  // end of section
 
 // MARK: - Carrying a reader's marks across the rebuild
 //
@@ -22172,7 +22234,7 @@ do {
 // third adversarial review round. It drives the **real** `makeSearchablePDF` twice
 // over one marked-up document and asks the published files what happened.
 
-print("\nthe Keep highlights and notes setting gates the transplant")
+section("the Keep highlights and notes setting gates the transplant") {
 
 do {
     resetPrefs()
@@ -22539,6 +22601,7 @@ do {
     }
     resetPrefs()
 }
+}  // end of section
 
 resetPrefs()
 
@@ -22647,6 +22710,8 @@ func makeWashedTextPDF(at url: URL, pages: Int, washFraction: Double) {
     }
     pdf.closePDF()
 }
+
+section("the MRC layering loop, end to end (C28)") {
 
 do {
     resetPrefs()
@@ -22840,6 +22905,20 @@ do {
     }
     resetPrefs()
 }
+}  // end of section
+
+// lt-sections-rest. Every check above runs in a named section; this one checks that.
+section("every check runs inside a named section") {
+check("every check so far ran inside a named section",
+      checksOutsideSections == 0, "\(checksOutsideSections) outside")
+if let url = sectionTimings {
+    let rows = ((try? String(contentsOf: url, encoding: .utf8)) ?? "")
+        .split(separator: "\n").dropFirst()
+    check("…and the timing file has one row per section that ran, with its checks",
+          rows.count == sectionsRun && rows.allSatisfy { $0.split(separator: "\t").count == 4 },
+          "\(rows.count) rows for \(sectionsRun) sections at \(url.path)")
+}
+}  // end of section
 
 resetPrefs()
 noteSection("(outside any section)\t\(checksOutsideSections)\t\t")

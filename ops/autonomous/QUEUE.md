@@ -1780,9 +1780,14 @@ say so in the commit.
         137.7 s; "automatic per-page image mode" alone is 188 checks, 43.7 s. Rows go to
         `$STATE/section-timings/<stamp>.tsv`, kept 14 days. Section names contain commas (the C56 one), so
         lt-tier's `VISIONOCR_SECTIONS=a,b` needs another separator or a short id.
-      - [ ] **lt-sections-rest** — wrap the remaining sections the same way. (blocked-on: lt-sections)
+      - [x] **lt-sections-rest** — wrap the remaining sections the same way. (blocked-on: lt-sections)
         (uses: build) DONE WHEN the suite's check count and pass set are unchanged, every check sits inside a named
         section, and one full run's per-section times are committed. ESTIMATE: 1 session.
+        Done 2026-10-13: 74 more sections (112 in all; the untitled C28 MRC block is now one, and the "every
+        check" pair runs last in its own). Measured: base and after both 1884/1884, sorted ok sets identical;
+        0 checks outside. `SECTION-TIMINGS-2026-10-13.tsv`: 362.0 s in sections; the largest is "telling real
+        digital text from an OCR layer", 114 checks, 66.2 s. Global helper funcs stay outside sections. Three
+        fixture guards that recorded a FAIL and then `exit(0)` (revision, concurrency, orientation) now exit 1.
       - [ ] **lt-audit** — find at run time which sections touch Vision, the Flattener or a subprocess.
         (blocked-on: lt-sections-rest) (uses: build) Count the calls per section with test-only tripwires on the recogniser, the
         Flattener's entry points and process launches, over one full run, and commit the table (section, checks,

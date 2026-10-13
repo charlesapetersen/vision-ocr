@@ -1,0 +1,114 @@
+section	checks	failures	seconds
+the suite's preferences domain is its own	4	0	0.08
+end-to-end runs	10	0	3.33
+cancelling a text extraction neither publishes nor lies about it	8	0	0.31
+a document with no text on any page says so	17	0	3.23
+rejoining hyphenated words	31	0	0.04
+reporting a copy larger than its original	6	0	0.00
+the unplaced-lines message names pages, not text	6	0	0.00
+presets	26	0	0.02
+forced re-OCR of already-OCR'd input	4	0	0.14
+rebuild removes the old text layer	11	0	0.24
+automatic per-page image mode	188	0	44.08
+the eight routing fixtures route the way R56 and R57 say they must	18	0	6.08
+dense bilevel type is routed to 1-bit, not to the picture path	11	0	1.57
+JBIG2 compression of the page images	15	0	0.91
+word spacing in the searchable PDF	4	0	0.28
+right-to-left text	7	0	0.01
+unplaced lines are reported per file	3	0	0.02
+drop box	14	0	0.05
+concurrency	7	0	0.74
+batch accounting	11	0	3.91
+searchable PDF, end to end	9	0	6.13
+output naming	5	0	0.00
+text layer page geometry	4	0	0.01
+closely-spaced lines	4	0	0.06
+rotated pages	10	0	0.98
+sideways text gets a layer along its printed line (C36)	12	0	3.78
+a page pasted up from scanned strips is read strip by strip (C39)	25	0	4.39
+a 1-bit page keeps the source's stroke weight, and its faint marks (C56)	10	0	0.58
+a 1-bit JBIG2 source page keeps its own stream (C37)	39	0	19.65
+a layered scan keeps its own images, without its text (C47)	17	0	13.42
+two inputs with the same name	5	0	0.05
+stop() escalates past a child that ignores SIGTERM	2	0	0.84
+a logo does not set the page's rebuild resolution	53	0	1.69
+a layered scan's type is kept at the resolution of its mask (C39)	80	0	11.83
+the document outline survives OCR	16	0	7.98
+files added during a run	14	0	0.08
+pages far too big for a recogniser to refuse	3	0	0.93
+recognising a page again in overlapping bands (C30)	103	0	1.13
+the text layer reads down each column, not across them (C34)	24	0	0.31
+a drag down one column stays in it, as PDFKit selects (C52)	23	0	0.16
+the revision we pin is the revision Vision uses	2	0	0.10
+cancelling recognition is a cancellation, not a short document	1	0	0.19
+recognition from several threads at once agrees with itself	2	0	0.57
+every recognition setting reaches the request	11	0	0.00
+every recognition setting reaches the helper	24	0	0.00
+a model's reading takes Vision's lines' words where the two agree (ocr-hybrid-proto)	19	0	11.24
+a model reads only the lines Vision was unsure of and the ones it skipped (ocr-hybrid-proto, fill)	17	0	8.62
+a model's own blocks and words replace Vision's reading (ocr-hybrid-proto, replace)	23	0	5.55
+a model's reading of each layout region takes the words of Vision's lines in it (hp-regions)	15	0	9.50
+ocr-newspaper-detect: a newspaper page is told from print by Vision's lines alone	10	0	0.01
+a helper is only worth it when there is something to overlap with	5	0	0.00
+the helper recognises exactly what the app would	9	0	2.57
+a helper that misbehaves costs time, never content	31	0	6.24
+the engine assumptions two declined features rest on	13	0	0.95
+a photograph that says it is sideways is read as sideways	4	0	0.12
+every control VoiceOver cannot name from its own label has one	12	0	0.03
+telling a new version from an old one	52	0	0.00
+what each file's row shows	15	0	0.05
+every door into a committed batch is shut	15	0	0.08
+the import interlock counts imports, not drops	10	0	0.13
+retrying the failures from a finished batch	19	0	0.63
+a retry declined at the alert puts the batch back	8	0	0.03
+a retry cannot claim a path the batch it came from protected	11	0	0.00
+the retried batch really does protect the earlier one's files	10	0	1.43
+the batch stays frozen while the alert is up	15	0	0.41
+importing a folder does not block the main actor	9	0	1.08
+indeterminate progress	11	0	0.00
+outline destinations survive the page rewrite	14	0	0.01
+a pathological outline cannot take the batch down	7	0	0.32
+outline destinations of every form	7	0	0.01
+the backend does not leak or wedge	8	0	10.77
+a skipped page is not mistaken for a blank one	5	0	3.92
+wrapping a dropped image	6	0	0.07
+open-when-finished picks a folder in every configuration	3	0	0.00
+assembling no pages is refused	2	0	0.00
+crop box differing from media box	33	0	14.80
+mixed page sizes and rotation through the whole pipeline	9	0	3.95
+partial results are never published	20	0	3.16
+cancel reaches the whole process tree	10	0	1.31
+publishing	5	0	0.10
+searchable pipeline: the unhappy branches	5	0	3.08
+searchable pipeline without the rebuild	8	0	2.48
+encrypted input	9	0	3.15
+colour pages	5	0	4.02
+a short text layer is caught	3	0	0.69
+concurrent searchable batch	12	0	1.11
+telling real digital text from an OCR layer	114	0	66.24
+defaults and ordering	5	0	0.00
+the run log carries outcomes, not pipeline steps	10	0	0.56
+recognition languages this Mac actually has	20	0	1.55
+the written run report	38	0	0.03
+calibrated constants have not drifted	11	0	0.00
+resolution decisions the corpus rests on	2	0	0.00
+safeInt cannot be handed something that traps	4	0	0.00
+the declared-geometry conversions cannot trap	10	0	0.25
+ink coverage cannot exceed one	5	0	0.00
+repeated text in a column is not a duplicate	5	0	0.00
+adjacent fragments of one line keep their space	14	0	0.08
+a box sitting on top of a run is not the next fragment of its line	10	0	0.03
+a squashed run sits in the middle of its line's ink (C55)	7	0	0.00
+a short fragment beside a tall one is one line, and keeps its space	11	0	0.02
+"one visual line" means the same thing to the writer and to its instrument	5	0	0.00
+saying what the confidence setting means	11	0	0.00
+what the rebuild does, and to which files	67	0	0.75
+settings survive the rename	14	0	0.01
+tool lookup	3	0	0.51
+an input named after a scratch intermediate	9	0	11.53
+hostile page dimensions	20	0	1.81
+shared form resources	42	0	10.87
+the Keep highlights and notes setting gates the transplant	33	0	21.58
+the MRC layering loop, end to end (C28)	9	0	4.70
+every check runs inside a named section	2	0	0.00
+(outside any section)	0		
