@@ -1,0 +1,36 @@
+# ocr-compare-run, 2026-10-12 20:17 to 2026-10-13 01:15: hybrid-run.sh in $STATE/ocrlab/compare, tools from 5a46b22,
+# the 67 pages of OCR-SAMPLE-2026-10-04.tsv (11 newspaper, 56 other), each published by score-gate and scored by
+# ux-harness --truth; made by hybrid-table.py (column meanings in its docstring). Every page of every run published.
+# Download (du, OCR-HYBRID-DECISION-2026-10-12.md): Vision none; Falcon-OCR bf16 1.0 GB; PaddleOCR-VL 1.6 4-bit 682 MB;
+# regions add DocLayout-YOLO's 72 MB (vision-regions needs only that), and every model needs the lab's Python and
+# MLX runtime, about 0.8 GB, until ocr-integrate-engine packages one.
+# peak_mb is the guard's sample of the reader's processes. vision-regions' reader is the layout model alone, done
+# in about 3 s, so the guard often sampled only its shell (2 MB on newspapers); 612 MB is the most it caught. The
+# app's own Vision memory is in no peak_mb.
+# NewsBench is not here: its gold has no line boxes, which ux-harness --truth needs.
+combo	group	pages	ok	failed	skipped	unscored	scored	right	wrong	missing	added	wm_share	vision_wm	wm_cut	copyErr	find	order	tflags	ink_red	colour_red	elInk	elCol	secs	vision_secs	ratio	model_secs	peak_mb	bytes	vision_bytes	note
+vision-off	all	67	67	0	0	1	50281	42609	6841	831	47548	0.1526	0.1526	0.0000	1.0982	0.9666	91/104	19	1	4	0.0000	0.0000	6.5970	6.5970	1.0000	0.0000	-	12374287	12374287	-
+vision-off	newspaper	11	11	0	0	0	24867	17499	6609	759	46860	0.2963	0.2963	0.0000	2.1807	0.8545	45/55	10	0	0	0.3600	-	23.1000	23.1000	1.0000	0.0000	-	5691194	5691194	-
+vision-off	other	56	56	0	0	1	25414	25110	232	72	688	0.0120	0.0120	0.0000	0.0390	0.9894	46/49	9	1	4	0.0000	0.0000	3.3554	3.3554	1.0000	0.0000	-	6683093	6683093	-
+falcon-align	all	56	56	0	0	1	25414	25253	93	68	708	0.0063	0.0120	0.4704	0.0342	0.9931	47/48	10	1	4	0.0000	0.0000	13.8107	3.3554	4.1160	9.7857	3947	6677269	6683093	-
+falcon-align	newspaper	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	not run: whole newspaper pages loop or trip the guard (ocr-lab-setup)
+falcon-align	other	56	56	0	0	1	25414	25253	93	68	708	0.0063	0.0120	0.4704	0.0342	0.9931	47/48	10	1	4	0.0000	0.0000	13.8107	3.3554	4.1160	9.7857	3947	6677269	6683093	-
+falcon-fill	all	67	67	0	0	1	50281	43025	6468	788	50054	0.1443	0.1526	0.0542	1.1398	0.9665	93/106	19	1	4	0.0000	0.0000	9.4373	6.5970	1.4305	2.5970	1773	12364376	12374287	-
+falcon-fill	newspaper	11	11	0	0	0	24867	17893	6244	730	49367	0.2805	0.2963	0.0535	2.2657	0.8482	47/57	10	0	0	0.3600	-	37.7818	23.1000	1.6356	13.7273	1773	5680694	5691194	-
+falcon-fill	other	56	56	0	0	1	25414	25132	224	58	687	0.0111	0.0120	0.0724	0.0381	0.9906	46/49	9	1	4	0.0000	0.0000	3.8696	3.3554	1.1533	0.4107	1318	6683682	6683093	-
+vision-regions	all	67	67	0	0	1	50281	43403	6073	805	49416	0.1368	0.1526	0.1035	1.1196	0.9662	92/107	23	1	4	0.0000	0.0000	11.1328	6.5970	1.6876	1.8657	612	12361637	12374287	-
+vision-regions	newspaper	11	11	0	0	0	24867	18267	5868	732	48335	0.2654	0.2963	0.1042	2.2092	0.8727	46/58	11	0	0	0.3600	-	33.0364	23.1000	1.4301	2.3636	2	5690386	5691194	-
+vision-regions	other	56	56	0	0	1	25414	25136	205	73	1081	0.0109	0.0120	0.0855	0.0535	0.9852	46/49	12	1	4	0.0000	0.0000	6.8304	3.3554	2.0357	1.7679	612	6671251	6683093	-
+paddle-regions	all	67	67	0	0	1	50281	44670	4718	893	47919	0.1116	0.1526	0.2686	1.0646	0.9788	99/113	20	1	4	0.0000	0.0000	20.8672	6.5970	3.1631	13.7313	2451	12397794	12374287	-
+paddle-regions	newspaper	11	11	0	0	0	24867	19439	4604	824	47197	0.2183	0.2963	0.2633	2.1163	0.9145	51/62	10	0	0	0.3600	-	59.8000	23.1000	2.5887	35.8182	2451	5682798	5691194	-
+paddle-regions	other	56	56	0	0	1	25414	25231	114	69	722	0.0072	0.0120	0.3980	0.0356	0.9919	48/51	10	1	4	0.0000	0.0000	13.2196	3.3554	3.9399	9.3929	2406	6714996	6683093	-
+paddle-fill	all	67	67	0	0	1	50281	43129	6356	796	49963	0.1422	0.1526	0.0678	1.1359	0.9669	92/105	19	1	4	0.0000	0.0000	8.8179	6.5970	1.3367	1.9552	1871	12357261	12374287	-
+paddle-fill	newspaper	11	11	0	0	0	24867	17997	6132	738	49275	0.2763	0.2963	0.0676	2.2578	0.8509	46/56	10	0	0	0.3600	-	34.0091	23.1000	1.4723	9.8182	1871	5677920	5691194	-
+paddle-fill	other	56	56	0	0	1	25414	25132	224	58	688	0.0111	0.0120	0.0724	0.0382	0.9906	46/49	9	1	4	0.0000	0.0000	3.8696	3.3554	1.1533	0.4107	1640	6679341	6683093	-
+falcon-regions	all	67	67	0	0	1	50281	44803	4580	898	47925	0.1089	0.1526	0.2860	1.0621	0.9809	101/116	20	1	4	0.0000	0.0000	22.8418	6.5970	3.4624	15.6567	4892	12404972	12374287	-
+falcon-regions	newspaper	11	11	0	0	0	24867	19558	4479	830	47213	0.2135	0.2963	0.2795	2.1121	0.9209	52/64	10	0	0	0.3600	-	67.6182	23.1000	2.9272	43.2727	3725	5687117	5691194	-
+falcon-regions	other	56	56	0	0	1	25414	25245	101	68	712	0.0066	0.0120	0.4441	0.0347	0.9931	49/52	10	1	4	0.0000	0.0000	14.0464	3.3554	4.1863	10.2321	4892	6717855	6683093	-
+falcon-replace	all	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	not run: Falcon-OCR writes no boxes, and replace places the model's own blocks (hp-replace)
+paddle-align	all	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	not run: PaddleOCR-VL caps its input near 1 MP, so a whole page is read at a fraction of its scan (ocr-compare-run)
+vision-align/fill/replace	all	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	not run: Vision's reading is what align, fill and replace mend; they need a model (hp-align)
+paddle-replace	all	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	not run: PaddleOCR-VL writes no boxes, and replace places the model's own blocks (hp-replace)

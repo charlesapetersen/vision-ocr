@@ -1511,7 +1511,7 @@ say so in the commit.
       a real sense of the differences." So the three are measured on both kinds of page in the same arrangements
       before anything is built, and Vision reading DocLayout-YOLO regions is a candidate standard for newspapers
       with no model at all (lab: NewsBench 1−CER 0.304 whole page against 0.741 on regions, `ocr-lab-round3`).
-- [ ] **ocr-compare-run** — run Vision, PaddleOCR-VL and Falcon-OCR in every arrangement that suits each, on both
+- [x] **ocr-compare-run** — run Vision, PaddleOCR-VL and Falcon-OCR in every arrangement that suits each, on both
       kinds of page, as one job. (blocked-on: ocr-vision-regions, model-night-ok) (uses: machine)
       `ocr-hybrid-run` left the comparison uneven: PaddleOCR-VL read newspapers only, nothing read regions off
       newspapers, and Vision never read regions. Run with `ops/ocrlab/hybrid-run.sh` over the same 67 pages and
@@ -1533,10 +1533,21 @@ say so in the commit.
       `ux-harness --truth` needs. Smoke run on s04, same build [measured], wrong/missing of 440: vision-regions 5/6,
       paddle-regions 5/6, falcon-regions 4/6, paddle-fill 1/0.
       - [x] **compare-run-started** — 2026-10-12 20:17, pid 97459; holds engine.lock.
-      - [ ] **compare-run-finished** — `hybrid.log` says `all combinations done`. Restart a dead job with the same
-            `HYBRID_DIR` and `HYBRID_COMBOS`; it resumes.
-      - [ ] **compare-run-scored** — `OCR-COMPARE-<date>.tsv` and its pages file committed
+      - [x] **compare-run-finished** — `hybrid.log` says `all combinations done`. Restart a dead job with the same
+            `HYBRID_DIR` and `HYBRID_COMBOS`; it resumes. 2026-10-13 01:15, five hours; all 458 runs ok, none failed.
+      - [x] **compare-run-scored** — `OCR-COMPARE-<date>.tsv` and its pages file committed
             (`hybrid-table.py $STATE/ocrlab/compare OCR-COMPARE-<date>.tsv OCR-COMPARE-<date>-pages.tsv`).
+            DONE 2026-10-13: `OCR-COMPARE-2026-10-13.tsv` and `-pages.tsv`. Measured, wrong+missing share (cut vs
+            Vision), app's time a page against Vision's, largest guard peak:
+            other pages (56; Vision 1.20%, 3.4 s): falcon-align 0.63% (0.47) 4.1x 3.9 GB; falcon-regions 0.66%
+            (0.44) 4.2x 4.9 GB; paddle-regions 0.72% (0.40) 3.9x 2.4 GB; vision-regions 1.09% (0.09) 2.0x; falcon-fill
+            and paddle-fill 1.11% (0.07) 1.2x.
+            newspapers (11; Vision 29.6%, 23 s): falcon-regions 21.4% (0.28) 2.9x 3.7 GB; paddle-regions 21.8% (0.26)
+            2.6x 2.5 GB; vision-regions 26.5% (0.10) 1.4x, no model; paddle-fill 27.6% (0.07) 1.5x; falcon-fill 28.1%
+            (0.05) 1.6x. Find on newspapers 0.85 Vision, 0.87 vision-regions, 0.91 paddle, 0.92 falcon regions.
+            Vision on regions gains a tenth on newspapers, far below the lab's NewsBench whole-vs-regions gap
+            (0.304 -> 0.741 1−CER); reasoned, not measured: there the score was the crops' text alone, here the
+            region words only mend Vision's lines and the layer keeps Vision's placement. vision-regions' peak is under-sampled (note in the table's header). For ocr-compare-report.
 - [ ] **ocr-compare-report** — write the full comparison for the owner and for the app's settings table.
       (blocked-on: ocr-compare-run, ocr-newspaper-detect) (uses: light)
       A dated `OCR-COMPARE-DECISION-<date>.md` in the plain prose of `OCR-HYBRID-DECISION-2026-10-12.md`: for each

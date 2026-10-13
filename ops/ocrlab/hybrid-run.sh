@@ -62,8 +62,10 @@ room() {
 # built on; oQ4 reads within 0.02 points of it, so ocr-hybrid-pick can take oQ4's figures from the bits table).
 # Pages: `other` is every page but the newspapers, whose whole page three of six models could not read in
 # ocr-lab-setup (swap or loops; bakeoff.sh reads them as crops only); `newspaper` is the newspapers alone, the
-# pages the region arrangement is for (ocr-hybrid-proto: (c)'s newspaper bands are its regions).
+# pages the region arrangement was built for (ocr-hybrid-proto: (c)'s newspaper bands are its regions).
 # PaddleOCR-VL is not one of the three; it is the region reader ocr-lab-round3 named, the reference for the others.
+# ocr-compare-run widened Vision's, PaddleOCR-VL's and Falcon-OCR's regions to every page, and added paddle-fill;
+# LightOnOCR's and Chandra's regions stay on newspapers, as ocr-hybrid-run ran them.
 COMBOS='vision-off	off	-	-	-	-	-	all
 falcon-align	align	text	tiiuae/Falcon-OCR	plain	-	4	other
 falcon-fill	fill	text	tiiuae/Falcon-OCR	plain	-	4	all
@@ -82,7 +84,7 @@ chandra-regions	regions	regions	mlx-community/chandra-ocr-2-oQ8	-	-	6	newspaper'
 NOT_RUN='falcon-replace	Falcon-OCR writes no boxes, and replace places the model'"'"'s own blocks (hp-replace)
 lighton-replace	LightOnOCR-2'"'"'s box build boxes only pictures, not text (hp-replace)
 paddle-align	PaddleOCR-VL caps its input near 1 MP, so a whole page is read at a fraction of its scan (ocr-compare-run)
-vision-align	Vision'"'"'s reading is what align, fill and replace mend; they need a model (hp-align)
+vision-align/fill/replace	Vision'"'"'s reading is what align, fill and replace mend; they need a model (hp-align)
 paddle-replace	PaddleOCR-VL writes no boxes, and replace places the model'"'"'s own blocks (hp-replace)'
 
 case "$cmd" in

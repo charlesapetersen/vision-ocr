@@ -1,0 +1,459 @@
+combo	id	document	page	route	class	status	secs	wall	model_secs	peak_mb	calls	killed	scored	right	wrong	missing	added	copyErr	find	order	layerMiss	elInk	elCol	tflags	flags	bytes	reason
+vision-off	s01	owner/1954 - Why.pdf	2	layered	truth-only	ok	2.4	20	0	-	0	0	8	6	2	0	0	-	-	-	-	0.23	1.00	tink	-	84478	harness exit 1
+vision-off	s02	owner/1954 - Why.pdf	6	layered	truth-only	ok	1.5	20	0	-	0	0	434	434	0	0	0	0.0000	1.00	1/1	0.0000	0.92	1.00	-	-	83849	harness exit 0
+vision-off	s03	owner/1954 - Why.pdf	8	layered	green	ok	1.6	21	0	-	0	0	473	470	3	0	1	0.0085	0.96	1/1	0.0063	-	-	-	-	43847	harness exit 0
+vision-off	s04	owner/1954 - Why.pdf	9	layered	red	ok	1.5	20	0	-	0	0	440	425	9	6	279	0.6682	0.97	1/1	0.0295	0.94	1.00	tcopy	selection	84091	harness exit 1
+vision-off	s05	owner/1954 - Why.pdf	10	layered	red	ok	1.1	20	0	-	0	0	0	0	0	0	0	-	-	-	-	0.98	0.00	tcolour	colour	36742	harness exit 1
+vision-off	s06	owner/1951 - Briefer Book Notes.pdf	1	jbig2	truth-only	ok	9.3	21	0	-	0	0	615	603	11	1	2	0.0228	0.97	2/2	0.0228	0.99	-	-	-	103252	harness exit 0
+vision-off	s07	owner/1951 - Briefer Book Notes.pdf	3	jbig2	truth-only	ok	5.4	21	0	-	0	0	654	644	10	0	1	0.0168	1.00	-	0.0168	-	-	-	-	90622	harness exit 0
+vision-off	s08	owner/Hughes - The Knitting of Racial Groups in Industry (Desktop copy 2026-09-26).pdf	1	unknown	green	ok	0.1	20	0	-	0	0	136	136	0	0	2	0.0147	1.00	-	0.0000	1.00	1.00	-	-	122728	harness exit 0
+vision-off	s09	owner/Hughes - The Knitting of Racial Groups in Industry (Desktop copy 2026-09-26).pdf	6	unknown	red	ok	4.2	21	0	-	0	0	302	296	6	0	129	0.4470	1.00	3/3	0.0132	1.00	-	tcopy	selection	58605	harness exit 1
+vision-off	s10	owner/Bird - 1963 - More Room at the Top Company Experiences in Employing Negroes in Professional and Management Jobs.pdf	3	jbig2	green	ok	3.8	20	0	-	0	0	444	442	1	1	0	0.0045	1.00	1/2	0.0068	1.00	-	-	-	68845	harness exit 0
+vision-off	s11	owner/Bird - 1963 - More Room at the Top Company Experiences in Employing Negroes in Professional and Management Jobs.pdf	5	jbig2	green	ok	4.1	21	0	-	0	0	472	469	3	0	0	0.0064	1.00	1/1	0.0085	1.00	-	-	-	69015	harness exit 0
+vision-off	s12	owner/Leland - 1952 - We Believe in Employment on Merit, but.pdf	2	jbig2	green	ok	4.0	21	0	-	0	0	458	447	9	2	0	0.0240	1.00	-	0.0218	1.00	-	-	-	63947	harness exit 0
+vision-off	s13	owner/Leland - 1952 - We Believe in Employment on Merit, but.pdf	5	jbig2	green	ok	3.8	21	0	-	0	0	447	445	2	0	0	0.0045	1.00	-	0.0045	1.00	-	-	-	61924	harness exit 0
+vision-off	s14	owner/Leland - 1952 - We Believe in Employment on Merit, but.pdf	6	jbig2	green	ok	3.5	21	0	-	0	0	444	443	1	0	0	0.0023	1.00	-	0.0023	-	-	-	-	55585	harness exit 0
+vision-off	s15	owner/Delton - 2007 - Before the EEOC How Management Integrated the Workplace.pdf	2	jbig2	green	ok	3.8	21	0	-	0	0	342	341	1	0	0	0.0029	1.00	1/1	0.0058	1.00	-	-	-	47314	harness exit 0
+vision-off	s16	thesis/Zarifa_2008_Emerging Forms of Stratification in Higher Education_.pdf	92	jbig2	green	ok	1.4	21	0	-	0	0	510	510	0	0	0	0.0000	1.00	-	0.0000	1.00	-	-	-	75770	harness exit 1
+vision-off	s17	newspaperArticle/Berendzen_1981_The Soaring Lesson of America in Space_Newsday (1940-1990), Nassau ed.; Long Island, N.Y..pdf	1	newspaper	truth-only	ok	7.6	21	0	-	0	0	1348	1322	18	8	210	0.1751	0.97	4/4	0.0237	1.00	-	tcopy	-	169687	harness exit 1
+vision-off	s18	document/2013 - Silicon Valley Program Transcript.pdf	10	jbig2	green	ok	0.1	20	0	-	0	0	323	323	0	0	0	0.0000	1.00	-	0.0000	1.00	1.00	-	-	291796	harness exit 0
+vision-off	s19	journalArticle/Surani et al. - AI for Scaling Legal Reform Mapping and Redacting Racial Covenants in Santa Clara County.pdf	10	jbig2	green	ok	0.2	20	0	-	0	0	643	643	0	0	0	0.0000	1.00	3/3	0.0000	1.00	1.00	-	-	1272435	harness exit 0
+vision-off	s20	bookSection/Berger_2013_Toward a Third Industrial Divide_.pdf	18	jbig2	truth-only	ok	5.0	20	0	-	0	0	470	460	9	1	45	0.1170	0.97	0/1	0.0191	-	-	tcopy	-	66172	harness exit 1
+vision-off	s21	magazineArticle/Glazer_2002_Higher Ed_New Republic.pdf	1	layered	red	ok	6.4	20	0	-	0	0	1199	1191	7	1	1	0.0075	1.00	2/2	0.0050	0.99	0.00	tcolour	colour	277518	harness exit 1
+vision-off	s22	newspaperArticle/___ 2.pdf	1	newspaper	red	ok	25.5	41	0	-	0	0	3027	2358	580	89	2552	1.0641	0.84	4/4	0.2081	0.86	-	tcopy	find,selection,copy	205249	harness exit 1
+vision-off	s23	bookSection/Hyman_2012_Rethinking the Postwar Corporation_Oxford University Press.pdf	8	jbig2	red	ok	5.1	20	0	-	0	0	911	897	14	0	1	0.0165	1.00	1/1	0.0209	0.00	0.00	tink,tcolour	colour,find	41887	harness exit 1
+vision-off	s24	journalArticle/Riesman_1949_Men, Women, and Marriage_Nation.pdf	2	jbig2	green	ok	13.3	21	0	-	0	0	1049	1038	10	1	0	0.0105	1.00	2/2	0.0153	1.00	-	-	-	127544	harness exit 0
+vision-off	s25	magazineArticle/Marth_1982_Why Unions Lose At Many Companies_Nation's Business (pre-1986); Washington.pdf	2	layered	red	ok	5.8	21	0	-	0	0	672	668	4	0	165	0.2515	1.00	4/4	0.0045	1.00	-	tcopy	selection	79552	harness exit 1
+vision-off	s26	document/_1953_99 Cong_ 2.pdf	16	jbig2	red	ok	9.2	21	0	-	0	0	1538	1510	26	2	0	0.0182	1.00	2/2	0.0189	-	-	-	-	190054	harness exit 0
+vision-off	s27	thesis/Ries_Marshall_1955_web.pdf	54	jbig2	truth-only	ok	2.8	20	0	-	0	0	221	211	7	3	0	0.0452	1.00	-	0.0452	0.97	-	-	legibility	30148	harness exit 1
+vision-off	s28	magazineArticle/Kristol_1960_High, Low, and Modern_Encounter.pdf	1	jbig2	red	ok	10.2	21	0	-	0	0	454	440	4	10	37	0.1123	0.96	4/4	0.0088	1.00	0.00	tcopy,tcolour	colour	64406	harness exit 1
+vision-off	s29	report/AI 2027.pdf	54	jbig2	truth-only	ok	0.2	20	0	-	0	0	233	224	1	8	8	0.0730	1.00	-	0.0043	1.00	1.00	tcopy	-	495096	harness exit 1
+vision-off	s30	newspaperArticle/_1941_Fiedler's hiring at UM announced_Helena Independent.pdf	1	newspaper	red	ok	32.7	41	0	-	0	0	3251	2048	1011	192	9203	3.2009	0.85	9/11	0.1916	0.73	-	tcopy	selection,copy	340906	harness exit 1
+vision-off	s31	bookSection/Allen_2011_The Origins of Political Philosophy_Oxford University Press.pdf	8	jbig2	green	ok	10.0	21	0	-	0	0	607	605	2	0	0	0.0033	1.00	-	0.0033	1.00	-	-	-	86929	harness exit 0
+vision-off	s32	owner/1954 - Why.pdf	3	jbig2	truth-only	ok	1.4	20	0	-	0	0	309	307	2	0	0	0.0065	1.00	2/2	0.0032	1.00	-	-	-	29489	harness exit 0
+vision-off	s33	owner/1954 - Why.pdf	4	layered	truth-only	ok	1.6	20	0	-	0	0	504	490	6	8	0	0.0278	0.96	2/2	0.0218	0.57	1.00	-	-	88136	harness exit 0
+vision-off	s34	owner/1954 - Why.pdf	7	layered	truth-only	ok	1.5	21	0	-	0	0	473	470	2	1	0	0.0063	1.00	1/1	0.0042	0.69	1.00	-	-	83446	harness exit 0
+vision-off	s35	owner/1951 - Briefer Book Notes.pdf	2	jbig2	green	ok	5.1	20	0	-	0	0	668	649	17	2	1	0.0299	0.97	1/1	0.0269	1.00	-	-	-	92575	harness exit 0
+vision-off	s36	owner/1951 - Briefer Book Notes.pdf	5	jbig2	green	ok	4.9	21	0	-	0	0	588	575	13	0	3	0.0272	1.00	-	0.0272	-	-	-	-	87691	harness exit 0
+vision-off	s37	owner/1951 - Briefer Book Notes.pdf	6	jbig2	green	ok	5.7	21	0	-	0	0	647	639	8	0	0	0.0124	1.00	-	0.0139	-	-	-	-	89572	harness exit 0
+vision-off	s38	owner/Hughes - The Knitting of Racial Groups in Industry (Desktop copy 2026-09-26).pdf	2	unknown	green	ok	5.5	20	0	-	0	0	624	620	4	0	1	0.0080	1.00	3/4	0.0064	1.00	-	-	-	49752	harness exit 0
+vision-off	s39	owner/Hughes - The Knitting of Racial Groups in Industry (Desktop copy 2026-09-26).pdf	8	unknown	green	ok	6.0	20	0	-	0	0	769	769	0	0	1	0.0013	1.00	1/1	0.0000	-	-	-	-	56334	harness exit 0
+vision-off	s40	newspaperArticle/Glazer_2003_Neoconservatives, Then and Now_New York Times.pdf	1	newspaper	green	ok	3.9	20	0	-	0	0	216	207	9	0	0	0.0417	1.00	0/1	0.0509	1.00	-	-	-	32129	harness exit 0
+vision-off	s41	newspaperArticle/Gitlin_2000_How Our Crowd Got Lonely_New York Times.pdf	1	newspaper	truth-only	ok	7.7	21	0	-	0	0	1497	1414	69	14	16	0.0661	0.90	-	0.0508	0.36	-	tcopy,tink	-	117548	harness exit 1
+vision-off	s42	newspaperArticle/Zipkin_2000_Management.pdf	1	newspaper	truth-only	ok	3.0	20	0	-	0	0	339	311	7	21	1	0.0855	1.00	4/4	0.0177	0.89	-	tcopy	-	78348	harness exit 1
+vision-off	s43	newspaperArticle/_1926_Cox resigns, following most severe public criticism that ever has been_Anaconda Standard.pdf	1	newspaper	red	ok	55.0	61	0	-	0	0	3277	1401	1709	167	6824	2.6549	0.56	3/4	0.4181	0.51	-	tcopy,tfind	find,selection,copy	263697	harness exit 1
+vision-off	s44	newspaperArticle/Williams_1958_DEMOCRACY OR MERITOCRACY_The Manchester Guardian (1901-1959); Manchester (UK).pdf	1	newspaper	red	ok	10.7	21	0	-	0	0	1269	1191	77	1	2378	1.9354	0.93	3/3	0.0362	-	-	tcopy	selection	163818	harness exit 1
+vision-off	s45	newspaperArticle/___.pdf	1	newspaper	red	ok	35.2	41	0	-	0	0	3778	3014	599	165	7641	2.2247	0.93	13/17	0.1501	1.00	-	tcopy	selection,copy	3491513	harness exit 1
+vision-off	s46	newspaperArticle/_1931_Again, press most excited about Frontier's history section_Helena Daily Independent.pdf	1	newspaper	red	ok	62.1	81	0	-	0	0	5339	2882	2355	102	13337	2.9582	0.52	1/2	0.2898	0.80	-	tcopy,tfind	find,selection,copy	339563	harness exit 1
+vision-off	s47	newspaperArticle/___ 4.pdf	1	newspaper	red	ok	10.7	20	0	-	0	0	1526	1351	175	0	4698	3.1933	0.90	4/5	0.1088	0.88	-	tcopy	selection	488736	harness exit 1
+vision-off	s48	book/Morgan_1975_American Slavery, American Freedom_Norton.pdf	1	dct	green	ok	0.1	20	0	-	0	0	162	157	0	5	0	0.0309	0.90	-	0.0309	1.00	1.00	-	-	72014	harness exit 0
+vision-off	s49	thesis/NAYLOR_Arthur E.pdf	67	jbig2	green	ok	4.4	20	0	-	0	0	393	379	2	12	5	0.0483	0.97	-	0.0280	-	-	-	-	57015	harness exit 0
+vision-off	s50	report/AI 2027.pdf	1	layered	green	ok	0.2	20	0	-	0	0	27	27	0	0	0	0.0000	1.00	-	0.0000	1.00	1.00	-	-	31530	harness exit 0
+vision-off	s51	thesis/Schwaller - 2026 - Silicon Valley Landscapes Architecture and the Soft Power of Big Tech.pdf	75	no-image	green	ok	0.1	21	0	-	0	0	488	488	0	0	0	0.0000	1.00	1/1	0.0000	1.00	-	-	-	252683	harness exit 0
+vision-off	s52	journalArticle/Burke - The Expansion of American Higher Education.pdf	1	other	green	ok	0.1	21	0	-	0	0	272	269	0	3	0	0.0110	0.97	2/2	0.0221	1.00	1.00	-	-	237719	harness exit 0
+vision-off	s53	owner/Sewell - 1999 - Contracting racial equality Affirmative action policy and practice in the United States, 1945-1970.pdf	244	unknown	green	ok	1.8	20	0	-	0	0	359	356	3	0	1	0.0111	1.00	-	0.0084	1.00	-	-	-	59596	harness exit 0
+vision-off	s54	journalArticle/Wilson_1975_Review of The Welfare State and Equality_Journal of Economic Literature.pdf	1	dct	green	ok	0.1	20	0	-	0	0	153	153	0	0	0	0.0000	1.00	-	0.0000	1.00	1.00	-	-	118895	harness exit 0
+vision-off	s55	thesis/Drumright - 2005 - A river for war, a watershed to change The Tennessee Valley Authority during World War II.pdf	60	jbig2	green	ok	1.2	21	0	-	0	0	323	320	3	0	2	0.0155	1.00	-	0.0124	1.00	-	-	-	64867	harness exit 0
+vision-off	s56	bookSection/Krippner__The political economy of financial exuberance_Emerald Group Publishing Limited.pdf	30	layered	green	ok	1.5	20	0	-	0	0	463	463	0	0	0	0.0000	1.00	-	0.0000	-	-	-	-	54793	harness exit 0
+vision-off	s57	journalArticle/Batzell - Free Labor, Capitalism and the Antislavery Origins of Chinese Labor Exclusion in 1870s California.pdf	14	no-image	green	ok	0.1	20	0	-	0	0	480	480	0	0	0	0.0000	1.00	1/1	0.0000	1.00	-	-	-	72379	harness exit 0
+vision-off	s58	book/Westad_2005_The Global Cold War_Cambridge University Press.pdf	1	other	green	ok	0.1	20	0	-	0	0	155	155	0	0	0	0.0000	1.00	-	0.0000	1.00	1.00	-	-	61311	harness exit 0
+vision-off	s59	owner/Hughes - The Knitting of Racial Groups in Industry (Desktop copy 2026-09-26).pdf	3	unknown	green	ok	6.3	20	0	-	0	0	743	738	4	1	1	0.0081	1.00	1/1	0.0094	1.00	-	-	-	51662	harness exit 0
+vision-off	s60	owner/Hughes - The Knitting of Racial Groups in Industry.pdf	1	dct	green	ok	0.1	21	0	-	0	0	136	136	0	0	0	0.0000	1.00	-	0.0000	1.00	1.00	-	-	122545	harness exit 0
+vision-off	s61	document/_1979_Ideology of American Neo-Conservatism_.pdf	4	jbig2	green	ok	8.9	21	0	-	0	0	493	472	21	0	2	0.0467	0.90	-	0.0426	-	-	-	-	97694	harness exit 0
+vision-off	s62	book/Riesman - 1954 - Individualism reconsidered, and other essays.pdf	16	layered	green	ok	7.9	21	0	-	0	0	472	470	2	0	0	0.0042	1.00	-	0.0064	1.00	-	-	-	334521	harness exit 0
+vision-off	s63	journalArticle/Batzell - Free Labor, Capitalism and the Antislavery Origins of Chinese Labor Exclusion in 1870s California.pdf	1	no-image	green	ok	0.1	21	0	-	0	0	291	291	0	0	0	0.0000	1.00	-	0.0000	1.00	-	-	-	71320	harness exit 0
+vision-off	s64	owner/1954 - Why.pdf	1	other	green	ok	0.1	20	0	-	0	0	186	182	0	4	0	0.0215	0.93	-	0.0215	1.00	1.00	-	-	25479	harness exit 0
+vision-off	s65	owner/1957 - Employment on Merit The Continuing Challenge to Business (Joseph J. Morrow).pdf	2	unknown	green	ok	2.5	21	0	-	0	0	508	505	3	0	0	0.0059	1.00	1/1	0.0118	-	-	-	-	65516	harness exit 0
+vision-off	s66	book/Cohen_1990_Making a New Deal_Cambridge University Press.pdf	1	dct	green	ok	0.1	20	0	-	0	0	155	155	0	0	0	0.0000	1.00	1/1	0.0000	1.00	1.00	-	-	60884	harness exit 0
+vision-off	s67	thesis/Koh - 2008 - Essays on stock options expensing and stock option.pdf	1	jbig2	green	ok	0.7	21	0	-	0	0	74	74	0	0	0	0.0000	1.00	-	0.0000	-	-	-	-	19524	harness exit 0
+falcon-align	s01	owner/1954 - Why.pdf	2	layered	truth-only	ok	10.7	20	7	1514	1	0	8	6	2	0	0	-	-	-	-	0.23	1.00	tink	-	84549	harness exit 1
+falcon-align	s02	owner/1954 - Why.pdf	6	layered	truth-only	ok	13.8	21	11	3947	1	0	434	434	0	0	0	0.0000	1.00	1/1	0.0000	0.92	1.00	-	-	83017	harness exit 0
+falcon-align	s03	owner/1954 - Why.pdf	8	layered	green	ok	14.2	20	11	2203	1	0	473	471	2	0	1	0.0063	1.00	1/1	0.0042	-	-	-	-	43056	harness exit 0
+falcon-align	s04	owner/1954 - Why.pdf	9	layered	red	ok	14.1	21	12	2206	1	0	440	431	3	6	279	0.6545	1.00	1/1	0.0182	0.94	1.00	tcopy	selection	83940	harness exit 1
+falcon-align	s05	owner/1954 - Why.pdf	10	layered	red	ok	4.2	21	3	39	1	0	0	0	0	0	0	-	-	-	-	0.98	0.00	tcolour	colour	36742	harness exit 1
+falcon-align	s06	owner/1951 - Briefer Book Notes.pdf	1	jbig2	truth-only	ok	26.4	41	16	2340	1	0	615	612	2	1	3	0.0098	1.00	2/2	0.0033	0.99	-	-	-	102693	harness exit 0
+falcon-align	s07	owner/1951 - Briefer Book Notes.pdf	3	jbig2	truth-only	ok	24.8	40	19	2363	1	0	654	653	1	0	1	0.0031	1.00	-	0.0031	-	-	-	-	90680	harness exit 0
+falcon-align	s08	owner/Hughes - The Knitting of Racial Groups in Industry (Desktop copy 2026-09-26).pdf	1	unknown	green	ok	0.1	20	0	-	0	0	136	136	0	0	2	0.0147	1.00	-	0.0000	1.00	1.00	-	-	122728	harness exit 0
+falcon-align	s09	owner/Hughes - The Knitting of Racial Groups in Industry (Desktop copy 2026-09-26).pdf	6	unknown	red	ok	14.2	21	9	2199	1	0	302	291	11	0	129	0.4636	0.97	3/3	0.0298	1.00	-	tcopy	selection	58288	harness exit 1
+falcon-align	s10	owner/Bird - 1963 - More Room at the Top Company Experiences in Employing Negroes in Professional and Management Jobs.pdf	3	jbig2	green	ok	16.3	20	11	2060	1	0	444	442	1	1	0	0.0045	1.00	1/2	0.0068	1.00	-	-	-	68846	harness exit 0
+falcon-align	s11	owner/Bird - 1963 - More Room at the Top Company Experiences in Employing Negroes in Professional and Management Jobs.pdf	5	jbig2	green	ok	16.6	21	11	2060	1	0	472	470	2	0	0	0.0042	1.00	1/1	0.0064	1.00	-	-	-	72433	harness exit 0
+falcon-align	s12	owner/Leland - 1952 - We Believe in Employment on Merit, but.pdf	2	jbig2	green	ok	18.8	20	14	2352	1	0	458	454	2	2	2	0.0131	1.00	1/1	0.0066	1.00	-	-	-	64251	harness exit 0
+falcon-align	s13	owner/Leland - 1952 - We Believe in Employment on Merit, but.pdf	5	jbig2	green	ok	13.8	21	9	2162	1	0	447	446	1	0	0	0.0022	1.00	-	0.0022	1.00	-	-	-	58111	harness exit 0
+falcon-align	s14	owner/Leland - 1952 - We Believe in Employment on Merit, but.pdf	6	jbig2	green	ok	13.8	21	9	2163	1	0	444	444	0	0	0	0.0000	1.00	-	0.0000	-	-	-	-	55540	harness exit 0
+falcon-align	s15	owner/Delton - 2007 - Before the EEOC How Management Integrated the Workplace.pdf	2	jbig2	green	ok	13.8	21	9	2185	1	0	342	342	0	0	1	0.0029	1.00	2/2	0.0000	1.00	-	-	-	48525	harness exit 0
+falcon-align	s16	thesis/Zarifa_2008_Emerging Forms of Stratification in Higher Education_.pdf	92	jbig2	green	ok	16.1	21	14	2338	1	0	510	510	0	0	0	0.0000	1.00	-	0.0000	1.00	-	-	-	75975	harness exit 1
+falcon-align	s18	document/2013 - Silicon Valley Program Transcript.pdf	10	jbig2	green	ok	0.1	21	0	-	0	0	323	323	0	0	0	0.0000	1.00	-	0.0000	1.00	1.00	-	-	291796	harness exit 0
+falcon-align	s19	journalArticle/Surani et al. - AI for Scaling Legal Reform Mapping and Redacting Racial Covenants in Santa Clara County.pdf	10	jbig2	green	ok	0.3	20	0	-	0	0	643	643	0	0	0	0.0000	1.00	3/3	0.0000	1.00	1.00	-	-	1272435	harness exit 0
+falcon-align	s20	bookSection/Berger_2013_Toward a Third Industrial Divide_.pdf	18	jbig2	truth-only	ok	17.4	20	12	2296	1	0	470	458	11	1	49	0.1298	0.97	-	0.0277	-	-	tcopy	-	66942	harness exit 1
+falcon-align	s21	magazineArticle/Glazer_2002_Higher Ed_New Republic.pdf	1	layered	red	ok	32.7	41	26	2424	1	0	1199	1196	3	0	3	0.0050	1.00	2/2	0.0017	0.99	0.00	tcolour	colour	277578	harness exit 1
+falcon-align	s23	bookSection/Hyman_2012_Rethinking the Postwar Corporation_Oxford University Press.pdf	8	jbig2	red	ok	29.5	40	24	2422	1	0	911	909	1	1	0	0.0022	1.00	-	0.0066	0.00	0.00	tink,tcolour	colour,find	41983	harness exit 1
+falcon-align	s24	journalArticle/Riesman_1949_Men, Women, and Marriage_Nation.pdf	2	jbig2	green	ok	39.6	41	25	2476	1	0	1049	1048	1	0	1	0.0019	1.00	2/2	0.0086	1.00	-	-	-	127193	harness exit 0
+falcon-align	s25	magazineArticle/Marth_1982_Why Unions Lose At Many Companies_Nation's Business (pre-1986); Washington.pdf	2	layered	red	ok	23.0	41	16	2274	1	0	672	662	10	0	165	0.2604	1.00	4/4	0.0134	1.00	-	tcopy	selection	79448	harness exit 1
+falcon-align	s26	document/_1953_99 Cong_ 2.pdf	16	jbig2	red	ok	42.7	60	33	2625	1	0	1538	1532	5	1	2	0.0052	1.00	2/2	0.0046	-	-	-	-	189533	harness exit 0
+falcon-align	s27	thesis/Ries_Marshall_1955_web.pdf	54	jbig2	truth-only	ok	10.8	21	7	2145	1	0	221	219	0	2	0	0.0090	1.00	-	0.0090	0.97	-	-	legibility	29788	harness exit 1
+falcon-align	s28	magazineArticle/Kristol_1960_High, Low, and Modern_Encounter.pdf	1	jbig2	red	ok	22.8	40	12	2207	1	0	454	440	4	10	38	0.1145	0.96	4/4	0.0044	1.00	0.00	tcopy,tcolour	colour	64462	harness exit 1
+falcon-align	s29	report/AI 2027.pdf	54	jbig2	truth-only	ok	0.2	21	0	-	0	0	233	224	1	8	8	0.0730	1.00	-	0.0043	1.00	1.00	tcopy	-	495096	harness exit 1
+falcon-align	s31	bookSection/Allen_2011_The Origins of Political Philosophy_Oxford University Press.pdf	8	jbig2	green	ok	24.2	40	14	2119	1	0	607	603	4	0	0	0.0066	1.00	-	0.0066	1.00	-	-	-	86872	harness exit 0
+falcon-align	s32	owner/1954 - Why.pdf	3	jbig2	truth-only	ok	11.7	20	10	2200	1	0	309	307	2	0	2	0.0129	1.00	1/1	0.0032	1.00	-	-	-	29598	harness exit 0
+falcon-align	s33	owner/1954 - Why.pdf	4	layered	truth-only	ok	13.7	20	12	2214	1	0	504	491	5	8	0	0.0258	0.96	2/2	0.0198	0.57	1.00	-	-	88235	harness exit 0
+falcon-align	s34	owner/1954 - Why.pdf	7	layered	truth-only	ok	13.9	21	11	2204	1	0	473	472	1	0	0	0.0021	1.00	1/1	0.0000	0.69	1.00	-	-	83504	harness exit 0
+falcon-align	s35	owner/1951 - Briefer Book Notes.pdf	2	jbig2	green	ok	24.4	41	18	2147	1	0	668	666	0	2	1	0.0045	1.00	1/1	0.0030	1.00	-	-	-	88856	harness exit 0
+falcon-align	s36	owner/1951 - Briefer Book Notes.pdf	5	jbig2	green	ok	21.9	40	16	2345	1	0	588	586	2	0	2	0.0068	1.00	-	0.0102	-	-	-	-	83908	harness exit 0
+falcon-align	s37	owner/1951 - Briefer Book Notes.pdf	6	jbig2	green	ok	22.8	40	16	2115	1	0	647	647	0	0	0	0.0000	1.00	-	0.0015	-	-	-	-	89570	harness exit 0
+falcon-align	s38	owner/Hughes - The Knitting of Racial Groups in Industry (Desktop copy 2026-09-26).pdf	2	unknown	green	ok	20.4	41	14	2199	1	0	624	619	5	0	1	0.0096	1.00	4/4	0.0080	1.00	-	-	-	53220	harness exit 0
+falcon-align	s39	owner/Hughes - The Knitting of Racial Groups in Industry (Desktop copy 2026-09-26).pdf	8	unknown	green	ok	23.1	41	17	2335	1	0	769	769	0	0	1	0.0013	1.00	1/1	0.0000	-	-	-	-	56362	harness exit 0
+falcon-align	s48	book/Morgan_1975_American Slavery, American Freedom_Norton.pdf	1	dct	green	ok	0.2	21	0	-	0	0	162	157	0	5	0	0.0309	0.90	-	0.0309	1.00	1.00	-	-	72014	harness exit 0
+falcon-align	s49	thesis/NAYLOR_Arthur E.pdf	67	jbig2	green	ok	14.6	20	9	2302	1	0	393	380	1	12	7	0.0509	0.97	-	0.0280	-	-	tcopy	-	56961	harness exit 1
+falcon-align	s50	report/AI 2027.pdf	1	layered	green	ok	0.1	20	0	-	0	0	27	27	0	0	0	0.0000	1.00	-	0.0000	1.00	1.00	-	-	31530	harness exit 0
+falcon-align	s51	thesis/Schwaller - 2026 - Silicon Valley Landscapes Architecture and the Soft Power of Big Tech.pdf	75	no-image	green	ok	0.2	21	0	-	0	0	488	488	0	0	0	0.0000	1.00	1/1	0.0000	1.00	-	-	-	252683	harness exit 0
+falcon-align	s52	journalArticle/Burke - The Expansion of American Higher Education.pdf	1	other	green	ok	0.1	20	0	-	0	0	272	269	0	3	0	0.0110	0.97	2/2	0.0221	1.00	1.00	-	-	237719	harness exit 0
+falcon-align	s53	owner/Sewell - 1999 - Contracting racial equality Affirmative action policy and practice in the United States, 1945-1970.pdf	244	unknown	green	ok	14.1	21	12	2310	1	0	359	358	1	0	2	0.0084	1.00	-	0.0000	1.00	-	-	-	59307	harness exit 0
+falcon-align	s54	journalArticle/Wilson_1975_Review of The Welfare State and Equality_Journal of Economic Literature.pdf	1	dct	green	ok	0.2	21	0	-	0	0	153	153	0	0	0	0.0000	1.00	-	0.0000	1.00	1.00	-	-	118895	harness exit 0
+falcon-align	s55	thesis/Drumright - 2005 - A river for war, a watershed to change The Tennessee Valley Authority during World War II.pdf	60	jbig2	green	ok	13.6	21	11	2585	1	0	323	321	2	0	2	0.0124	1.00	-	0.0093	1.00	-	-	-	65030	harness exit 0
+falcon-align	s56	bookSection/Krippner__The political economy of financial exuberance_Emerald Group Publishing Limited.pdf	30	layered	green	ok	13.7	21	11	2093	1	0	463	463	0	0	0	0.0000	1.00	-	0.0000	-	-	-	-	55129	harness exit 0
+falcon-align	s57	journalArticle/Batzell - Free Labor, Capitalism and the Antislavery Origins of Chinese Labor Exclusion in 1870s California.pdf	14	no-image	green	ok	0.2	20	0	-	0	0	480	480	0	0	0	0.0000	1.00	1/1	0.0000	1.00	-	-	-	72379	harness exit 0
+falcon-align	s58	book/Westad_2005_The Global Cold War_Cambridge University Press.pdf	1	other	green	ok	0.1	20	0	-	0	0	155	155	0	0	0	0.0000	1.00	-	0.0000	1.00	1.00	-	-	61311	harness exit 0
+falcon-align	s59	owner/Hughes - The Knitting of Racial Groups in Industry (Desktop copy 2026-09-26).pdf	3	unknown	green	ok	23.4	41	16	2328	1	0	743	738	4	1	1	0.0081	1.00	1/1	0.0094	1.00	-	-	-	51511	harness exit 0
+falcon-align	s60	owner/Hughes - The Knitting of Racial Groups in Industry.pdf	1	dct	green	ok	0.1	21	0	-	0	0	136	136	0	0	0	0.0000	1.00	-	0.0000	1.00	1.00	-	-	122545	harness exit 0
+falcon-align	s61	document/_1979_Ideology of American Neo-Conservatism_.pdf	4	jbig2	green	ok	24.2	41	14	3647	1	0	493	492	1	0	4	0.0101	1.00	-	0.0020	-	-	-	-	97156	harness exit 0
+falcon-align	s62	book/Riesman - 1954 - Individualism reconsidered, and other essays.pdf	16	layered	green	ok	20.3	41	11	3427	1	0	472	471	1	0	0	0.0021	1.00	-	0.0042	1.00	-	-	-	334621	harness exit 0
+falcon-align	s63	journalArticle/Batzell - Free Labor, Capitalism and the Antislavery Origins of Chinese Labor Exclusion in 1870s California.pdf	1	no-image	green	ok	0.1	20	0	-	0	0	291	291	0	0	0	0.0000	1.00	-	0.0000	1.00	-	-	-	71320	harness exit 0
+falcon-align	s64	owner/1954 - Why.pdf	1	other	green	ok	0.1	20	0	-	0	0	186	182	0	4	0	0.0215	0.93	-	0.0215	1.00	1.00	-	-	25479	harness exit 0
+falcon-align	s65	owner/1957 - Employment on Merit The Continuing Challenge to Business (Joseph J. Morrow).pdf	2	unknown	green	ok	14.9	20	12	2059	1	0	508	507	1	0	1	0.0039	1.00	1/1	0.0059	-	-	-	-	65520	harness exit 0
+falcon-align	s66	book/Cohen_1990_Making a New Deal_Cambridge University Press.pdf	1	dct	green	ok	0.1	21	0	-	0	0	155	155	0	0	0	0.0000	1.00	1/1	0.0000	1.00	1.00	-	-	60884	harness exit 0
+falcon-align	s67	thesis/Koh - 2008 - Essays on stock options expensing and stock option.pdf	1	jbig2	green	ok	6.2	20	4	1978	1	0	74	74	0	0	0	0.0000	1.00	-	0.0000	-	-	-	-	19522	harness exit 0
+falcon-fill	s01	owner/1954 - Why.pdf	2	layered	truth-only	ok	2.4	21	0	-	0	0	8	6	2	0	0	-	-	-	-	0.23	1.00	tink	-	84478	harness exit 1
+falcon-fill	s02	owner/1954 - Why.pdf	6	layered	truth-only	ok	1.5	20	0	-	0	0	434	434	0	0	0	0.0000	1.00	1/1	0.0000	0.92	1.00	-	-	83849	harness exit 0
+falcon-fill	s03	owner/1954 - Why.pdf	8	layered	green	ok	1.7	20	0	-	0	0	473	470	3	0	1	0.0085	0.96	1/1	0.0063	-	-	-	-	43847	harness exit 0
+falcon-fill	s04	owner/1954 - Why.pdf	9	layered	red	ok	4.9	21	2	39	1	0	440	439	1	0	278	0.6341	1.00	1/1	0.0000	0.94	1.00	tcopy	selection	84374	harness exit 1
+falcon-fill	s05	owner/1954 - Why.pdf	10	layered	red	ok	1.1	21	0	-	0	0	0	0	0	0	0	-	-	-	-	0.98	0.00	tcolour	colour	36742	harness exit 1
+falcon-fill	s06	owner/1951 - Briefer Book Notes.pdf	1	jbig2	truth-only	ok	9.0	21	0	-	0	0	615	603	11	1	2	0.0228	0.97	2/2	0.0228	0.99	-	-	-	103252	harness exit 0
+falcon-fill	s07	owner/1951 - Briefer Book Notes.pdf	3	jbig2	truth-only	ok	5.1	21	0	-	0	0	654	644	10	0	1	0.0168	1.00	-	0.0168	-	-	-	-	90622	harness exit 0
+falcon-fill	s08	owner/Hughes - The Knitting of Racial Groups in Industry (Desktop copy 2026-09-26).pdf	1	unknown	green	ok	0.1	20	0	-	0	0	136	136	0	0	2	0.0147	1.00	-	0.0000	1.00	1.00	-	-	122728	harness exit 0
+falcon-fill	s09	owner/Hughes - The Knitting of Racial Groups in Industry (Desktop copy 2026-09-26).pdf	6	unknown	red	ok	7.1	21	3	39	1	0	302	296	6	0	129	0.4470	1.00	3/3	0.0132	1.00	-	tcopy	selection	58606	harness exit 1
+falcon-fill	s10	owner/Bird - 1963 - More Room at the Top Company Experiences in Employing Negroes in Professional and Management Jobs.pdf	3	jbig2	green	ok	6.9	21	2	39	1	0	444	442	1	1	0	0.0045	1.00	1/2	0.0068	1.00	-	-	-	68845	harness exit 0
+falcon-fill	s11	owner/Bird - 1963 - More Room at the Top Company Experiences in Employing Negroes in Professional and Management Jobs.pdf	5	jbig2	green	ok	4.1	20	0	-	0	0	472	469	3	0	0	0.0064	1.00	1/1	0.0085	1.00	-	-	-	69015	harness exit 0
+falcon-fill	s12	owner/Leland - 1952 - We Believe in Employment on Merit, but.pdf	2	jbig2	green	ok	3.9	20	0	-	0	0	458	447	9	2	0	0.0240	1.00	-	0.0218	1.00	-	-	-	63947	harness exit 0
+falcon-fill	s13	owner/Leland - 1952 - We Believe in Employment on Merit, but.pdf	5	jbig2	green	ok	3.9	20	0	-	0	0	447	445	2	0	0	0.0045	1.00	-	0.0045	1.00	-	-	-	61924	harness exit 0
+falcon-fill	s14	owner/Leland - 1952 - We Believe in Employment on Merit, but.pdf	6	jbig2	green	ok	3.5	20	0	-	0	0	444	443	1	0	0	0.0023	1.00	-	0.0023	-	-	-	-	55585	harness exit 0
+falcon-fill	s15	owner/Delton - 2007 - Before the EEOC How Management Integrated the Workplace.pdf	2	jbig2	green	ok	3.8	20	0	-	0	0	342	341	1	0	0	0.0029	1.00	1/1	0.0058	1.00	-	-	-	47314	harness exit 0
+falcon-fill	s16	thesis/Zarifa_2008_Emerging Forms of Stratification in Higher Education_.pdf	92	jbig2	green	ok	1.5	21	0	-	0	0	510	510	0	0	0	0.0000	1.00	-	0.0000	1.00	-	-	-	75770	harness exit 1
+falcon-fill	s17	newspaperArticle/Berendzen_1981_The Soaring Lesson of America in Space_Newsday (1940-1990), Nassau ed.; Long Island, N.Y..pdf	1	newspaper	truth-only	ok	10.8	20	3	39	1	0	1348	1324	16	8	210	0.1736	0.97	4/4	0.0223	1.00	-	tcopy	-	169693	harness exit 1
+falcon-fill	s18	document/2013 - Silicon Valley Program Transcript.pdf	10	jbig2	green	ok	0.1	20	0	-	0	0	323	323	0	0	0	0.0000	1.00	-	0.0000	1.00	1.00	-	-	291796	harness exit 0
+falcon-fill	s19	journalArticle/Surani et al. - AI for Scaling Legal Reform Mapping and Redacting Racial Covenants in Santa Clara County.pdf	10	jbig2	green	ok	0.2	20	0	-	0	0	643	643	0	0	0	0.0000	1.00	3/3	0.0000	1.00	1.00	-	-	1272435	harness exit 0
+falcon-fill	s20	bookSection/Berger_2013_Toward a Third Industrial Divide_.pdf	18	jbig2	truth-only	ok	7.7	20	2	39	1	0	470	459	10	1	45	0.1191	0.97	0/1	0.0213	-	-	tcopy	-	66182	harness exit 1
+falcon-fill	s21	magazineArticle/Glazer_2002_Higher Ed_New Republic.pdf	1	layered	red	ok	6.4	20	0	-	0	0	1199	1191	7	1	1	0.0075	1.00	2/2	0.0050	0.99	0.00	tcolour	colour	277518	harness exit 1
+falcon-fill	s22	newspaperArticle/___ 2.pdf	1	newspaper	red	ok	63.3	80	37	1519	1	0	3027	2585	368	74	2500	0.9719	0.84	4/4	0.1328	0.86	-	tcopy	find,selection,copy	202376	harness exit 1
+falcon-fill	s23	bookSection/Hyman_2012_Rethinking the Postwar Corporation_Oxford University Press.pdf	8	jbig2	red	ok	5.1	21	0	-	0	0	911	897	14	0	1	0.0165	1.00	1/1	0.0209	0.00	0.00	tink,tcolour	colour,find	41887	harness exit 1
+falcon-fill	s24	journalArticle/Riesman_1949_Men, Women, and Marriage_Nation.pdf	2	jbig2	green	ok	18.8	20	5	1318	1	0	1049	1038	10	1	0	0.0105	1.00	2/2	0.0162	1.00	-	-	-	127745	harness exit 0
+falcon-fill	s25	magazineArticle/Marth_1982_Why Unions Lose At Many Companies_Nation's Business (pre-1986); Washington.pdf	2	layered	red	ok	6.0	21	0	-	0	0	672	668	4	0	165	0.2515	1.00	4/4	0.0045	1.00	-	tcopy	selection	79552	harness exit 1
+falcon-fill	s26	document/_1953_99 Cong_ 2.pdf	16	jbig2	red	ok	12.3	21	2	39	1	0	1538	1510	26	2	0	0.0182	1.00	2/2	0.0189	-	-	-	-	190049	harness exit 0
+falcon-fill	s27	thesis/Ries_Marshall_1955_web.pdf	54	jbig2	truth-only	ok	2.7	21	0	-	0	0	221	211	7	3	0	0.0452	1.00	-	0.0452	0.97	-	-	legibility	30148	harness exit 1
+falcon-fill	s28	magazineArticle/Kristol_1960_High, Low, and Modern_Encounter.pdf	1	jbig2	red	ok	10.2	20	0	-	0	0	454	440	4	10	37	0.1123	0.96	4/4	0.0088	1.00	0.00	tcopy,tcolour	colour	64406	harness exit 1
+falcon-fill	s29	report/AI 2027.pdf	54	jbig2	truth-only	ok	0.2	21	0	-	0	0	233	224	1	8	8	0.0730	1.00	-	0.0043	1.00	1.00	tcopy	-	495096	harness exit 1
+falcon-fill	s30	newspaperArticle/_1941_Fiedler's hiring at UM announced_Helena Independent.pdf	1	newspaper	red	ok	50.4	61	16	1773	1	0	3251	2083	982	186	9246	3.2033	0.81	9/11	0.1756	0.73	-	tcopy	selection,copy	340118	harness exit 1
+falcon-fill	s31	bookSection/Allen_2011_The Origins of Political Philosophy_Oxford University Press.pdf	8	jbig2	green	ok	9.5	20	0	-	0	0	607	605	2	0	0	0.0033	1.00	-	0.0033	1.00	-	-	-	86929	harness exit 0
+falcon-fill	s32	owner/1954 - Why.pdf	3	jbig2	truth-only	ok	1.4	20	0	-	0	0	309	307	2	0	0	0.0065	1.00	2/2	0.0032	1.00	-	-	-	29489	harness exit 0
+falcon-fill	s33	owner/1954 - Why.pdf	4	layered	truth-only	ok	1.6	21	0	-	0	0	504	490	6	8	0	0.0278	0.96	2/2	0.0218	0.57	1.00	-	-	88136	harness exit 0
+falcon-fill	s34	owner/1954 - Why.pdf	7	layered	truth-only	ok	1.5	20	0	-	0	0	473	470	2	1	0	0.0063	1.00	1/1	0.0042	0.69	1.00	-	-	83446	harness exit 0
+falcon-fill	s35	owner/1951 - Briefer Book Notes.pdf	2	jbig2	green	ok	5.1	21	0	-	0	0	668	649	17	2	1	0.0299	0.97	1/1	0.0269	1.00	-	-	-	92575	harness exit 0
+falcon-fill	s36	owner/1951 - Briefer Book Notes.pdf	5	jbig2	green	ok	5.0	21	0	-	0	0	588	575	13	0	3	0.0272	1.00	-	0.0272	-	-	-	-	87691	harness exit 0
+falcon-fill	s37	owner/1951 - Briefer Book Notes.pdf	6	jbig2	green	ok	5.5	21	0	-	0	0	647	639	8	0	0	0.0124	1.00	-	0.0139	-	-	-	-	89572	harness exit 0
+falcon-fill	s38	owner/Hughes - The Knitting of Racial Groups in Industry (Desktop copy 2026-09-26).pdf	2	unknown	green	ok	8.6	20	2	37	1	0	624	621	3	0	1	0.0064	1.00	3/4	0.0048	1.00	-	-	-	49753	harness exit 0
+falcon-fill	s39	owner/Hughes - The Knitting of Racial Groups in Industry (Desktop copy 2026-09-26).pdf	8	unknown	green	ok	5.9	21	0	-	0	0	769	769	0	0	1	0.0013	1.00	1/1	0.0000	-	-	-	-	56334	harness exit 0
+falcon-fill	s40	newspaperArticle/Glazer_2003_Neoconservatives, Then and Now_New York Times.pdf	1	newspaper	green	ok	7.1	20	2	39	1	0	216	207	9	0	0	0.0417	1.00	0/1	0.0509	1.00	-	-	-	32129	harness exit 0
+falcon-fill	s41	newspaperArticle/Gitlin_2000_How Our Crowd Got Lonely_New York Times.pdf	1	newspaper	truth-only	ok	13.0	21	5	1319	1	0	1497	1418	65	14	16	0.0635	0.90	-	0.0481	0.36	-	tcopy,tink	-	117504	harness exit 1
+falcon-fill	s42	newspaperArticle/Zipkin_2000_Management.pdf	1	newspaper	truth-only	ok	8.5	20	5	1318	1	0	339	312	6	21	3	0.0885	1.00	4/4	0.0147	0.89	-	tcopy	-	78359	harness exit 1
+falcon-fill	s43	newspaperArticle/_1926_Cox resigns, following most severe public criticism that ever has been_Anaconda Standard.pdf	1	newspaper	red	ok	83.7	100	28	1438	1	0	3277	1417	1698	162	9172	3.3665	0.56	5/6	0.4074	0.51	-	tcopy,tfind	find,selection,copy	263114	harness exit 1
+falcon-fill	s44	newspaperArticle/Williams_1958_DEMOCRACY OR MERITOCRACY_The Manchester Guardian (1901-1959); Manchester (UK).pdf	1	newspaper	red	ok	16.4	21	4	1364	1	0	1269	1191	77	1	2378	1.9354	0.93	3/3	0.0362	-	-	tcopy	selection	163818	harness exit 1
+falcon-fill	s45	newspaperArticle/___.pdf	1	newspaper	red	ok	57.2	61	21	1581	1	0	3778	3023	599	156	7745	2.2499	0.90	13/17	0.1437	1.00	-	tcopy	selection,copy	3489230	harness exit 1
+falcon-fill	s46	newspaperArticle/_1931_Again, press most excited about Frontier's history section_Helena Daily Independent.pdf	1	newspaper	red	ok	89.3	100	25	1530	1	0	5339	2976	2255	108	13393	2.9511	0.52	1/2	0.2718	0.80	-	tcopy,tfind	find,selection,copy	336977	harness exit 1
+falcon-fill	s47	newspaperArticle/___ 4.pdf	1	newspaper	red	ok	15.9	20	5	1331	1	0	1526	1357	169	0	4704	3.1933	0.90	4/5	0.1035	0.88	-	tcopy	selection	487376	harness exit 1
+falcon-fill	s48	book/Morgan_1975_American Slavery, American Freedom_Norton.pdf	1	dct	green	ok	0.1	20	0	-	0	0	162	157	0	5	0	0.0309	0.90	-	0.0309	1.00	1.00	-	-	72014	harness exit 0
+falcon-fill	s49	thesis/NAYLOR_Arthur E.pdf	67	jbig2	green	ok	7.5	21	2	40	1	0	393	387	2	4	5	0.0280	1.00	-	0.0127	-	-	-	-	57116	harness exit 0
+falcon-fill	s50	report/AI 2027.pdf	1	layered	green	ok	0.1	21	0	-	0	0	27	27	0	0	0	0.0000	1.00	-	0.0000	1.00	1.00	-	-	31530	harness exit 0
+falcon-fill	s51	thesis/Schwaller - 2026 - Silicon Valley Landscapes Architecture and the Soft Power of Big Tech.pdf	75	no-image	green	ok	0.1	21	0	-	0	0	488	488	0	0	0	0.0000	1.00	1/1	0.0000	1.00	-	-	-	252683	harness exit 0
+falcon-fill	s52	journalArticle/Burke - The Expansion of American Higher Education.pdf	1	other	green	ok	0.1	21	0	-	0	0	272	269	0	3	0	0.0110	0.97	2/2	0.0221	1.00	1.00	-	-	237719	harness exit 0
+falcon-fill	s53	owner/Sewell - 1999 - Contracting racial equality Affirmative action policy and practice in the United States, 1945-1970.pdf	244	unknown	green	ok	1.7	21	0	-	0	0	359	356	3	0	1	0.0111	1.00	-	0.0084	1.00	-	-	-	59596	harness exit 0
+falcon-fill	s54	journalArticle/Wilson_1975_Review of The Welfare State and Equality_Journal of Economic Literature.pdf	1	dct	green	ok	0.1	20	0	-	0	0	153	153	0	0	0	0.0000	1.00	-	0.0000	1.00	1.00	-	-	118895	harness exit 0
+falcon-fill	s55	thesis/Drumright - 2005 - A river for war, a watershed to change The Tennessee Valley Authority during World War II.pdf	60	jbig2	green	ok	1.2	21	0	-	0	0	323	320	3	0	2	0.0155	1.00	-	0.0124	1.00	-	-	-	64867	harness exit 0
+falcon-fill	s56	bookSection/Krippner__The political economy of financial exuberance_Emerald Group Publishing Limited.pdf	30	layered	green	ok	1.4	21	0	-	0	0	463	463	0	0	0	0.0000	1.00	-	0.0000	-	-	-	-	54793	harness exit 0
+falcon-fill	s57	journalArticle/Batzell - Free Labor, Capitalism and the Antislavery Origins of Chinese Labor Exclusion in 1870s California.pdf	14	no-image	green	ok	0.2	21	0	-	0	0	480	480	0	0	0	0.0000	1.00	1/1	0.0000	1.00	-	-	-	72379	harness exit 0
+falcon-fill	s58	book/Westad_2005_The Global Cold War_Cambridge University Press.pdf	1	other	green	ok	0.1	20	0	-	0	0	155	155	0	0	0	0.0000	1.00	-	0.0000	1.00	1.00	-	-	61311	harness exit 0
+falcon-fill	s59	owner/Hughes - The Knitting of Racial Groups in Industry (Desktop copy 2026-09-26).pdf	3	unknown	green	ok	6.4	21	0	-	0	0	743	738	4	1	1	0.0081	1.00	1/1	0.0094	1.00	-	-	-	51662	harness exit 0
+falcon-fill	s60	owner/Hughes - The Knitting of Racial Groups in Industry.pdf	1	dct	green	ok	0.1	21	0	-	0	0	136	136	0	0	0	0.0000	1.00	-	0.0000	1.00	1.00	-	-	122545	harness exit 0
+falcon-fill	s61	document/_1979_Ideology of American Neo-Conservatism_.pdf	4	jbig2	green	ok	9.0	21	0	-	0	0	493	472	21	0	2	0.0467	0.90	-	0.0426	-	-	-	-	97694	harness exit 0
+falcon-fill	s62	book/Riesman - 1954 - Individualism reconsidered, and other essays.pdf	16	layered	green	ok	10.8	20	3	38	1	0	472	470	2	0	0	0.0042	1.00	-	0.0064	1.00	-	-	-	334518	harness exit 0
+falcon-fill	s63	journalArticle/Batzell - Free Labor, Capitalism and the Antislavery Origins of Chinese Labor Exclusion in 1870s California.pdf	1	no-image	green	ok	0.1	21	0	-	0	0	291	291	0	0	0	0.0000	1.00	-	0.0000	1.00	-	-	-	71320	harness exit 0
+falcon-fill	s64	owner/1954 - Why.pdf	1	other	green	ok	0.1	20	0	-	0	0	186	182	0	4	0	0.0215	0.93	-	0.0215	1.00	1.00	-	-	25479	harness exit 0
+falcon-fill	s65	owner/1957 - Employment on Merit The Continuing Challenge to Business (Joseph J. Morrow).pdf	2	unknown	green	ok	2.5	21	0	-	0	0	508	505	3	0	0	0.0059	1.00	1/1	0.0118	-	-	-	-	65516	harness exit 0
+falcon-fill	s66	book/Cohen_1990_Making a New Deal_Cambridge University Press.pdf	1	dct	green	ok	0.1	21	0	-	0	0	155	155	0	0	0	0.0000	1.00	1/1	0.0000	1.00	1.00	-	-	60884	harness exit 0
+falcon-fill	s67	thesis/Koh - 2008 - Essays on stock options expensing and stock option.pdf	1	jbig2	green	ok	0.7	20	0	-	0	0	74	74	0	0	0	0.0000	1.00	-	0.0000	-	-	-	-	19524	harness exit 0
+vision-regions	s01	owner/1954 - Why.pdf	2	layered	truth-only	ok	8.8	21	5	612	1	0	8	5	3	0	0	-	-	-	-	0.23	1.00	tink	-	84479	harness exit 1
+vision-regions	s02	owner/1954 - Why.pdf	6	layered	truth-only	ok	5.9	20	2	2	1	0	434	434	0	0	8	0.0184	1.00	1/1	0.0000	0.92	1.00	-	-	83028	harness exit 0
+vision-regions	s03	owner/1954 - Why.pdf	8	layered	green	ok	6.1	20	2	2	1	0	473	471	2	0	7	0.0190	0.96	1/1	0.0042	-	-	-	find	42955	harness exit 1
+vision-regions	s04	owner/1954 - Why.pdf	9	layered	red	ok	5.9	20	3	2	1	0	440	429	5	6	298	0.7023	1.00	1/1	0.0205	0.94	1.00	tcopy	selection	84173	harness exit 1
+vision-regions	s05	owner/1954 - Why.pdf	10	layered	red	ok	4.2	20	2	2	1	0	0	0	0	0	0	-	-	-	-	0.98	0.00	tcolour	colour	36742	harness exit 1
+vision-regions	s06	owner/1951 - Briefer Book Notes.pdf	1	jbig2	truth-only	ok	13.9	21	3	2	1	0	615	608	6	1	7	0.0228	1.00	2/2	0.0081	0.99	-	-	-	102635	harness exit 0
+vision-regions	s07	owner/1951 - Briefer Book Notes.pdf	3	jbig2	truth-only	ok	9.8	21	3	2	1	0	654	648	6	0	6	0.0183	1.00	-	0.0107	-	-	-	-	90726	harness exit 0
+vision-regions	s08	owner/Hughes - The Knitting of Racial Groups in Industry (Desktop copy 2026-09-26).pdf	1	unknown	green	ok	0.1	21	0	-	0	0	136	136	0	0	2	0.0147	1.00	-	0.0000	1.00	1.00	-	-	122728	harness exit 0
+vision-regions	s09	owner/Hughes - The Knitting of Racial Groups in Industry (Desktop copy 2026-09-26).pdf	6	unknown	red	ok	9.0	21	2	2	1	0	302	295	7	0	139	0.4834	1.00	3/3	0.0166	1.00	-	tcopy	selection	58681	harness exit 1
+vision-regions	s10	owner/Bird - 1963 - More Room at the Top Company Experiences in Employing Negroes in Professional and Management Jobs.pdf	3	jbig2	green	ok	8.1	21	2	2	1	0	444	441	2	1	16	0.0428	0.97	1/2	0.0090	1.00	-	-	-	68965	harness exit 0
+vision-regions	s11	owner/Bird - 1963 - More Room at the Top Company Experiences in Employing Negroes in Professional and Management Jobs.pdf	5	jbig2	green	ok	8.4	20	2	2	1	0	472	470	2	0	17	0.0403	1.00	1/1	0.0042	1.00	-	-	-	69129	harness exit 0
+vision-regions	s12	owner/Leland - 1952 - We Believe in Employment on Merit, but.pdf	2	jbig2	green	ok	8.1	20	2	2	1	0	458	450	6	2	7	0.0328	1.00	1/1	0.0153	1.00	-	-	-	64341	harness exit 0
+vision-regions	s13	owner/Leland - 1952 - We Believe in Employment on Merit, but.pdf	5	jbig2	green	ok	7.9	20	2	2	1	0	447	441	6	0	5	0.0246	0.97	-	0.0134	1.00	-	-	-	58267	harness exit 0
+vision-regions	s14	owner/Leland - 1952 - We Believe in Employment on Merit, but.pdf	6	jbig2	green	ok	9.2	21	2	2	1	0	444	444	0	0	5	0.0113	1.00	-	0.0000	-	-	-	-	55614	harness exit 0
+vision-regions	s15	owner/Delton - 2007 - Before the EEOC How Management Integrated the Workplace.pdf	2	jbig2	green	ok	9.1	20	2	2	1	0	342	337	5	0	9	0.0409	1.00	1/1	0.0117	1.00	-	-	-	47446	harness exit 0
+vision-regions	s16	thesis/Zarifa_2008_Emerging Forms of Stratification in Higher Education_.pdf	92	jbig2	green	ok	5.7	21	2	2	1	0	510	505	5	0	0	0.0098	1.00	-	0.0098	1.00	-	-	-	75926	harness exit 1
+vision-regions	s17	newspaperArticle/Berendzen_1981_The Soaring Lesson of America in Space_Newsday (1940-1990), Nassau ed.; Long Island, N.Y..pdf	1	newspaper	truth-only	ok	14.2	21	2	2	1	0	1348	1319	21	8	244	0.2025	0.93	4/4	0.0208	1.00	-	tcopy	-	169801	harness exit 1
+vision-regions	s18	document/2013 - Silicon Valley Program Transcript.pdf	10	jbig2	green	ok	0.1	20	0	-	0	0	323	323	0	0	0	0.0000	1.00	-	0.0000	1.00	1.00	-	-	291796	harness exit 0
+vision-regions	s19	journalArticle/Surani et al. - AI for Scaling Legal Reform Mapping and Redacting Racial Covenants in Santa Clara County.pdf	10	jbig2	green	ok	0.2	20	0	-	0	0	643	643	0	0	0	0.0000	1.00	3/3	0.0000	1.00	1.00	-	-	1272435	harness exit 0
+vision-regions	s20	bookSection/Berger_2013_Toward a Third Industrial Divide_.pdf	18	jbig2	truth-only	ok	9.4	21	3	2	1	0	470	460	9	1	59	0.1468	0.97	0/1	0.0170	-	-	tcopy	-	66609	harness exit 1
+vision-regions	s21	magazineArticle/Glazer_2002_Higher Ed_New Republic.pdf	1	layered	red	ok	12.1	20	2	2	1	0	1199	1194	4	1	37	0.0350	1.00	2/2	0.0025	0.99	0.00	tcolour	colour	277773	harness exit 1
+vision-regions	s22	newspaperArticle/___ 2.pdf	1	newspaper	red	ok	36.8	40	2	2	1	0	3027	2552	392	83	2516	0.9881	0.92	6/7	0.1430	0.86	-	tcopy	find,selection,copy	202510	harness exit 1
+vision-regions	s23	bookSection/Hyman_2012_Rethinking the Postwar Corporation_Oxford University Press.pdf	8	jbig2	red	ok	10.1	20	2	2	1	0	911	900	11	0	21	0.0351	1.00	1/1	0.0165	0.00	0.00	tink,tcolour	colour,find	42071	harness exit 1
+vision-regions	s24	journalArticle/Riesman_1949_Men, Women, and Marriage_Nation.pdf	2	jbig2	green	ok	20.8	41	2	2	1	0	1049	1045	3	1	29	0.0315	1.00	2/2	0.0038	1.00	-	-	-	127731	harness exit 0
+vision-regions	s25	magazineArticle/Marth_1982_Why Unions Lose At Many Companies_Nation's Business (pre-1986); Washington.pdf	2	layered	red	ok	10.7	20	2	2	1	0	672	662	8	2	187	0.2932	1.00	4/4	0.0089	1.00	-	tcopy	selection	79388	harness exit 1
+vision-regions	s26	document/_1953_99 Cong_ 2.pdf	16	jbig2	red	ok	16.2	20	3	2	1	0	1538	1517	18	3	36	0.0371	1.00	1/1	0.0143	-	-	-	-	190062	harness exit 0
+vision-regions	s27	thesis/Ries_Marshall_1955_web.pdf	54	jbig2	truth-only	ok	6.5	21	3	2	1	0	221	208	10	3	0	0.0588	0.97	-	0.0452	0.97	-	tcopy	legibility,copy	29771	harness exit 1
+vision-regions	s28	magazineArticle/Kristol_1960_High, Low, and Modern_Encounter.pdf	1	jbig2	red	ok	14.6	20	3	2	1	0	454	439	5	10	54	0.1520	0.96	4/4	0.0088	1.00	0.00	tcopy,tcolour	colour	64515	harness exit 1
+vision-regions	s29	report/AI 2027.pdf	54	jbig2	truth-only	ok	0.2	20	0	-	0	0	233	224	1	8	8	0.0730	1.00	-	0.0043	1.00	1.00	tcopy	-	495096	harness exit 1
+vision-regions	s30	newspaperArticle/_1941_Fiedler's hiring at UM announced_Helena Independent.pdf	1	newspaper	red	ok	44.7	61	3	2	1	0	3251	2128	930	193	9356	3.2233	0.89	8/10	0.1556	0.73	-	tcopy	find,selection,copy	341422	harness exit 1
+vision-regions	s31	bookSection/Allen_2011_The Origins of Political Philosophy_Oxford University Press.pdf	8	jbig2	green	ok	14.1	20	2	2	1	0	607	606	1	0	0	0.0016	1.00	-	0.0016	1.00	-	-	-	86902	harness exit 0
+vision-regions	s32	owner/1954 - Why.pdf	3	jbig2	truth-only	ok	5.1	20	3	2	1	0	309	307	2	0	6	0.0259	1.00	2/2	0.0032	1.00	-	-	-	29499	harness exit 0
+vision-regions	s33	owner/1954 - Why.pdf	4	layered	truth-only	ok	6.0	21	3	2	1	0	504	489	7	8	9	0.0476	0.96	2/2	0.0238	0.57	1.00	-	-	88184	harness exit 0
+vision-regions	s34	owner/1954 - Why.pdf	7	layered	truth-only	ok	5.8	21	3	2	1	0	473	469	3	1	5	0.0190	0.97	1/1	0.0063	0.69	1.00	-	-	83455	harness exit 0
+vision-regions	s35	owner/1951 - Briefer Book Notes.pdf	2	jbig2	green	ok	9.7	20	2	2	1	0	668	661	6	1	2	0.0135	1.00	1/1	0.0120	1.00	-	-	-	88807	harness exit 0
+vision-regions	s36	owner/1951 - Briefer Book Notes.pdf	5	jbig2	green	ok	10.0	20	2	2	1	0	588	579	9	0	14	0.0391	1.00	-	0.0170	-	-	-	-	83968	harness exit 0
+vision-regions	s37	owner/1951 - Briefer Book Notes.pdf	6	jbig2	green	ok	10.2	20	2	2	1	0	647	642	5	0	4	0.0139	0.96	-	0.0093	-	-	-	-	89765	harness exit 0
+vision-regions	s38	owner/Hughes - The Knitting of Racial Groups in Industry (Desktop copy 2026-09-26).pdf	2	unknown	green	ok	12.4	21	3	2	1	0	624	619	5	0	15	0.0321	1.00	3/4	0.0064	1.00	-	-	-	49839	harness exit 0
+vision-regions	s39	owner/Hughes - The Knitting of Racial Groups in Industry (Desktop copy 2026-09-26).pdf	8	unknown	green	ok	11.2	20	2	2	1	0	769	768	1	0	21	0.0286	1.00	1/1	0.0000	-	-	-	-	56487	harness exit 0
+vision-regions	s40	newspaperArticle/Glazer_2003_Neoconservatives, Then and Now_New York Times.pdf	1	newspaper	green	ok	7.7	20	2	2	1	0	216	215	1	0	10	0.0509	0.97	0/1	0.0046	1.00	-	tcopy	find	31725	harness exit 1
+vision-regions	s41	newspaperArticle/Gitlin_2000_How Our Crowd Got Lonely_New York Times.pdf	1	newspaper	truth-only	ok	14.0	21	3	2	1	0	1497	1391	92	14	732	0.5598	0.87	-	0.0581	0.36	-	tcopy,tink	selection	117584	harness exit 1
+vision-regions	s42	newspaperArticle/Zipkin_2000_Management.pdf	1	newspaper	truth-only	ok	8.3	21	2	2	1	0	339	310	8	21	8	0.1091	1.00	3/3	0.0206	0.89	-	tcopy	-	78408	harness exit 1
+vision-regions	s43	newspaperArticle/_1926_Cox resigns, following most severe public criticism that ever has been_Anaconda Standard.pdf	1	newspaper	red	ok	71.1	81	3	2	1	0	3277	1429	1714	134	6952	2.6854	0.56	3/4	0.4080	0.51	-	tcopy,tfind	find,selection,copy	265833	harness exit 1
+vision-regions	s44	newspaperArticle/Williams_1958_DEMOCRACY OR MERITOCRACY_The Manchester Guardian (1901-1959); Manchester (UK).pdf	1	newspaper	red	ok	17.0	20	2	2	1	0	1269	1192	76	1	2399	1.9511	0.90	3/3	0.0378	-	-	tcopy	selection	163809	harness exit 1
+vision-regions	s45	newspaperArticle/___.pdf	1	newspaper	red	ok	53.4	62	2	2	1	0	3778	3309	307	162	7658	2.1511	0.97	13/18	0.0699	1.00	-	tcopy	selection,copy	3491688	harness exit 1
+vision-regions	s46	newspaperArticle/_1931_Again, press most excited about Frontier's history section_Helena Daily Independent.pdf	1	newspaper	red	ok	79.0	80	3	2	1	0	5339	3044	2179	116	13569	2.9713	0.62	2/3	0.2562	0.80	-	tcopy,tfind	find,selection,copy	338796	harness exit 1
+vision-regions	s47	newspaperArticle/___ 4.pdf	1	newspaper	red	ok	17.2	20	2	2	1	0	1526	1378	148	0	4891	3.3021	0.97	4/5	0.0898	0.88	-	tcopy	selection	488810	harness exit 1
+vision-regions	s48	book/Morgan_1975_American Slavery, American Freedom_Norton.pdf	1	dct	green	ok	0.1	20	0	-	0	0	162	157	0	5	0	0.0309	0.90	-	0.0309	1.00	1.00	-	-	72014	harness exit 0
+vision-regions	s49	thesis/NAYLOR_Arthur E.pdf	67	jbig2	green	ok	10.0	20	3	2	1	0	393	379	2	12	8	0.0560	0.97	-	0.0280	-	-	tcopy	-	56889	harness exit 1
+vision-regions	s50	report/AI 2027.pdf	1	layered	green	ok	0.1	20	0	-	0	0	27	27	0	0	0	0.0000	1.00	-	0.0000	1.00	1.00	-	-	31530	harness exit 0
+vision-regions	s51	thesis/Schwaller - 2026 - Silicon Valley Landscapes Architecture and the Soft Power of Big Tech.pdf	75	no-image	green	ok	0.1	21	0	-	0	0	488	488	0	0	0	0.0000	1.00	1/1	0.0000	1.00	-	-	-	252683	harness exit 0
+vision-regions	s52	journalArticle/Burke - The Expansion of American Higher Education.pdf	1	other	green	ok	0.1	20	0	-	0	0	272	269	0	3	0	0.0110	0.97	2/2	0.0221	1.00	1.00	-	-	237719	harness exit 0
+vision-regions	s53	owner/Sewell - 1999 - Contracting racial equality Affirmative action policy and practice in the United States, 1945-1970.pdf	244	unknown	green	ok	5.7	21	3	2	1	0	359	355	4	0	1	0.0139	1.00	-	0.0111	1.00	-	-	-	59230	harness exit 0
+vision-regions	s54	journalArticle/Wilson_1975_Review of The Welfare State and Equality_Journal of Economic Literature.pdf	1	dct	green	ok	0.1	20	0	-	0	0	153	153	0	0	0	0.0000	1.00	-	0.0000	1.00	1.00	-	-	118895	harness exit 0
+vision-regions	s55	thesis/Drumright - 2005 - A river for war, a watershed to change The Tennessee Valley Authority during World War II.pdf	60	jbig2	green	ok	4.9	21	2	2	1	0	323	320	3	0	2	0.0155	1.00	-	0.0124	1.00	-	-	-	64620	harness exit 0
+vision-regions	s56	bookSection/Krippner__The political economy of financial exuberance_Emerald Group Publishing Limited.pdf	30	layered	green	ok	5.4	20	2	2	1	0	463	463	0	0	2	0.0043	1.00	-	0.0000	-	-	-	-	55011	harness exit 0
+vision-regions	s57	journalArticle/Batzell - Free Labor, Capitalism and the Antislavery Origins of Chinese Labor Exclusion in 1870s California.pdf	14	no-image	green	ok	0.1	20	0	-	0	0	480	480	0	0	0	0.0000	1.00	1/1	0.0000	1.00	-	-	-	72379	harness exit 0
+vision-regions	s58	book/Westad_2005_The Global Cold War_Cambridge University Press.pdf	1	other	green	ok	0.1	20	0	-	0	0	155	155	0	0	0	0.0000	1.00	-	0.0000	1.00	1.00	-	-	61311	harness exit 0
+vision-regions	s59	owner/Hughes - The Knitting of Racial Groups in Industry (Desktop copy 2026-09-26).pdf	3	unknown	green	ok	11.3	21	2	2	1	0	743	740	3	0	17	0.0269	1.00	1/1	0.0054	1.00	-	-	-	51722	harness exit 0
+vision-regions	s60	owner/Hughes - The Knitting of Racial Groups in Industry.pdf	1	dct	green	ok	0.1	20	0	-	0	0	136	136	0	0	0	0.0000	1.00	-	0.0000	1.00	1.00	-	-	122545	harness exit 0
+vision-regions	s61	document/_1979_Ideology of American Neo-Conservatism_.pdf	4	jbig2	green	ok	15.1	20	3	2	1	0	493	466	27	0	3	0.0609	0.77	-	0.0548	-	-	tcopy,tfind	-	97427	harness exit 1
+vision-regions	s62	book/Riesman - 1954 - Individualism reconsidered, and other essays.pdf	16	layered	green	ok	12.2	20	2	2	1	0	472	470	2	0	5	0.0148	0.97	-	0.0064	1.00	-	-	-	334506	harness exit 0
+vision-regions	s63	journalArticle/Batzell - Free Labor, Capitalism and the Antislavery Origins of Chinese Labor Exclusion in 1870s California.pdf	1	no-image	green	ok	0.1	20	0	-	0	0	291	291	0	0	0	0.0000	1.00	-	0.0000	1.00	-	-	-	71320	harness exit 0
+vision-regions	s64	owner/1954 - Why.pdf	1	other	green	ok	0.1	21	0	-	0	0	186	182	0	4	0	0.0215	0.93	-	0.0215	1.00	1.00	-	-	25479	harness exit 0
+vision-regions	s65	owner/1957 - Employment on Merit The Continuing Challenge to Business (Joseph J. Morrow).pdf	2	unknown	green	ok	7.0	20	2	2	1	0	508	507	1	0	10	0.0217	1.00	1/1	0.0059	-	-	-	-	65577	harness exit 0
+vision-regions	s66	book/Cohen_1990_Making a New Deal_Cambridge University Press.pdf	1	dct	green	ok	0.1	20	0	-	0	0	155	155	0	0	0	0.0000	1.00	1/1	0.0000	1.00	1.00	-	-	60884	harness exit 0
+vision-regions	s67	thesis/Koh - 2008 - Essays on stock options expensing and stock option.pdf	1	jbig2	green	ok	4.2	20	2	2	1	0	74	74	0	0	0	0.0000	1.00	-	0.0000	-	-	-	-	19522	harness exit 0
+paddle-regions	s01	owner/1954 - Why.pdf	2	layered	truth-only	ok	10.4	21	7	2127	1	0	8	6	2	0	0	-	-	-	-	0.23	1.00	tink	-	84478	harness exit 1
+paddle-regions	s02	owner/1954 - Why.pdf	6	layered	truth-only	ok	11.6	20	10	1624	1	0	434	434	0	0	0	0.0000	1.00	1/1	0.0000	0.92	1.00	-	-	83394	harness exit 0
+paddle-regions	s03	owner/1954 - Why.pdf	8	layered	green	ok	11.9	20	10	1471	1	0	473	471	2	0	1	0.0063	1.00	1/1	0.0042	-	-	-	-	43267	harness exit 0
+paddle-regions	s04	owner/1954 - Why.pdf	9	layered	red	ok	11.7	21	10	1651	1	0	440	429	5	6	279	0.6591	1.00	1/1	0.0205	0.94	1.00	tcopy	selection	83563	harness exit 1
+paddle-regions	s05	owner/1954 - Why.pdf	10	layered	red	ok	6.6	21	5	1103	1	0	0	0	0	0	0	-	-	-	-	0.98	0.00	tcolour	colour	36742	harness exit 1
+paddle-regions	s06	owner/1951 - Briefer Book Notes.pdf	1	jbig2	truth-only	ok	26.6	41	16	2246	1	0	615	611	3	1	5	0.0146	1.00	2/2	0.0081	0.99	-	-	-	102712	harness exit 0
+paddle-regions	s07	owner/1951 - Briefer Book Notes.pdf	3	jbig2	truth-only	ok	20.2	40	14	2194	1	0	654	651	3	0	5	0.0122	1.00	-	0.0122	-	-	-	-	90675	harness exit 0
+paddle-regions	s08	owner/Hughes - The Knitting of Racial Groups in Industry (Desktop copy 2026-09-26).pdf	1	unknown	green	ok	0.1	20	0	-	0	0	136	136	0	0	2	0.0147	1.00	-	0.0000	1.00	1.00	-	-	122728	harness exit 0
+paddle-regions	s09	owner/Hughes - The Knitting of Racial Groups in Industry (Desktop copy 2026-09-26).pdf	6	unknown	red	ok	21.5	41	17	2216	1	0	302	294	8	0	130	0.4570	0.97	3/3	0.0232	1.00	-	tcopy	selection	68680	harness exit 1
+paddle-regions	s10	owner/Bird - 1963 - More Room at the Top Company Experiences in Employing Negroes in Professional and Management Jobs.pdf	3	jbig2	green	ok	16.6	21	12	2195	1	0	444	443	0	1	2	0.0068	1.00	1/2	0.0045	1.00	-	-	-	68853	harness exit 0
+paddle-regions	s11	owner/Bird - 1963 - More Room at the Top Company Experiences in Employing Negroes in Professional and Management Jobs.pdf	5	jbig2	green	ok	16.6	20	12	1454	1	0	472	471	1	0	0	0.0021	1.00	1/1	0.0042	1.00	-	-	-	73352	harness exit 0
+paddle-regions	s12	owner/Leland - 1952 - We Believe in Employment on Merit, but.pdf	2	jbig2	green	ok	14.2	20	10	2314	1	0	458	450	6	2	3	0.0240	1.00	1/1	0.0175	1.00	-	-	copy	67866	harness exit 1
+paddle-regions	s13	owner/Leland - 1952 - We Believe in Employment on Merit, but.pdf	5	jbig2	green	ok	14.4	21	10	2150	1	0	447	444	3	0	0	0.0067	1.00	-	0.0067	1.00	-	-	-	61546	harness exit 0
+paddle-regions	s14	owner/Leland - 1952 - We Believe in Employment on Merit, but.pdf	6	jbig2	green	ok	13.7	21	10	2195	1	0	444	444	0	0	0	0.0000	1.00	-	0.0000	-	-	-	-	55945	harness exit 0
+paddle-regions	s15	owner/Delton - 2007 - Before the EEOC How Management Integrated the Workplace.pdf	2	jbig2	green	ok	19.1	21	14	2249	1	0	342	342	0	0	1	0.0029	1.00	2/2	0.0000	1.00	-	-	-	51058	harness exit 0
+paddle-regions	s16	thesis/Zarifa_2008_Emerging Forms of Stratification in Higher Education_.pdf	92	jbig2	green	ok	14.2	21	12	1931	1	0	510	508	2	0	0	0.0039	1.00	-	0.0039	1.00	-	-	-	80463	harness exit 1
+paddle-regions	s17	newspaperArticle/Berendzen_1981_The Soaring Lesson of America in Space_Newsday (1940-1990), Nassau ed.; Long Island, N.Y..pdf	1	newspaper	truth-only	ok	22.9	41	14	1728	1	0	1348	1334	6	8	214	0.1691	0.97	4/4	0.0119	1.00	-	tcopy	-	169672	harness exit 1
+paddle-regions	s18	document/2013 - Silicon Valley Program Transcript.pdf	10	jbig2	green	ok	0.1	20	0	-	0	0	323	323	0	0	0	0.0000	1.00	-	0.0000	1.00	1.00	-	-	291796	harness exit 0
+paddle-regions	s19	journalArticle/Surani et al. - AI for Scaling Legal Reform Mapping and Redacting Racial Covenants in Santa Clara County.pdf	10	jbig2	green	ok	0.2	21	0	-	0	0	643	643	0	0	0	0.0000	1.00	3/3	0.0000	1.00	1.00	-	-	1272435	harness exit 0
+paddle-regions	s20	bookSection/Berger_2013_Toward a Third Industrial Divide_.pdf	18	jbig2	truth-only	ok	17.2	20	12	2219	1	0	470	456	13	1	46	0.1277	0.97	0/1	0.0255	-	-	tcopy	-	70138	harness exit 1
+paddle-regions	s21	magazineArticle/Glazer_2002_Higher Ed_New Republic.pdf	1	layered	red	ok	19.0	20	12	1730	1	0	1199	1191	7	1	2	0.0083	0.97	2/2	0.0033	0.99	0.00	tcolour	colour	277856	harness exit 1
+paddle-regions	s22	newspaperArticle/___ 2.pdf	1	newspaper	red	ok	62.8	80	36	2201	1	0	3027	2699	233	95	2516	0.9395	0.96	8/9	0.0955	0.86	-	tcopy	find,selection,copy	204196	harness exit 1
+paddle-regions	s23	bookSection/Hyman_2012_Rethinking the Postwar Corporation_Oxford University Press.pdf	8	jbig2	red	ok	24.7	41	18	2276	1	0	911	910	0	1	0	0.0011	1.00	1/1	0.0055	0.00	0.00	tink,tcolour	colour,find	42863	harness exit 1
+paddle-regions	s24	journalArticle/Riesman_1949_Men, Women, and Marriage_Nation.pdf	2	jbig2	green	ok	33.0	40	19	2294	1	0	1049	1046	3	0	2	0.0048	1.00	2/2	0.0095	1.00	-	-	-	127198	harness exit 0
+paddle-regions	s25	magazineArticle/Marth_1982_Why Unions Lose At Many Companies_Nation's Business (pre-1986); Washington.pdf	2	layered	red	ok	18.7	21	12	2160	1	0	672	662	10	0	165	0.2604	1.00	4/4	0.0134	1.00	-	tcopy	selection	79704	harness exit 1
+paddle-regions	s26	document/_1953_99 Cong_ 2.pdf	16	jbig2	red	ok	33.6	41	24	2406	1	0	1538	1531	6	1	3	0.0065	1.00	2/2	0.0052	-	-	-	-	189554	harness exit 0
+paddle-regions	s27	thesis/Ries_Marshall_1955_web.pdf	54	jbig2	truth-only	ok	10.6	20	7	1092	1	0	221	218	0	3	0	0.0136	1.00	-	0.0136	0.97	-	-	legibility	29784	harness exit 1
+paddle-regions	s28	magazineArticle/Kristol_1960_High, Low, and Modern_Encounter.pdf	1	jbig2	red	ok	23.4	41	12	2330	1	0	454	438	6	10	38	0.1189	0.96	4/4	0.0088	1.00	0.00	tcopy,tcolour	colour	64796	harness exit 1
+paddle-regions	s29	report/AI 2027.pdf	54	jbig2	truth-only	ok	0.2	20	0	-	0	0	233	224	1	8	8	0.0730	1.00	-	0.0043	1.00	1.00	tcopy	-	495096	harness exit 1
+paddle-regions	s30	newspaperArticle/_1941_Fiedler's hiring at UM announced_Helena Independent.pdf	1	newspaper	red	ok	96.4	101	63	2193	1	0	3251	2232	827	192	9252	3.1593	0.93	9/11	0.1224	0.73	-	tcopy	find,selection,copy	339791	harness exit 1
+paddle-regions	s31	bookSection/Allen_2011_The Origins of Political Philosophy_Oxford University Press.pdf	8	jbig2	green	ok	22.3	41	12	2234	1	0	607	605	2	0	0	0.0033	1.00	-	0.0033	1.00	-	-	-	86767	harness exit 0
+paddle-regions	s32	owner/1954 - Why.pdf	3	jbig2	truth-only	ok	6.9	20	4	1044	1	0	309	307	2	0	0	0.0065	1.00	2/2	0.0032	1.00	-	-	-	29489	harness exit 0
+paddle-regions	s33	owner/1954 - Why.pdf	4	layered	truth-only	ok	21.1	41	18	1389	1	0	504	490	6	8	0	0.0278	0.96	2/2	0.0218	0.57	1.00	-	-	88437	harness exit 0
+paddle-regions	s34	owner/1954 - Why.pdf	7	layered	truth-only	ok	19.0	20	17	1195	1	0	473	470	3	0	0	0.0063	1.00	1/1	0.0042	0.69	1.00	-	-	83556	harness exit 0
+paddle-regions	s35	owner/1951 - Briefer Book Notes.pdf	2	jbig2	green	ok	20.3	41	14	2338	1	0	668	666	1	1	3	0.0075	1.00	1/1	0.0090	1.00	-	-	-	88886	harness exit 0
+paddle-regions	s36	owner/1951 - Briefer Book Notes.pdf	5	jbig2	green	ok	17.6	21	12	2391	1	0	588	583	5	0	6	0.0187	1.00	-	0.0204	-	-	-	-	83910	harness exit 0
+paddle-regions	s37	owner/1951 - Briefer Book Notes.pdf	6	jbig2	green	ok	20.7	40	15	2298	1	0	647	647	0	0	3	0.0046	1.00	-	0.0062	-	-	-	-	89571	harness exit 0
+paddle-regions	s38	owner/Hughes - The Knitting of Racial Groups in Industry (Desktop copy 2026-09-26).pdf	2	unknown	green	ok	25.4	40	20	2307	1	0	624	622	2	0	0	0.0032	1.00	3/4	0.0048	1.00	-	-	-	54259	harness exit 0
+paddle-regions	s39	owner/Hughes - The Knitting of Racial Groups in Industry (Desktop copy 2026-09-26).pdf	8	unknown	green	ok	31.0	41	24	2321	1	0	769	769	0	0	1	0.0013	1.00	1/1	0.0000	-	-	-	-	56705	harness exit 0
+paddle-regions	s40	newspaperArticle/Glazer_2003_Neoconservatives, Then and Now_New York Times.pdf	1	newspaper	green	ok	11.8	21	8	1072	1	0	216	216	0	0	0	0.0000	1.00	0/1	0.0093	1.00	-	-	-	31937	harness exit 0
+paddle-regions	s41	newspaperArticle/Gitlin_2000_How Our Crowd Got Lonely_New York Times.pdf	1	newspaper	truth-only	ok	22.5	40	14	1722	1	0	1497	1451	32	14	19	0.0434	0.93	-	0.0247	0.36	-	tink	-	117217	harness exit 1
+paddle-regions	s42	newspaperArticle/Zipkin_2000_Management.pdf	1	newspaper	truth-only	ok	15.4	20	12	2112	1	0	339	318	0	21	1	0.0649	1.00	4/4	0.0029	0.89	-	tcopy	-	78057	harness exit 1
+paddle-regions	s43	newspaperArticle/_1926_Cox resigns, following most severe public criticism that ever has been_Anaconda Standard.pdf	1	newspaper	red	ok	101	120	44	1798	1	0	3277	1786	1306	185	6933	2.5706	0.64	3/4	0.2539	0.51	-	tcopy,tfind	find,selection,copy	260646	harness exit 1
+paddle-regions	s44	newspaperArticle/Williams_1958_DEMOCRACY OR MERITOCRACY_The Manchester Guardian (1901-1959); Manchester (UK).pdf	1	newspaper	red	ok	30.4	41	19	2246	1	0	1269	1196	72	1	2387	1.9385	0.93	3/3	0.0355	-	-	tcopy	selection	163677	harness exit 1
+paddle-regions	s45	newspaperArticle/___.pdf	1	newspaper	red	ok	129	141	92	2451	1	0	3778	3306	313	159	7664	2.1535	0.97	13/17	0.0696	1.00	-	tcopy	selection,copy	3491383	harness exit 1
+paddle-regions	s46	newspaperArticle/_1931_Again, press most excited about Frontier's history section_Helena Daily Independent.pdf	1	newspaper	red	ok	135	141	72	2358	1	0	5339	3498	1692	149	13485	2.8706	0.76	3/4	0.1549	0.80	-	tcopy,tfind	find,selection,copy	337233	harness exit 1
+paddle-regions	s47	newspaperArticle/___ 4.pdf	1	newspaper	red	ok	30.3	41	20	2363	1	0	1526	1403	123	0	4726	3.1776	0.97	4/5	0.0708	0.88	-	tcopy	selection	488989	harness exit 1
+paddle-regions	s48	book/Morgan_1975_American Slavery, American Freedom_Norton.pdf	1	dct	green	ok	0.1	20	0	-	0	0	162	157	0	5	0	0.0309	0.90	-	0.0309	1.00	1.00	-	-	72014	harness exit 0
+paddle-regions	s49	thesis/NAYLOR_Arthur E.pdf	67	jbig2	green	ok	14.9	20	10	2282	1	0	393	380	1	12	7	0.0509	0.97	-	0.0254	-	-	tcopy	-	56794	harness exit 1
+paddle-regions	s50	report/AI 2027.pdf	1	layered	green	ok	0.1	20	0	-	0	0	27	27	0	0	0	0.0000	1.00	-	0.0000	1.00	1.00	-	-	31530	harness exit 0
+paddle-regions	s51	thesis/Schwaller - 2026 - Silicon Valley Landscapes Architecture and the Soft Power of Big Tech.pdf	75	no-image	green	ok	0.1	20	0	-	0	0	488	488	0	0	0	0.0000	1.00	1/1	0.0000	1.00	-	-	-	252683	harness exit 0
+paddle-regions	s52	journalArticle/Burke - The Expansion of American Higher Education.pdf	1	other	green	ok	0.1	20	0	-	0	0	272	269	0	3	0	0.0110	0.97	2/2	0.0221	1.00	1.00	-	-	237719	harness exit 0
+paddle-regions	s53	owner/Sewell - 1999 - Contracting racial equality Affirmative action policy and practice in the United States, 1945-1970.pdf	244	unknown	green	ok	14.5	20	12	1302	1	0	359	358	1	0	2	0.0084	1.00	-	0.0028	1.00	-	-	-	59813	harness exit 0
+paddle-regions	s54	journalArticle/Wilson_1975_Review of The Welfare State and Equality_Journal of Economic Literature.pdf	1	dct	green	ok	0.1	20	0	-	0	0	153	153	0	0	0	0.0000	1.00	-	0.0000	1.00	1.00	-	-	118895	harness exit 0
+paddle-regions	s55	thesis/Drumright - 2005 - A river for war, a watershed to change The Tennessee Valley Authority during World War II.pdf	60	jbig2	green	ok	13.9	20	12	2338	1	0	323	322	1	0	1	0.0062	1.00	-	0.0093	1.00	-	-	-	65328	harness exit 0
+paddle-regions	s56	bookSection/Krippner__The political economy of financial exuberance_Emerald Group Publishing Limited.pdf	30	layered	green	ok	9.2	21	8	1670	1	0	463	463	0	0	0	0.0000	1.00	-	0.0000	-	-	-	-	55110	harness exit 0
+paddle-regions	s57	journalArticle/Batzell - Free Labor, Capitalism and the Antislavery Origins of Chinese Labor Exclusion in 1870s California.pdf	14	no-image	green	ok	0.1	21	0	-	0	0	480	480	0	0	0	0.0000	1.00	1/1	0.0000	1.00	-	-	-	72379	harness exit 0
+paddle-regions	s58	book/Westad_2005_The Global Cold War_Cambridge University Press.pdf	1	other	green	ok	0.1	21	0	-	0	0	155	155	0	0	0	0.0000	1.00	-	0.0000	1.00	1.00	-	-	61311	harness exit 0
+paddle-regions	s59	owner/Hughes - The Knitting of Racial Groups in Industry (Desktop copy 2026-09-26).pdf	3	unknown	green	ok	26.0	41	20	2279	1	0	743	737	5	1	3	0.0121	0.96	1/1	0.0108	1.00	-	-	-	52240	harness exit 0
+paddle-regions	s60	owner/Hughes - The Knitting of Racial Groups in Industry.pdf	1	dct	green	ok	0.1	20	0	-	0	0	136	136	0	0	0	0.0000	1.00	-	0.0000	1.00	1.00	-	-	122545	harness exit 0
+paddle-regions	s61	document/_1979_Ideology of American Neo-Conservatism_.pdf	4	jbig2	green	ok	21.8	40	12	2190	1	0	493	492	1	0	3	0.0081	1.00	-	0.0020	-	-	-	-	100848	harness exit 0
+paddle-regions	s62	book/Riesman - 1954 - Individualism reconsidered, and other essays.pdf	16	layered	green	ok	20.8	40	12	2207	1	0	472	471	1	0	0	0.0021	1.00	-	0.0042	1.00	-	-	-	334675	harness exit 0
+paddle-regions	s63	journalArticle/Batzell - Free Labor, Capitalism and the Antislavery Origins of Chinese Labor Exclusion in 1870s California.pdf	1	no-image	green	ok	0.1	21	0	-	0	0	291	291	0	0	0	0.0000	1.00	-	0.0000	1.00	-	-	-	71320	harness exit 0
+paddle-regions	s64	owner/1954 - Why.pdf	1	other	green	ok	0.1	20	0	-	0	0	186	182	0	4	0	0.0215	0.93	-	0.0215	1.00	1.00	-	-	25479	harness exit 0
+paddle-regions	s65	owner/1957 - Employment on Merit The Continuing Challenge to Business (Joseph J. Morrow).pdf	2	unknown	green	ok	15.2	20	12	2139	1	0	508	507	1	0	1	0.0039	1.00	1/1	0.0059	-	-	-	-	65785	harness exit 0
+paddle-regions	s66	book/Cohen_1990_Making a New Deal_Cambridge University Press.pdf	1	dct	green	ok	0.1	21	0	-	0	0	155	155	0	0	0	0.0000	1.00	1/1	0.0000	1.00	1.00	-	-	60884	harness exit 0
+paddle-regions	s67	thesis/Koh - 2008 - Essays on stock options expensing and stock option.pdf	1	jbig2	green	ok	8.5	20	7	1703	1	0	74	73	1	0	0	0.0135	1.00	-	0.0135	-	-	-	-	19522	harness exit 0
+paddle-fill	s01	owner/1954 - Why.pdf	2	layered	truth-only	ok	2.3	21	0	-	0	0	8	6	2	0	0	-	-	-	-	0.23	1.00	tink	-	84478	harness exit 1
+paddle-fill	s02	owner/1954 - Why.pdf	6	layered	truth-only	ok	1.6	21	0	-	0	0	434	434	0	0	0	0.0000	1.00	1/1	0.0000	0.92	1.00	-	-	83849	harness exit 0
+paddle-fill	s03	owner/1954 - Why.pdf	8	layered	green	ok	1.6	20	0	-	0	0	473	470	3	0	1	0.0085	0.96	1/1	0.0063	-	-	-	-	43847	harness exit 0
+paddle-fill	s04	owner/1954 - Why.pdf	9	layered	red	ok	5.0	21	2	38	1	0	440	439	1	0	278	0.6341	1.00	1/1	0.0000	0.94	1.00	tcopy	selection	84101	harness exit 1
+paddle-fill	s05	owner/1954 - Why.pdf	10	layered	red	ok	1.1	21	0	-	0	0	0	0	0	0	0	-	-	-	-	0.98	0.00	tcolour	colour	36742	harness exit 1
+paddle-fill	s06	owner/1951 - Briefer Book Notes.pdf	1	jbig2	truth-only	ok	9.1	21	0	-	0	0	615	603	11	1	2	0.0228	0.97	2/2	0.0228	0.99	-	-	-	103252	harness exit 0
+paddle-fill	s07	owner/1951 - Briefer Book Notes.pdf	3	jbig2	truth-only	ok	5.2	21	0	-	0	0	654	644	10	0	1	0.0168	1.00	-	0.0168	-	-	-	-	90622	harness exit 0
+paddle-fill	s08	owner/Hughes - The Knitting of Racial Groups in Industry (Desktop copy 2026-09-26).pdf	1	unknown	green	ok	0.1	20	0	-	0	0	136	136	0	0	2	0.0147	1.00	-	0.0000	1.00	1.00	-	-	122728	harness exit 0
+paddle-fill	s09	owner/Hughes - The Knitting of Racial Groups in Industry (Desktop copy 2026-09-26).pdf	6	unknown	red	ok	7.0	21	2	39	1	0	302	296	6	0	129	0.4470	1.00	3/3	0.0132	1.00	-	tcopy	selection	58606	harness exit 1
+paddle-fill	s10	owner/Bird - 1963 - More Room at the Top Company Experiences in Employing Negroes in Professional and Management Jobs.pdf	3	jbig2	green	ok	7.1	21	3	39	1	0	444	442	1	1	0	0.0045	1.00	1/2	0.0068	1.00	-	-	-	68845	harness exit 0
+paddle-fill	s11	owner/Bird - 1963 - More Room at the Top Company Experiences in Employing Negroes in Professional and Management Jobs.pdf	5	jbig2	green	ok	4.1	21	0	-	0	0	472	469	3	0	0	0.0064	1.00	1/1	0.0085	1.00	-	-	-	69015	harness exit 0
+paddle-fill	s12	owner/Leland - 1952 - We Believe in Employment on Merit, but.pdf	2	jbig2	green	ok	3.8	20	0	-	0	0	458	447	9	2	0	0.0240	1.00	-	0.0218	1.00	-	-	-	63947	harness exit 0
+paddle-fill	s13	owner/Leland - 1952 - We Believe in Employment on Merit, but.pdf	5	jbig2	green	ok	3.9	21	0	-	0	0	447	445	2	0	0	0.0045	1.00	-	0.0045	1.00	-	-	-	61924	harness exit 0
+paddle-fill	s14	owner/Leland - 1952 - We Believe in Employment on Merit, but.pdf	6	jbig2	green	ok	3.7	21	0	-	0	0	444	443	1	0	0	0.0023	1.00	-	0.0023	-	-	-	-	55585	harness exit 0
+paddle-fill	s15	owner/Delton - 2007 - Before the EEOC How Management Integrated the Workplace.pdf	2	jbig2	green	ok	3.8	20	0	-	0	0	342	341	1	0	0	0.0029	1.00	1/1	0.0058	1.00	-	-	-	47314	harness exit 0
+paddle-fill	s16	thesis/Zarifa_2008_Emerging Forms of Stratification in Higher Education_.pdf	92	jbig2	green	ok	1.4	21	0	-	0	0	510	510	0	0	0	0.0000	1.00	-	0.0000	1.00	-	-	-	75770	harness exit 1
+paddle-fill	s17	newspaperArticle/Berendzen_1981_The Soaring Lesson of America in Space_Newsday (1940-1990), Nassau ed.; Long Island, N.Y..pdf	1	newspaper	truth-only	ok	10.8	21	3	39	1	0	1348	1324	16	8	210	0.1736	0.97	4/4	0.0223	1.00	-	tcopy	-	169693	harness exit 1
+paddle-fill	s18	document/2013 - Silicon Valley Program Transcript.pdf	10	jbig2	green	ok	0.1	20	0	-	0	0	323	323	0	0	0	0.0000	1.00	-	0.0000	1.00	1.00	-	-	291796	harness exit 0
+paddle-fill	s19	journalArticle/Surani et al. - AI for Scaling Legal Reform Mapping and Redacting Racial Covenants in Santa Clara County.pdf	10	jbig2	green	ok	0.2	21	0	-	0	0	643	643	0	0	0	0.0000	1.00	3/3	0.0000	1.00	1.00	-	-	1272435	harness exit 0
+paddle-fill	s20	bookSection/Berger_2013_Toward a Third Industrial Divide_.pdf	18	jbig2	truth-only	ok	7.6	20	2	39	1	0	470	459	10	1	45	0.1191	0.97	0/1	0.0213	-	-	tcopy	-	66182	harness exit 1
+paddle-fill	s21	magazineArticle/Glazer_2002_Higher Ed_New Republic.pdf	1	layered	red	ok	6.4	21	0	-	0	0	1199	1191	7	1	1	0.0075	1.00	2/2	0.0050	0.99	0.00	tcolour	colour	277518	harness exit 1
+paddle-fill	s22	newspaperArticle/___ 2.pdf	1	newspaper	red	ok	45.6	60	19	1805	1	0	3027	2621	334	72	2496	0.9587	0.84	4/4	0.1242	0.86	-	tcopy	find,selection,copy	203075	harness exit 1
+paddle-fill	s23	bookSection/Hyman_2012_Rethinking the Postwar Corporation_Oxford University Press.pdf	8	jbig2	red	ok	5.0	21	0	-	0	0	911	897	14	0	1	0.0165	1.00	1/1	0.0209	0.00	0.00	tink,tcolour	colour,find	41887	harness exit 1
+paddle-fill	s24	journalArticle/Riesman_1949_Men, Women, and Marriage_Nation.pdf	2	jbig2	green	ok	18.9	20	5	1640	1	0	1049	1038	10	1	0	0.0105	1.00	2/2	0.0153	1.00	-	-	-	123395	harness exit 0
+paddle-fill	s25	magazineArticle/Marth_1982_Why Unions Lose At Many Companies_Nation's Business (pre-1986); Washington.pdf	2	layered	red	ok	5.8	20	0	-	0	0	672	668	4	0	165	0.2515	1.00	4/4	0.0045	1.00	-	tcopy	selection	79552	harness exit 1
+paddle-fill	s26	document/_1953_99 Cong_ 2.pdf	16	jbig2	red	ok	12.3	20	2	39	1	0	1538	1510	26	2	0	0.0182	1.00	2/2	0.0189	-	-	-	-	190044	harness exit 0
+paddle-fill	s27	thesis/Ries_Marshall_1955_web.pdf	54	jbig2	truth-only	ok	2.7	20	0	-	0	0	221	211	7	3	0	0.0452	1.00	-	0.0452	0.97	-	-	legibility	30148	harness exit 1
+paddle-fill	s28	magazineArticle/Kristol_1960_High, Low, and Modern_Encounter.pdf	1	jbig2	red	ok	10.1	21	0	-	0	0	454	440	4	10	37	0.1123	0.96	4/4	0.0088	1.00	0.00	tcopy,tcolour	colour	64406	harness exit 1
+paddle-fill	s29	report/AI 2027.pdf	54	jbig2	truth-only	ok	0.2	20	0	-	0	0	233	224	1	8	8	0.0730	1.00	-	0.0043	1.00	1.00	tcopy	-	495096	harness exit 1
+paddle-fill	s30	newspaperArticle/_1941_Fiedler's hiring at UM announced_Helena Independent.pdf	1	newspaper	red	ok	44.3	61	12	1824	1	0	3251	2089	976	186	9243	3.2006	0.81	9/11	0.1747	0.73	-	tcopy	selection,copy	338098	harness exit 1
+paddle-fill	s31	bookSection/Allen_2011_The Origins of Political Philosophy_Oxford University Press.pdf	8	jbig2	green	ok	9.9	21	0	-	0	0	607	605	2	0	0	0.0033	1.00	-	0.0033	1.00	-	-	-	86929	harness exit 0
+paddle-fill	s32	owner/1954 - Why.pdf	3	jbig2	truth-only	ok	1.4	20	0	-	0	0	309	307	2	0	0	0.0065	1.00	2/2	0.0032	1.00	-	-	-	29489	harness exit 0
+paddle-fill	s33	owner/1954 - Why.pdf	4	layered	truth-only	ok	1.6	21	0	-	0	0	504	490	6	8	0	0.0278	0.96	2/2	0.0218	0.57	1.00	-	-	88136	harness exit 0
+paddle-fill	s34	owner/1954 - Why.pdf	7	layered	truth-only	ok	1.5	21	0	-	0	0	473	470	2	1	0	0.0063	1.00	1/1	0.0042	0.69	1.00	-	-	83446	harness exit 0
+paddle-fill	s35	owner/1951 - Briefer Book Notes.pdf	2	jbig2	green	ok	5.1	20	0	-	0	0	668	649	17	2	1	0.0299	0.97	1/1	0.0269	1.00	-	-	-	92575	harness exit 0
+paddle-fill	s36	owner/1951 - Briefer Book Notes.pdf	5	jbig2	green	ok	4.9	20	0	-	0	0	588	575	13	0	3	0.0272	1.00	-	0.0272	-	-	-	-	87691	harness exit 0
+paddle-fill	s37	owner/1951 - Briefer Book Notes.pdf	6	jbig2	green	ok	5.6	20	0	-	0	0	647	639	8	0	0	0.0124	1.00	-	0.0139	-	-	-	-	89572	harness exit 0
+paddle-fill	s38	owner/Hughes - The Knitting of Racial Groups in Industry (Desktop copy 2026-09-26).pdf	2	unknown	green	ok	8.5	21	3	39	1	0	624	621	3	0	1	0.0064	1.00	3/4	0.0048	1.00	-	-	-	49753	harness exit 0
+paddle-fill	s39	owner/Hughes - The Knitting of Racial Groups in Industry (Desktop copy 2026-09-26).pdf	8	unknown	green	ok	5.9	21	0	-	0	0	769	769	0	0	1	0.0013	1.00	1/1	0.0000	-	-	-	-	56334	harness exit 0
+paddle-fill	s40	newspaperArticle/Glazer_2003_Neoconservatives, Then and Now_New York Times.pdf	1	newspaper	green	ok	7.1	20	2	39	1	0	216	207	9	0	0	0.0417	1.00	0/1	0.0509	1.00	-	-	-	32129	harness exit 0
+paddle-fill	s41	newspaperArticle/Gitlin_2000_How Our Crowd Got Lonely_New York Times.pdf	1	newspaper	truth-only	ok	13.0	20	4	1079	1	0	1497	1419	64	14	16	0.0628	0.90	-	0.0474	0.36	-	tcopy,tink	-	117517	harness exit 1
+paddle-fill	s42	newspaperArticle/Zipkin_2000_Management.pdf	1	newspaper	truth-only	ok	8.5	21	4	1082	1	0	339	311	7	21	1	0.0855	1.00	4/4	0.0177	0.89	-	tcopy	-	78345	harness exit 1
+paddle-fill	s43	newspaperArticle/_1926_Cox resigns, following most severe public criticism that ever has been_Anaconda Standard.pdf	1	newspaper	red	ok	78.7	81	21	1717	1	0	3277	1425	1687	165	9147	3.3564	0.56	4/5	0.4077	0.51	-	tcopy,tfind	find,selection,copy	262980	harness exit 1
+paddle-fill	s44	newspaperArticle/Williams_1958_DEMOCRACY OR MERITOCRACY_The Manchester Guardian (1901-1959); Manchester (UK).pdf	1	newspaper	red	ok	15.8	21	5	33	1	0	1269	1200	68	1	2402	1.9472	0.93	3/3	0.0292	-	-	tcopy	selection	163862	harness exit 1
+paddle-fill	s45	newspaperArticle/___.pdf	1	newspaper	red	ok	50.4	61	14	1871	1	0	3778	3044	573	161	7658	2.2213	0.93	13/17	0.1376	1.00	-	tcopy	selection,copy	3488783	harness exit 1
+paddle-fill	s46	newspaperArticle/_1931_Again, press most excited about Frontier's history section_Helena Daily Independent.pdf	1	newspaper	red	ok	83.7	101	19	1800	1	0	5339	2991	2238	110	13390	2.9477	0.52	1/2	0.2692	0.80	-	tcopy,tfind	find,selection,copy	337069	harness exit 1
+paddle-fill	s47	newspaperArticle/___ 4.pdf	1	newspaper	red	ok	16.2	20	5	1376	1	0	1526	1366	160	0	4712	3.1927	0.90	4/5	0.0990	0.88	-	tcopy	selection	486369	harness exit 1
+paddle-fill	s48	book/Morgan_1975_American Slavery, American Freedom_Norton.pdf	1	dct	green	ok	0.1	20	0	-	0	0	162	157	0	5	0	0.0309	0.90	-	0.0309	1.00	1.00	-	-	72014	harness exit 0
+paddle-fill	s49	thesis/NAYLOR_Arthur E.pdf	67	jbig2	green	ok	7.5	21	2	39	1	0	393	387	2	4	6	0.0305	1.00	-	0.0127	-	-	-	-	57404	harness exit 0
+paddle-fill	s50	report/AI 2027.pdf	1	layered	green	ok	0.1	21	0	-	0	0	27	27	0	0	0	0.0000	1.00	-	0.0000	1.00	1.00	-	-	31530	harness exit 0
+paddle-fill	s51	thesis/Schwaller - 2026 - Silicon Valley Landscapes Architecture and the Soft Power of Big Tech.pdf	75	no-image	green	ok	0.1	21	0	-	0	0	488	488	0	0	0	0.0000	1.00	1/1	0.0000	1.00	-	-	-	252683	harness exit 0
+paddle-fill	s52	journalArticle/Burke - The Expansion of American Higher Education.pdf	1	other	green	ok	0.1	21	0	-	0	0	272	269	0	3	0	0.0110	0.97	2/2	0.0221	1.00	1.00	-	-	237719	harness exit 0
+paddle-fill	s53	owner/Sewell - 1999 - Contracting racial equality Affirmative action policy and practice in the United States, 1945-1970.pdf	244	unknown	green	ok	1.7	21	0	-	0	0	359	356	3	0	1	0.0111	1.00	-	0.0084	1.00	-	-	-	59596	harness exit 0
+paddle-fill	s54	journalArticle/Wilson_1975_Review of The Welfare State and Equality_Journal of Economic Literature.pdf	1	dct	green	ok	0.1	21	0	-	0	0	153	153	0	0	0	0.0000	1.00	-	0.0000	1.00	1.00	-	-	118895	harness exit 0
+paddle-fill	s55	thesis/Drumright - 2005 - A river for war, a watershed to change The Tennessee Valley Authority during World War II.pdf	60	jbig2	green	ok	1.2	21	0	-	0	0	323	320	3	0	2	0.0155	1.00	-	0.0124	1.00	-	-	-	64867	harness exit 0
+paddle-fill	s56	bookSection/Krippner__The political economy of financial exuberance_Emerald Group Publishing Limited.pdf	30	layered	green	ok	1.5	21	0	-	0	0	463	463	0	0	0	0.0000	1.00	-	0.0000	-	-	-	-	54793	harness exit 0
+paddle-fill	s57	journalArticle/Batzell - Free Labor, Capitalism and the Antislavery Origins of Chinese Labor Exclusion in 1870s California.pdf	14	no-image	green	ok	0.1	20	0	-	0	0	480	480	0	0	0	0.0000	1.00	1/1	0.0000	1.00	-	-	-	72379	harness exit 0
+paddle-fill	s58	book/Westad_2005_The Global Cold War_Cambridge University Press.pdf	1	other	green	ok	0.1	20	0	-	0	0	155	155	0	0	0	0.0000	1.00	-	0.0000	1.00	1.00	-	-	61311	harness exit 0
+paddle-fill	s59	owner/Hughes - The Knitting of Racial Groups in Industry (Desktop copy 2026-09-26).pdf	3	unknown	green	ok	6.2	21	0	-	0	0	743	738	4	1	1	0.0081	1.00	1/1	0.0094	1.00	-	-	-	51662	harness exit 0
+paddle-fill	s60	owner/Hughes - The Knitting of Racial Groups in Industry.pdf	1	dct	green	ok	0.1	20	0	-	0	0	136	136	0	0	0	0.0000	1.00	-	0.0000	1.00	1.00	-	-	122545	harness exit 0
+paddle-fill	s61	document/_1979_Ideology of American Neo-Conservatism_.pdf	4	jbig2	green	ok	9.2	20	0	-	0	0	493	472	21	0	2	0.0467	0.90	-	0.0426	-	-	-	-	97694	harness exit 0
+paddle-fill	s62	book/Riesman - 1954 - Individualism reconsidered, and other essays.pdf	16	layered	green	ok	10.5	20	2	39	1	0	472	470	2	0	0	0.0042	1.00	-	0.0064	1.00	-	-	-	334517	harness exit 0
+paddle-fill	s63	journalArticle/Batzell - Free Labor, Capitalism and the Antislavery Origins of Chinese Labor Exclusion in 1870s California.pdf	1	no-image	green	ok	0.1	20	0	-	0	0	291	291	0	0	0	0.0000	1.00	-	0.0000	1.00	-	-	-	71320	harness exit 0
+paddle-fill	s64	owner/1954 - Why.pdf	1	other	green	ok	0.1	21	0	-	0	0	186	182	0	4	0	0.0215	0.93	-	0.0215	1.00	1.00	-	-	25479	harness exit 0
+paddle-fill	s65	owner/1957 - Employment on Merit The Continuing Challenge to Business (Joseph J. Morrow).pdf	2	unknown	green	ok	2.5	21	0	-	0	0	508	505	3	0	0	0.0059	1.00	1/1	0.0118	-	-	-	-	65516	harness exit 0
+paddle-fill	s66	book/Cohen_1990_Making a New Deal_Cambridge University Press.pdf	1	dct	green	ok	0.1	20	0	-	0	0	155	155	0	0	0	0.0000	1.00	1/1	0.0000	1.00	1.00	-	-	60884	harness exit 0
+paddle-fill	s67	thesis/Koh - 2008 - Essays on stock options expensing and stock option.pdf	1	jbig2	green	ok	0.8	20	0	-	0	0	74	74	0	0	0	0.0000	1.00	-	0.0000	-	-	-	-	19524	harness exit 0
+falcon-regions	s01	owner/1954 - Why.pdf	2	layered	truth-only	ok	10.5	21	7	245	1	0	8	5	2	1	0	-	-	-	-	0.23	1.00	tink	-	84082	harness exit 1
+falcon-regions	s02	owner/1954 - Why.pdf	6	layered	truth-only	ok	11.7	21	10	1430	1	0	434	434	0	0	0	0.0000	1.00	1/1	0.0000	0.92	1.00	-	-	83364	harness exit 0
+falcon-regions	s03	owner/1954 - Why.pdf	8	layered	green	ok	11.7	20	10	1363	1	0	473	470	3	0	1	0.0085	1.00	1/1	0.0063	-	-	-	-	43328	harness exit 0
+falcon-regions	s04	owner/1954 - Why.pdf	9	layered	red	ok	11.8	21	10	1320	1	0	440	430	4	6	279	0.6568	1.00	1/1	0.0182	0.94	1.00	tcopy	selection	83459	harness exit 1
+falcon-regions	s05	owner/1954 - Why.pdf	10	layered	red	ok	4.0	21	3	2	1	0	0	0	0	0	0	-	-	-	-	0.98	0.00	tcolour	colour	36742	harness exit 1
+falcon-regions	s06	owner/1951 - Briefer Book Notes.pdf	1	jbig2	truth-only	ok	28.5	41	19	3633	1	0	615	612	2	1	3	0.0098	1.00	2/2	0.0033	0.99	-	-	-	102693	harness exit 0
+falcon-regions	s07	owner/1951 - Briefer Book Notes.pdf	3	jbig2	truth-only	ok	22.1	41	16	2357	1	0	654	652	2	0	1	0.0046	1.00	-	0.0046	-	-	-	-	90674	harness exit 0
+falcon-regions	s08	owner/Hughes - The Knitting of Racial Groups in Industry (Desktop copy 2026-09-26).pdf	1	unknown	green	ok	0.1	20	0	-	0	0	136	136	0	0	2	0.0147	1.00	-	0.0000	1.00	1.00	-	-	122728	harness exit 0
+falcon-regions	s09	owner/Hughes - The Knitting of Racial Groups in Industry (Desktop copy 2026-09-26).pdf	6	unknown	red	ok	17.1	21	12	4892	1	0	302	296	6	0	129	0.4470	1.00	3/3	0.0132	1.00	-	tcopy	selection	62303	harness exit 1
+falcon-regions	s10	owner/Bird - 1963 - More Room at the Top Company Experiences in Employing Negroes in Professional and Management Jobs.pdf	3	jbig2	green	ok	18.8	20	14	3342	1	0	444	443	0	1	0	0.0023	1.00	1/2	0.0045	1.00	-	-	-	68842	harness exit 0
+falcon-regions	s11	owner/Bird - 1963 - More Room at the Top Company Experiences in Employing Negroes in Professional and Management Jobs.pdf	5	jbig2	green	ok	19.1	20	14	3340	1	0	472	471	1	0	0	0.0021	1.00	1/1	0.0042	1.00	-	-	-	72487	harness exit 0
+falcon-regions	s12	owner/Leland - 1952 - We Believe in Employment on Merit, but.pdf	2	jbig2	green	ok	18.9	20	14	2004	1	0	458	452	4	2	2	0.0175	1.00	1/1	0.0109	1.00	-	-	-	67816	harness exit 0
+falcon-regions	s13	owner/Leland - 1952 - We Believe in Employment on Merit, but.pdf	5	jbig2	green	ok	16.4	21	11	2043	1	0	447	445	2	0	0	0.0045	1.00	-	0.0045	1.00	-	-	-	61546	harness exit 0
+falcon-regions	s14	owner/Leland - 1952 - We Believe in Employment on Merit, but.pdf	6	jbig2	green	ok	16.0	21	12	2426	1	0	444	444	0	0	0	0.0000	1.00	-	0.0000	-	-	-	-	55536	harness exit 0
+falcon-regions	s15	owner/Delton - 2007 - Before the EEOC How Management Integrated the Workplace.pdf	2	jbig2	green	ok	16.4	21	11	2998	1	0	342	342	0	0	2	0.0058	1.00	2/2	0.0000	1.00	-	-	-	50832	harness exit 0
+falcon-regions	s16	thesis/Zarifa_2008_Emerging Forms of Stratification in Higher Education_.pdf	92	jbig2	green	ok	13.7	21	11	1908	1	0	510	509	1	0	0	0.0020	1.00	-	0.0020	1.00	-	-	-	79839	harness exit 1
+falcon-regions	s17	newspaperArticle/Berendzen_1981_The Soaring Lesson of America in Space_Newsday (1940-1990), Nassau ed.; Long Island, N.Y..pdf	1	newspaper	truth-only	ok	30.1	41	21	1433	1	0	1348	1334	6	8	218	0.1721	0.97	3/3	0.0119	1.00	-	tcopy	-	169640	harness exit 1
+falcon-regions	s18	document/2013 - Silicon Valley Program Transcript.pdf	10	jbig2	green	ok	0.1	20	0	-	0	0	323	323	0	0	0	0.0000	1.00	-	0.0000	1.00	1.00	-	-	291796	harness exit 0
+falcon-regions	s19	journalArticle/Surani et al. - AI for Scaling Legal Reform Mapping and Redacting Racial Covenants in Santa Clara County.pdf	10	jbig2	green	ok	0.2	20	0	-	0	0	643	643	0	0	0	0.0000	1.00	3/3	0.0000	1.00	1.00	-	-	1272435	harness exit 0
+falcon-regions	s20	bookSection/Berger_2013_Toward a Third Industrial Divide_.pdf	18	jbig2	truth-only	ok	17.3	20	12	2301	1	0	470	461	9	0	49	0.1234	0.97	0/1	0.0170	-	-	tcopy	copy	70145	harness exit 1
+falcon-regions	s21	magazineArticle/Glazer_2002_Higher Ed_New Republic.pdf	1	layered	red	ok	30.7	41	24	2520	1	0	1199	1196	3	0	6	0.0075	1.00	2/2	0.0008	0.99	0.00	tcolour	colour	277868	harness exit 1
+falcon-regions	s22	newspaperArticle/___ 2.pdf	1	newspaper	red	ok	73.1	80	47	3424	1	0	3027	2709	223	95	2517	0.9366	1.00	8/9	0.0922	0.86	-	tcopy	find,selection,copy	204010	harness exit 1
+falcon-regions	s23	bookSection/Hyman_2012_Rethinking the Postwar Corporation_Oxford University Press.pdf	8	jbig2	red	ok	29.4	40	24	3341	1	0	911	897	13	1	1	0.0165	1.00	1/1	0.0187	0.00	0.00	tink,tcolour	colour,find	47084	harness exit 1
+falcon-regions	s24	journalArticle/Riesman_1949_Men, Women, and Marriage_Nation.pdf	2	jbig2	green	ok	42.5	61	28	4045	1	0	1049	1048	1	0	2	0.0029	1.00	2/2	0.0076	1.00	-	-	-	127200	harness exit 0
+falcon-regions	s25	magazineArticle/Marth_1982_Why Unions Lose At Many Companies_Nation's Business (pre-1986); Washington.pdf	2	layered	red	ok	22.8	40	16	1630	1	0	672	662	10	0	165	0.2604	0.97	4/4	0.0134	1.00	-	tcopy	selection	79330	harness exit 1
+falcon-regions	s26	document/_1953_99 Cong_ 2.pdf	16	jbig2	red	ok	42.5	61	32	1992	1	0	1538	1531	6	1	2	0.0059	1.00	2/2	0.0052	-	-	-	-	189816	harness exit 0
+falcon-regions	s27	thesis/Ries_Marshall_1955_web.pdf	54	jbig2	truth-only	ok	12.7	20	9	1364	1	0	221	219	0	2	0	0.0090	1.00	-	0.0090	0.97	-	-	legibility	29658	harness exit 1
+falcon-regions	s28	magazineArticle/Kristol_1960_High, Low, and Modern_Encounter.pdf	1	jbig2	red	ok	25.3	41	14	3587	1	0	454	439	5	10	38	0.1167	0.96	4/4	0.0066	1.00	0.00	tcopy,tcolour	colour	64747	harness exit 1
+falcon-regions	s29	report/AI 2027.pdf	54	jbig2	truth-only	ok	0.2	20	0	-	0	0	233	224	1	8	8	0.0730	1.00	-	0.0043	1.00	1.00	tcopy	-	495096	harness exit 1
+falcon-regions	s30	newspaperArticle/_1941_Fiedler's hiring at UM announced_Helena Independent.pdf	1	newspaper	red	ok	94.5	101	61	3112	1	0	3251	2245	815	191	9249	3.1544	0.96	9/11	0.1169	0.73	-	tcopy	find,selection,copy	344885	harness exit 1
+falcon-regions	s31	bookSection/Allen_2011_The Origins of Political Philosophy_Oxford University Press.pdf	8	jbig2	green	ok	26.8	41	17	2594	1	0	607	607	0	0	0	0.0000	1.00	-	0.0000	1.00	-	-	-	86768	harness exit 0
+falcon-regions	s32	owner/1954 - Why.pdf	3	jbig2	truth-only	ok	9.1	21	7	1616	1	0	309	306	3	0	0	0.0097	1.00	2/2	0.0065	1.00	-	-	-	29541	harness exit 0
+falcon-regions	s33	owner/1954 - Why.pdf	4	layered	truth-only	ok	11.8	20	10	1363	1	0	504	491	5	8	0	0.0258	0.96	2/2	0.0198	0.57	1.00	-	-	88446	harness exit 0
+falcon-regions	s34	owner/1954 - Why.pdf	7	layered	truth-only	ok	11.4	21	10	1740	1	0	473	471	2	0	0	0.0042	1.00	1/1	0.0021	0.69	1.00	-	-	83511	harness exit 0
+falcon-regions	s35	owner/1951 - Briefer Book Notes.pdf	2	jbig2	green	ok	19.9	21	15	1728	1	0	668	666	0	2	1	0.0045	1.00	1/1	0.0030	1.00	-	-	-	88856	harness exit 0
+falcon-regions	s36	owner/1951 - Briefer Book Notes.pdf	5	jbig2	green	ok	20.0	21	15	2207	1	0	588	586	2	0	2	0.0068	1.00	-	0.0102	-	-	-	-	83908	harness exit 0
+falcon-regions	s37	owner/1951 - Briefer Book Notes.pdf	6	jbig2	green	ok	20.5	41	14	1846	1	0	647	647	0	0	0	0.0000	1.00	-	0.0015	-	-	-	-	89570	harness exit 0
+falcon-regions	s38	owner/Hughes - The Knitting of Racial Groups in Industry (Desktop copy 2026-09-26).pdf	2	unknown	green	ok	22.9	41	17	3364	1	0	624	622	2	0	1	0.0048	1.00	4/5	0.0032	1.00	-	-	-	53273	harness exit 0
+falcon-regions	s39	owner/Hughes - The Knitting of Racial Groups in Industry (Desktop copy 2026-09-26).pdf	8	unknown	green	ok	29.9	41	23	3742	1	0	769	769	0	0	1	0.0013	1.00	1/1	0.0000	-	-	-	-	56416	harness exit 0
+falcon-regions	s40	newspaperArticle/Glazer_2003_Neoconservatives, Then and Now_New York Times.pdf	1	newspaper	green	ok	14.0	20	9	1411	1	0	216	216	0	0	3	0.0139	1.00	0/1	0.0046	1.00	-	-	find	31671	harness exit 1
+falcon-regions	s41	newspaperArticle/Gitlin_2000_How Our Crowd Got Lonely_New York Times.pdf	1	newspaper	truth-only	ok	35.9	41	28	1432	1	0	1497	1448	35	14	19	0.0454	0.93	2/2	0.0247	0.36	-	tink	-	117330	harness exit 1
+falcon-regions	s42	newspaperArticle/Zipkin_2000_Management.pdf	1	newspaper	truth-only	ok	15.3	20	12	1962	1	0	339	318	0	21	1	0.0649	1.00	4/4	0.0029	0.89	-	tcopy	-	78249	harness exit 1
+falcon-regions	s43	newspaperArticle/_1926_Cox resigns, following most severe public criticism that ever has been_Anaconda Standard.pdf	1	newspaper	red	ok	124	141	64	2050	1	0	3277	1819	1271	187	6922	2.5572	0.64	3/4	0.2426	0.51	-	tcopy,tfind	find,selection,copy	260619	harness exit 1
+falcon-regions	s44	newspaperArticle/Williams_1958_DEMOCRACY OR MERITOCRACY_The Manchester Guardian (1901-1959); Manchester (UK).pdf	1	newspaper	red	ok	37.6	40	26	3102	1	0	1269	1196	72	1	2387	1.9385	0.93	3/3	0.0355	-	-	tcopy	selection	163678	harness exit 1
+falcon-regions	s45	newspaperArticle/___.pdf	1	newspaper	red	ok	137	141	101	3725	1	0	3778	3325	293	160	7671	2.1503	0.97	13/18	0.0627	1.00	-	tcopy	selection,copy	3491200	harness exit 1
+falcon-regions	s46	newspaperArticle/_1931_Again, press most excited about Frontier's history section_Helena Daily Independent.pdf	1	newspaper	red	ok	146	161	82	1547	1	0	5339	3543	1643	153	13501	2.8651	0.76	3/4	0.1455	0.80	-	tcopy,tfind	find,selection,copy	337122	harness exit 1
+falcon-regions	s47	newspaperArticle/___ 4.pdf	1	newspaper	red	ok	37.0	41	25	2510	1	0	1526	1405	121	0	4725	3.1756	0.97	4/5	0.0701	0.88	-	tcopy	selection	488713	harness exit 1
+falcon-regions	s48	book/Morgan_1975_American Slavery, American Freedom_Norton.pdf	1	dct	green	ok	0.1	21	0	-	0	0	162	157	0	5	0	0.0309	0.90	-	0.0309	1.00	1.00	-	-	72014	harness exit 0
+falcon-regions	s49	thesis/NAYLOR_Arthur E.pdf	67	jbig2	green	ok	16.9	21	12	2258	1	0	393	380	1	12	7	0.0509	0.97	-	0.0280	-	-	tcopy	-	60211	harness exit 1
+falcon-regions	s50	report/AI 2027.pdf	1	layered	green	ok	0.2	21	0	-	0	0	27	27	0	0	0	0.0000	1.00	-	0.0000	1.00	1.00	-	-	31530	harness exit 0
+falcon-regions	s51	thesis/Schwaller - 2026 - Silicon Valley Landscapes Architecture and the Soft Power of Big Tech.pdf	75	no-image	green	ok	0.2	21	0	-	0	0	488	488	0	0	0	0.0000	1.00	1/1	0.0000	1.00	-	-	-	252683	harness exit 0
+falcon-regions	s52	journalArticle/Burke - The Expansion of American Higher Education.pdf	1	other	green	ok	0.1	20	0	-	0	0	272	269	0	3	0	0.0110	0.97	2/2	0.0221	1.00	1.00	-	-	237719	harness exit 0
+falcon-regions	s53	owner/Sewell - 1999 - Contracting racial equality Affirmative action policy and practice in the United States, 1945-1970.pdf	244	unknown	green	ok	14.1	21	12	1913	1	0	359	355	4	0	2	0.0167	1.00	-	0.0111	1.00	-	-	-	59962	harness exit 0
+falcon-regions	s54	journalArticle/Wilson_1975_Review of The Welfare State and Equality_Journal of Economic Literature.pdf	1	dct	green	ok	0.1	21	0	-	0	0	153	153	0	0	0	0.0000	1.00	-	0.0000	1.00	1.00	-	-	118895	harness exit 0
+falcon-regions	s55	thesis/Drumright - 2005 - A river for war, a watershed to change The Tennessee Valley Authority during World War II.pdf	60	jbig2	green	ok	13.7	21	12	3428	1	0	323	320	3	0	2	0.0155	1.00	-	0.0124	1.00	-	-	-	68495	harness exit 0
+falcon-regions	s56	bookSection/Krippner__The political economy of financial exuberance_Emerald Group Publishing Limited.pdf	30	layered	green	ok	14.0	20	12	1862	1	0	463	463	0	0	0	0.0000	1.00	-	0.0000	-	-	-	-	54860	harness exit 0
+falcon-regions	s57	journalArticle/Batzell - Free Labor, Capitalism and the Antislavery Origins of Chinese Labor Exclusion in 1870s California.pdf	14	no-image	green	ok	0.1	20	0	-	0	0	480	480	0	0	0	0.0000	1.00	1/1	0.0000	1.00	-	-	-	72379	harness exit 0
+falcon-regions	s58	book/Westad_2005_The Global Cold War_Cambridge University Press.pdf	1	other	green	ok	0.1	20	0	-	0	0	155	155	0	0	0	0.0000	1.00	-	0.0000	1.00	1.00	-	-	61311	harness exit 0
+falcon-regions	s59	owner/Hughes - The Knitting of Racial Groups in Industry (Desktop copy 2026-09-26).pdf	3	unknown	green	ok	26.1	41	19	2221	1	0	743	740	2	1	1	0.0054	1.00	1/1	0.0067	1.00	-	-	-	54999	harness exit 0
+falcon-regions	s60	owner/Hughes - The Knitting of Racial Groups in Industry.pdf	1	dct	green	ok	0.1	20	0	-	0	0	136	136	0	0	0	0.0000	1.00	-	0.0000	1.00	1.00	-	-	122545	harness exit 0
+falcon-regions	s61	document/_1979_Ideology of American Neo-Conservatism_.pdf	4	jbig2	green	ok	21.8	40	12	1744	1	0	493	492	1	0	4	0.0101	1.00	-	0.0020	-	-	-	-	100994	harness exit 0
+falcon-regions	s62	book/Riesman - 1954 - Individualism reconsidered, and other essays.pdf	16	layered	green	ok	22.6	41	14	3273	1	0	472	472	0	0	0	0.0000	1.00	-	0.0021	1.00	-	-	-	334533	harness exit 0
+falcon-regions	s63	journalArticle/Batzell - Free Labor, Capitalism and the Antislavery Origins of Chinese Labor Exclusion in 1870s California.pdf	1	no-image	green	ok	0.1	20	0	-	0	0	291	291	0	0	0	0.0000	1.00	-	0.0000	1.00	-	-	-	71320	harness exit 0
+falcon-regions	s64	owner/1954 - Why.pdf	1	other	green	ok	0.1	21	0	-	0	0	186	182	0	4	0	0.0215	0.93	-	0.0215	1.00	1.00	-	-	25479	harness exit 0
+falcon-regions	s65	owner/1957 - Employment on Merit The Continuing Challenge to Business (Joseph J. Morrow).pdf	2	unknown	green	ok	17.3	21	14	3050	1	0	508	507	1	0	1	0.0039	1.00	1/1	0.0059	-	-	-	-	65785	harness exit 0
+falcon-regions	s66	book/Cohen_1990_Making a New Deal_Cambridge University Press.pdf	1	dct	green	ok	0.1	20	0	-	0	0	155	155	0	0	0	0.0000	1.00	1/1	0.0000	1.00	1.00	-	-	60884	harness exit 0
+falcon-regions	s67	thesis/Koh - 2008 - Essays on stock options expensing and stock option.pdf	1	jbig2	green	ok	6.0	21	5	1365	1	0	74	74	0	0	0	0.0000	1.00	-	0.0000	-	-	-	-	19522	harness exit 0
