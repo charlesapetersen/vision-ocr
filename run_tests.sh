@@ -285,7 +285,13 @@ echo "run_tests: binaries ready in $(( $(date +%s) - c_t0 ))s ($BUILT )"
 # on its swiftc. test-lock.sh, which callers wrap this script in, still holds test.lock over both; it passes
 # its lock directory (touched while this waits, so test.lock is not broken as stale) and its label.
 HEAVY="${VISIONOCR_MAC_HEAVY:-ops/autonomous/mac-heavy-lock.sh}"
-RUN=(env VISIONOCR_HELPER="$PWD/$HELPER" VISIONOCR_PLATE_FIXTURES="$PWD/$PLATES" "./$BIN")
+# light-tier (lt-sections): one TSV per run of each section's checks and seconds, beside suite-timings.tsv,
+# kept a fortnight. VISIONOCR_SECTION_TIMINGS names another path.
+SECTIONS_DIR="$STATE_DIR/section-timings"
+SECTION_TSV="${VISIONOCR_SECTION_TIMINGS:-$SECTIONS_DIR/$(date +%Y%m%d-%H%M%S)-$$.tsv}"
+[ -n "${VISIONOCR_SECTION_TIMINGS:-}" ] || find "$SECTIONS_DIR" -name '*.tsv' -mtime +14 -delete 2>/dev/null || true
+RUN=(env VISIONOCR_HELPER="$PWD/$HELPER" VISIONOCR_PLATE_FIXTURES="$PWD/$PLATES"
+     VISIONOCR_SECTION_TIMINGS="$SECTION_TSV" "./$BIN")
 rc=0
 if [ -x "$HEAVY" ]; then
   MAC_HEAVY_TOUCH="${VISIONOCR_TEST_LOCK_DIR:-}" "$HEAVY" run --label "${VISIONOCR_SUITE_LABEL:-suite}" -- "${RUN[@]}" || rc=$?

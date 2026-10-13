@@ -1770,10 +1770,16 @@ say so in the commit.
       subprocess, jbig2 and qpdf sites. A static count finds 47 of the 108 sections (about 415 checks) with no
       direct call to any of them, but they share globals (`sample`, `tmp`, `d`, `resetPrefs`) and nothing times a
       section today. Evidence: `VISION-OCR-TEST-LOAD-2026-10-07.md`, changes F and G.
-      - [ ] **lt-sections** — add `section("name") { … }`, which records a section's wall time to a per-run TSV
+      - [x] **lt-sections** — add `section("name") { … }`, which records a section's wall time to a per-run TSV
         beside `suite-timings.tsv`, and wrap the sections in the first half of `Tests/main.swift` (to about line
         10,000) with it. (uses: build) Globals a later section reads stay global. DONE WHEN the suite's check count
         and pass set are unchanged and every check in that half sits inside a named section. ESTIMATE: 1 session.
+        Done 2026-10-13: 38 sections, through C30 (the C34 section starts the rest). Measured: base 1882/1882,
+        after 1884/1884; the sorted ok sets differ only by the run's pid label and the two new checks
+        (every check so far ran in a section; the TSV has a row per section). The 38 hold 812 checks and
+        137.7 s; "automatic per-page image mode" alone is 188 checks, 43.7 s. Rows go to
+        `$STATE/section-timings/<stamp>.tsv`, kept 14 days. Section names contain commas (the C56 one), so
+        lt-tier's `VISIONOCR_SECTIONS=a,b` needs another separator or a short id.
       - [ ] **lt-sections-rest** — wrap the remaining sections the same way. (blocked-on: lt-sections)
         (uses: build) DONE WHEN the suite's check count and pass set are unchanged, every check sits inside a named
         section, and one full run's per-section times are committed. ESTIMATE: 1 session.

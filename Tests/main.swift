@@ -100,8 +100,47 @@ func skipBlock(_ label: String, checks n: Int, because reason: String) {
     print("  SKIP \(label) — \(n) check(s) not run: \(reason)")
 }
 
+/// light-tier (lt-sections). Each block of checks runs inside `section`, which prints its
+/// heading and records its wall time, checks and failures. The bodies are not re-indented:
+/// `section("…") {` and `}  // end of section` sit at column 0 around the `do` blocks, and
+/// helpers a later section calls stay global, outside any section. Sections do not nest.
+/// VISIONOCR_SECTION_TIMINGS names a TSV that gets one row per section as it finishes;
+/// run_tests.sh puts one per run beside suite-timings.tsv.
+var currentSection: String?
+var checksOutsideSections = 0
+var sectionsRun = 0
+var sectionTimingsStarted = false
+let sectionTimings = ProcessInfo.processInfo.environment["VISIONOCR_SECTION_TIMINGS"]
+    .flatMap { $0.isEmpty ? nil : URL(fileURLWithPath: $0) }
+func noteSection(_ row: String) {
+    guard let url = sectionTimings else { return }
+    // The run's first row starts the file afresh, so a path named twice holds one run.
+    if !sectionTimingsStarted {
+        sectionTimingsStarted = true
+        try? FileManager.default.createDirectory(at: url.deletingLastPathComponent(),
+                                                 withIntermediateDirectories: true)
+        try? "section\tchecks\tfailures\tseconds\n".write(to: url, atomically: false, encoding: .utf8)
+    }
+    guard let h = try? FileHandle(forWritingTo: url) else { return }
+    _ = try? h.seekToEnd()
+    try? h.write(contentsOf: Data((row + "\n").utf8))
+    try? h.close()
+}
+func section(_ name: String, _ body: () -> Void) {
+    precondition(currentSection == nil, "section '\(name)' opened inside '\(currentSection ?? "")'")
+    print("\n" + name)
+    currentSection = name
+    let c0 = checks, f0 = failures, t0 = Date()
+    body()
+    let secs = Date().timeIntervalSince(t0)
+    currentSection = nil
+    sectionsRun += 1
+    noteSection("\(name)\t\(checks - c0)\t\(failures - f0)\t\(String(format: "%.2f", secs))")
+}
+
 func check(_ label: String, _ condition: Bool, _ detail: String = "") {
     checks += 1
+    if currentSection == nil { checksOutsideSections += 1 }
     if condition {
         print("  ok   \(label)")
     } else {
@@ -180,7 +219,7 @@ func resetPrefs() {
 }
 resetPrefs()
 
-print("\nthe suite's preferences domain is its own")
+section("the suite's preferences domain is its own") {
 do {
     // Written through the store, read back by domain name: a store left on
     // `.standard` puts the sentinel in `tests.plist`, where every suite writes.
@@ -214,6 +253,7 @@ do {
           offenders.joined(separator: " | "))
     Prefs.store.removeObject(forKey: sentinel)
 }
+}  // end of section
 
 // MARK: - Fixtures
 
@@ -518,7 +558,7 @@ func runAndList(_ label: String, outDir: URL) -> (ok: Bool, message: String, fil
 // before a run ("recognition languages this Mac actually has"), and what a run
 // will do is still previewed in Settings.
 
-print("\nend-to-end runs")
+section("end-to-end runs") {
 
 do {
     resetPrefs()
@@ -577,6 +617,7 @@ do {
     check("…and a document with text says nothing about being empty",
           !message.contains("no text was found"), message)
 }
+}  // end of section
 
 // MARK: - The text route's cancel handling (A2.2's text half, and R63)
 
@@ -594,7 +635,7 @@ do {
 // every in-flight file, reason "Cancelled.", counted them as failures in the run
 // report, and left them in `failedFiles` for Retry Failed to offer.
 
-print("\ncancelling a text extraction neither publishes nor lies about it")
+section("cancelling a text extraction neither publishes nor lies about it") {
 
 do {
     resetPrefs()
@@ -668,6 +709,7 @@ do {
           modelSource.contains("Self.outcome(for: error,"),
           modelSource.isEmpty ? "could not read Model.swift" : "it does not")
 }
+}  // end of section
 
 // MARK: - A document Vision reads nothing from says so (A13.2)
 
@@ -681,7 +723,7 @@ do {
 // black, which produces exactly this signature. On a one-page document the user was
 // told it succeeded and told nothing else at all.
 
-print("\na document with no text on any page says so")
+section("a document with no text on any page says so") {
 
 do {
     resetPrefs()
@@ -799,10 +841,11 @@ do {
           atSmallest.contains("smallest files"), atSmallest)
     resetPrefs()
 }
+}  // end of section
 
 // MARK: - Words broken across a line
 
-print("\nrejoining hyphenated words")
+section("rejoining hyphenated words") {
 
 do {
     // Two stacked lines, the first ending in a hyphen. Boxes are what the rule
@@ -1028,10 +1071,11 @@ do {
               offText.contains("cracy have been described"))
     }
 }
+}  // end of section
 
 // MARK: - Saying so when the copy is larger than the original
 
-print("\nreporting a copy larger than its original")
+section("reporting a copy larger than its original") {
 
 do {
     let dir = tmp.appendingPathComponent("sizenote")
@@ -1072,6 +1116,7 @@ do {
           OCRModel.sizeNote(from: small, to: big).contains("KB"),
           OCRModel.sizeNote(from: small, to: big))
 }
+}  // end of section
 
 // MARK: - The unplaced-lines message carries no document text (A4.1)
 
@@ -1081,7 +1126,7 @@ do {
 // carry text.prefix(24) for up to three lines: 72 characters of the user's own
 // document, with the page numbers to locate them by. It is also spoken aloud.
 
-print("\nthe unplaced-lines message names pages, not text")
+section("the unplaced-lines message names pages, not text") {
 
 do {
     // Text a reader would recognise instantly if it turned up in a shared file.
@@ -1117,10 +1162,11 @@ do {
             && OCRModel.unplacedSummary(many).hasSuffix("…"),
           OCRModel.unplacedSummary(many))
 }
+}  // end of section
 
 // MARK: - Batch presets
 
-print("\npresets")
+section("presets") {
 
 do {
     resetPrefs()
@@ -1306,6 +1352,7 @@ do {
           names.filter { $0.lowercased().contains("preset") }.joined(separator: ", "))
     resetPrefs()
 }
+}  // end of section
 
 // MARK: - Forced re-OCR
 
@@ -1314,7 +1361,7 @@ do {
 // one string but its embedded text layer says another, so the output identifies
 // which one was actually read.
 
-print("\nforced re-OCR of already-OCR'd input")
+section("forced re-OCR of already-OCR'd input") {
 
 do {
     let trap = tmp.appendingPathComponent("decoy.pdf")
@@ -1343,6 +1390,7 @@ do {
           Prefs.store.bool(forKey: Prefs.rebuildImages))
     resetPrefs()
 }
+}  // end of section
 
 // MARK: - Rebuilding away an old text layer
 
@@ -1350,7 +1398,7 @@ do {
 // layer on top of any existing one, so already-OCR'd input is rebuilt as images
 // first. These checks prove the old text is gone and the new text isn't doubled.
 
-print("\nrebuild removes the old text layer")
+section("rebuild removes the old text layer") {
 
 do {
     resetPrefs()
@@ -1400,6 +1448,7 @@ do {
     check("rebuild is on by default", Prefs.store.bool(forKey: Prefs.rebuildImages))
     resetPrefs()
 }
+}  // end of section
 
 // MARK: - Per-page bilevel vs greyscale
 
@@ -1408,7 +1457,6 @@ do {
 // unreadable), while forcing greyscale multiplies the size of a text-only book.
 // Automatic mode decides per page from ink coverage.
 
-print("\nautomatic per-page image mode")
 
 /// A page dark enough to read as a picture rather than text.
 /// Mean colour of a rendered page, for checking that colour survived a route.
@@ -1547,6 +1595,7 @@ func makeDarkPDF(at url: URL) {
     pdf.beginPDFPage(nil); pdf.draw(cg, in: box); pdf.endPDFPage(); pdf.closePDF()
 }
 
+section("automatic per-page image mode") {
 do {
     resetPrefs()
     check("automatic is the default rebuild mode",
@@ -4313,6 +4362,7 @@ do {
           leftSet == nil ? "nil" : String(format: "%.4f", leftSet!))
     resetPrefs()
 }
+}  // end of section
 
 // MARK: - R56 / R57: the eight routing fixtures, routed
 
@@ -4342,7 +4392,7 @@ do {
 // The tool's own header carries this; it is repeated here because a check is read far
 // more often than the fixture behind it.
 
-print("\nthe eight routing fixtures route the way R56 and R57 say they must")
+section("the eight routing fixtures route the way R56 and R57 say they must") {
 
 do {
     resetPrefs()
@@ -4583,10 +4633,10 @@ do {
         } else { check("the pale-drawing fixture layers", false) }
     }
 }
+}  // end of section
 
 // MARK: - R38: heavy ink is not on its own a picture
 
-print("\ndense bilevel type is routed to 1-bit, not to the picture path")
 
 /// A page built from exact 8-bit grey values, so ink and tone are *set* rather
 /// than hoped for. `NSColor(calibratedWhite:)` does not put the byte you asked
@@ -4620,6 +4670,7 @@ func makeGreyValuePDF(at url: URL, inkFraction: Double,
 // the fix held 26% of the stroke pixels, so the rest survived only in the background at
 // an eighth of the page's resolution. The same stems at 10-59 on paper at 250 are the
 // dark-ink control, which the stretch must leave alone.
+section("dense bilevel type is routed to 1-bit, not to the picture path") {
 do {
     resetPrefs()
     let dir = tmp.appendingPathComponent("c54-\(UUID().uuidString)")
@@ -4789,10 +4840,11 @@ do {
           routed(cor, "c") == ["jpeg"], routed(cor, "c2").joined(separator: ","))
     resetPrefs()
 }
+}  // end of section
 
 // MARK: - JBIG2 compression
 
-print("\nJBIG2 compression of the page images")
+section("JBIG2 compression of the page images") {
 
 do {
     resetPrefs()
@@ -4918,6 +4970,7 @@ do {
     }
     resetPrefs()
 }
+}  // end of section
 
 // MARK: - Word spacing in the text layer
 
@@ -4925,7 +4978,7 @@ do {
 // space characters, so extractors merge roughly a third of them. Ours writes one
 // run per line, spaces included. This guards that difference.
 
-print("\nword spacing in the searchable PDF")
+section("word spacing in the searchable PDF") {
 
 do {
     resetPrefs()
@@ -4984,6 +5037,7 @@ do {
     // about — `uniqueOutputs` deciding one distinct destination per input — is
     // asserted directly in "output naming".
 }
+}  // end of section
 
 // MARK: - Bidirectional text
 
@@ -5001,7 +5055,7 @@ do {
 // So: guard the PDFKit round-trip, so a change to draw() cannot silently start
 // reversing right-to-left lines.
 
-print("\nright-to-left text")
+section("right-to-left text") {
 
 do {
     resetPrefs()
@@ -5059,6 +5113,7 @@ do {
     }
     resetPrefs()
 }
+}  // end of section
 
 // MARK: - Unplaced lines belong to the file that lost them
 
@@ -5070,7 +5125,7 @@ do {
 // compose now returns them. This asserts the property that makes the race
 // impossible — each caller sees exactly its own losses, under real concurrency.
 
-print("\nunplaced lines are reported per file")
+section("unplaced lines are reported per file") {
 
 do {
     resetPrefs()
@@ -5129,10 +5184,11 @@ do {
           bCounts == [0], "saw \(bCounts.sorted())")
     resetPrefs()
 }
+}  // end of section
 
 // MARK: - The drop box
 
-print("\ndrop box")
+section("drop box") {
 
 do {
     // Exactly what Finder supplies on a drop: a provider carrying a file URL.
@@ -5224,10 +5280,11 @@ do {
     check("a cancelled control refuses the work before it starts", control.isCancelled)
     // Mid-run cancellation of a real batch is covered under "batch accounting".
 }
+}  // end of section
 
 // MARK: - Concurrency control
 
-print("\nconcurrency")
+section("concurrency") {
 
 do {
     let n = Prefs.defaultConcurrency
@@ -5278,6 +5335,7 @@ do {
     check("a released process isn't terminated by a later cancel", released.isRunning)
     released.terminate()
 }
+}  // end of section
 
 // MARK: - Batch accounting
 
@@ -5285,7 +5343,6 @@ do {
 // back exactly once, including ones cancelled before they ever launched, or the
 // batch never reaches its total and the UI stays stuck on "Running…".
 
-print("\nbatch accounting")
 
 /// Pumps the main run loop until `predicate` holds or the deadline passes.
 /// The model is main-actor bound, so the main thread has to stay free to serve it.
@@ -5297,6 +5354,7 @@ func pump(until predicate: @escaping () -> Bool, seconds: TimeInterval) -> Bool 
     return predicate()
 }
 
+section("batch accounting") {
 do {
     let inDir = tmp.appendingPathComponent("batch-in")
     let outDir = tmp.appendingPathComponent("batch-out")
@@ -5395,6 +5453,7 @@ do {
     }
     resetPrefs()
 }
+}  // end of section
 
 // MARK: - The whole searchable pipeline, end to end
 
@@ -5403,7 +5462,7 @@ do {
 // cleanup step had already deleted, so it saw -1 pages and refused to publish.
 // Nothing short of running the real function catches that.
 
-print("\nsearchable PDF, end to end")
+section("searchable PDF, end to end") {
 
 do {
     resetPrefs()
@@ -5454,6 +5513,7 @@ do {
     }
     resetPrefs()
 }
+}  // end of section
 
 // MARK: - Output names never collide
 
@@ -5461,7 +5521,7 @@ do {
 // output path, so the second silently overwrote the first — and under
 // concurrency they raced for it.
 
-print("\noutput naming")
+section("output naming") {
 
 do {
     resetPrefs()
@@ -5493,6 +5553,7 @@ do {
     // `uniqueOutputs` above is the whole of that decision now.
     resetPrefs()
 }
+}  // end of section
 
 // MARK: - The text layer tracks per-page size
 
@@ -5502,7 +5563,7 @@ do {
 // had the wrong shape, qpdf scaled it onto the image layer, and the text drifted
 // down by up to a full line — which made the first line of a selection vanish.
 
-print("\ntext layer page geometry")
+section("text layer page geometry") {
 
 do {
     resetPrefs()
@@ -5554,6 +5615,7 @@ do {
           "\(Int(p2.width))x\(Int(p2.height))")
     resetPrefs()
 }
+}  // end of section
 
 // MARK: - Closely-spaced lines stay selectable
 
@@ -5563,7 +5625,7 @@ do {
 // them as separate lines: dragging over the paragraph silently skipped its last
 // line. Geometry taken from a real page 76.
 
-print("\nclosely-spaced lines")
+section("closely-spaced lines") {
 
 do {
     resetPrefs()
@@ -5604,6 +5666,7 @@ do {
           text.replacingOccurrences(of: "\n", with: " / "))
     resetPrefs()
 }
+}  // end of section
 
 // MARK: - Rotated pages
 
@@ -5612,7 +5675,6 @@ do {
 // that Vision read as completely blank, and later a portrait bitmap stretched
 // into a landscape page box.
 
-print("\nrotated pages")
 
 /// A landscape sheet whose text is drawn sideways, as a sideways scan would be.
 func makeSidewaysPDF(at url: URL, text: String) {
@@ -5635,6 +5697,7 @@ func makeSidewaysPDF(at url: URL, text: String) {
     pdf.beginPDFPage(nil); pdf.draw(cg, in: box); pdf.endPDFPage(); pdf.closePDF()
 }
 
+section("rotated pages") {
 do {
     resetPrefs()
     let dir = tmp.appendingPathComponent("rotate")
@@ -5761,10 +5824,11 @@ do {
           text.trimmingCharacters(in: .whitespacesAndNewlines))
     resetPrefs()
 }
+}  // end of section
 
 // MARK: - C36: sideways text is selectable along its printed line
 
-print("\nsideways text gets a layer along its printed line (C36)")
+section("sideways text gets a layer along its printed line (C36)") {
 
 do {
     resetPrefs()
@@ -5881,10 +5945,11 @@ do {
           order.count == 3 && order == order.sorted(), turnedText.replacingOccurrences(of: "\n", with: " / "))
     resetPrefs()
 }
+}  // end of section
 
 // MARK: - C39: a page pasted up from strips is read one strip at a time
 
-print("\na page pasted up from scanned strips is read strip by strip (C39)")
+section("a page pasted up from scanned strips is read strip by strip (C39)") {
 
 do {
     resetPrefs()
@@ -6146,10 +6211,11 @@ do {
           "\(String(describing: outcome)) \(published.prefix(120))")
     resetPrefs()
 }
+}  // end of section
 
 // MARK: - C56: a 1-bit page keeps its source's stroke weight
 
-print("\na 1-bit page keeps the source's stroke weight, and its faint marks (C56)")
+section("a 1-bit page keeps the source's stroke weight, and its faint marks (C56)") {
 do {
     // Antialiased small type on white, as a scan's grey edges arrive, and a square
     // at 140 with no dark core: under Otsu's threshold, over the strokes' midpoint.
@@ -6333,10 +6399,11 @@ do {
               false, "no layers")
     }
 }
+}  // end of section
 
 // MARK: - C37: a scan that is already 1-bit JBIG2 keeps its own stream
 
-print("\na 1-bit JBIG2 source page keeps its own stream (C37)")
+section("a 1-bit JBIG2 source page keeps its own stream (C37)") {
 
 do {
     resetPrefs()
@@ -6912,10 +6979,11 @@ do {
     }
     resetPrefs()
 }
+}  // end of section
 
 // MARK: - A layered scan keeps its own images (C47)
 
-print("\na layered scan keeps its own images, without its text (C47)")
+section("a layered scan keeps its own images, without its text (C47)") {
 
 do {
     resetPrefs()
@@ -7224,6 +7292,7 @@ do {
     }
     resetPrefs()
 }
+}  // end of section
 
 // MARK: - Same-named inputs are tracked separately
 
@@ -7232,7 +7301,7 @@ do {
 // so the bar read 0.25 where it should read 0.5, and
 // `inFlight.removeAll { $0 == name }` dropped both when the first finished.
 
-print("\ntwo inputs with the same name")
+section("two inputs with the same name") {
 
 do {
     resetPrefs()
@@ -7274,6 +7343,7 @@ do {
     check("…which keying by name did not", byName.count == 1, "\(byName.count)")
     resetPrefs()
 }
+}  // end of section
 
 // MARK: - The streaming read, retired with the subprocess it served
 
@@ -7296,7 +7366,7 @@ do {
 // past a SIGTERM-proof child is checked immediately below and still matters:
 // jbig2 and qpdf are children.
 
-print("\nstop() escalates past a child that ignores SIGTERM")
+section("stop() escalates past a child that ignores SIGTERM") {
 
 do {
     // terminate() alone leaves a SIGTERM-ignoring child running for ever.
@@ -7315,6 +7385,7 @@ do {
           !p.isRunning && took < 5, String(format: "running=%@ took=%.2fs",
                                            p.isRunning ? "yes" : "no", took))
 }
+}  // end of section
 
 // MARK: - A small image must not set the whole page's resolution
 
@@ -7325,7 +7396,7 @@ do {
 // 1.9 DPI — a 595x841 pt page rebuilt as 16x23 pixels, reported as a success
 // because the page count still matched.
 
-print("\na logo does not set the page's rebuild resolution")
+section("a logo does not set the page's rebuild resolution") {
 
 do {
     resetPrefs()
@@ -8319,10 +8390,11 @@ do {
     }
     resetPrefs()
 }
+}  // end of section
 
 // MARK: - C39: a layered scan's type is kept at its mask's resolution
 
-print("\na layered scan's type is kept at the resolution of its mask (C39)")
+section("a layered scan's type is kept at the resolution of its mask (C39)") {
 
 do {
     resetPrefs()
@@ -9202,6 +9274,7 @@ do {
     }
     resetPrefs()
 }
+}  // end of section
 
 // MARK: - The document outline survives, and the text layer is unharmed
 
@@ -9212,7 +9285,7 @@ do {
 // most delicate thing here. Both halves are checked: the outline arrives AND
 // the text layer still extracts and still sits on the ink.
 
-print("\nthe document outline survives OCR")
+section("the document outline survives OCR") {
 
 do {
     resetPrefs()
@@ -9343,6 +9416,7 @@ do {
           String(embeddedText(of: plainOut).prefix(80)))
     resetPrefs()
 }
+}  // end of section
 
 // MARK: - Files cannot join a run that has already started
 
@@ -9353,7 +9427,7 @@ do {
 // Gating only the Add… button left the two other ways in — the drop zone and
 // files handed over by Finder — so the guard belongs here, where all three meet.
 
-print("\nfiles added during a run")
+section("files added during a run") {
 
 do {
     resetPrefs()
@@ -9423,8 +9497,9 @@ do {
     }
     resetPrefs()
 }
+}  // end of section
 
-print("\npages far too big for a recogniser to refuse")
+section("pages far too big for a recogniser to refuse") {
 
 do {
     // This block was mostly `recogniserDPICeiling`: mac-ocr refused a page over
@@ -9479,10 +9554,11 @@ do {
     }
     resetPrefs()
 }
+}  // end of section
 
 // MARK: - C30: a page Vision half-reads is read again in overlapping bands
 
-print("\nrecognising a page again in overlapping bands (C30)")
+section("recognising a page again in overlapping bands (C30)") {
 
 do {
     resetPrefs()
@@ -10640,6 +10716,19 @@ do {
               && Recogniser.unspanned(largeType, by: [], pageHeight: 4000, lineHeight: 40,
                                       pageWidth: 4000).count == 1)
     resetPrefs()
+}
+}  // end of section
+
+// lt-sections. Everything above runs in named sections; lt-sections-rest wraps the rest
+// and moves this check to the end of the file.
+check("every check so far ran inside a named section",
+      checksOutsideSections == 0, "\(checksOutsideSections) outside")
+if let url = sectionTimings {
+    let rows = ((try? String(contentsOf: url, encoding: .utf8)) ?? "")
+        .split(separator: "\n").dropFirst()
+    check("…and the timing file has one row per section that ran, with its checks",
+          rows.count == sectionsRun && rows.allSatisfy { $0.split(separator: "\t").count == 4 },
+          "\(rows.count) rows for \(sectionsRun) sections at \(url.path)")
 }
 
 // MARK: - C34: the text layer reads down each column
@@ -22753,6 +22842,8 @@ do {
 }
 
 resetPrefs()
+noteSection("(outside any section)\t\(checksOutsideSections)\t\t")
+if checksOutsideSections > 0 { print("\n\(checksOutsideSections) check(s) ran outside a named section") }
 
 // A11.7. Measured, not documented. The census used to live in `ARCHITECTURE.md` as
 // a number that was wrong by 57, and five of the eight blocks left no trace at all
