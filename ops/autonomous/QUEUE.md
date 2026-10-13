@@ -1852,7 +1852,7 @@ These are offered to nobody. `next-item.sh` prints them as `hold` so they stay v
       measured figures, so the question here becomes which readers give a real advantage for which kind, answered
       from `OCR-COMPARE-DECISION-<date>.md` (blocked-on: ocr-compare-report). An interactive
       session shows the owner the options as a choice and records the answer here. [hold] needs: owner — the choice of route is the owner's.
-- [ ] **model-night-ok** — the owner says the Mac is free for a night, so a long model job may start: ocr-bakeoff-bits'
+- [x] **model-night-ok** — the owner says the Mac is free for a night, so a long model job may start: ocr-bakeoff-bits'
       4-6 hours, ocr-hybrid-run's 6-10. Added 2026-10-07 when EFFICIENCY-PLAN item 16 loosened the edges that had kept
       both behind other work. Tick it with the date and the owner's words; untick it when the owner next needs the Mac.
       [hold] needs: owner — only the owner knows when the Mac is free for the night.
@@ -1860,6 +1860,8 @@ These are offered to nobody. `next-item.sh` prints them as `hold` so they stay v
       can run."); until the owner next needs the Mac. Untick by hand when they do.
       UNTICKED 2026-10-12 ~08:45 (owner, in chat: "Untick that the mac is free. We'll have to do the compare-run
       tonight"). ocr-compare-run is meant for the night of 2026-10-12; the owner ticks this again when the Mac is free.
+      TICKED 2026-10-12 (owner, in chat via the Agent Manager: "I'm done with the computer until tomorrow morning");
+      for tonight, until the owner next needs the Mac. Untick by hand when they do.
       Last ticked for the night of 2026-10-08 (owner: "Assume the mac is free at 10pm"); unticked 2026-10-09 08:00.
 - [ ] **taborder** — the tab-order walk is still by hand. [hold] needs: owner — accepted by the owner
       as a known gap on 2026-08-13.
