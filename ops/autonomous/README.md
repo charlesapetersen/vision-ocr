@@ -150,6 +150,22 @@ settings domain, report and temporary directories, and leaves a marker named by 
 `$(getconf DARWIN_USER_TEMP_DIR)visionocr-isolated-suites`; `test-lock.sh` does not count a marked suite as
 out-of-band. `ops/ocrlab/run-guarded.sh` still refuses beside any suite, marked or not: it guards memory.
 
+**Since cs-narrow-lock (2026-10-13) the lock is per worktree.** `test.lock/` holds one entry per tree
+(`wt-<sha of the tree's path>/`, with pid, label and tree), so suites in two worktrees compile and queue for
+the heavy lock side by side, and only a second suite in the *same* tree, which would share its `build/`,
+waits. `test.lock/` exists while any entry does, so the `[ -d test.lock ]` checks in `run-guarded.sh`,
+`bakeoff.sh` and `hybrid-run.sh` are unchanged. What the trees still share is serialised where it is written:
+a binary-cache entry's write and the prune take an flock on `test-binary-cache/.write.lock`, and the ledger
+append one on `suite-timings.tsv.lock`; stamps and cache reads are temp-then-rename. A lock with `pid` at its
+top and no `format` file is an older `test-lock.sh`'s machine-wide hold and still excludes every tree. The
+other way round, the top carries `format` and a mirror of one live entry's pid and label, because an older
+script that finds no pid there takes every entry for dead and removes the directory (found in review; a real
+copy of the cs-paths script is run against a live entry in `prove-test-lock.sh` [14]). The daemon's park
+drops only its own and dead holds (`test-lock.sh drop-under <pid>`), no longer `rm -rf test.lock`.
+`test-lock.sh status` lists each hold with its tree, `holders` prints them TAB-separated. Proved by
+`prove-run-tests.sh` [5] (two trees at once, the cache write, one tree one suite, the run phases still one at a
+time; four mutants) and `prove-test-lock.sh` [14].
+
 ## How long things actually take — and why one number was never going to do
 
 Every timing constant in this daemon was originally derived from a suite believed to take **3-6 minutes**.

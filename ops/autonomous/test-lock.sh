@@ -1,5 +1,22 @@
 #!/usr/bin/env bash
-# ops/autonomous/test-lock.sh — ONE test suite at a time, machine-wide.
+# ops/autonomous/test-lock.sh — ONE test suite at a time per worktree (machine-wide until cs-narrow-lock).
+#
+# ONE ENTRY PER WORKTREE (concurrent-suites, cs-narrow-lock, 2026-10-13). Since cs-domains and cs-paths a suite's
+# settings, reports and temporary files are its own, so what two suites still share is: their worktree's build/
+# (the binaries run_tests.sh writes and runs), which only another suite in the SAME tree touches; and the binary
+# cache, the stamps and the timing ledger in $STATE. So $LOCKDIR is now a directory of entries, one per
+# worktree (`$LOCKDIR/wt-<sha of the tree's path>/` holding pid, label and tree), and a suite waits only for
+# another suite in its own tree. The directory exists while any entry does, so callers that ask "is a suite in
+# flight?" with `[ -d test.lock ]` (run-guarded.sh, bakeoff.sh, hybrid-run.sh) still get the right answer. The
+# shared state is serialised where it is written: run_tests.sh takes an flock around a cache entry's write and
+# prune, and note_timing below around the ledger append; stamps and cache reads are a temp-then-rename and need
+# none. A lock with `pid` at its top level and no `format` file is an OLDER test-lock.sh's machine-wide hold:
+# it excludes everyone, as it always did. The other way round, the top carries `format` and a mirror of one
+# live entry's pid and label, so an older script waits rather than taking the entries for dead (see _mirror).
+# One window is left: between a fresh directory's mkdir and its first mirror an older script reads no pid and
+# removes the directory, as two older scripts could already do to each other. Rejected: per-tree lock
+# directories beside test.lock (`test.lock.<key>`), which every `[ -d test.lock ]` caller would have missed.
+# The rest of this header is the history of the machine-wide lock; its reasoning still holds within one tree.
 #
 # WHY THIS EXISTS, and why it is the first file of this daemon rather than an afterthought.
 # CLAUDE.md's first environment trap: "Never run two suites at once, in any two worktrees."
@@ -41,6 +58,8 @@
 #   test-lock.sh acquire [--label L] [--wait S]                 acquire and return (caller must release)
 #   test-lock.sh release                                        release a lock this pid tree holds
 #   test-lock.sh status                                         who holds it + whether a suite is live (read-only)
+#   test-lock.sh holders                                        one line per holder: pid, label, age, entry (TABs)
+#   test-lock.sh drop-under PID                                 drop holds whose holder is gone or under PID
 #   test-lock.sh record --label L --seconds N [--rc R]          append one row to the suite-timing ledger
 #
 # EXIT: 0 ok (for `run`, the command's own status is propagated) · 4 could not acquire within --wait
@@ -96,20 +115,94 @@ OWNER_PID="${VISIONOCR_TEST_LOCK_PID:-$$}"
 usage() { sed -n '/^# USAGE/,/^# EXIT/p' "$0" | sed 's/^# \{0,1\}//'; }
 
 _now() { date +%s; }
-_holder_pid()   { cat "$LOCKDIR/pid"   2>/dev/null; }
-_holder_label() { cat "$LOCKDIR/label" 2>/dev/null; }
-_holder_age() {
-  local m; m="$(stat -f %m "$LOCKDIR" 2>/dev/null)"
+
+# THIS caller's entry: its worktree is the git top level of the current directory (every caller runs from its
+# tree's root: the hook, the gate, `test-lock.sh run -- ./run_tests.sh`), or the directory itself outside git.
+# VISIONOCR_TEST_LOCK_TREE names it explicitly (the harnesses).
+_tree() {
+  local t="${VISIONOCR_TEST_LOCK_TREE:-}"
+  [ -n "$t" ] || { t="$(git rev-parse --show-toplevel 2>/dev/null)" && [ -n "$t" ]; } || t="$PWD"
+  (cd "$t" 2>/dev/null && pwd -P) || printf '%s\n' "$t"
+}
+TREE="$(_tree)"
+ENTRY="$LOCKDIR/wt-$(printf '%s' "$TREE" | shasum -a 256 | cut -c1-12)"
+# THE TOP OF THE DIRECTORY, AND OLDER SCRIPTS. An older test-lock.sh takes the whole directory and writes pid
+# and label at its top; that is a legacy hold, and it excludes every tree. An older script also READS that pid
+# whenever its own mkdir fails, and with none there it took every entry for a dead holder's and removed the
+# whole directory (adversarial review, verified 2026-10-13: a second suite then started in a tree whose first
+# was still running). So a per-worktree lock carries `format` and a MIRROR at its top, the pid and label of one
+# live entry (see _mirror), and an older script waits for it like any held lock.
+_legacy() { { [ -f "$LOCKDIR/pid" ] || [ -f "$LOCKDIR/label" ]; } && [ ! -f "$LOCKDIR/format" ]; }
+# What this caller contends for: its entry, or the whole directory while an older script holds it.
+_held_dir() { if _legacy; then echo "$LOCKDIR"; else echo "$ENTRY"; fi; }
+
+_pid_in()   { cat "$1/pid"   2>/dev/null; }
+_label_in() { cat "$1/label" 2>/dev/null; }
+_age_in() {
+  local m; m="$(stat -f %m "$1" 2>/dev/null)"
   case "$m" in ''|*[!0-9]*) echo 0; return ;; esac
   echo $(( $(_now) - m ))
 }
 # A holder pid that no longer exists means the process died without releasing (a killed session, a
 # watchdog TERM, a closed laptop lid). That is the common case on this machine, so it must resolve
 # instantly rather than waiting out MAXAGE.
-_holder_alive() {
-  local p; p="$(_holder_pid)"
+_alive_in() {
+  local p; p="$(_pid_in "$1")"
   case "$p" in ''|*[!0-9]*) return 1 ;; esac
   kill -0 "$p" 2>/dev/null
+}
+# _drop DIR — remove one hold: an entry, or an older script's pid and label (never the entries beside them).
+# The directory itself goes only once it is empty: rmdir refuses a non-empty one, so a racing acquire that has
+# just made its entry keeps it, and one whose `mkdir` lost the directory to this rmdir simply tries again.
+_drop() {
+  if [ "$1" = "$LOCKDIR" ]; then rm -f "$LOCKDIR/pid" "$LOCKDIR/label" 2>/dev/null
+  else rm -rf "$1" 2>/dev/null; _mirror; fi
+  rmdir "$LOCKDIR" 2>/dev/null
+  return 0
+}
+# _mirror — keep the top's pid and label naming a LIVE entry, or remove them and `format` once no entry is left.
+# `format` is written before the pid and removed after it, so a reader never sees a mirror as a legacy hold.
+# A mirror that already names a live entry is left alone. An entry made but not yet written is not live; its
+# own acquire mirrors itself once its pid is in.
+_mirror() {
+  local d p top any=0 live=""
+  [ -d "$LOCKDIR" ] && ! _legacy || return 0
+  top="$(_pid_in "$LOCKDIR")"
+  for d in "$LOCKDIR"/wt-*; do
+    [ -d "$d" ] || continue
+    any=1; _alive_in "$d" || continue
+    [ "$(_pid_in "$d")" = "$top" ] && return 0
+    [ -n "$live" ] || live="$d"
+  done
+  if [ -n "$live" ]; then
+    d="$live"; p="$(_pid_in "$d")"
+    printf 'per-worktree 1\n' > "$LOCKDIR/format" 2>/dev/null
+    printf '%s\n' "$p" > "$LOCKDIR/.pid.$$" 2>/dev/null && mv -f "$LOCKDIR/.pid.$$" "$LOCKDIR/pid" 2>/dev/null
+    { _label_in "$d"; } > "$LOCKDIR/.label.$$" 2>/dev/null && mv -f "$LOCKDIR/.label.$$" "$LOCKDIR/label" 2>/dev/null
+    return 0
+  fi
+  [ "$any" = 1 ] && return 0
+  rm -f "$LOCKDIR/pid" "$LOCKDIR/label" 2>/dev/null; rm -f "$LOCKDIR/format" 2>/dev/null
+  return 0
+}
+_holder_pid()   { _pid_in "$(_held_dir)"; }
+_holder_label() { _label_in "$(_held_dir)"; }
+_holder_age()   { _age_in "$(_held_dir)"; }
+_holder_alive() { _alive_in "$(_held_dir)"; }
+
+# _hold_dirs — the directory of every hold, one per line; an older script's hold comes first.
+_hold_dirs() {
+  local d
+  _legacy && printf '%s\n' "$LOCKDIR"
+  for d in "$LOCKDIR"/wt-*; do [ -d "$d" ] && printf '%s\n' "$d"; done
+  return 0
+}
+# _holders — one line per hold: pid, label, age in seconds, directory, TAB-separated (`holders` prints it).
+_holders() {
+  local d
+  _hold_dirs | while IFS= read -r d; do
+    printf '%s\t%s\t%s\t%s\n' "$(_pid_in "$d")" "$(_label_in "$d")" "$(_age_in "$d")" "$d"
+  done
 }
 
 SUITE_MARKS="${VISIONOCR_SUITE_MARKS:-$(getconf DARWIN_USER_TEMP_DIR 2>/dev/null)visionocr-isolated-suites}"
@@ -266,37 +359,50 @@ _try_acquire() {
   _TL_BUSY=""; _TL_BUSY_LABEL=""; _TL_BUSY_PID=""
   # mkdir is atomic on every filesystem this repo runs on, which is why the lock is a DIRECTORY and not
   # a file written with `>`. Two racing `[ -f ] && touch` callers both win; two racing mkdirs cannot.
-  if mkdir "$LOCKDIR" 2>/dev/null; then
-    printf '%s\n' "$OWNER_PID" > "$LOCKDIR/pid"   2>/dev/null || true
-    printf '%s\n' "$label" > "$LOCKDIR/label" 2>/dev/null || true
-    # Re-check for an out-of-band suite AFTER taking the lock, then yield to it. Checking only before
-    # would leave a window: a hand-run suite that starts between the check and the mkdir would run
-    # alongside ours, which is the exact collision this file exists to prevent.
-    if _suite_live; then
-      rm -rf "$LOCKDIR" 2>/dev/null || true
-      _TL_BUSY="out-of-band-suite"
-      return 1
+  # The entry's mkdir can also fail because a releasing holder's rmdir took the directory between the two
+  # mkdirs (see _drop); that is not a hold, so it is tried again at once.
+  local tries=0 hd
+  _mirror    # repair a mirror left naming a holder that died without releasing
+  while ! _legacy && [ "$tries" -lt 5 ]; do
+    mkdir "$LOCKDIR" 2>/dev/null
+    if mkdir "$ENTRY" 2>/dev/null; then
+      printf '%s\n' "$OWNER_PID" > "$ENTRY/pid"   2>/dev/null || true
+      printf '%s\n' "$label" > "$ENTRY/label" 2>/dev/null || true
+      _mirror
+      printf '%s\n' "$TREE" > "$ENTRY/tree" 2>/dev/null || true
+      # Re-check for an out-of-band suite AFTER taking the lock, then yield to it. Checking only before
+      # would leave a window: a hand-run suite that starts between the check and the mkdir would run
+      # alongside ours, which is the exact collision this file exists to prevent.
+      if _suite_live; then
+        _drop "$ENTRY"
+        _TL_BUSY="out-of-band-suite"
+        return 1
+      fi
+      return 0
     fi
-    return 0
-  fi
-  # Held. Reclaim it only if the holder is provably gone, or it has aged out.
-  local age; age="$(_holder_age)"
-  if ! _holder_alive; then
-    echo "test-lock: holder pid $(_holder_pid) is gone (lock ${age}s old) — reclaiming." >&2
-    rm -rf "$LOCKDIR" 2>/dev/null || true
+    [ -d "$ENTRY" ] && break
+    tries=$(( tries + 1 ))
+  done
+  # Held, by a suite in this tree or by an older script's machine-wide lock. Reclaim it only if the holder is
+  # provably gone, or it has aged out.
+  hd="$(_held_dir)"
+  local age; age="$(_age_in "$hd")"
+  if ! _alive_in "$hd"; then
+    echo "test-lock: holder pid $(_pid_in "$hd") is gone (lock ${age}s old) — reclaiming." >&2
+    _drop "$hd"
     _TL_BUSY="reclaimed-dead"
     return 1     # deliberately do NOT acquire on this pass: let the next loop iteration race for it
                  # fairly, so two reclaimers cannot both conclude they own it.
   fi
   if [ "$MAXAGE" -gt 0 ] && [ "$age" -ge "$MAXAGE" ]; then
-    echo "test-lock: holder '$(_holder_label)' (pid $(_holder_pid)) has held the lock ${age}s (>= ${MAXAGE}s) — breaking it." >&2
-    rm -rf "$LOCKDIR" 2>/dev/null || true
+    echo "test-lock: holder '$(_label_in "$hd")' (pid $(_pid_in "$hd")) has held the lock ${age}s (>= ${MAXAGE}s) — breaking it." >&2
+    _drop "$hd"
     _TL_BUSY="reclaimed-aged"
     return 1
   fi
   # A live holder inside MAXAGE: the ordinary busy case. Capture its label and pid HERE, while the lock still
   # exists — reading them later is what invented a phantom three times.
-  _TL_BUSY="held"; _TL_BUSY_LABEL="$(_holder_label)"; _TL_BUSY_PID="$(_holder_pid)"
+  _TL_BUSY="held"; _TL_BUSY_LABEL="$(_label_in "$hd")"; _TL_BUSY_PID="$(_pid_in "$hd")"
   return 1
 }
 
@@ -346,22 +452,49 @@ acquire() {
 # Release only what we hold. A release that does not check the pid is how a stale caller steals the lock
 # from whoever legitimately took it over after a break-in above.
 release() {
-  local p; p="$(_holder_pid)"
-  if [ -d "$LOCKDIR" ] && [ "$p" != "$OWNER_PID" ] && [ -n "$p" ]; then
+  local hd p; hd="$(_held_dir)"; p="$(_pid_in "$hd")"
+  [ -d "$hd" ] || { rmdir "$LOCKDIR" 2>/dev/null; return 0; }
+  if [ "$p" != "$OWNER_PID" ] && [ -n "$p" ]; then
     echo "test-lock: not releasing — the lock is held by pid $p, not by this caller ($OWNER_PID)." >&2
     return 1
   fi
-  rm -rf "$LOCKDIR" 2>/dev/null || true
+  _drop "$hd"
+  return 0
+}
+
+# drop_under PID — drop every hold whose holder is gone or is PID or one of its descendants. For the daemon's
+# park, which until cs-narrow-lock did `rm -rf test.lock`: with one entry per tree that would also take the
+# entry of a suite still running in another tree (or the owner's), and a second suite could then start there.
+drop_under() {
+  local root="$1" d p up hops
+  case "$root" in ''|*[!0-9]*) echo "test-lock: drop-under needs a pid" >&2; return 2 ;; esac
+  _hold_dirs | while IFS= read -r d; do
+    p="$(_pid_in "$d")"; up="$p"; hops=0
+    if _alive_in "$d"; then
+      # Bounded for the reason _is_probe_child is (one `ps` per hop; a recycled pid can close a loop).
+      while [ -n "$up" ] && [ "$up" != "$root" ] && [ "$up" != 0 ] && [ "$up" != 1 ] && [ "$hops" -le 23 ]; do
+        up="$(_ppid_of "$up")"; hops=$(( hops + 1 ))
+      done
+      [ "$up" = "$root" ] || continue
+    fi
+    _drop "$d"
+  done
   return 0
 }
 
 status() {
-  local rc=0 lbl stale=""
-  if [ -d "$LOCKDIR" ]; then
-    lbl="$(_holder_label)"; [ -n "$lbl" ] || lbl="?"
-    _holder_alive || stale=" — HOLDER IS GONE (stale; the next acquire reclaims it)"
-    printf 'lock   HELD by %s (pid %s), %ss old%s\n' \
-      "$lbl" "$(_holder_pid)" "$(_holder_age)" "$stale"
+  local rc=0 hl stale hd tr dirs
+  dirs="$(_hold_dirs)"
+  if [ -n "$dirs" ]; then
+    while IFS= read -r hd; do
+      hl="$(_label_in "$hd")"; [ -n "$hl" ] || hl="?"
+      stale=""; _alive_in "$hd" || stale=" — HOLDER IS GONE (stale; the next acquire reclaims it)"
+      tr="$(cat "$hd/tree" 2>/dev/null)"
+      if [ "$hd" = "$LOCKDIR" ]; then tr=" [machine-wide: an older test-lock.sh]"; else tr="${tr:+ [$tr]}"; fi
+      printf 'lock   HELD by %s (pid %s), %ss old%s%s\n' "$hl" "$(_pid_in "$hd")" "$(_age_in "$hd")" "$stale" "$tr"
+    done <<EOF
+$dirs
+EOF
     rc=1
   else
     printf 'lock   free (%s)\n' "$LOCKDIR"
@@ -397,14 +530,27 @@ note_timing() {
   led="${VISIONOCR_SUITE_TIMINGS:-${VISIONOCR_STATE:-$HOME/.local/state/visionocr-autonomous}/suite-timings.tsv}"
   {
     mkdir -p "$(dirname "$led")" 2>/dev/null || true
-    [ -s "$led" ] || printf 'when\tlabel\tseconds\trc\tloadavg1\n' >> "$led"
     # The 1-minute load average AT THE END of the run. Without it two rows are not comparable — the same
     # suite has been timed at 80 s and at 2370 s on this machine, and load is most of the difference.
     load="$(uptime 2>/dev/null | sed -n 's/.*load averages*: *\([0-9.]*\).*/\1/p')"
+    # Suites in two trees can now finish together: the header test and the append are one step under an
+    # flock, so an empty ledger gets one header. A lock not had in 10 s appends anyway (instrumentation).
+    _flock "$led.lock" 10
+    [ -s "$led" ] || printf 'when\tlabel\tseconds\trc\tloadavg1\n' >> "$led"
     printf '%s\t%s\t%s\t%s\t%s\n' "$(date '+%F %T')" "$lbl" "$secs" "$rc" "${load:-?}" >> "$led"
+    _funlock
   } 2>/dev/null || true
   return 0
 }
+
+# _flock FILE SECS — an exclusive flock(2) on FILE through fd 9, held by this shell until _funlock or its exit
+# (the kernel releases it if the process dies, so it cannot go stale). perl takes it on the shared open file
+# and exits; the lock belongs to the open file, which this shell keeps. Non-zero if not had within SECS.
+_flock() {
+  exec 9>>"$1" || return 1
+  perl -MFcntl=:flock -e 'alarm shift; open(my $f, ">&=", 9) or exit 2; flock($f, LOCK_EX) or exit 1' "$2"
+}
+_funlock() { exec 9>&-; }
 
 # THE MACHINE LOCK is not taken here. run_tests.sh takes mac-heavy-lock.sh itself around ./build/tests alone
 # (EFFICIENCY-PLAN round 2), so Archive Suite does not wait on this suite's compiles; test.lock still covers the
@@ -412,7 +558,7 @@ note_timing() {
 # the suite its lock directory (touched while the suite waits for the heavy lock, so MAXAGE does not break a
 # suite lock whose holder is only queued) and its label, and a file in which the suite says how it went.
 # ⚠️ `run` is for ./run_tests.sh. Anything else wrapped in it gets test.lock and NOT the heavy lock.
-_suite_env() { export VISIONOCR_TEST_LOCK_DIR="$LOCKDIR" VISIONOCR_SUITE_LABEL="${LABEL:-suite}"; }
+_suite_env() { export VISIONOCR_TEST_LOCK_DIR="$(_held_dir)" VISIONOCR_SUITE_LABEL="${LABEL:-suite}"; }
 
 # ---- dispatch ----
 LABEL="${VISIONOCR_TEST_LOCK_LABEL:-$(basename "${0##*/}")-$$}"
@@ -430,6 +576,8 @@ case "$WAIT" in ''|*[!0-9]*) echo "test-lock: --wait must be a whole number of s
 
 case "$CMD" in
   status)  status; exit $? ;;
+  holders) _holders; exit 0 ;;
+  drop-under) drop_under "${1:-}"; exit $? ;;
   record)
     # Positional-free on purpose: the caller is a hook writing a machine-read row, and a transposed
     # seconds/rc pair would corrupt the ledger silently.

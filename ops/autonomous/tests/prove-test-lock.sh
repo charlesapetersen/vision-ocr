@@ -31,12 +31,12 @@
 # the interposition works and aborts if it does not.
 #
 # USAGE:  ops/autonomous/tests/prove-test-lock.sh [path/to/test-lock.sh]
-# EXPECTED RESULT: 78 passed, 0 failed, 0 skipped — on an IDLE machine with a working process tree.
+# EXPECTED RESULT: 90 passed, 0 failed, 0 skipped — on an IDLE machine with a working process tree.
 # ⚠️ THERE ARE THREE SKIP ARMS, not one, and this line used to name only the first while the count beside it
 # had been updated twice. They are: [10]'s converse ("with no suite on the machine, the real detector reports
 # free"), which is undecidable while a real suite runs; [12]'s pid-chain arm, if the three-deep helper chain
 # cannot be built; and [12]'s real end-to-end arm, if the real `pgrep` cannot see both `exec -a tests`
-# processes. Each emits ONE skip per assertion it stands in for, named the same, so the total is 78 either way
+# processes. Each emits ONE skip per assertion it stands in for, named the same, so the total is 90 either way
 # — see the note on [12]'s `else`. A skip is a loud SKIP, never a quiet pass.
 set -uo pipefail
 
@@ -79,6 +79,10 @@ export PATH="$BIN:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin
 export VISIONOCR_TEST_LOCK="$T/test.lock"
 export VISIONOCR_SUITE_MARKS="$T/marks"
 LOCKDIR="$T/test.lock"
+# Every acquire here is from one worktree, named explicitly, so its entry is known (test-lock.sh, ONE ENTRY PER
+# WORKTREE). Sections [1]-[13] are about that entry; [14] adds a second tree and an older script's hold.
+export VISIONOCR_TEST_LOCK_TREE="$T/tree-a"
+ENTRY="$LOCKDIR/wt-$(printf '%s' "$VISIONOCR_TEST_LOCK_TREE" | shasum -a 256 | cut -c1-12)"
 
 # Scriptable `pgrep` stub: $T/pgrepctl holds `none`, `live`, `pids N N N…`, or `flip` (a suite on the first
 # call and none afterwards — a suite that exits inside the acquire window).
@@ -150,13 +154,14 @@ tlps() {   # $1 = ceiling in seconds; rest = test-lock.sh arguments
 }
 TLPS_SECS=0
 held()   { [ -d "$LOCKDIR" ]; }
-holder() { cat "$LOCKDIR/pid" 2>/dev/null; }
+holder() { cat "$ENTRY/pid" 2>/dev/null; }
 clear_lock() { rm -rf "$LOCKDIR"; }
 # A lock planted by hand, so a test can choose the holder pid. Files first, then the mtime: adding files to
 # a directory updates its mtime, so back-dating has to come last.
-plant_lock() {   # $1=pid  $2=label  [$3=touch -t stamp]
-  mkdir -p "$LOCKDIR"; printf '%s\n' "$1" > "$LOCKDIR/pid"; printf '%s\n' "$2" > "$LOCKDIR/label"
-  [ -n "${3:-}" ] && touch -t "$3" "$LOCKDIR"
+plant_lock() {   # $1=pid  $2=label  [$3=touch -t stamp]  [$4=entry directory, default this tree's]
+  local e="${4:-$ENTRY}"
+  mkdir -p "$e"; printf '%s\n' "$1" > "$e/pid"; printf '%s\n' "$2" > "$e/label"
+  [ -n "${3:-}" ] && touch -t "$3" "$e"
   return 0
 }
 live_helper() {  # a process that is genuinely alive, to act as a lock holder; echoes its pid
@@ -188,7 +193,7 @@ clear_lock
 OUT=$(VISIONOCR_TEST_LOCK_PID=$$ tl acquire --label prove --wait 0 2>&1); RC=$?
 [ "$RC" = 0 ] && held && ok "acquire took the lock (rc 0, lockdir created)" || bad "acquire failed rc=$RC out='$OUT'"
 [ "$(holder)" = "$$" ] && ok "records the CALLER's pid, not the helper's ($(holder))" || bad "holder pid is '$(holder)', expected $$"
-[ "$(cat "$LOCKDIR/label" 2>/dev/null)" = prove ] && ok "records the label" || bad "label not recorded"
+[ "$(cat "$ENTRY/label" 2>/dev/null)" = prove ] && ok "records the label" || bad "label not recorded"
 OUT=$(VISIONOCR_TEST_LOCK_PID=$$ tl release 2>&1); RC=$?
 [ "$RC" = 0 ] && ! held && ok "release gave it back" || bad "release failed rc=$RC held=$(held && echo yes || echo no)"
 
@@ -685,6 +690,99 @@ OUT=$(VISIONOCR_TEST_LOCK_PID=$$ tl acquire --label taker --wait 0 2>&1); RC=$?
   && ok "…and prints no waiting notice, because nobody is waiting" \
   || bad "printed a waiting notice for a caller that asked not to wait: '$(printf '%s' "$OUT" | tr '\n' '|')'"
 kill -9 "$LH" 2>/dev/null; clear_lock
+
+echo "[14] one entry per worktree: two trees hold at once, one tree once, and an older script's hold excludes both"
+# concurrent-suites, cs-narrow-lock. A suite shares its build/ only with suites in its own tree, so the lock
+# is per tree; test.lock itself must still exist while any tree holds, for the `[ -d test.lock ]` callers.
+pgset none; clear_lock
+tlb() { VISIONOCR_TEST_LOCK_TREE="$T/tree-b" tl "$@"; }
+ENTRY_B="$LOCKDIR/wt-$(printf '%s' "$T/tree-b" | shasum -a 256 | cut -c1-12)"
+VISIONOCR_TEST_LOCK_PID=$$ tl acquire --label tree-a --wait 0 >/dev/null 2>&1; RA=$?
+LH=$(live_helper)
+OUT=$(VISIONOCR_TEST_LOCK_PID=$LH tlb acquire --label tree-b --wait 0 2>&1); RB=$?
+[ "$RA" = 0 ] && [ "$RB" = 0 ] && [ -d "$ENTRY" ] && [ -d "$ENTRY_B" ] \
+  && ok "a second tree acquires while the first holds (rc $RA, $RB), each in its own entry" \
+  || bad "the second tree could not acquire beside the first: rc $RA/$RB '$OUT'"
+OUT=$(tl acquire --label tree-a-again --wait 0 2>&1); RC=$?
+[ "$RC" = 4 ] && [ "$(holder)" = "$$" ] && ok "a second suite in the SAME tree is refused, and the holder kept" \
+  || bad "the same tree was not serialised: rc $RC holder '$(holder)' '$OUT'"
+OUT=$(tl status 2>&1); RC=$?
+[ "$RC" = 1 ] && [ "$(printf '%s\n' "$OUT" | grep -c '^lock   HELD by')" = 2 ] \
+  && printf '%s' "$OUT" | grep -q "HELD by tree-b (pid $LH).*\[$T/tree-b\]" \
+  && ok "status names both holders and their trees" || bad "status over two holders: '$(printf '%s' "$OUT" | tr '\n' '|')'"
+[ "$(tl holders | grep -c "	$ENTRY_B\$")" = 1 ] && [ "$(tl holders | wc -l | tr -d ' ')" = 2 ] \
+  && ok "\`holders\` prints one TAB-separated line per hold" || bad "holders: '$(tl holders | tr '\n' '|')'"
+# The mirror an older script reads (test-lock.sh, THE TOP OF THE DIRECTORY): `format`, and a live entry's pid.
+[ -f "$LOCKDIR/format" ] && [ "$(cat "$LOCKDIR/pid" 2>/dev/null)" = "$$" ] && [ "$(cat "$LOCKDIR/label" 2>/dev/null)" = tree-a ] \
+  && ok "the top mirrors the first live entry, under \`format\`" || bad "no mirror: pid '$(cat "$LOCKDIR/pid" 2>/dev/null)' format $( [ -f "$LOCKDIR/format" ] && echo yes || echo no)"
+VISIONOCR_TEST_LOCK_PID=$$ tl release >/dev/null 2>&1
+[ ! -d "$ENTRY" ] && [ -d "$ENTRY_B" ] && held && ok "releasing one tree keeps the other's entry and test.lock itself" \
+  || bad "a release disturbed the other tree's hold (entry_b $( [ -d "$ENTRY_B" ] && echo kept || echo GONE))"
+[ "$(cat "$LOCKDIR/pid" 2>/dev/null)" = "$LH" ] && ok "…and the mirror moves to the entry still held" \
+  || bad "the mirror names '$(cat "$LOCKDIR/pid" 2>/dev/null)' after its holder released, not $LH"
+# A REAL older test-lock.sh (cs-paths, 1cc13b2: the last machine-wide one) against a live entry: it must wait,
+# not take the entry for a dead holder's and remove the directory (adversarial review, 2026-10-13).
+OLDTL="$T/old-test-lock.sh"
+if git -C "$(dirname "$LOCKSH")" show 1cc13b2:ops/autonomous/test-lock.sh > "$OLDTL" 2>/dev/null && [ -s "$OLDTL" ]; then
+  OUT=$(BASH_ENV="$T/preload.sh" bash "$OLDTL" acquire --label old-script --wait 0 2>&1); RC=$?
+  [ "$RC" = 4 ] && [ -d "$ENTRY_B" ] && [ "$(cat "$ENTRY_B/pid" 2>/dev/null)" = "$LH" ] \
+    && ok "an older test-lock.sh waits for a live entry and leaves it" \
+    || bad "an older test-lock.sh broke a live entry: rc $RC, entry $( [ -d "$ENTRY_B" ] && echo kept || echo GONE), '$OUT'"
+else
+  skip "an older test-lock.sh waits for a live entry and leaves it (1cc13b2 not readable from this checkout)"
+fi
+VISIONOCR_TEST_LOCK_PID=$$ tlb release >/dev/null 2>&1; RC=$?
+[ "$RC" = 1 ] && [ -d "$ENTRY_B" ] && ok "a caller cannot release another tree's entry" || bad "released another pid's entry (rc $RC)"
+kill -9 "$LH" 2>/dev/null; wait "$LH" 2>/dev/null
+OUT=$(VISIONOCR_TEST_LOCK_PID=$$ tlb acquire --label tree-b2 --wait 6 2>&1); RC=$?
+[ "$RC" = 0 ] && [ "$(cat "$ENTRY_B/pid" 2>/dev/null)" = "$$" ] && ok "another tree's dead holder is reclaimed for that tree" \
+  || bad "dead entry not reclaimed: rc $RC '$OUT'"
+VISIONOCR_TEST_LOCK_PID=$$ tlb release >/dev/null 2>&1
+held && bad "test.lock outlived its last entry" || ok "test.lock goes with its last entry"
+# An older test-lock.sh (any tree not yet rebased) takes the whole directory and writes pid at its top.
+LH=$(live_helper); mkdir -p "$LOCKDIR"; echo "$LH" > "$LOCKDIR/pid"; echo old-script > "$LOCKDIR/label"
+OUT=$(tl acquire --label new-a --wait 0 2>&1); RA=$?; OUT2=$(tlb acquire --label new-b --wait 0 2>&1); RB=$?
+[ "$RA" = 4 ] && [ "$RB" = 4 ] && [ ! -d "$ENTRY" ] && [ ! -d "$ENTRY_B" ] \
+  && ok "an older script's machine-wide hold excludes every tree" || bad "an older script's hold was shared: rc $RA/$RB"
+OUT=$(tl status 2>&1)
+printf '%s' "$OUT" | grep -q 'HELD by old-script.*machine-wide' && ok "status calls it machine-wide" \
+  || bad "status over an older script's hold: '$(printf '%s' "$OUT" | tr '\n' '|')'"
+kill -9 "$LH" 2>/dev/null; wait "$LH" 2>/dev/null
+VISIONOCR_TEST_LOCK_PID=$$ tl acquire --label new-a --wait 6 >/dev/null 2>&1; RC=$?
+[ "$RC" = 0 ] && [ -f "$LOCKDIR/format" ] && [ "$(cat "$LOCKDIR/pid" 2>/dev/null)" = "$$" ] && [ -d "$ENTRY" ] \
+  && ok "a dead older-script hold is reclaimed, the entry taken, and the top is now its mirror" \
+  || bad "dead legacy hold: rc $RC, top pid '$(cat "$LOCKDIR/pid" 2>/dev/null)', format $( [ -f "$LOCKDIR/format" ] && echo yes || echo no)"
+VISIONOCR_TEST_LOCK_PID=$$ tl release >/dev/null 2>&1; clear_lock
+# A mirror left naming a holder that died without releasing is repaired by the next acquire, so an older
+# script does not see every entry as dead while one is live.
+LH=$(live_helper); LH2=$(live_helper)
+VISIONOCR_TEST_LOCK_PID=$LH tl acquire --label dies --wait 0 >/dev/null 2>&1
+VISIONOCR_TEST_LOCK_PID=$LH2 tlb acquire --label lives --wait 0 >/dev/null 2>&1
+kill -9 "$LH" 2>/dev/null; sleep 0.2
+tl acquire --label probe --wait 0 >/dev/null 2>&1   # reclaims the dead entry; must not take it on this pass
+[ "$(cat "$LOCKDIR/pid" 2>/dev/null)" = "$LH2" ] && ok "a mirror naming a dead holder is moved to the live entry" \
+  || bad "the mirror still names '$(cat "$LOCKDIR/pid" 2>/dev/null)' with $LH2 live"
+# drop-under (the daemon's park): this daemon's holds and dead ones go, another tree's live suite stays.
+clear_lock
+/bin/sh -c '/bin/sleep 300; :' >/dev/null 2>&1 & PARENT=$!; note_pid "$PARENT" "sh sleep 300"; sleep 0.3
+KID="$(/usr/bin/pgrep -P "$PARENT" sleep 2>/dev/null | head -1)"; [ -n "$KID" ] && note_pid "$KID" "sleep 300"
+DEADP=$(dead_pid); ENTRY_C="$LOCKDIR/wt-dead"
+VISIONOCR_TEST_LOCK_PID=${KID:-$PARENT} tl acquire --label under-daemon --wait 0 >/dev/null 2>&1
+VISIONOCR_TEST_LOCK_PID=$LH2 tlb acquire --label other-tree --wait 0 >/dev/null 2>&1
+plant_lock "$DEADP" dead "" "$ENTRY_C"
+tl drop-under "$PARENT" >/dev/null 2>&1; RC=$?
+[ "$RC" = 0 ] && [ ! -d "$ENTRY" ] && [ ! -d "$ENTRY_C" ] && [ -d "$ENTRY_B" ] && [ "$(cat "$LOCKDIR/pid" 2>/dev/null)" = "$LH2" ] \
+  && ok "drop-under removes the daemon's descendant and a dead holder, keeps another tree's live one" \
+  || bad "drop-under: rc $RC, under-daemon $( [ -d "$ENTRY" ] && echo kept || echo gone), dead $( [ -d "$ENTRY_C" ] && echo kept || echo gone), other $( [ -d "$ENTRY_B" ] && echo kept || echo GONE)"
+kill -9 "$PARENT" "$KID" "$LH2" 2>/dev/null; clear_lock
+# The ledger: rows from suites finishing together in two trees. One header, every row. A SMOKE CHECK, not a
+# proof of note_timing's flock: the unlocked header race is microseconds wide, and a copy with the flock
+# removed passed this three times out of three (2026-10-13). prove-run-tests.sh [5] proves the cache's flock.
+LED="$T/led-concurrent.tsv"; rm -f "$LED"
+for i in 1 2 3 4 5 6 7 8 9 10 11 12; do VISIONOCR_SUITE_TIMINGS="$LED" tl record --label "c$i" --seconds "$i" & done; wait
+[ "$(grep -c '^when	' "$LED")" = 1 ] && [ "$(grep -c '^[0-9]' "$LED")" = 12 ] \
+  && ok "twelve concurrent ledger rows: one header, twelve rows" \
+  || bad "concurrent ledger: $(grep -c '^when	' "$LED") headers, $(grep -c '^[0-9]' "$LED") rows"
 
 echo
 echo "=================== $PASS passed, $FAIL failed, $SKIP skipped ==================="

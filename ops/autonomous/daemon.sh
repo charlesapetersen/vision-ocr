@@ -341,14 +341,17 @@ case "$VERB" in
     # was therefore exactly inverted: it told the owner to ignore a runaway this script had just created. The
     # caution itself is right and stays — it must never break the lock out from under the owner's interactive
     # suite — but the test has to be ANCESTRY, not liveness, so the two cases can be told apart at all.
-    if [ -d "$LOCKDIR" ]; then
-      hp="$(cat "$LOCKDIR/pid" 2>/dev/null)"
-      hl="$(cat "$LOCKDIR/label" 2>/dev/null)"
+    # Since cs-narrow-lock the lock holds one entry per worktree ($LOCKDIR/wt-*), each judged on its own; pid
+    # and label at its top are an older test-lock.sh's hold, unless `format` says they mirror an entry. Nothing
+    # is removed here: an entry with no pid may be an acquire half done, and a dead one is reclaimed by the next.
+    for hd in "$LOCKDIR" "$LOCKDIR"/wt-*; do
+      [ -d "$hd" ] || continue
+      [ "$hd" = "$LOCKDIR" ] && { [ -f "$LOCKDIR/format" ] || { [ ! -f "$LOCKDIR/pid" ] && [ ! -f "$LOCKDIR/label" ]; }; } && continue
+      hp="$(cat "$hd/pid" 2>/dev/null)"
+      hl="$(cat "$hd/label" 2>/dev/null)"
       was_ours=0
       case "$hp" in ''|*[!0-9]*) ;; *) case " $uniq_victims " in *" $hp "*) was_ours=1 ;; esac ;; esac
-      if [ -x "$TESTLOCK" ] && VISIONOCR_TEST_LOCK="$LOCKDIR" "$TESTLOCK" release 2>/dev/null; then
-        echo "suite lock released."
-      elif [ "$was_ours" = 1 ]; then
+      if [ "$was_ours" = 1 ]; then
         echo "suite lock was held by ${hl:-?} (pid $hp) — one of the processes this stop just TERMed, so it IS"
         echo "  ours. \`test-lock.sh run\` releases on its own TERM trap, and a dead holder is reclaimed by the"
         echo "  next acquire without waiting out MAXAGE — so this needs nothing from you. Confirm if you like:"
@@ -362,7 +365,8 @@ case "$VERB" in
         echo "  test-lock.sh reclaims a dead holder on the next acquire, without waiting out its MAXAGE."
         echo "  Confirm with: $TESTLOCK status"
       fi
-    fi
+    done
+    rmdir "$LOCKDIR" 2>/dev/null || true
     exit 0 ;;
 esac
 

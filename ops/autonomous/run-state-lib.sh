@@ -73,7 +73,10 @@ ratelimit_phrase() {
 suite_blocking() {
   local lockdir="${VISIONOCR_TEST_LOCK:-${STATE:-$HOME/.local/state/visionocr-autonomous}/test.lock}" lbl
   if pgrep -x tests >/dev/null 2>&1; then
-    lbl="$(cat "$lockdir/label" 2>/dev/null)"
+    # Since cs-narrow-lock each worktree holds its own entry; a label at the top is an older test-lock.sh's
+    # hold, unless `format` says it only mirrors one of the entries.
+    lbl="$( { [ -f "$lockdir/format" ] || cat "$lockdir/label"; cat "$lockdir"/wt-*/label; } 2>/dev/null \
+            | paste -sd, - | sed 's/,/, /g')"
     if [ -n "$lbl" ]; then
       printf 'a test suite is running (%s)' "$lbl"
     else

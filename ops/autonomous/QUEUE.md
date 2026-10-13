@@ -1678,7 +1678,7 @@ say so in the commit.
       moved each column's rows onto one baseline pitch (`gridded`): Marth p2's two lower columns 0.51/0.61 ->
       1.00, Cong p16 already 1.00 on main. (origin: BUGS.md C52)
 
-- [ ] **concurrent-suites** — let two suites run at once from two worktrees without either one wiping the other's
+- [x] **concurrent-suites** — let two suites run at once from two worktrees without either one wiping the other's
       settings, logs or files, so that `test.lock` limits only what truly conflicts. (uses: build)
       WHY. EFFICIENCY-PLAN item 10 (owner, 2026-10-07: "isolate parts of test suites that create heavy load so we
       reduce lock time ... Then implement that plan"). `test.lock` exists for correctness, not load: `build/tests` has
@@ -1733,7 +1733,7 @@ say so in the commit.
         75 with both running; `MUTANT=shared-reports` turns it red. prove-test-lock 71 -> 78, a mutant dropping the
         probe-child skip caught. Left as they are: `run-state-lib.sh` `suite_blocking` and the daemon's wedge check
         still treat any suite as busy, which is safe; cs-narrow-lock decides whether they should change.
-      - [ ] **cs-narrow-lock** — shrink `test.lock` to what two suites still share. (blocked-on: cs-paths) (uses: build)
+      - [x] **cs-narrow-lock** — shrink `test.lock` to what two suites still share. (blocked-on: cs-paths) (uses: build)
         Audit what remains shared once cs-domains is in (`build/` is per worktree; candidates: appends to
         `$STATE/suite-timings.tsv`, the binary cache's temp-then-rename, the green stamp's record) and hold the
         lock only around those. The machine-wide heavy lock still serialises the run phase across projects; do
@@ -1741,6 +1741,25 @@ say so in the commit.
         `ops/autonomous/README.md`. DONE WHEN a harness shows two suites from two worktrees compiling at the same
         time with no `test.lock` wait and both green, a write to a shared path still serialised, and a mutant
         removing that serialisation turns it red. ESTIMATE: 1 session.
+        DONE 2026-10-13. `test.lock/` holds one entry per worktree (`wt-<sha of the tree's path>/`: pid, label,
+        tree); a suite waits only for another in its own tree, which shares its `build/`. The directory lives while
+        any entry does, so run-guarded's, bakeoff's and hybrid-run's `[ -d test.lock ]` are unchanged; a lock with
+        `pid` and no `format` at its top (an older test-lock.sh) still excludes every tree, and the top mirrors one
+        live entry's pid so an older script waits (review found it otherwise removing live entries; verified with
+        a real copy of 1cc13b2's script). Audit of the rest: a cache entry's write and the prune now take an
+        flock (`test-binary-cache/.write.lock`); the ledger append takes one (`suite-timings.tsv.lock`); stamps
+        and cache reads are temp-then-rename, unchanged. daemon.sh `stop`, `suite_blocking` and `status` read
+        every entry; the park drops only its own and dead holds (`drop-under`). Rejected: lock directories
+        beside test.lock (`test.lock.<key>`), which every `[ -d test.lock ]` caller would have missed. The heavy
+        lock is untouched; prove-mac-heavy-lock.sh needed no change. Measured: prove-run-tests [5], two fake
+        trees, compiles overlapping, no test.lock wait, run phases one at a time, every cache `ok` matching its
+        binary; mutants (cache write unlocked, one entry for all trees, one per caller, run phase unlocked) all
+        red; 47/0. prove-test-lock 78 -> 95; mutate-test-lock 18 killed, 0 survived. Real: two suites from two
+        worktrees at once through test-lock.sh, both 1882/1882, both entries held in 61 of 128 samples, B queued
+        on the heavy lock (A 362 s, B 715 s). Left: a suite whose `tests` started in the same second as another
+        acquire is read as out-of-band once (marker not yet written; one 5 s retry), and one status sample read a
+        markerless probe child as a second suite (busy side). prove-daemon [5]'s fixed 10 s sleep sat on a
+        backoff boundary and went red under the slower lock calls; it now waits for the 8 s nap.
       DONE WHEN the three sub-boxes are ticked. The hook and the gate still run the full suite. ESTIMATE: 3 sessions.
       BOUND: rule 10. (context: owner request 2026-10-07, ~/Claude/Agent Manager/EFFICIENCY-PLAN.md item 10)
 - [ ] **light-tier** — a light test tier of the sections that never call Vision, with per-section timing, so a

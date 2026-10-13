@@ -618,7 +618,13 @@ park_run() {
   rm -f "$LOCK" 2>/dev/null || true
   # Release the SUITE lock too, for the same reason: a park during a gate would otherwise strand it until
   # its MAXAGE, blocking the owner's own `./run_tests.sh` for 90 minutes with no visible cause.
-  rm -rf "${VISIONOCR_TEST_LOCK:-$STATE/test.lock}" 2>/dev/null || true
+  # Only this daemon's holds and dead ones (test-lock.sh drop-under): since cs-narrow-lock another tree's suite,
+  # or the owner's, may hold an entry beside the gate's, and removing it would let a second suite into its tree.
+  if [ -x "$REPO/ops/autonomous/test-lock.sh" ]; then
+    VISIONOCR_TEST_LOCK="${VISIONOCR_TEST_LOCK:-$STATE/test.lock}" "$REPO/ops/autonomous/test-lock.sh" drop-under $$ 2>/dev/null || true
+  else
+    rm -rf "${VISIONOCR_TEST_LOCK:-$STATE/test.lock}" 2>/dev/null || true
+  fi
   log "!!!!!!!!!!!! PARKED ($reason) — stopping. $m"
   { echo "[$(date '+%F %T')] $m"; } > "$HOME/Desktop/VISION-OCR-RUN-PARKED.txt" 2>/dev/null || true
   notify "Vision OCR: run parked ($reason)" "$m"

@@ -99,7 +99,8 @@ STEP 3 — DO IT.
         git worktree add "/private/tmp/vo-$stamp" -b "auto/$stamp" && cd "/private/tmp/vo-$stamp"
   * Write a test that fails without the change and watch it fail. Tests are `check(...)` calls in
     `Tests/main.swift`.
-  * Only one test suite may run at a time on this machine, in any worktree. Run yours as
+  * Only one test suite may run at a time in a worktree, and its checks queue for the machine-wide heavy
+    lock behind any other worktree's (test-lock.sh and run_tests.sh enforce both). Run yours as
         ops/autonomous/test-lock.sh run --label session -- ./run_tests.sh
     and tell every subagent not to run the suite, `./build.sh` or `Tools/mutate.py`. A run whose exact
     inputs passed in the last 24 hours prints "skipped: identical inputs passed at <time>" and runs no

@@ -9,7 +9,12 @@
 # FAKE_SDKPATH, FAKE_BUILD, FAKE_ARCH, FAKE_JBIG2, FAKE_QPDF, FAKE_LOGIN_DIR (the login shell's tools, with
 # SHELL=$FB/loginsh); FAKE_FAIL=<output name> fails that compile;
 # FAKE_EDIT_DURING=<file> is appended to during each compile; FAKE_TESTS_RC is the suite's exit status;
-# FAKE_RUN_SLEEP delays the suite; FAKE_RUN_EDIT=<file> is appended to during the suite.
+# FAKE_RUN_SLEEP delays the suite and logs `runoverlap <n>`, n being how many other fake suites were running when it
+# started; FAKE_RUN_EDIT=<file> is appended to during the suite.
+# FAKE_COMPILE_SLEEP holds each compile open that long and logs `overlap <output name> <n>`, n being how many other
+# fake compiles were in progress when it started (any tree sharing $FAKE_LOG). FAKE_OK_MV_DELAY=<s> makes the
+# FIRST `mv` onto a file named `ok` (once per $FAKE_LOG) sleep that long first: the window in which a second,
+# unserialised writer of the same cache key can put its binary under the first one's checksum.
 # Needs $T (a scratch directory) and the real run_tests.sh path in $1 of fake_tree.
 
 fake_bin() {   # $1 directory to fill
@@ -22,18 +27,36 @@ heavy=no; [ -d "${MAC_HEAVY_LOCK:-/nonexistent}" ] && heavy=yes
 tl=no; [ -n "${VISIONOCR_TEST_LOCK:-}" ] && [ -d "$VISIONOCR_TEST_LOCK" ] && tl=yes
 echo "compile ${out##*/} heavy=$heavy testlock=$tl args=$*" >> "$FAKE_LOG"
 [ -n "${FAKE_EDIT_DURING:-}" ] && echo "// edited during the compile" >> "$FAKE_EDIT_DURING"
+if [ -n "${FAKE_COMPILE_SLEEP:-}" ]; then
+  act="$FAKE_LOG.active"; mkdir -p "$act"
+  echo "overlap ${out##*/} $(ls "$act" | wc -l | tr -d ' ')" >> "$FAKE_LOG"
+  : > "$act/$$"; sleep "$FAKE_COMPILE_SLEEP"; rm -f "$act/$$"
+fi
 [ -n "${FAKE_FAIL:-}" ] && [ "${out##*/}" = "$FAKE_FAIL" ] && { echo "error: fake compile failure" >&2; exit 1; }
 n=$(grep -c '^compile' "$FAKE_LOG")
 cat > "$out" <<EOS
 #!/bin/bash
+# made by fake compile $$ (so two compiles of one key differ, as prove-run-tests [5] needs)
 h=no; [ -d "\$MAC_HEAVY_LOCK" ] && h=yes
 echo "run \${0##*/} build=$n heavy=\$h label=\$(sed -n 's/^label=//p' "\$MAC_HEAVY_LOCK/owner" 2>/dev/null)" >> "\$FAKE_LOG"
 [ -n "\${FAKE_RUN_EDIT:-}" ] && echo "// edited during the run" >> "\$FAKE_RUN_EDIT"
-[ -n "\${FAKE_RUN_SLEEP:-}" ] && sleep "\$FAKE_RUN_SLEEP"
+if [ -n "\${FAKE_RUN_SLEEP:-}" ]; then
+  ra="\$FAKE_LOG.running"; mkdir -p "\$ra"
+  echo "runoverlap \$(ls "\$ra" | wc -l | tr -d ' ')" >> "\$FAKE_LOG"
+  : > "\$ra/\$\$"; sleep "\$FAKE_RUN_SLEEP"; rm -f "\$ra/\$\$"
+fi
 echo "3/3 passed"
 exit \${FAKE_TESTS_RC:-0}
 EOS
 chmod +x "$out"
+EOF
+  cat > "$b/mv" <<'EOF'
+#!/bin/bash
+last=""; for a in "$@"; do last="$a"; done
+if [ -n "${FAKE_OK_MV_DELAY:-}" ] && [ "${last##*/}" = ok ] && mkdir "$FAKE_LOG.ok-delayed" 2>/dev/null; then
+  sleep "$FAKE_OK_MV_DELAY"
+fi
+exec /bin/mv "$@"
 EOF
   cat > "$b/xcrun" <<'EOF'
 #!/bin/bash

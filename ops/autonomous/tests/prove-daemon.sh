@@ -371,7 +371,12 @@ grep -q "progress $EM backoff reset to 1s" "$L" \
 
 echo "[5] A QUEUE EDIT wakes it early from backoff_sleep (the owner arming an item)"
 echo "1:no" > "$CTRL"; reset_repo; dfset 999999; reset_state
-P=$(launch 0); sleep 10; H0=$(git -C "$REPO" rev-parse HEAD)
+# Edit once the daemon is INSIDE an 8 s nap, not at a fixed 10 s: the naps are 2, 4 and 8 s after ~1 s
+# sessions, so 10 s sat on the boundary of the third, and a few hundred ms more per cycle (cs-narrow-lock's
+# test-lock.sh) put the edit before the nap took its fingerprint: red twice running, green on main (2026-10-13).
+P=$(launch 0)
+for _i in $(seq 1 60); do grep -q 'next attempt in 8s' "$STATE/daemon.log" 2>/dev/null && break; sleep 0.5; done
+sleep 1; H0=$(git -C "$REPO" rev-parse HEAD)
 write_queue "NEWLY ARMED ITEM"          # working-tree edit only: no commit
 sleep 8; stop "$P"; L="$STATE/daemon.log"
 grep -q "decision surface changed during backoff (commit / queue edit)" "$L" \

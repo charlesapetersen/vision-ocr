@@ -180,8 +180,11 @@ mutant notice-claims-reclaim-on-yield 'a suite is already running' \
 # A new busy path that forgets to record its reason: the `*)` arm is what makes that visible instead of silent.
 mutant busy-reason-not-recorded '_TL_BUSY="reclaimed-aged"' \
   's/    _TL_BUSY="reclaimed-aged"\n//'
-mutant multiword-label-truncated '_TL_BUSY_LABEL="$(_holder_label)"; _TL_BUSY_PID' \
-  's/  _TL_BUSY="held"; _TL_BUSY_LABEL="\$\(_holder_label\)"; _TL_BUSY_PID="\$\(_holder_pid\)"/  _TL_BUSY="held"; _TL_BUSY_LABEL="\$(_holder_label | cut -d\x27 \x27 -f1)"; _TL_BUSY_PID="\$(_holder_pid)"/'
+# cs-narrow-lock: with no mirror at the top, an older test-lock.sh takes every live entry for a dead holder's.
+mutant mirror-never-written '+live=""; return 0' \
+  's/  local d p top any=0 live=""\n/  local d p top any=0 live=""; return 0\n/'
+mutant multiword-label-truncated '_TL_BUSY_LABEL="$(_label_in "$hd")"; _TL_BUSY_PID' \
+  's/  _TL_BUSY="held"; _TL_BUSY_LABEL="\$\(_label_in "\$hd"\)"; _TL_BUSY_PID="\$\(_pid_in "\$hd"\)"/  _TL_BUSY="held"; _TL_BUSY_LABEL="\$(_label_in "\$hd" | cut -d\x27 \x27 -f1)"; _TL_BUSY_PID="\$(_pid_in "\$hd")"/'
 
 echo
 echo "=== $KILLED killed, $SURVIVED SURVIVED, $NOTAPPLIED NOT-APPLIED ==="

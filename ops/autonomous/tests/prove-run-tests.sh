@@ -16,6 +16,7 @@
 #   [4] the health gate reports a stamped skip as a skip (never ✓) in its step line and its GREEN and RED
 #       verdicts, and a RED verdict carrying the note still names only its failing steps; the gate runs a real
 #       suite past any stamp when its own last real suite is missing or 24 hours old, and records each one.
+#   [5] two trees at once: no test.lock wait, the shared cache write serialised, one suite per tree.
 # Each section is then re-run against deliberately broken copies, each of which must turn it red; a copy
 # whose anchor is missing or not unique, or that leaves the file unchanged, is a failure, not a pass.
 # ~5 min. USAGE: ops/autonomous/tests/prove-run-tests.sh
@@ -55,6 +56,8 @@ fresh() {   # $1 name: a scratch area with a tree, a state directory and a log
   : > "$FAKE_LOG"
 }
 rt() { (cd "${TREE:-$X/tree}" && PATH="$FB:$PATH" ./run_tests.sh) > "$X/out" 2>&1; }   # rc is the suite's
+# entry — the one tree's hold inside test.lock (test-lock.sh, ONE ENTRY PER WORKTREE): what the suite keeps fresh.
+entry() { ls -d "$VISIONOCR_TEST_LOCK"/wt-* 2>/dev/null | head -1; }
 tlrun() { (cd "$X/tree" && PATH="$FB:$PATH" BASH_ENV="$T/preload.sh" bash "$TL" run --label "$1" -- ./run_tests.sh) > "$X/out" 2>&1; }
 
 # ── [1] which lock covers which phase ─────────────────────────────────────────────────────────────────
@@ -77,8 +80,8 @@ check_locks() {
   waitfor '[ -s "$MAC_HEAVY_LOCK/owner" ]' 5
   tlrun queued & tp=$!
   if waitfor '[ "$(grep -c ^compile "$FAKE_LOG")" = 3 ]' 10; then
-    sleep 0.5; touch -t 202001010000 "$VISIONOCR_TEST_LOCK" 2>/dev/null; sleep 2.5
-    age=$(( $(date +%s) - $(stat -f %m "$VISIONOCR_TEST_LOCK" 2>/dev/null || echo 0) ))
+    sleep 0.5; touch -t 202001010000 "$(entry)" 2>/dev/null; sleep 2.5
+    age=$(( $(date +%s) - $(stat -f %m "$(entry)" 2>/dev/null || echo 0) ))
     [ "$age" -lt 3 ] || fail "test.lock was not kept fresh while the suite waited for the heavy lock (${age}s old)"
     grep -q '^run' "$FAKE_LOG" && fail "the suite ran while another project held the heavy lock"
   else
@@ -95,8 +98,8 @@ check_locks() {
   tlrun guarded & tp=$!
   sleep 3
   grep -q '^compile' "$FAKE_LOG" && fail "a compile started while a guarded model run was live"
-  touch -t 202001010000 "$VISIONOCR_TEST_LOCK" 2>/dev/null; sleep 2.5
-  age=$(( $(date +%s) - $(stat -f %m "$VISIONOCR_TEST_LOCK" 2>/dev/null || echo 0) ))
+  touch -t 202001010000 "$(entry)" 2>/dev/null; sleep 2.5
+  age=$(( $(date +%s) - $(stat -f %m "$(entry)" 2>/dev/null || echo 0) ))
   [ "$age" -lt 3 ] || fail "test.lock was not kept fresh while the suite waited for a guarded model run (${age}s old)"
   wait "$gp"; wait "$tp"
   [ "$(grep -c '^compile' "$FAKE_LOG")" = 3 ] || fail "the suite did not compile once the guarded run ended: $(tail -2 "$X/out" | tr '\n' ' ')"
@@ -301,6 +304,52 @@ check_gate() {
     || fail "the RED verdict does not carry the stamped skip after its steps: $(grep '^HEALTH GATE' <<<"$out")"
 }
 
+# ── [5] two worktrees at once (concurrent-suites, cs-narrow-lock) ───────────────────────────────────────
+# Two trees' suites compile together with no test.lock wait and both pass; the one write they share, a cache
+# entry for the same key, is serialised (FAKE_OK_MV_DELAY holds the first writer's `ok` open, the window in
+# which an unserialised second writer leaves its binary under the first one's checksum); and two suites in
+# ONE tree, which share build/, still go one at a time.
+tl_in() { (cd "$1" && PATH="$FB:$PATH" BASH_ENV="$T/preload.sh" bash "$TL" run --label "$2" -- ./run_tests.sh) > "$3" 2>&1; }
+check_concurrent() {
+  local pa pb ra rb o d b sum
+  fresh concurrent
+  fake_tree "$RT" "$X/tree-b"
+  # B starts a second after A, so its 2 s compile overlaps A's and ends while A's `ok` is held open: the order
+  # (A computes its checksum, B moves its binary in, A writes its `ok`) that an unserialised write gets wrong.
+  # Started together, both binaries land before either checksum is taken, and a copy without the lock passed.
+  export FAKE_COMPILE_SLEEP=2 FAKE_OK_MV_DELAY=3 FAKE_RUN_SLEEP=1 VISIONOCR_SUITE_STAMP=off
+  tl_in "$X/tree" tree-a "$X/out-a" & pa=$!
+  sleep 1
+  tl_in "$X/tree-b" tree-b "$X/out-b" & pb=$!
+  wait "$pa"; ra=$?; wait "$pb"; rb=$?
+  [ "$ra" = 0 ] && [ "$rb" = 0 ] || fail "two trees at once exited $ra and $rb: $(tail -2 "$X/out-a" "$X/out-b" | tr '\n' ' ')"
+  grep -q 'holds the suite lock\|waiting up to' "$X/out-a" "$X/out-b" \
+    && fail "one tree waited on test.lock for the other: $(grep -h 'holds the suite lock\|waiting up to' "$X/out-a" "$X/out-b" | head -1)"
+  grep -q '^overlap [^ ]* [1-9]' "$FAKE_LOG" || fail "the two trees' compiles never overlapped: $(grep '^overlap' "$FAKE_LOG" | tr '\n' ';')"
+  [ "$(grep -c '^run tests ' "$FAKE_LOG")" = 2 ] || fail "both suites did not run: $(grep '^run' "$FAKE_LOG" | tr '\n' ';')"
+  grep -q '^runoverlap [1-9]' "$FAKE_LOG" && fail "the two trees' run phases overlapped: the heavy lock no longer serialises them"
+  [ -d "$FAKE_LOG.ok-delayed" ] || fail "no cache entry was written, so the shared write was never exercised"
+  for o in "$VISIONOCR_STATE/test-binary-cache"/*/ok; do
+    [ -f "$o" ] || continue
+    d="${o%/ok}"; sum="$(sed -n 's/^sha256=//p' "$o" | head -1)"
+    for b in tests visionocr-recognise make-plate-fixtures; do
+      [ -f "$d/$b" ] || continue
+      [ "$(shasum -a 256 < "$d/$b" | cut -c1-64)" = "$sum" ] || fail "the cached $b's ok names another writer's binary"
+    done
+  done
+  unset FAKE_OK_MV_DELAY; export VISIONOCR_TEST_CACHE=off
+  : > "$FAKE_LOG"
+  tl_in "$X/tree" same-1 "$X/out-1" & pa=$!
+  waitfor '[ -n "$(entry)" ]' 10 || fail "the first suite in the tree never took its entry"
+  tl_in "$X/tree" same-2 "$X/out-2" & pb=$!
+  wait "$pa"; ra=$?; wait "$pb"; rb=$?
+  [ "$ra" = 0 ] && [ "$rb" = 0 ] || fail "two suites in one tree exited $ra and $rb"
+  grep -q "'same-1' holds the suite lock" "$X/out-2" || fail "a second suite in the same tree did not wait for the first: $(head -2 "$X/out-2" | tr '\n' ' ')"
+  grep -q '^overlap [^ ]* [1-9]' "$FAKE_LOG" && fail "two suites in one tree compiled at once"
+  [ -d "$VISIONOCR_TEST_LOCK" ] && fail "test.lock was left behind: $(ls "$VISIONOCR_TEST_LOCK")"
+  unset FAKE_COMPILE_SLEEP FAKE_RUN_SLEEP VISIONOCR_TEST_CACHE VISIONOCR_SUITE_STAMP
+}
+
 # ── run each section on the real files, then on broken copies ─────────────────────────────────────────
 RT="$RT_REAL"; TL="$TL_REAL"; GATE="$GATE_REAL"
 section() {   # $1 title · $2 check function
@@ -374,6 +423,12 @@ mutant check_gate GATE gate-no-record 'date +%s > "$GATE_REAL_SUITE"' 'true'
 mutant check_gate GATE gate-record-never-expires '[ "$a" -lt 0 ] || [ "$a" -ge 86400 ]' '[ "$a" -lt 0 ]'
 mutant check_gate GATE gate-record-on-skip '      echo "  ⊘ $name skipped' '      date +%s > "$GATE_REAL_SUITE"; echo "  ⊘ $name skipped'
 mutant check_gate GATE red-without-note '$fails${SUITE_STAMP:+ — suite skipped: identical inputs passed at $SUITE_STAMP}"' '$fails"'
+
+section "[5] two worktrees at once: no test.lock wait, the cache write serialised, one tree one suite" check_concurrent
+mutant check_concurrent RT no-cache-write-lock 'mkdir -p "$CACHE" 2>/dev/null && _flock "$CACHE/.write.lock" 120; }' 'true; }'
+mutant check_concurrent TL one-entry-for-every-tree 'ENTRY="$LOCKDIR/wt-$(printf' 'ENTRY="$LOCKDIR/wt-shared" # $(printf'
+mutant check_concurrent RT run-phase-unlocked 'if [ -x "$HEAVY" ]; then' 'if false; then'
+mutant check_concurrent TL an-entry-per-caller 'ENTRY="$LOCKDIR/wt-$(printf' 'ENTRY="$LOCKDIR/wt-$$" # $(printf'
 
 echo ""
 echo "=================== $PASS passed, $FAIL failed ==================="

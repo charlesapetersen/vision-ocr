@@ -144,19 +144,18 @@ Never report a change as working without `./run_tests.sh` passing. Add a test th
   `run-guarded.sh` already do. Wrap any other long build, VM run or corpus job in it too; one-page checks don't need to.
   When the Agent Manager's `bin/heavy-lock` is installed, the helper hands every call to it (`ops/autonomous/README.md`).
 
-- **Never run two suites at once, in any two worktrees.** `build/tests` has no
-  bundle identifier, so `UserDefaults.standard` lands in a domain keyed by the
-  process *name* — `~/Library/Preferences/tests.plist` — and **every worktree
-  shares that one file**. A second suite's `resetPrefs()` removes every key and
-  wipes the first one's settings mid-run. Measured: 882/883 → 877/879, two
-  failures in the run-report block, because the other run cleared
-  `writeRunReport` between this one setting it and the batch finishing.
-  `Tools/mutate.py` says to stay sequential and blames *timing*; the real hazard
-  is shared preferences, and it fails checks for reasons unrelated to load. This
-  includes suites started by review agents you launched. Since cs-domains
-  (2026-10-13) each run has its own domain, `local.visionocr-tests.<pid>`, and since
-  cs-paths its own run-report directory, with a marker `test-lock.sh` reads; the rule
-  stands until cs-narrow-lock shrinks `test.lock` to what two suites still share.
+- **Run every suite through `ops/autonomous/test-lock.sh run`, and never two in
+  one worktree.** Until 2026-10-13 two suites anywhere corrupted each other:
+  `build/tests` has no bundle identifier, so every worktree shared
+  `~/Library/Preferences/tests.plist`, and a second suite's `resetPrefs()` wiped
+  the first one's settings mid-run (measured 882/883 → 877/879). Since
+  concurrent-suites each run has its own settings domain
+  (`local.visionocr-tests.<pid>`), report and temporary directories, and
+  `test.lock` holds one entry per worktree: suites in two worktrees compile side by
+  side and queue for the machine-wide heavy lock, which still runs one suite's
+  checks at a time. Two in one worktree share `build/`; the lock makes the second
+  wait. A tree older than these commits still shares `tests.plist` with its own
+  kind, so its suites keep the old rule.
 - **Backgrounded shell commands have essentially no `PATH`** — `basename`, `cut`,
   `timeout` fail silently and loops report bogus results. Use absolute paths.
 - **A suite's log lags by up to 4 KB when redirected to a file** — `print` is

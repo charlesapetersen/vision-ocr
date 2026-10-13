@@ -207,6 +207,13 @@ _build() {
   if [ "$("$keyfn")" != "$key" ]; then
     echo "run_tests: a $name input changed during the compile — not caching it." >&2; return 0
   fi
+  # The cache is the one thing two trees' suites write in common (concurrent-suites, cs-narrow-lock), so an
+  # entry's write and the prune are serialised by an flock: two runs writing one key at once could otherwise
+  # leave one's binary under the other's `ok` (a checksum miss, then a needless compile), and a prune could
+  # remove an entry another run is writing. A lock not had in 120 s skips the write; nothing else waits on it.
+  if ! { mkdir -p "$CACHE" 2>/dev/null && _flock "$CACHE/.write.lock" 120; }; then
+    _funlock; echo "run_tests: the binary cache's write lock was busy — not caching $name." >&2; return 0
+  fi
   t="$d/.$name.$$"
   if mkdir -p "$d" 2>/dev/null && cp -p "$dest" "$t" 2>/dev/null && mv -f "$t" "$d/$name" \
      && { printf 'sha256=%s\nwritten=%s\nworktree=%s\n' "$(_sha < "$d/$name")" "$(date '+%F %T')" "$PWD"; } > "$d/.ok.$$" \
@@ -217,8 +224,18 @@ _build() {
     rm -f "$t" "$d/.ok.$$" 2>/dev/null
     echo "run_tests: could not write the binary cache at $d — continuing uncached." >&2
   fi
+  _funlock
   return 0
 }
+# _flock FILE SECS — an exclusive flock(2) on FILE through fd 9, held by this shell until _funlock or its exit
+# (the kernel drops it if the process dies, so it cannot go stale). perl takes it on the open file this shell
+# shares with it and exits; the lock belongs to that open file. Non-zero if not had within SECS. The same
+# helper is in ops/autonomous/test-lock.sh, around the timing ledger.
+_flock() {
+  exec 9>>"$1" || return 1
+  perl -MFcntl=:flock -e 'alarm shift; open(my $f, ">&=", 9) or exit 2; flock($f, LOCK_EX) or exit 1' "$2"
+}
+_funlock() { exec 9>&-; }
 
 c_t0=$(date +%s)
 _build tests key_tests "$BIN" swiftc "${TESTS_FLAGS[@]}" -o "$BIN" "${SOURCES[@]}" Tests/main.swift || exit 1
