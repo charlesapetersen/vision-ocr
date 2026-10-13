@@ -1548,7 +1548,7 @@ say so in the commit.
             Vision on regions gains a tenth on newspapers, far below the lab's NewsBench whole-vs-regions gap
             (0.304 -> 0.741 1−CER); reasoned, not measured: there the score was the crops' text alone, here the
             region words only mend Vision's lines and the layer keeps Vision's placement. vision-regions' peak is under-sampled (note in the table's header). For ocr-compare-report.
-- [ ] **ocr-compare-report** — write the full comparison for the owner and for the app's settings table.
+- [x] **ocr-compare-report** — write the full comparison for the owner and for the app's settings table.
       (blocked-on: ocr-compare-run, ocr-newspaper-detect) (uses: light)
       A dated `OCR-COMPARE-DECISION-<date>.md` in the plain prose of `OCR-HYBRID-DECISION-2026-10-12.md`: for each
       kind of page, Vision, PaddleOCR-VL and Falcon-OCR in their best arrangement side by side (words wrong or
@@ -1559,6 +1559,10 @@ say so in the commit.
       route. Draft the table the settings will show: per kind, per reader, the accuracy figure, the speed figure
       and the memory it needs, in words a user reads. A note on the Desktop as `ocr-hybrid-pick` left. DONE WHEN
       committed with the note. It decides nothing. ESTIMATE: 1 session. BOUND: rule 10. (context: owner request 2026-10-12)
+      DONE 2026-10-13: `OCR-COMPARE-DECISION-2026-10-13.md`, note on the Desktop. Both models give a real advantage over
+      Vision on both kinds (print 1.20% -> 0.63-0.72% at about 4x; newspapers 29.6% -> 21.3-21.8% at 2.6-2.9x, no page
+      worse) and little over each other. No advantage: fill (any model), Vision on regions off newspapers. Vision on
+      regions not recommended as the standard newspaper route (cut 0.10, 3 of 11 worse); offer it in the accurate mode.
 - [ ] **ocr-integrate-engine** — run the readers the owner approved inside the app. (blocked-on: ocr-hybrid-approve) (uses: build,model:12)
       Starts from what the owner approved in `ocr-hybrid-approve` after `ocr-compare-report`: under THE APPROACH
       above, which of Vision-on-regions, PaddleOCR-VL and Falcon-OCR are offered for which kind of page. Its first
