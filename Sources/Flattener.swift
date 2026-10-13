@@ -1235,6 +1235,7 @@ enum Flattener {
         progress: (Int, Int) -> Void = { _, _ in },
         onPage: ((RebuiltPage) throws -> Void)? = nil
     ) throws -> [RebuiltPage] {
+        tripwire?()
         var rebuilt: [RebuiltPage] = []
         guard let doc = open(source, password: password) else {
             // Distinguish "needs a password" from "not a PDF": the first is
@@ -1803,6 +1804,7 @@ enum Flattener {
         _ page: PDFPage, box: CGRect, scale: CGFloat, width: Int, height: Int,
         from pdfBox: CGPDFBox = .mediaBox, scaleY: CGFloat? = nil, origin: CGPoint = .zero
     ) -> [UInt8]? {
+        tripwire?()
         var buffer = [UInt8](repeating: 255, count: width * height)
         let ok = buffer.withUnsafeMutableBytes { raw -> Bool in
             guard let ctx = CGContext(
@@ -1899,6 +1901,7 @@ enum Flattener {
         _ page: PDFPage, box: CGRect, scale: CGFloat, width: Int, height: Int,
         from pdfBox: CGPDFBox = .mediaBox
     ) -> [UInt8]? {
+        tripwire?()
         var buffer = [UInt8](repeating: 255, count: width * height * 4)
         let ok = buffer.withUnsafeMutableBytes { raw -> Bool in
             guard let ctx = CGContext(
@@ -2764,6 +2767,7 @@ enum Flattener {
         -> (buffer: [UInt8], width: Int, height: Int)? {
         // The same area flatten rebuilds, so the routing signal describes the
         // page that actually gets written.
+        tripwire?()
         let box = fullBox(of: page)
         guard let (w, h, scale) = thumbnailSize(for: box) else { return nil }
         var buffer = [UInt8](repeating: 255, count: w * h * 4)
@@ -3324,6 +3328,12 @@ enum Flattener {
     /// file — see `build.sh`'s `HELPER_SOURCES` — but never layers a page, so there is no
     /// second address space for the value to be `nil` in.
     nonisolated(unsafe) static var textPageInkOutsideThresholdOverride: Double?
+
+    /// light-tier (lt-audit). The suite sets this to count, per section, calls to the four
+    /// functions that render a page: `flatten`, `renderGrey`, `renderRGB` and
+    /// `saturationThumbnail`. Pixel loops a check runs on a buffer it made itself are not
+    /// counted. `nil` in the app and the helper.
+    nonisolated(unsafe) static var tripwire: (() -> Void)?
 
     /// What a page of nothing but text shrinks its tone layers to.
     ///

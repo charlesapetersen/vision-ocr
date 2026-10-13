@@ -119,23 +119,108 @@ func noteSection(_ row: String) {
         sectionTimingsStarted = true
         try? FileManager.default.createDirectory(at: url.deletingLastPathComponent(),
                                                  withIntermediateDirectories: true)
-        try? "section\tchecks\tfailures\tseconds\n".write(to: url, atomically: false, encoding: .utf8)
+        try? "section\tchecks\tfailures\tseconds\tvision\tflatten\tprocess\tlaunched\n"
+            .write(to: url, atomically: false, encoding: .utf8)
     }
     guard let h = try? FileHandle(forWritingTo: url) else { return }
     _ = try? h.seekToEnd()
     try? h.write(contentsOf: Data((row + "\n").utf8))
     try? h.close()
 }
+
+/// light-tier (lt-audit). Tripwires count what a light tier must not touch, per section:
+/// Vision in this process (`-[VNImageRequestHandler performRequests:error:]`, and the
+/// language query `supportedRecognitionLanguagesAndReturnError:`), the Flattener's page
+/// renders (`Flattener.tripwire`), and process launches
+/// (`-[NSTask launchAndReturnError:]` and `-launch`), which is how Vision in the recognition
+/// helper shows up, beside jbig2, qpdf and whatever a check spawns itself. The Objective-C
+/// methods are replaced in this process only, and call the original. Work a section leaves
+/// running when it ends is charged to whichever section is open when it lands.
+final class Tripwires: @unchecked Sendable {
+    static let shared = Tripwires()
+    struct Counts { var vision = 0, flatten = 0, process = 0; var launched: [String: Int] = [:] }
+    private let lock = NSLock()
+    private var counts = Counts()
+    func hit(_ kind: WritableKeyPath<Counts, Int>, launching name: String? = nil) {
+        lock.lock(); counts[keyPath: kind] += 1
+        if let name { counts.launched[name, default: 0] += 1 }
+        lock.unlock()
+    }
+    func snapshot() -> Counts { lock.lock(); defer { lock.unlock() }; return counts }
+}
+func installTripwires() {
+    Flattener.tripwire = { Tripwires.shared.hit(\.flatten) }
+
+    typealias Perform = @convention(c) (AnyObject, Selector, AnyObject, UnsafeMutableRawPointer?) -> ObjCBool
+    let performSel = NSSelectorFromString("performRequests:error:")
+    if let m = class_getInstanceMethod(VNImageRequestHandler.self, performSel) {
+        let original = unsafeBitCast(method_getImplementation(m), to: Perform.self)
+        let block: @convention(block) (AnyObject, AnyObject, UnsafeMutableRawPointer?) -> ObjCBool = {
+            Tripwires.shared.hit(\.vision)
+            return original($0, performSel, $1, $2)
+        }
+        method_setImplementation(m, imp_implementationWithBlock(block))
+    }
+
+    // Unmanaged passes the returned array through with no retain or release of its own.
+    typealias Languages = @convention(c) (AnyObject, Selector, UnsafeMutableRawPointer?)
+        -> Unmanaged<AnyObject>?
+    let languagesSel = NSSelectorFromString("supportedRecognitionLanguagesAndReturnError:")
+    if let m = class_getInstanceMethod(VNRecognizeTextRequest.self, languagesSel) {
+        let original = unsafeBitCast(method_getImplementation(m), to: Languages.self)
+        let block: @convention(block) (AnyObject, UnsafeMutableRawPointer?) -> Unmanaged<AnyObject>? = {
+            Tripwires.shared.hit(\.vision)
+            return original($0, languagesSel, $1)
+        }
+        method_setImplementation(m, imp_implementationWithBlock(block))
+    }
+
+    // `Process` is a class cluster: replace the method on the class an instance really has.
+    let taskClass: AnyClass = object_getClass(Process()) ?? Process.self
+    func launchedName(_ task: AnyObject) -> String {
+        (task as? Process)?.executableURL?.lastPathComponent ?? "?"
+    }
+    typealias LaunchErr = @convention(c) (AnyObject, Selector, UnsafeMutableRawPointer?) -> ObjCBool
+    let launchErrSel = NSSelectorFromString("launchAndReturnError:")
+    if let m = class_getInstanceMethod(taskClass, launchErrSel) {
+        let original = unsafeBitCast(method_getImplementation(m), to: LaunchErr.self)
+        let block: @convention(block) (AnyObject, UnsafeMutableRawPointer?) -> ObjCBool = {
+            Tripwires.shared.hit(\.process, launching: launchedName($0))
+            return original($0, launchErrSel, $1)
+        }
+        method_setImplementation(m, imp_implementationWithBlock(block))
+    }
+    typealias Launch = @convention(c) (AnyObject, Selector) -> Void
+    let launchSel = NSSelectorFromString("launch")
+    if let m = class_getInstanceMethod(taskClass, launchSel) {
+        let original = unsafeBitCast(method_getImplementation(m), to: Launch.self)
+        let block: @convention(block) (AnyObject) -> Void = {
+            Tripwires.shared.hit(\.process, launching: launchedName($0))
+            original($0, launchSel)
+        }
+        method_setImplementation(m, imp_implementationWithBlock(block))
+    }
+}
+installTripwires()
+var trippedInSections = Tripwires.Counts()
+
 func section(_ name: String, _ body: () -> Void) {
     precondition(currentSection == nil, "section '\(name)' opened inside '\(currentSection ?? "")'")
     print("\n" + name)
     currentSection = name
     let c0 = checks, f0 = failures, t0 = Date()
+    let w0 = Tripwires.shared.snapshot()
     body()
     let secs = Date().timeIntervalSince(t0)
+    let w1 = Tripwires.shared.snapshot()
     currentSection = nil
     sectionsRun += 1
-    noteSection("\(name)\t\(checks - c0)\t\(failures - f0)\t\(String(format: "%.2f", secs))")
+    let v = w1.vision - w0.vision, f = w1.flatten - w0.flatten, p = w1.process - w0.process
+    trippedInSections.vision += v; trippedInSections.flatten += f; trippedInSections.process += p
+    let names = w1.launched.keys.filter { w1.launched[$0] != w0.launched[$0] }
+        .sorted().joined(separator: ",")
+    noteSection("\(name)\t\(checks - c0)\t\(failures - f0)\t\(String(format: "%.2f", secs))"
+                + "\t\(v)\t\(f)\t\(p)\t\(names)")
 }
 
 func check(_ label: String, _ condition: Bool, _ detail: String = "") {
@@ -22907,6 +22992,53 @@ do {
 }
 }  // end of section
 
+// lt-audit. Each tripwire counts one call per call, so a section's row is a count, not a guess.
+section("the tripwires count Vision, the Flattener and process launches") {
+func moved(_ body: () -> Void) -> Tripwires.Counts {
+    let a = Tripwires.shared.snapshot(); body(); let b = Tripwires.shared.snapshot()
+    var c = Tripwires.Counts()
+    c.vision = b.vision - a.vision; c.flatten = b.flatten - a.flatten; c.process = b.process - a.process
+    c.launched = b.launched.filter { a.launched[$0.key] != $0.value }
+    return c
+}
+let ran = moved {
+    let p = Process(); p.executableURL = URL(fileURLWithPath: "/usr/bin/true")
+    try? p.run(); p.waitUntilExit()
+}
+check("a Process run is one launch, named by its executable",
+      ran.process == 1 && ran.vision == 0 && ran.flatten == 0 && Set(ran.launched.keys) == ["true"],
+      "\(ran)")
+let launched = moved {
+    let p = Process(); p.launchPath = "/usr/bin/true"; p.launch(); p.waitUntilExit()
+}
+check("…and so is the older launch()", launched.process == 1, "\(launched)")
+let image = NSImage(size: NSSize(width: 64, height: 32))
+image.lockFocus(); NSColor.white.setFill(); NSRect(x: 0, y: 0, width: 64, height: 32).fill()
+image.unlockFocus()
+let saw = moved {
+    if let cg = image.cgImage(forProposedRect: nil, context: nil, hints: nil) {
+        try? VNImageRequestHandler(cgImage: cg, options: [:]).perform([VNRecognizeTextRequest()])
+    }
+}
+check("a Vision request performed in this process is one", saw.vision == 1 && saw.process == 0, "\(saw)")
+let asked = moved { _ = Recogniser.supportedLanguages(fast: false) }
+check("…and so is asking which languages it reads, and the answer still comes back",
+      asked.vision == 1 && !Recogniser.supportedLanguages(fast: true).isEmpty, "\(asked)")
+let box = CGRect(x: 0, y: 0, width: 64, height: 32)
+let drew = moved {
+    if let page = PDFPage(image: image) {
+        _ = Flattener.renderGrey(page, box: box, scale: 1, width: 64, height: 32)
+        _ = Flattener.renderRGB(page, box: box, scale: 1, width: 64, height: 32)
+        _ = Flattener.saturationThumbnail(of: page)
+    }
+    _ = try? Flattener.flatten(tmp.appendingPathComponent("lt-audit-absent.pdf"),
+                               to: tmp.appendingPathComponent("lt-audit-out.pdf"), mode: .auto)
+}
+check("renderGrey, renderRGB, saturationThumbnail and flatten each count once",
+      drew.flatten == 4 && drew.vision == 0,
+      "\(drew)")
+}  // end of section
+
 // lt-sections-rest. Every check above runs in a named section; this one checks that.
 section("every check runs inside a named section") {
 check("every check so far ran inside a named section",
@@ -22915,13 +23047,17 @@ if let url = sectionTimings {
     let rows = ((try? String(contentsOf: url, encoding: .utf8)) ?? "")
         .split(separator: "\n").dropFirst()
     check("…and the timing file has one row per section that ran, with its checks",
-          rows.count == sectionsRun && rows.allSatisfy { $0.split(separator: "\t").count == 4 },
+          rows.count == sectionsRun
+            && rows.allSatisfy { $0.split(separator: "\t", omittingEmptySubsequences: false).count == 8 },
           "\(rows.count) rows for \(sectionsRun) sections at \(url.path)")
 }
 }  // end of section
 
 resetPrefs()
-noteSection("(outside any section)\t\(checksOutsideSections)\t\t")
+let trippedAll = Tripwires.shared.snapshot()
+noteSection("(outside any section)\t\(checksOutsideSections)\t\t\t"
+            + "\(trippedAll.vision - trippedInSections.vision)\t\(trippedAll.flatten - trippedInSections.flatten)"
+            + "\t\(trippedAll.process - trippedInSections.process)\t")
 if checksOutsideSections > 0 { print("\n\(checksOutsideSections) check(s) ran outside a named section") }
 
 // A11.7. Measured, not documented. The census used to live in `ARCHITECTURE.md` as

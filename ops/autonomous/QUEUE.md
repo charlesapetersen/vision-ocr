@@ -1788,11 +1788,17 @@ say so in the commit.
         0 checks outside. `SECTION-TIMINGS-2026-10-13.tsv`: 362.0 s in sections; the largest is "telling real
         digital text from an OCR layer", 114 checks, 66.2 s. Global helper funcs stay outside sections. Three
         fixture guards that recorded a FAIL and then `exit(0)` (revision, concurrency, orientation) now exit 1.
-      - [ ] **lt-audit** — find at run time which sections touch Vision, the Flattener or a subprocess.
+      - [x] **lt-audit** — find at run time which sections touch Vision, the Flattener or a subprocess.
         (blocked-on: lt-sections-rest) (uses: build) Count the calls per section with test-only tripwires on the recogniser, the
         Flattener's entry points and process launches, over one full run, and commit the table (section, checks,
         seconds, touches). The static 47 is a lead, not the answer. DONE WHEN the table covers every section and a
         mutant that hides one call from the tripwires shows up as a changed row. ESTIMATE: 1 session.
+        Done 2026-10-13: `SECTION-AUDIT-2026-10-13.tsv`. Tripwires: `-[VNImageRequestHandler performRequests:error:]`
+        and the language query swapped in-process, `Flattener.tripwire` on flatten/renderGrey/renderRGB/
+        saturationThumbnail, `-[NSTask launch…]` with the executable's name. 47 of 113 sections touch nothing:
+        503 checks, 3.0 s; 38 touch all three (896 checks, 295 s). Mutant (renderRGB's tripwire removed): 11 rows'
+        flatten counts changed and the self-check went red. Not counted: pixel loops on a check's own buffers;
+        work a section leaves running is charged to the section open when it lands. Suite 1884 -> 1889/1889.
       - [ ] **lt-tier** — `VISIONOCR_TIER=light` runs only the sections the audit found clean, and
         `VISIONOCR_SECTIONS=a,b` runs named sections. (blocked-on: lt-audit) (uses: build) A light run whose tripwires fire fails,
         so the tier cannot quietly grow heavy. The hook, the gate and the green stamp ignore both variables and run

@@ -1,0 +1,114 @@
+section	checks	seconds	vision	flatten	process	launched	touches
+the suite's preferences domain is its own	4	0.11	0	0	0		none
+end-to-end runs	10	2.76	4	5	10	jbig2,qpdf	vision,flatten,process
+cancelling a text extraction neither publishes nor lies about it	8	0.36	2	2	0		vision,flatten
+a document with no text on any page says so	17	2.48	3	6	11	jbig2,qpdf	vision,flatten,process
+rejoining hyphenated words	31	0.04	0	0	0		none
+reporting a copy larger than its original	6	0.00	0	0	0		none
+the unplaced-lines message names pages, not text	6	0.00	0	0	0		none
+presets	26	0.07	0	0	0		none
+forced re-OCR of already-OCR'd input	4	0.17	1	1	0		vision,flatten
+rebuild removes the old text layer	11	0.36	2	4	0		vision,flatten
+automatic per-page image mode	188	55.62	15	139	50	jbig2,nonexistent,qpdf	vision,flatten,process
+the eight routing fixtures route the way R56 and R57 say they must	18	8.42	0	24	1	make-plate-fixtures	flatten,process
+dense bilevel type is routed to 1-bit, not to the picture path	11	2.30	0	25	0		flatten
+JBIG2 compression of the page images	15	0.88	1	5	2	jbig2,qpdf	vision,flatten,process
+word spacing in the searchable PDF	4	0.35	2	2	0		vision,flatten
+right-to-left text	7	0.01	0	0	0		none
+unplaced lines are reported per file	3	0.02	0	0	0		none
+drop box	14	0.07	0	0	0		none
+concurrency	7	0.58	0	0	5	sleep	process
+batch accounting	11	4.62	2	30	94	jbig2,qpdf,visionocr-recognise	vision,flatten,process
+searchable PDF, end to end	9	4.87	30	10	19	jbig2,qpdf	vision,flatten,process
+output naming	5	0.01	0	0	0		none
+text layer page geometry	4	0.01	0	0	0		none
+closely-spaced lines	4	0.06	0	0	0		none
+rotated pages	10	1.13	1	6	1	jbig2	vision,flatten,process
+sideways text gets a layer along its printed line (C36)	12	3.08	6	7	12	jbig2,qpdf	vision,flatten,process
+a page pasted up from scanned strips is read strip by strip (C39)	25	4.23	16	6	10	jbig2,qpdf	vision,flatten,process
+a 1-bit page keeps the source's stroke weight, and its faint marks (C56)	10	0.84	0	5	0		flatten
+a 1-bit JBIG2 source page keeps its own stream (C37)	39	16.20	21	85	57	jbig2,qpdf	vision,flatten,process
+a layered scan keeps its own images, without its text (C47)	17	12.64	59	35	33	jbig2,qpdf	vision,flatten,process
+two inputs with the same name	5	0.07	0	0	0		none
+stop() escalates past a child that ignores SIGTERM	2	0.88	0	0	1	sh	process
+a logo does not set the page's rebuild resolution	53	2.18	1	38	0		vision,flatten
+a layered scan's type is kept at the resolution of its mask (C39)	80	11.86	32	47	24	jbig2,qpdf,visionocr-recognise	vision,flatten,process
+the document outline survives OCR	16	6.12	4	7	28	jbig2,qpdf	vision,flatten,process
+files added during a run	14	0.09	0	0	0		none
+pages far too big for a recogniser to refuse	3	1.50	1	1	0		vision,flatten
+recognising a page again in overlapping bands (C30)	103	1.52	20	0	0		vision
+the text layer reads down each column, not across them (C34)	24	0.42	5	0	0		vision
+a drag down one column stays in it, as PDFKit selects (C52)	23	0.22	2	0	0		vision
+the revision we pin is the revision Vision uses	2	0.12	1	1	0		vision,flatten
+cancelling recognition is a cancellation, not a short document	1	0.26	2	2	0		vision,flatten
+recognition from several threads at once agrees with itself	2	0.82	7	1	0		vision,flatten
+every recognition setting reaches the request	11	0.00	0	0	0		none
+every recognition setting reaches the helper	24	0.00	0	0	0		none
+a model's reading takes Vision's lines' words where the two agree (ocr-hybrid-proto)	19	9.81	10	14	30	broken.sh,jbig2,qpdf,reader.sh,silent.sh,sleeper-false.sh,visionocr-recognise	vision,flatten,process
+a model reads only the lines Vision was unsure of and the ones it skipped (ocr-hybrid-proto, fill)	17	7.04	4	8	25	blank.sh,crowd.sh,echo.sh,jbig2,qpdf,short.sh,visionocr-recognise	vision,flatten,process
+a model's own blocks and words replace Vision's reading (ocr-hybrid-proto, replace)	23	4.41	2	5	15	blocks.sh,empty.sh,jbig2,plain.sh,qpdf,visionocr-recognise,whole.sh	vision,flatten,process
+a model's reading of each layout region takes the words of Vision's lines in it (hp-regions)	15	7.99	8	8	28	first-line.sh,jbig2,layout.sh,none.sh,plain.sh,qpdf,regions.sh,visionocr-recognise,wordless.sh	vision,flatten,process
+ocr-newspaper-detect: a newspaper page is told from print by Vision's lines alone	10	0.01	0	0	0		none
+a helper is only worth it when there is something to overlap with	5	0.00	0	0	0		none
+the helper recognises exactly what the app would	9	3.51	17	6	2	visionocr-recognise	vision,flatten,process
+a helper that misbehaves costs time, never content	31	5.70	1	4	14	adopted.sh,always-fails.sh,exits.sh,fine.sh,garbled.sh,noisy.sh,odd-3129205540956065655.sh,odd-6353319637357115029.sh,odd-6872488996104438304.sh,odd-7904299423384620605.sh,odd-8264054460093257327.sh,short.sh,signalled.sh,stalls.sh	vision,flatten,process
+the engine assumptions two declined features rest on	13	1.17	4	0	0		vision
+a photograph that says it is sideways is read as sideways	4	0.19	2	0	0		vision
+every control VoiceOver cannot name from its own label has one	12	0.04	0	0	0		none
+telling a new version from an old one	52	0.00	0	0	0		none
+what each file's row shows	15	0.07	0	0	0		none
+every door into a committed batch is shut	15	0.10	0	0	0		none
+the import interlock counts imports, not drops	10	0.17	0	0	0		none
+retrying the failures from a finished batch	19	0.92	2	3	11	jbig2,qpdf,visionocr-recognise	vision,flatten,process
+a retry declined at the alert puts the batch back	8	0.03	0	0	0		none
+a retry cannot claim a path the batch it came from protected	11	0.00	0	0	0		none
+the retried batch really does protect the earlier one's files	10	1.70	4	6	21	jbig2,qpdf,visionocr-recognise	vision,flatten,process
+the batch stays frozen while the alert is up	15	0.57	2	3	10	jbig2,qpdf	vision,flatten,process
+importing a folder does not block the main actor	9	1.58	0	0	0		none
+indeterminate progress	11	0.01	0	0	0		none
+outline destinations survive the page rewrite	14	0.01	0	0	0		none
+a pathological outline cannot take the batch down	7	0.26	0	0	1	tests	process
+outline destinations of every form	7	0.00	0	0	0		none
+the backend does not leak or wedge	8	7.34	0	0	54	echo,sh	process
+a skipped page is not mistaken for a blank one	5	2.88	3	7	12	jbig2,qpdf	vision,flatten,process
+wrapping a dropped image	6	0.09	0	0	0		none
+open-when-finished picks a folder in every configuration	3	0.00	0	0	0		none
+assembling no pages is refused	2	0.00	0	0	0		none
+crop box differing from media box	33	11.26	15	23	49	jbig2,qpdf	vision,flatten,process
+mixed page sizes and rotation through the whole pipeline	9	2.99	5	7	12	jbig2,qpdf	vision,flatten,process
+partial results are never published	20	2.51	6	6	9	qpdf	vision,flatten,process
+cancel reaches the whole process tree	10	1.26	0	0	2	sh	process
+publishing	5	0.11	0	0	0		none
+searchable pipeline: the unhappy branches	5	2.24	1	4	11	jbig2,qpdf	vision,flatten,process
+searchable pipeline without the rebuild	8	1.87	3	3	8	qpdf	vision,flatten,process
+encrypted input	9	2.41	2	4	11	jbig2,qpdf	vision,flatten,process
+colour pages	5	2.88	15	11	13	qpdf	vision,flatten,process
+a short text layer is caught	3	0.68	3	3	1	qpdf	vision,flatten,process
+concurrent searchable batch	12	1.14	1	6	22	jbig2,qpdf,visionocr-recognise	vision,flatten,process
+telling real digital text from an OCR layer	114	63.75	181	120	149	jbig2,qpdf,visionocr-recognise	vision,flatten,process
+defaults and ordering	5	0.00	0	0	0		none
+the run log carries outcomes, not pipeline steps	10	0.48	2	3	10	jbig2,qpdf	vision,flatten,process
+recognition languages this Mac actually has	20	1.47	12	0	5	binary,sh	vision,process
+the written run report	38	0.03	0	0	0		none
+calibrated constants have not drifted	11	0.00	0	0	0		none
+resolution decisions the corpus rests on	2	0.00	0	0	0		none
+safeInt cannot be handed something that traps	4	0.00	0	0	0		none
+the declared-geometry conversions cannot trap	10	0.18	0	0	1	tests	process
+ink coverage cannot exceed one	5	0.00	0	0	0		none
+repeated text in a column is not a duplicate	5	0.00	0	0	0		none
+adjacent fragments of one line keep their space	14	0.06	0	0	0		none
+a box sitting on top of a run is not the next fragment of its line	10	0.04	0	0	0		none
+a squashed run sits in the middle of its line's ink (C55)	7	0.00	0	0	0		none
+a short fragment beside a tall one is one line, and keeps its space	11	0.04	0	0	0		none
+"one visual line" means the same thing to the writer and to its instrument	5	0.00	0	0	0		none
+saying what the confidence setting means	11	0.00	0	0	0		none
+what the rebuild does, and to which files	67	1.09	0	58	0		flatten
+settings survive the rename	14	0.02	0	0	0		none
+tool lookup	3	0.42	0	0	2	zsh	process
+an input named after a scratch intermediate	9	8.30	4	12	40	jbig2,qpdf	vision,flatten,process
+hostile page dimensions	20	1.94	0	2	5	tests	flatten,process
+shared form resources	42	10.13	0	0	14	answering,answers-with-decoy,chatter-only,chatty,chatty-nonsense,dribbling,holder,lipo,nonsense,nvmish,wedged	process
+the Keep highlights and notes setting gates the transplant	33	16.36	9	41	75	jbig2,qpdf	vision,flatten,process
+the MRC layering loop, end to end (C28)	9	6.70	27	20	11	jbig2,qpdf	vision,flatten,process
+the tripwires count Vision, the Flattener and process launches	5	0.40	3	4	2	true	vision,flatten,process
+every check runs inside a named section	2	0.00	0	0	0		none
