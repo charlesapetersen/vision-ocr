@@ -12193,6 +12193,67 @@ do {
               cancelled && pid > 0 && gone && Date().timeIntervalSince(began) < 30,
               "cancelled \(cancelled), pid \(pid), gone \(gone)")
     }
+
+    // A shipped reader by name (C57, ie-runtime): the runtime's python runs the bundled script
+    // with the model and limits ocr-compare-run measured, offline. A stand-in python records them.
+    let modelHome = dir.appendingPathComponent("model home")
+    let fakeBin = modelHome.appendingPathComponent("Runtime/bin")
+    try? FileManager.default.createDirectory(at: fakeBin, withIntermediateDirectories: true)
+    let argvFile = dir.appendingPathComponent("python-argv.txt")
+    let python = fakeBin.appendingPathComponent("python3")
+    try? ("#!/bin/sh\nprintf '%s\\n' \"$@\" \"HF_HOME=$HF_HOME\" \"OFFLINE=$HF_HUB_OFFLINE\" > '\(argvFile.path)'\n"
+          + "printf '%s\\n' \"The model reader's wordz reach the texts layer\" > \"$5\"\n")
+        .write(to: python, atomically: true, encoding: .utf8)
+    try? FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: python.path)
+    let script = dir.appendingPathComponent("read-model.py")
+    try? "".write(to: script, atomically: true, encoding: .utf8)
+    setenv("VISIONOCR_MODEL_HOME", modelHome.path, 1)
+    setenv("VISIONOCR_READER_SCRIPT", script.path, 1)
+    let notDownloaded = publish(.align, "falcon-ocr")
+    check("a shipped reader whose model is not downloaded fails the file, saying so",
+          notDownloaded.2 == .failed && notDownloaded.1.contains("has not been downloaded") && notDownloaded.0.isEmpty,
+          "\(String(describing: notDownloaded.2)) \(notDownloaded.1)")
+    try? FileManager.default.createDirectory(
+        at: modelHome.appendingPathComponent("Models/hub/models--tiiuae--Falcon-OCR"), withIntermediateDirectories: true)
+    let shipped = publish(.align, "falcon-ocr")
+    let argv = (try? String(contentsOf: argvFile, encoding: .utf8))?.split(separator: "\n").map(String.init) ?? []
+    check("a shipped reader by name runs in the model runtime and its words reach the layer",
+          shipped.2 == .succeeded && shipped.0.contains("wordz") && argv.count == 13
+              && Array(argv[0...2]) == ["-I", script.path, "tiiuae/Falcon-OCR"]
+              && Array(argv[5...10]) == ["--prompt", "plain", "--seconds", "540", "--max-side", "3300"]
+              && argv[11] == "HF_HOME=" + modelHome.appendingPathComponent("Models").path && argv[12] == "OFFLINE=1",
+          shipped.1 + " | " + argv.joined(separator: " "))
+    // Only the approved arrangements this build serves: no fill, no regions before the layout
+    // model, and PaddleOCR-VL never on a whole page.
+    for (arrangement, name) in [(Prefs.ModelArrangement.regions, "falcon-ocr"), (.fill, "falcon-ocr"),
+                                (.align, "paddleocr-vl")] {
+        let refused = publish(arrangement, name)
+        check("\(name) under \(arrangement.rawValue) fails the file, saying it is not offered",
+              refused.2 == .failed && refused.1.contains("not offered") && refused.0.isEmpty,
+              "\(String(describing: refused.2)) \(refused.1)")
+    }
+    let paddleEnv = ["VISIONOCR_MODEL_HOME": modelHome.path, "VISIONOCR_READER_SCRIPT": script.path]
+    let undownloaded = try? ModelRuntime.command(reader: "paddleocr-vl", image: source, out: argvFile,
+                                                 crops: script, environment: paddleEnv)
+    try? FileManager.default.createDirectory(
+        at: modelHome.appendingPathComponent("Models/hub/models--mlx-community--PaddleOCR-VL-1.6-4bit"),
+        withIntermediateDirectories: true)
+    let cropped = try? ModelRuntime.command(reader: "paddleocr-vl", image: source, out: argvFile,
+                                            crops: script, environment: paddleEnv)
+    check("PaddleOCR-VL reads crops one a line under the regions' caps, once downloaded",
+          undownloaded == nil && cropped.map { Array($0.arguments.suffix(9)) } == ["--prompt", "OCR:", "--crops", script.path,
+              "--one-line-each", "--max-tokens", "3000", "--seconds", "540"]
+              && cropped?.arguments[2] == "mlx-community/PaddleOCR-VL-1.6-4bit",
+          cropped?.arguments.joined(separator: " ") ?? "nil")
+    try? FileManager.default.removeItem(at: python)
+    // The same output name as the publish that succeeded above: gone first, so an empty layer means this run's.
+    try? FileManager.default.removeItem(at: dir.appendingPathComponent("align-falcon-ocr.ocr.pdf"))
+    let noRuntime = publish(.align, "falcon-ocr")
+    check("…and a shipped reader with no runtime installed fails the file, naming the runtime",
+          noRuntime.2 == .failed && noRuntime.1.contains("model runtime") && noRuntime.0.isEmpty,
+          "\(String(describing: noRuntime.2)) \(noRuntime.1)")
+    unsetenv("VISIONOCR_MODEL_HOME")
+    unsetenv("VISIONOCR_READER_SCRIPT")
     resetPrefs()
 }
 }  // end of section

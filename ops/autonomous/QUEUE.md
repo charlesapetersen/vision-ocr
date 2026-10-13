@@ -1584,8 +1584,11 @@ say so in the commit.
             Standalone Python + MLX + mlx-vlm, 439-445 MB on disk, 134 MB to download; Falcon whole-page on s01 and s46
             and PaddleOCR-VL on s46's 181 regions byte-identical to the lab venv's, moved or rebuilt. DocLayout-YOLO
             to Core ML in the helper.
-      - [ ] **ie-runtime** — the runtime in the helper. (blocked-on: ocr-hybrid-approve) (uses: build,model:12)
-            `modelReading` with an interpreter and a reader script in `Resources/`, each model's reading of a sample page equal to the lab's, behind a test.
+      - [x] **ie-runtime** — the runtime in the helper. (blocked-on: ocr-hybrid-approve) (uses: build,model:12)
+            `modelReading` with an interpreter and a reader script in `Resources/`, each model's reading of a sample
+            page equal to the lab's, behind a test. Done 2026-10-13: `modelReader` `falcon-ocr` / `paddleocr-vl` (`ModelRuntime`, `Resources/read-model.py`). Falcon
+            align on s03 and s05, in-process and through the helper, publishes the text ocr-compare-run did (identical);
+            PaddleOCR-VL's crop call waits for ie-layout to give it regions.
       - [ ] **ie-layout** — DocLayout-YOLO as Core ML in the helper. (blocked-on: ocr-hybrid-approve) (uses: build)
             Its pre- and post-processing and dedupe in Swift, giving the lab's regions on the sample.
       - [ ] **ie-guard** — the memory guard and fallback. (blocked-on: ie-runtime) (uses: build,model:12)

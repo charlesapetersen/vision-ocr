@@ -20131,6 +20131,20 @@ regions needs no runtime. Rejected: an MLX Swift port (would not reproduce the f
 architectures was not checked), the runtime inside the app (+134 MB for everyone), the lab venv as it is.
 Next: sub-box 2, the runtime in the helper.
 
+#### Sub-box 2, the runtime in the helper (2026-10-13)
+
+`modelReader` may now name a shipped reader, `falcon-ocr` or `paddleocr-vl`, in place of a path.
+`ModelRuntime.command` runs it as `<home>/Runtime/bin/python3 -I <Resources>/read-model.py <repo> …` with the
+comparison's limits (whole page: `--seconds 540 --max-side 3300`; crops: `--one-line-each --max-tokens 3000
+--seconds 540`), `HF_HOME=<home>/Models` and offline; home is `~/Library/Application Support/Vision OCR`, or
+`VISIONOCR_MODEL_HOME`. `Resources/read-model.py` is `read-mlx.py`'s Falcon and PaddleOCR-VL path, exiting 1 when
+540 s stops a reading. No runtime, no download, or a shipped reader outside the approved arrangements this build serves
+(Falcon-OCR: `align`; `regions` for both waits for the layout model; no `fill`) fails the file, saying which. Measured through `score-gate` built from this tree, Falcon-OCR on align: `s03`'s
+published text layer is identical (pdftotext hash) whether read by the lab venv's `read-mlx.py`, by `falcon-ocr`
+in-process, or by `falcon-ocr` through the helper (a two-file batch, `s03` and `s05`), and identical to
+`ocr-compare-run`'s own `falcon-align` output for both pages; Vision's alone differs on `s03`. PaddleOCR-VL's crop
+form is wired and its arguments checked, but it has no caller until ie-layout cuts regions.
+
 ## Robustness and correctness of reporting
 
 ### R1 · jbig2 and qpdf children are never registered for cancellation — FIXED

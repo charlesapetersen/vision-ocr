@@ -130,6 +130,9 @@ if [ -f "Resources/mac-ocr-LICENSE" ]; then
   cp "Resources/mac-ocr-LICENSE" "$APP/Contents/Resources/mac-ocr-LICENSE"
 fi
 
+# The shipped model reader's script, run by the downloaded runtime (ModelRuntime, BUGS.md C57).
+cp Resources/read-model.py "$APP/Contents/Resources/read-model.py"
+
 # Optional in a way mac-ocr is not: without them the app writes Flate-compressed
 # pages, which work identically and are about three times the size. Bundling
 # them means "smaller files" stops being a thing you have to visit Homebrew for.

@@ -944,6 +944,13 @@ enum Recogniser {
         guard settings.modelArrangement != .off, !isCancelled() else { return fitted }
         // The grey render when there is one: a model reads grey better than Otsu's 1-bit.
         let shown = FileManager.default.fileExists(atPath: greyURL.path) ? greyURL : pageURL
+        // A shipped reader runs only in the arrangements the owner approved for it and this
+        // build can serve: regions waits for the layout model (ie-layout), fill was not approved.
+        if let shipped = ModelRuntime.readers[settings.modelReader],
+           !shipped.arrangements.contains(settings.modelArrangement) {
+            throw Failure.modelReader("\(settings.modelReader) is not offered for the "
+                + "\(settings.modelArrangement.rawValue) arrangement in this build")
+        }
         if settings.modelArrangement == .fill {
             return try filledReading(of: fitted, on: fitOn, shown: shown, reader: settings.modelReader,
                                      isCancelled: isCancelled)
@@ -1245,8 +1252,15 @@ enum Recogniser {
             .appendingPathComponent("visionocr-reader-\(UUID().uuidString).txt")
         defer { try? FileManager.default.removeItem(at: out) }
         let process = Process()
-        process.executableURL = URL(fileURLWithPath: reader)
-        process.arguments = [image.path, out.path] + (crops.map { [$0.path] } ?? [])
+        if ModelRuntime.readers[reader] != nil {
+            let command = try ModelRuntime.command(reader: reader, image: image, out: out, crops: crops)
+            process.executableURL = command.executable
+            process.arguments = command.arguments
+            process.environment = command.environment
+        } else {
+            process.executableURL = URL(fileURLWithPath: reader)
+            process.arguments = [image.path, out.path] + (crops.map { [$0.path] } ?? [])
+        }
         process.standardInput = FileHandle.nullDevice
         process.standardOutput = FileHandle.nullDevice
         process.standardError = FileHandle.nullDevice
@@ -4834,4 +4848,83 @@ extension Recogniser {
     static let newspaperLines = 600
     static let newspaperColumnLines = 200
     static let newspaperColumnWidth = 0.2
+}
+
+/// The readers the app ships (`BUGS.md` C57, `OCR-RUNTIME-PLAN-2026-10-13.md`). A name from
+/// `readers` in `modelReader`, in place of a path, runs that model in the downloaded
+/// runtime, with the prompt and limits `ocr-compare-run` measured it at
+/// (`ops/ocrlab/reader-hybrid.sh`, `reader-regions.sh`), so the app reads as that table says.
+enum ModelRuntime {
+    struct Reader: Equatable {
+        let repo: String
+        let prompt: String
+        /// Where the app may run it: the approved arrangements this build can serve. Falcon-OCR's
+        /// and PaddleOCR-VL's `regions` join when the layout model does; PaddleOCR-VL is never
+        /// offered on a whole page, which its input cap of about 1 MP rules out.
+        let arrangements: Set<Prefs.ModelArrangement>
+    }
+
+    static let readers: [String: Reader] = [
+        "falcon-ocr": Reader(repo: "tiiuae/Falcon-OCR", prompt: "plain", arrangements: [.align]),
+        "paddleocr-vl": Reader(repo: "mlx-community/PaddleOCR-VL-1.6-4bit", prompt: "OCR:", arrangements: []),
+    ]
+
+    /// Where the runtime (`Runtime/bin/python3`, `ops/ocrlab/make-runtime.sh`) and the
+    /// models (`Models/`, the Hub's cache layout) live. `VISIONOCR_MODEL_HOME` moves it,
+    /// for the suite and for measuring a runtime before the downloads exist.
+    static func home(_ environment: [String: String] = ProcessInfo.processInfo.environment) -> URL {
+        if let override = environment["VISIONOCR_MODEL_HOME"], !override.isEmpty {
+            return URL(fileURLWithPath: override)
+        }
+        return FileManager.default.homeDirectoryForCurrentUser
+            .appendingPathComponent("Library/Application Support/Vision OCR")
+    }
+
+    /// The reader script, found beside the helper at run time and never from a stored
+    /// path: an app run from where it was downloaded is translocated to a random one.
+    /// `VISIONOCR_READER_SCRIPT` is the suite's way to it, as `VISIONOCR_HELPER` is the helper's.
+    static func script(_ environment: [String: String] = ProcessInfo.processInfo.environment) -> URL? {
+        if let override = environment["VISIONOCR_READER_SCRIPT"], !override.isEmpty {
+            return URL(fileURLWithPath: override)
+        }
+        return Bundle.main.resourceURL?.appendingPathComponent("read-model.py")
+    }
+
+    struct Command: Equatable {
+        let executable: URL
+        let arguments: [String]
+        let environment: [String: String]
+    }
+
+    /// How to run `reader` over `image`, or why it cannot run. The whole page is read with
+    /// its longer side at most 3,300 px, as `falcon-align` was, and `crops` (layout regions,
+    /// for ie-layout) each on one line under `reader-regions.sh`'s 3,000-token cap, both
+    /// stopped at 540 s, the script exiting 1 when that stops it, as the
+    /// comparison's readers did. Only the Hub's cache, offline: a page read never
+    /// touches the network.
+    static func command(reader: String, image: URL, out: URL, crops: URL?,
+                        environment: [String: String] = ProcessInfo.processInfo.environment) throws -> Command {
+        guard let model = readers[reader] else { throw Recogniser.Failure.modelReader("\(reader) is not a shipped reader") }
+        let home = home(environment)
+        let python = home.appendingPathComponent("Runtime/bin/python3")
+        guard Runner.isRunnable(python.path) else {
+            throw Recogniser.Failure.modelReader("\(reader) needs the model runtime, which is not installed at \(python.path)")
+        }
+        let models = home.appendingPathComponent("Models")
+        let cached = models.appendingPathComponent("hub/models--" + model.repo.replacingOccurrences(of: "/", with: "--"))
+        guard FileManager.default.fileExists(atPath: cached.path) else {
+            throw Recogniser.Failure.modelReader("\(reader) has not been downloaded to \(cached.path)")
+        }
+        guard let script = script(environment), FileManager.default.fileExists(atPath: script.path) else {
+            throw Recogniser.Failure.modelReader("\(reader)'s script is not in this build")
+        }
+        let limits = crops.map { ["--crops", $0.path, "--one-line-each", "--max-tokens", "3000", "--seconds", "540"] }
+            ?? ["--seconds", "540", "--max-side", "3300"]
+        var env = ["HF_HOME": models.path, "HF_HUB_OFFLINE": "1", "HF_HUB_DISABLE_TELEMETRY": "1",
+                   "PATH": "/usr/bin:/bin:/usr/sbin:/sbin"]
+        for key in ["HOME", "TMPDIR"] { env[key] = environment[key] }
+        return Command(executable: python,
+                       arguments: ["-I", script.path, model.repo, image.path, out.path, "--prompt", model.prompt] + limits,
+                       environment: env)
+    }
 }
