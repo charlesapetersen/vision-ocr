@@ -955,7 +955,7 @@ enum Recogniser {
         if settings.modelArrangement == .regions {
             return try regionedReading(of: fitted, shown: shown, reader: settings.modelReader,
                                        aspect: Double(fitOn.height) / Double(fitOn.width),
-                                       isCancelled: isCancelled)
+                                       settings: settings, isCancelled: isCancelled)
         }
         let reading = try modelReading(of: shown, reader: settings.modelReader, isCancelled: isCancelled)
         // Nothing, over a page Vision read lines on, is a reader that failed quietly.
@@ -2212,17 +2212,66 @@ enum Recogniser {
     /// Vision read lines on, as under `replace`. One that writes no block found no text
     /// region (a page of advertisements, a photograph), and the page keeps Vision's lines,
     /// which this arrangement only ever rewrites.
+    ///
+    /// A block labelled `visionRegionLabel` is a region the reader cut and left unread
+    /// (`reader-regions.sh` with `VISIONOCR_REGION_MODEL=vision`): its text is Vision's
+    /// own reading of it (`visionRegionText`), so the arrangement runs with no model.
+    /// Vision reads it on `shown`, the grey render when there is one: on the finer 1-bit
+    /// bitmap instead, Helena 1941 / 1931's wrong words rose 930 -> 976 / 2179 -> 2298.
     static func regionedReading(of lines: [SearchableWriter.Observation], shown: URL, reader: String,
-                                aspect: Double, isCancelled: () -> Bool = { false })
+                                aspect: Double, settings: Prefs.Snapshot = .current(),
+                                isCancelled: () -> Bool = { false })
         throws -> [SearchableWriter.Observation] {
         let raw = try modelReading(of: shown, reader: reader, isCancelled: isCancelled)
-        guard let blocks = modelBlocks(raw) else {
+        guard var blocks = modelBlocks(raw) else {
             throw Failure.modelReader("\(reader) wrote something other than blocks")
         }
-        if !lines.isEmpty && !blocks.isEmpty && !blocks.contains(where: { !modelWords($0.text).isEmpty }) {
+        let read = blocks.filter { $0.label != visionRegionLabel }
+        if !lines.isEmpty && !read.isEmpty && !read.contains(where: { !modelWords($0.text).isEmpty }) {
             throw Failure.modelReader("\(reader) read no block on a page holding \(lines.count) lines")
         }
+        if blocks.contains(where: { $0.label == visionRegionLabel }) {
+            guard let image = loadImage(at: shown) else {
+                throw Failure.modelReader("the page image \(shown.lastPathComponent) could not be read for its regions")
+            }
+            for i in blocks.indices where blocks[i].label == visionRegionLabel {
+                if isCancelled() { throw Failure.cancelled }
+                blocks[i] = ModelBlock(box: blocks[i].box, label: blocks[i].label,
+                                       text: try visionRegionText(blocks[i].box, of: image, settings: settings,
+                                                                  isCancelled: isCancelled))
+            }
+            // A cancelled reading returns what it had; the last region's may be half of it.
+            if isCancelled() { throw Failure.cancelled }
+        }
         return regionAligned(lines, blocks: blocks, aspect: aspect)
+    }
+
+    /// The label of a block a regions reader cut and did not read, for Vision to read.
+    static let visionRegionLabel = "layout"
+    /// Pixels of the page around a region Vision reads, as C41's measurement padded them:
+    /// a detector's box sits on the ink, and a letter cut at its edge is misread.
+    static let visionRegionPadding = 12.0
+
+    /// Vision's reading of the region `box` (normalised, top-left origin) of `image`,
+    /// at the app's settings, as one text in its reading order (`columnOrdered`): the
+    /// words `regionAligned` takes as a model's. A region Vision reads nothing in is
+    /// empty, and its lines keep their words.
+    static func visionRegionText(_ box: SearchableWriter.BoundingBox, of image: CGImage,
+                                 settings: Prefs.Snapshot, isCancelled: () -> Bool = { false })
+        throws -> String {
+        let w = Double(image.width), h = Double(image.height)
+        let rect = CGRect(x: box.x * w, y: box.y * h, width: box.width * w, height: box.height * h)
+            .insetBy(dx: -visionRegionPadding, dy: -visionRegionPadding)
+            .integral.intersection(CGRect(x: 0, y: 0, width: w, height: h))
+        // `cropping(to:)` takes a top-left pixel rect, as the paste-up's strips do.
+        guard !rect.isNull, rect.width >= 2, rect.height >= 2,
+              let crop = image.cropping(to: rect) else { return "" }
+        var local = settings
+        local.minTextHeight = min(1, settings.minTextHeight * h / rect.height)
+        let lines = try recognisePage(crop, settings: local, isCancelled: isCancelled)
+            .sorted { $0.boundingBox.y < $1.boundingBox.y }
+        return SearchableWriter.columnOrdered(lines, aspect: rect.height / rect.width)
+            .map(\.text).joined(separator: " ")
     }
 
     /// The regions `flatten` wrote beside the bitmap at `image`, or nil when it wrote

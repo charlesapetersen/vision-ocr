@@ -69,6 +69,7 @@ falcon-align	align	text	tiiuae/Falcon-OCR	plain	-	4	other
 falcon-fill	fill	text	tiiuae/Falcon-OCR	plain	-	4	all
 lighton-align	align	text	mlx-community/LightOnOCR-2-1B-8bit	""	--max-side 1540	8	other
 lighton-fill	fill	text	mlx-community/LightOnOCR-2-1B-8bit	""	--max-side 1540	8	all
+vision-regions	regions	regions	vision	-	-	2	newspaper
 paddle-regions	regions	regions	mlx-community/PaddleOCR-VL-1.6-4bit	OCR:	-	4	newspaper
 falcon-regions	regions	regions	tiiuae/Falcon-OCR	plain	-	4	newspaper
 lighton-regions	regions	regions	mlx-community/LightOnOCR-2-1B-8bit	""	--max-side 1540	8	newspaper

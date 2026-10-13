@@ -12409,6 +12409,50 @@ do {
     check("the helper aligns by region too, without falling back",
           fellBack.isEmpty && helperText.contains("those words") && !helperText.contains("these words"),
           helperText + " | " + fellBack.joined())
+
+    // ocr-vision-regions: a reader that only cuts the page leaves each region for Vision to read.
+    let layoutOnly = reader("layout.sh", "[ $# -eq 2 ] || exit 4\n"
+                            + "printf '0\\t0\\t1\\t1\\t\(Recogniser.visionRegionLabel)\\t\\n' > \"$2\"")
+    let page = bitmaps.first.flatMap(Recogniser.imageURL(of:))
+    let mended = page.flatMap { try? Recogniser.regionedReading(of: viaHelper?[1] ?? [], shown: $0, reader: layoutOnly,
+                                                                 aspect: 1584.0 / 1224, settings: settings) }
+    let mendedText = (mended ?? []).map(\.text).joined(separator: " ")
+    check("a region the reader leaves unread is read by Vision, and its words go on the lines in it",
+          mendedText.contains("these words") && !mendedText.contains("those words")
+              && mended?.count == viaHelper?[1]?.count, mendedText)
+    // A region over the first line alone: Vision reads that line's pixels and no others.
+    let firstLine = (viaHelper?[1] ?? []).first { $0.text.contains("those words") }?.boundingBox
+    let lineOnly = firstLine.map { b in
+        reader("first-line.sh", "printf '%.4f\\t%.4f\\t%.4f\\t%.4f\\t\(Recogniser.visionRegionLabel)\\t\\n' "
+               + "\(b.x - 0.01) \(b.y - 0.005) \(b.x + b.width + 0.01) \(b.y + b.height + 0.005) > \"$2\"")
+    }
+    var partly = "threw"
+    if let url = page, let r = lineOnly,
+       let got = try? Recogniser.regionedReading(of: viaHelper?[1] ?? [], shown: url, reader: r,
+                                                 aspect: 1584.0 / 1224, settings: settings) {
+        partly = got.map(\.text).joined(separator: " / ")
+    }
+    check("…each region read from its own place on the page", firstLine != nil
+              && partly.contains("these words") && !partly.contains("those words"), partly)
+    d.set(layoutOnly, forKey: Prefs.modelReader)
+    let visionOut = dir.appendingPathComponent("vision-regions.ocr.pdf")
+    outcome = nil; message = ""
+    OCRModel.makeSearchablePDF(file: source, output: visionOut, rebuild: true, rebuildMode: .auto,
+                               password: nil, control: RunControl(), progress: { _, _ in },
+                               report: { o, m in outcome = o; message = m })
+    let visionPublished = embeddedText(of: visionOut)
+    check("…so the regions arrangement publishes with no model, the page in Vision's own words",
+          outcome == .succeeded && visionPublished.contains("these words") && visionPublished.contains("this line"),
+          visionPublished + " | " + message)
+    let blank = CGContext(data: nil, width: 400, height: 300, bitsPerComponent: 8, bytesPerRow: 0,
+                          space: CGColorSpaceCreateDeviceGray(), bitmapInfo: CGImageAlphaInfo.none.rawValue)
+    blank?.setFillColor(gray: 1, alpha: 1)
+    blank?.fill(CGRect(x: 0, y: 0, width: 400, height: 300))
+    let empty = (blank?.makeImage()).flatMap {
+        try? Recogniser.visionRegionText(.init(x: 0.2, y: 0.2, width: 0.5, height: 0.5), of: $0, settings: settings)
+    }
+    check("…and a region with no ink in it reads as nothing, leaving its lines as they were", empty == "",
+          empty ?? "threw")
     resetPrefs()
 }
 

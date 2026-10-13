@@ -32,23 +32,31 @@ if [ "$(/usr/bin/awk 'END {print NR}' "$work/crops.tsv")" -lt 2 ]; then : > "$2"
 # VISIONOCR_REGION_MODEL and VISIONOCR_REGION_PROMPT read the regions with another model (ocr-hybrid-run's
 # reader-hybrid.sh), with VISIONOCR_REGION_EXTRA's read-mlx.py options; prompt `""` is none, as LightOnOCR takes,
 # and `-` read-mlx.py's own. Unset, the region reader is PaddleOCR-VL's.
+# VISIONOCR_REGION_MODEL=vision reads none: each region is written unread, labelled `layout`, and the app reads it
+# with its own Vision request (`Recogniser.visionRegionText`, ocr-vision-regions), so the arrangement needs no model.
+label=region
+if [ "${VISIONOCR_REGION_MODEL:-}" = vision ]; then
+    label=layout
+    /usr/bin/awk 'NR > 1 {print ""}' "$work/crops.tsv" > "$work/read.txt"
+else
 rp=(--prompt "${VISIONOCR_REGION_PROMPT:-OCR:}"); [ "${VISIONOCR_REGION_PROMPT:-}" = '""' ] && rp=(--prompt "")
 [ "${VISIONOCR_REGION_PROMPT:-}" = - ] && rp=()
 stats="$("$py" -I "$here/read-mlx.py" "${VISIONOCR_REGION_MODEL:-mlx-community/PaddleOCR-VL-1.6-4bit}" "$1" "$work/read.txt" \
     ${rp[@]+"${rp[@]}"} ${VISIONOCR_REGION_EXTRA:-} \
     --crops "$work/crops.tsv" --one-line-each --max-tokens 3000 --seconds 540)" || exit 1
 case "$stats" in *'"cut": "seconds"'*) echo "reader-regions.sh: reading cut short: $stats" >&2; exit 1;; esac
+fi
 # For measuring: VISIONOCR_READER_KEEP=<dir> keeps each page's regions and readings beside a copy of the image.
 if [ -n "${VISIONOCR_READER_KEEP:-}" ]; then
     k="$VISIONOCR_READER_KEEP/$(date +%s)-$$"
     cp "$work/crops.tsv" "$k.crops.tsv"; cp "$work/read.txt" "$k.read.txt"; cp "$1" "$k.${1##*.}"
 fi
 # Each crop's reading is one line of read.txt, in crops.tsv's order (its header aside).
-"$py" -I - "$1" "$work/crops.tsv" "$work/read.txt" "$2" <<'EOF'
+"$py" -I - "$1" "$work/crops.tsv" "$work/read.txt" "$2" "$label" <<'EOF'
 import sys
 from PIL import Image
 Image.MAX_IMAGE_PIXELS = None
-image, crops, read, out = sys.argv[1:5]
+image, crops, read, out, label = sys.argv[1:6]
 w, h = Image.open(image).size
 rows = open(crops).read().splitlines()[1:]
 texts = open(read).read().split("\n")
@@ -61,5 +69,5 @@ with open(out, "w") as f:
         _, x, y, cw, ch = row.split("\t")[:5]
         x, y, cw, ch = int(x), int(y), int(cw), int(ch)
         text = " ".join(text.replace("\t", " ").split())
-        f.write(f"{x / w:.5f}\t{y / h:.5f}\t{(x + cw) / w:.5f}\t{(y + ch) / h:.5f}\tregion\t{text}\n")
+        f.write(f"{x / w:.5f}\t{y / h:.5f}\t{(x + cw) / w:.5f}\t{(y + ch) / h:.5f}\t{label}\t{text}\n")
 EOF

@@ -361,7 +361,8 @@ enum Prefs {
     /// ink of each block (`Recogniser.replacedReading`): arrangement (a). `regions` keeps
     /// Vision's lines and takes their words from the model's reading of each layout
     /// region they lie in (`Recogniser.regionedReading`), for newspaper pages: its reader
-    /// writes blocks as `replace`'s does.
+    /// writes blocks as `replace`'s does, or leaves them unread for Vision to read
+    /// (`Recogniser.visionRegionLabel`).
     enum ModelArrangement: String, CaseIterable {
         case off, align, fill, replace, regions
     }

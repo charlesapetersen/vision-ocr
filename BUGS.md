@@ -18899,6 +18899,14 @@ above for the rest.
 *(2026-10-08, `hp-regions` [measured]: `modelArrangement=regions`, PaddleOCR-VL reading DocLayout-YOLO regions
 aligned onto Vision's lines, on Helena 1931 / Helena 1941 (`ux-harness --truth`): drag wrong 2355 -> 1692 /
 1190 -> 826, layerMiss 0.290 -> 0.155 / 0.195 -> 0.126. Off by default, a lab reader; `QUEUE.md` hp-regions.)*
+*(2026-10-12, `ocr-vision-regions` [measured, hybrid-run.sh, score-gate then `ux-harness --truth`]: Vision reads the
+same deduped regions itself (`reader-regions.sh` with `VISIONOCR_REGION_MODEL=vision`, `visionRegionText`). Helena
+1931 / 1941, off -> Vision regions (PaddleOCR-VL regions from `ocr-hybrid-run`): wrong 2355 -> 2179 (1692) / 1011 ->
+930 (827), layerMiss 0.290 -> 0.256 (0.155) / 0.192 -> 0.156 (0.122), find 0.52 -> 0.62 (0.76) / 0.85 -> 0.89 (0.93);
+app seconds 64 -> 82 / 33 -> 49. A third to two thirds of the model's gain with no model. Unlike session 4's
+dictionary-word count below, the truth figures move: there regions were read in place of the page, here their
+words only mend Vision's own lines. Rejected: cropping from the finer 1-bit bitmap rather than the grey render,
+wrong 2298 / 976.)*
 
 #### 2026-10-08, round 1 session 4: Vision gains nothing from layout regions; ruled gutters narrower than their boxes now split
 

@@ -1466,7 +1466,7 @@ say so in the commit.
       Options A (adopt nothing), B (Falcon-OCR bf16: align off newspapers, regions on them; 4.0x / 0.28 miss the
       rule), C (PaddleOCR-VL regions, newspapers only), D (B plus Chandra at 9 GB+). Recommended B, which needs the
       rule relaxed. Nothing chosen; `ocr-hybrid-approve` is the owner's.
-- [ ] **ocr-vision-regions** — make Vision a region reader, so `modelArrangement=regions` runs with no model.
+- [x] **ocr-vision-regions** — make Vision a region reader, so `modelArrangement=regions` runs with no model.
       (uses: build) (effort: medium) Ahead of ocr-newspaper-detect so ocr-compare-run can start the night of 2026-10-12 (owner).
       `hp-regions` built the regions arrangement with a model reading each region (`reader-regions.sh`); Vision
       as the reader is still to write (`c41` notes the same gap). Read each deduped DocLayout-YOLO region with the
@@ -1475,6 +1475,10 @@ say so in the commit.
       `ocr-integrate-engine`'s. DONE WHEN Vision-on-regions publishes the two `hp-regions` pages (Helena 1931,
       Helena 1941) through `score-gate` and `ux-harness --truth`, with figures beside `hp-regions`' PaddleOCR-VL
       ones, behind a test that goes red without it. ESTIMATE: 1 session. BOUND: rule 10. (context: owner request 2026-10-12)
+      DONE 2026-10-12: `reader-regions.sh` with `VISIONOCR_REGION_MODEL=vision` writes the regions unread (label
+      `layout`) and the app reads each on the grey render (`Recogniser.visionRegionText`); `hybrid-run.sh`'s
+      combination `vision-regions`. Helena 1931 / 1941, wrong 2355 -> 2179 / 1011 -> 930 against PaddleOCR-VL's
+      1692 / 827; the rest in `BUGS.md` C41.
 - [ ] **ocr-newspaper-detect** — tell newspaper pages from the rest by themselves, page by page, so the accurate
       mode can pick its arrangement without the user labelling anything. (uses: build) (effort: medium)
       Owner, 2026-10-12, at the walkthrough: users add a wide variety of material and will not specify a model per
