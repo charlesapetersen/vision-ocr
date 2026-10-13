@@ -1940,6 +1940,10 @@ These are offered to nobody. `next-item.sh` prints them as `hold` so they stay v
       measured figures, so the question here becomes which readers give a real advantage for which kind, answered
       from `OCR-COMPARE-DECISION-<date>.md` (blocked-on: ocr-compare-report). An interactive
       session shows the owner the options as a choice and records the answer here. [hold] needs: owner — the choice of route is the owner's.
+      2026-10-13 walkthrough: the question the manager posed from `OCR-HYBRID-DECISION-2026-10-12.md` (options A-D) was
+      OUT OF DATE; the owner had commissioned further items (THE APPROACH, `ocr-newspaper-detect`, `ocr-compare-*`) and
+      FILED it. Do not re-pose that version. Pose it once, from `OCR-COMPARE-DECISION-2026-10-13.md`, when the commissioned
+      items are all done.
 - [x] **model-night-ok** — the owner says the Mac is free for a night, so a long model job may start: ocr-bakeoff-bits'
       4-6 hours, ocr-hybrid-run's 6-10. Added 2026-10-07 when EFFICIENCY-PLAN item 16 loosened the edges that had kept
       both behind other work. Tick it with the date and the owner's words; untick it when the owner next needs the Mac.
