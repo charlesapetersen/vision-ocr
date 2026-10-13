@@ -69,9 +69,10 @@ falcon-align	align	text	tiiuae/Falcon-OCR	plain	-	4	other
 falcon-fill	fill	text	tiiuae/Falcon-OCR	plain	-	4	all
 lighton-align	align	text	mlx-community/LightOnOCR-2-1B-8bit	""	--max-side 1540	8	other
 lighton-fill	fill	text	mlx-community/LightOnOCR-2-1B-8bit	""	--max-side 1540	8	all
-vision-regions	regions	regions	vision	-	-	2	newspaper
-paddle-regions	regions	regions	mlx-community/PaddleOCR-VL-1.6-4bit	OCR:	-	4	newspaper
-falcon-regions	regions	regions	tiiuae/Falcon-OCR	plain	-	4	newspaper
+vision-regions	regions	regions	vision	-	-	2	all
+paddle-regions	regions	regions	mlx-community/PaddleOCR-VL-1.6-4bit	OCR:	-	4	all
+paddle-fill	fill	text	mlx-community/PaddleOCR-VL-1.6-4bit	OCR:	-	4	all
+falcon-regions	regions	regions	tiiuae/Falcon-OCR	plain	-	4	all
 lighton-regions	regions	regions	mlx-community/LightOnOCR-2-1B-8bit	""	--max-side 1540	8	newspaper
 chandra-fill	fill	text	mlx-community/chandra-ocr-2-oQ8	-	-	6	all
 chandra-align	align	text	mlx-community/chandra-ocr-2-oQ8	-	-	6	other
@@ -79,7 +80,10 @@ chandra-replace	replace	blocks	mlx-community/chandra-ocr-2-oQ8	-	-	6	other
 chandra-regions	regions	regions	mlx-community/chandra-ocr-2-oQ8	-	-	6	newspaper'
 # Combinations with no run, and why; hybrid-table.py prints them as rows.
 NOT_RUN='falcon-replace	Falcon-OCR writes no boxes, and replace places the model'"'"'s own blocks (hp-replace)
-lighton-replace	LightOnOCR-2'"'"'s box build boxes only pictures, not text (hp-replace)'
+lighton-replace	LightOnOCR-2'"'"'s box build boxes only pictures, not text (hp-replace)
+paddle-align	PaddleOCR-VL caps its input near 1 MP, so a whole page is read at a fraction of its scan (ocr-compare-run)
+vision-align	Vision'"'"'s reading is what align, fill and replace mend; they need a model (hp-align)
+paddle-replace	PaddleOCR-VL writes no boxes, and replace places the model'"'"'s own blocks (hp-replace)'
 
 case "$cmd" in
 status)
@@ -219,8 +223,14 @@ run_one() {
 
 # No page's gate run may hang the night: 30 minutes is three times the slowest page's reader bound and Vision.
 bound=""; [ -x /opt/homebrew/bin/timeout ] && bound="/opt/homebrew/bin/timeout 1800"
-echo "$COMBOS" > "$H/combos.tsv"
-echo "$NOT_RUN" > "$H/not-run.tsv"
+# A run limited by HYBRID_COMBOS writes only those, so the table has no rows for combinations it never ran.
+echo "$COMBOS" | while IFS='	' read -r label rest; do
+    [ "$only_combos" = "  " ] || case "$only_combos" in *" $label "*) ;; *) continue ;; esac
+    printf '%s\t%s\n' "$label" "$rest"; done > "$H/combos.tsv"
+# and only the not-run rows of the models among them (the label's part before the dash).
+echo "$NOT_RUN" | while IFS='	' read -r label why; do
+    [ "$only_combos" = "  " ] || case "$only_combos" in *" ${label%%-*}-"*) ;; *) continue ;; esac
+    printf '%s\t%s\n' "$label" "$why"; done > "$H/not-run.tsv"
 while IFS='	' read -r label arr kind model prompt extra need set <&4; do
     [ "$only_combos" = "  " ] || case "$only_combos" in *" $label "*) ;; *) continue ;; esac
     log "$label	start"
