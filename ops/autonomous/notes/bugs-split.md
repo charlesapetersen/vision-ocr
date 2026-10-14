@@ -25,3 +25,11 @@ A simulated split of the whole real register (scratch dir; 197 files, index 238,
 FOR bs-move, `R63` has TWO entries (BUGS.md lines ~23411 and ~23884, same defect recorded twice, second
 heading without the `**failed**` bold). The resolver has only ever reached the first. bs-move must merge them
 into one `bugs/R63.md` under the first heading, or give the second its own tag, before splitting.
+
+2026-10-14, bs-move (round 1, session 2). R63's second record moved, verbatim, to the end of the first under a
+`####` sub-heading (own commit; rejected retagging it R63.1, which keeps `bugs-entry.sh R63` blind to it). Then
+197 entries moved to `bugs/`; BUGS.md 2,266,505 -> 238,574 B, each index line followed by one blank line. An awk
+reconstruction (each index line and its blank line replaced by its file) is byte-identical to the old register.
+Old vs new: all 197 `bugs-entry.sh <TAG>` outputs, `--list`, `--list-open`, `next-item.sh`,
+`check-queue-coherence.sh` and `check-staleness.sh` identical; closed-heading count 194 on both. Rule 3 amended.
+`check-staleness.sh` exits 1 on main before and after (OPEN-COUNT claims, CHECK-COUNT-REFERENCE): not this item.

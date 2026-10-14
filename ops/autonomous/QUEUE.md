@@ -16,7 +16,7 @@ say so in the commit.
 2. **Every item says when it is done**, in terms of the app's output, and how much work it is allowed.
 3. **Findings about instruments or prose do not become items.** If a session finds an instrument or a
    sentence is wrong and the error does not change what gets built, it writes one line in the relevant
-   `BUGS.md` entry and carries on with its item.
+   entry's file, `bugs/<TAG>.md`, and carries on with its item.
 4. **Three sessions, then decide.** If an item citing a `BUGS.md` entry has taken three sessions without a commit that changes
    `Sources/` or `Helper/`, the next session ships the best fix the evidence supports. It does not open
    another sub-step. A technical call is the session's to make; record the option rejected. Closing the
@@ -1871,7 +1871,7 @@ say so in the commit.
       is in `ops/autonomous/notes/queue-notes.md`. ESTIMATE: 1 session. BOUND: rule 10.
       (context: owner request 2026-10-07, ~/Claude/Agent Manager/EFFICIENCY-PLAN.md item 17)
       (notes: ops/autonomous/notes/queue-notes.md)
-- [ ] **bugs-split** — one file per `BUGS.md` entry, with `BUGS.md` kept as their index, so a session reads and
+- [x] **bugs-split** — one file per `BUGS.md` entry, with `BUGS.md` kept as their index, so a session reads and
       writes only the entry it works. (uses: light,build)
       WHY. EFFICIENCY-PLAN item 17. `BUGS.md` is 2.2 MB (2,237,810 bytes on 2026-10-07) and every session that
       records a finding writes into it, the second shared file named in the queue analysis ("What stops extra
@@ -1886,7 +1886,7 @@ say so in the commit.
         when an index line and its file's heading disagree. (blocked-on: bs-readers) (uses: light) DONE WHEN both
         give identical output on the tree, and a mutant making index and file disagree turns the check red.
         ESTIMATE: 1 session.
-      - [ ] **bs-move** — move every entry, verbatim, into its file in one commit. (blocked-on: bs-index-check)
+      - [x] **bs-move** — move every entry, verbatim, into its file in one commit. (blocked-on: bs-index-check)
         (uses: build) The health gate runs a build and the full suite, hence the tag. Rule 3's
         "one line in the relevant `BUGS.md` entry" then means the entry's file; amend that phrase and nothing else.
         DONE WHEN the files concatenated in index order reproduce the old `BUGS.md` byte for byte apart from the
