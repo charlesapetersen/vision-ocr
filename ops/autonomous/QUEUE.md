@@ -1563,7 +1563,7 @@ say so in the commit.
       Vision on both kinds (print 1.20% -> 0.63-0.72% at about 4x; newspapers 29.6% -> 21.3-21.8% at 2.6-2.9x, no page
       worse) and little over each other. No advantage: fill (any model), Vision on regions off newspapers. Vision on
       regions not recommended as the standard newspaper route (cut 0.10, 3 of 11 worse); offer it in the accurate mode.
-- [ ] **ocr-integrate-engine** — run the readers the owner approved inside the app. (blocked-on: ocr-hybrid-approve) (uses: build,model:12)
+- [x] **ocr-integrate-engine** — run the readers the owner approved inside the app. (blocked-on: ocr-hybrid-approve) (uses: build,model:12)
       Starts from what the owner approved in `ocr-hybrid-approve` after `ocr-compare-report`: under THE APPROACH
       above, which of Vision-on-regions, PaddleOCR-VL and Falcon-OCR are offered for which kind of page. Its first
       step is the `BUGS.md` entry that names it. If the owner approved "adopt nothing", tick the three
@@ -1580,6 +1580,8 @@ say so in the commit.
       runtime in the helper, the layout model in the app, the guard and fallback, one per reader wired in.
       BOUND: rule 10. (context: owner request 2026-10-02, split 2026-10-04, approach 2026-10-12)
       `BUGS.md` C57.
+      DONE 2026-10-13: every approved reader runs from the helper by page kind and publishes the comparison's layer
+      (the five sub-boxes below); 3 x 67 pages published, none failed; suite 1932/1932. C57 stays open for the settings.
       - [x] **ie-plan** — the runtime plan. Done 2026-10-13: `OCR-RUNTIME-PLAN-2026-10-13.md`, `ops/ocrlab/make-runtime.sh`.
             Standalone Python + MLX + mlx-vlm, 439-445 MB on disk, 134 MB to download; Falcon whole-page on s01 and s46
             and PaddleOCR-VL on s46's 181 regions byte-identical to the lab venv's, moved or rebuilt. DocLayout-YOLO
@@ -1597,8 +1599,11 @@ say so in the commit.
             The guard and the fallback to Vision with a message, behind a test that overruns the cap. Done 2026-10-13:
             `ModelGuard` (footprint over `modelMemoryGB`, 5 GB default; critical pressure; swap +2 GB). A shipped reader
             stopped or failing leaves the page Vision's reading, logged; after a stop the document's other pages skip it.
-      - [ ] **ie-readers** — wire in the approved readers. (blocked-on: ie-layout, ie-guard) (uses: build,model:12)
+      - [x] **ie-readers** — wire in the approved readers. (blocked-on: ie-layout, ie-guard) (uses: build,model:12)
             Vision regions, PaddleOCR-VL regions, Falcon align and regions wired in by page kind, each reproducing its `OCR-COMPARE-2026-10-13.tsv` row through the helper.
+            Done 2026-10-13: `newspaperModelArrangement` / `newspaperModelReader`, chosen per page by `pageKind`, approvals
+            per kind. Through the helper on 67 pages, published layers identical to the comparison's on 56/56 (Falcon align),
+            6/7 (Falcon regions), 64/67 (PaddleOCR-VL), 4/7 (Vision regions); the rest 0-3 words apart (grey JPEG decode).
 - [ ] **ocr-integrate-settings** — give the accurate mode its settings, figures, timing run and downloads. (uses: build)
       (blocked-on: ocr-integrate-engine)
       Off by default. Under THE APPROACH above (owner, 2026-10-12):

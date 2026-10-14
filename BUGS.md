@@ -20187,6 +20187,26 @@ Rejected: refusing to start below the cap's worth of reclaimable memory (the lab
 sessions open it would refuse most pages that would have fitted. Pressure and swap are machine-wide, so another
 program's load can stop a reader; it says so, and nothing is lost. Next: ie-readers.
 
+#### Sub-box 5, the readers by page kind (2026-10-13)
+
+A second pair, `newspaperModelArrangement` / `newspaperModelReader`, read for a page `Recogniser.pageKind` calls a
+newspaper (a paste-up is a page `flatten` wrote regions for); unset, newspapers take the main pair, so the lab's
+one-pair runs mean what they did. It crosses to the helper. Shipped readers are approved per kind
+(`ModelRuntime.offered`): print Falcon-OCR align and PaddleOCR-VL regions; newspapers Vision, PaddleOCR-VL and
+Falcon-OCR on regions. A reader approved for neither kind in that arrangement fails the file; one approved only for
+the other kind leaves the page Vision's reading, saying so (review: as first written, a print user's Falcon align
+failed every file holding one newspaper page). After a stop, a later page is "not tried" only if its kind has a reader.
+[measured] `score-gate` from this tree, helper on, all 67 sample pages per run, 67 published each time:
+Falcon align on print, 56 of 56 published layers identical to `ocr-compare-run`'s (pdftotext hash); Falcon regions on
+the 7 pages called newspapers, 6 identical, s30 3 words worse of 3,251; PaddleOCR-VL regions, 64 of 67 identical, s30
+and s62 scoring the same, s45 1 word worse; Vision regions, 4 of 7 identical, s22 the same, s30 1 and s46 3 worse.
+These are the grey JPEG pages, the decoder difference sub-box 3 recorded on s46. The four clippings (s17 s40 s41 s44)
+are called print, as `PAGE-KIND-2026-10-12.tsv` measured, and take the print reader: under Falcon align they leave
+143 words wrong or missing of 4,330, against Vision's 196 and Falcon regions' 136. Newspapers under the routing:
+Falcon 21.39% (table 21.35%), PaddleOCR-VL 21.83% (21.83%), Vision regions 26.49% (26.54%). Rejected: keeping the
+other kind's reader running after a stop; both run under one memory cap, and pressure or swap is the machine's. Next: `ocr-integrate-settings` gives the
+pairs their controls; until then no user can reach them, so the entry stays open.
+
 ## Robustness and correctness of reporting
 
 ### R1 · jbig2 and qpdf children are never registered for cancellation — FIXED

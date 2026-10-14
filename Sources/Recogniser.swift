@@ -221,9 +221,8 @@ enum Recogniser {
                 // disagree on a mixed document. Cosmetic, and recorded rather than
                 // fixed: `BUGS.md` C29 `#### (A) SHIPPED` names it.
                 onPage(item.page - 1, total)
-                guard let read = try recognisePage(at: item.image, settings: skippingModel(settings, after: stopped) {
-                                                       onModelFallback(item.page, $0)
-                                                   }, isCancelled: isCancelled,
+                guard let read = try recognisePage(at: item.image, settings: settings, modelStopped: stopped,
+                                                   isCancelled: isCancelled,
                                                    onModelFallback: { why, stop in
                                                        onModelFallback(item.page, why)
                                                        if stop { stopped = why }
@@ -928,8 +927,9 @@ enum Recogniser {
     ///
     /// `onModelFallback` hears why a shipped model reader left the page Vision's reading, and
     /// whether it was stopped (by its guard or its time bound), which the caller takes to mean
-    /// the rest of the document is not worth the reader's time (`skippingModel`).
-    static func recognisePage(at image: URL, settings: Prefs.Snapshot,
+    /// the rest of the document is not worth the reader's time: it passes that reason back as
+    /// `modelStopped` for every later page, whose reader, of either kind, is then not tried.
+    static func recognisePage(at image: URL, settings: Prefs.Snapshot, modelStopped: String? = nil,
                               isCancelled: () -> Bool = { false },
                               onModelFallback: (_ why: String, _ stopped: Bool) -> Void)
         throws -> [SearchableWriter.Observation]? {
@@ -965,16 +965,32 @@ enum Recogniser {
                                  aspect: Double(first.height) / Double(first.width))
         }
         let fitted = fittedToGutters(merged, of: fitOn, isCancelled: isCancelled)
-        guard settings.modelArrangement != .off, !isCancelled() else { return fitted }
+        guard settings.modelOn, !isCancelled() else { return fitted }
+        // Each page goes to the reader set for its kind (C57, ie-readers); a paste-up is the
+        // page `flatten` wrote regions for.
+        let kind = pageKind(of: fitted, pasteUp: regions != nil)
+        let settings = settings.model(for: kind)
+        guard settings.modelArrangement != .off else { return fitted }
+        if let modelStopped {
+            onModelFallback("it was not tried, the model reader having been stopped on an earlier page: "
+                            + modelStopped, false)
+            return fitted
+        }
         // The grey render when there is one: a model reads grey better than Otsu's 1-bit.
         let shown = FileManager.default.fileExists(atPath: greyURL.path) ? greyURL : pageURL
-        // A shipped reader runs only in the arrangements the owner approved for it; Vision on
-        // regions only on regions.
-        if let shipped = ModelRuntime.readers[settings.modelReader].map(\.arrangements)
-            ?? (settings.modelReader == ModelRuntime.visionRegions ? [.regions] : nil),
-           !shipped.contains(settings.modelArrangement) {
-            throw Failure.modelSetup("\(settings.modelReader) is not offered for the "
-                + "\(settings.modelArrangement.rawValue) arrangement in this build")
+        // A shipped reader runs only in the arrangements the owner approved for it on this
+        // kind of page. One approved for no kind is a setting nobody can have chosen, and fails
+        // the file; one approved for the other kind, as the main pair a newspaper page inherits
+        // is (Falcon-OCR on align), leaves this page Vision's reading, saying so.
+        if let offered = ModelRuntime.offered(settings.modelReader),
+           !(offered[kind] ?? []).contains(settings.modelArrangement) {
+            let why = "\(settings.modelReader) is not offered for the "
+                + "\(settings.modelArrangement.rawValue) arrangement on \(kind.pages) in this build"
+            guard offered.values.contains(where: { $0.contains(settings.modelArrangement) }) else {
+                throw Failure.modelSetup(why)
+            }
+            onModelFallback(why, false)
+            return fitted
         }
         do {
             return try modelPass(fitted, on: fitOn, shown: shown, settings: settings, isCancelled: isCancelled)
@@ -982,9 +998,7 @@ enum Recogniser {
             // A reader the app ships that fails or is stopped by its guard leaves the page
             // Vision's reading, saying so (C57, ie-guard). One given by path is the lab's, whose
             // failure is a measurement, and what it needs and lacks fails every page alike.
-            guard ModelRuntime.readers[settings.modelReader] != nil
-                    || settings.modelReader == ModelRuntime.visionRegions,
-                  !isCancelled() else { throw error }
+            guard ModelRuntime.offered(settings.modelReader) != nil, !isCancelled() else { throw error }
             switch error as? Failure {
             case .cancelled?, .modelSetup?: throw error
             case .modelMemory(let why)?, .modelTimeout(let why)?: onModelFallback(why, true)
@@ -4574,6 +4588,9 @@ enum Recogniser {
             "--confidence", "\(settings.confidence)",
             "--model-arrangement", settings.modelArrangement.rawValue,
             "--model-reader", settings.modelReader,
+            // Empty: newspaper pages are read as the rest.
+            "--newspaper-model-arrangement", settings.newspaperModelArrangement?.rawValue ?? "",
+            "--newspaper-model-reader", settings.newspaperModelReader,
             "--model-memory-gb", "\(settings.modelMemoryGB)",
         ]
     }
@@ -4617,6 +4634,9 @@ enum Recogniser {
               let arrangement = values["--model-arrangement"]
                   .flatMap(Prefs.ModelArrangement.init(rawValue:)),
               let reader = values["--model-reader"],
+              let newspaperArrangement = values["--newspaper-model-arrangement"],
+              newspaperArrangement.isEmpty || Prefs.ModelArrangement(rawValue: newspaperArrangement) != nil,
+              let newspaperReader = values["--newspaper-model-reader"],
               let memoryGB = number("--model-memory-gb")
         else { return nil }
 
@@ -4631,23 +4651,12 @@ enum Recogniser {
             fast: fast, languages: languages, languageCorrection: correction,
             confidence: confidence, pdfDPIAuto: true, pdfDPI: 0, password: "",
             customWords: words, minTextHeightOn: minOn, minTextHeight: minHeight,
-            modelArrangement: arrangement, modelReader: reader, modelMemoryGB: memoryGB)
+            modelArrangement: arrangement, modelReader: reader,
+            newspaperModelArrangement: Prefs.ModelArrangement(rawValue: newspaperArrangement),
+            newspaperModelReader: newspaperReader, modelMemoryGB: memoryGB)
     }
 
     /// One page's worth of the helper's output, and the app's input.
-    /// `settings` for the next page of a document, with the model reader off once it has been
-    /// stopped on an earlier one (`stopped`, its reason), and `note` told why: a reader that ran
-    /// out of memory or time on one page would do it again on the next, a guard trip or ten
-    /// minutes each, and every page would end with Vision's reading anyway.
-    static func skippingModel(_ settings: Prefs.Snapshot, after stopped: String?,
-                              note: (String) -> Void) -> Prefs.Snapshot {
-        guard let stopped, settings.modelArrangement != .off else { return settings }
-        note("it was not tried, the model reader having been stopped on an earlier page: \(stopped)")
-        var off = settings
-        off.modelArrangement = .off
-        return off
-    }
-
     struct HelperPage: Codable {
         let observations: [SearchableWriter.Observation]
         /// Why a shipped model reader left this page Vision's reading (`recognisePage(at:)`).
@@ -4989,6 +4998,26 @@ extension Recogniser {
     static let newspaperColumnWidth = 0.2
 }
 
+extension Recogniser.PageKind {
+    /// The kind in a message: "newspaper pages".
+    var pages: String { self == .newspaper ? "newspaper pages" : "pages other than newspapers" }
+}
+
+extension Prefs.Snapshot {
+    /// Whether a model reads any page: the main pair's arrangement or the newspapers'.
+    var modelOn: Bool { modelArrangement != .off || (newspaperModelArrangement ?? .off) != .off }
+
+    /// These settings as a page of `kind` is read: a newspaper page takes the newspaper pair
+    /// when one is set (C57, ie-readers), and every other page the main pair.
+    func model(for kind: Recogniser.PageKind) -> Prefs.Snapshot {
+        guard kind == .newspaper, let arrangement = newspaperModelArrangement else { return self }
+        var routed = self
+        routed.modelArrangement = arrangement
+        routed.modelReader = newspaperModelReader
+        return routed
+    }
+}
+
 /// The readers the app ships (`BUGS.md` C57, `OCR-RUNTIME-PLAN-2026-10-13.md`). A name from
 /// `readers` in `modelReader`, in place of a path, runs that model in the downloaded
 /// runtime, with the prompt and limits `ocr-compare-run` measured it at
@@ -4997,19 +5026,30 @@ enum ModelRuntime {
     struct Reader: Equatable {
         let repo: String
         let prompt: String
-        /// Where the app may run it: the arrangements the owner approved. PaddleOCR-VL is never
-        /// offered on a whole page, which its input cap of about 1 MP rules out; neither on `fill`.
-        let arrangements: Set<Prefs.ModelArrangement>
+        /// Where the app may run it: the arrangements the owner approved for each kind of page
+        /// (`OCR-COMPARE-DECISION-2026-10-13.md`). PaddleOCR-VL is never offered on a whole page,
+        /// which its input cap of about 1 MP rules out; Falcon-OCR's whole newspaper page loops
+        /// or trips the guard; neither is offered on `fill`.
+        let arrangements: [Recogniser.PageKind: Set<Prefs.ModelArrangement>]
     }
 
     static let readers: [String: Reader] = [
-        "falcon-ocr": Reader(repo: "tiiuae/Falcon-OCR", prompt: "plain", arrangements: [.align, .regions]),
-        "paddleocr-vl": Reader(repo: "mlx-community/PaddleOCR-VL-1.6-4bit", prompt: "OCR:", arrangements: [.regions]),
+        "falcon-ocr": Reader(repo: "tiiuae/Falcon-OCR", prompt: "plain",
+                             arrangements: [.other: [.align], .newspaper: [.regions]]),
+        "paddleocr-vl": Reader(repo: "mlx-community/PaddleOCR-VL-1.6-4bit", prompt: "OCR:",
+                               arrangements: [.other: [.regions], .newspaper: [.regions]]),
     ]
 
     /// `modelReader`'s name for Vision reading `LayoutModel`'s regions itself: the regions
-    /// arrangement with no model but the layout one.
+    /// arrangement with no model but the layout one, offered on newspapers only (off them it
+    /// took the words wrong or missing from 1.20% to 1.09% at twice Vision's time).
     static let visionRegions = "vision"
+
+    /// What a shipped reader, Vision on regions included, is offered for on each kind of page;
+    /// nil for a reader given by path, the lab's, which runs wherever it is set.
+    static func offered(_ reader: String) -> [Recogniser.PageKind: Set<Prefs.ModelArrangement>]? {
+        readers[reader]?.arrangements ?? (reader == visionRegions ? [.newspaper: [.regions]] : nil)
+    }
 
     /// Where the runtime (`Runtime/bin/python3`, `ops/ocrlab/make-runtime.sh`) and the
     /// models (`Models/`, the Hub's cache layout) live. `VISIONOCR_MODEL_HOME` moves it,

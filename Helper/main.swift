@@ -135,9 +135,8 @@ for (index, line) in pages.enumerated() {
     let observations: [SearchableWriter.Observation]
     var modelFallback: String?
     do {
-        let pageSettings = Recogniser.skippingModel(settings, after: modelStopped) { modelFallback = $0 }
         guard let read = try Recogniser.recognisePage(at: URL(fileURLWithPath: path),
-                                                      settings: pageSettings,
+                                                      settings: settings, modelStopped: modelStopped,
                                                       onModelFallback: { why, stop in
                                                           modelFallback = why
                                                           if stop { modelStopped = why }

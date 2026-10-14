@@ -251,9 +251,15 @@ enum RunReport {
                          c.settings.preserveAnnotations ? "on" : "off"))
             // `Recogniser.recognisePage(at:)` is the only place the reader runs, so a
             // page that is not rebuilt keeps Vision's words whatever this says.
-            rows.append(("Model reader", c.settings.modelArrangement == .off ? "off"
-                            : "\(c.settings.modelArrangement.rawValue), \(c.settings.modelReader), "
-                            + String(format: "stopped over %.1f GB", c.settings.modelMemoryGB)
+            let s = c.settings
+            func pair(_ arrangement: Prefs.ModelArrangement, _ reader: String) -> String {
+                arrangement == .off ? "off" : "\(arrangement.rawValue), \(reader)"
+            }
+            rows.append(("Model reader", !s.modelOn ? "off"
+                            : pair(s.modelArrangement, s.modelReader)
+                            + (s.newspaperModelArrangement.map {
+                                "; newspapers: " + pair($0, s.newspaperModelReader) } ?? "")
+                            + String(format: "; stopped over %.1f GB", s.modelMemoryGB)
                             + (c.rebuildImages ? "" : " — not used: pages are not rebuilt")))
         }
 
@@ -307,6 +313,8 @@ enum RunReport {
         "minTextHeight": "Minimum text height",
         "modelArrangement": "Model reader",
         "modelReader": "Model reader",
+        "newspaperModelArrangement": "Model reader",
+        "newspaperModelReader": "Model reader",
         "modelMemoryGB": "Model reader",
     ]
 

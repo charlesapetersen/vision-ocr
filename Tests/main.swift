@@ -11880,7 +11880,9 @@ do {
         "modelArrangement", // a second reader after Vision's; its handover is checked
         "modelReader",      //   with the helper's, and its effect under ocr-hybrid-proto
         "modelMemoryGB",    //   the model reader's memory guard (C57, ie-guard)
-        "password",        // opens the document; never reaches the request
+        "newspaperModelArrangement", // the same two for newspaper pages (C57, ie-readers)
+        "newspaperModelReader",
+        "password",       // opens the document; never reaches the request
         "pdfDPIAuto",       // what to rasterise at when not rebuilding
         "pdfDPI",
         "confidence",       // applied to the observations, not by the request
@@ -11974,6 +11976,8 @@ do {
         "confidence": { $0.confidence = 0.4 },
         "modelArrangement": { $0.modelArrangement = .align },
         "modelReader": { $0.modelReader = "/usr/local/bin/reader --fast" },
+        "newspaperModelArrangement": { $0.newspaperModelArrangement = .off },
+        "newspaperModelReader": { $0.newspaperModelReader = "vision" },
         "modelMemoryGB": { $0.modelMemoryGB = 7.5 },
     ]
 
@@ -12008,6 +12012,8 @@ do {
                   && back.confidence == changed.confidence
                   && back.modelArrangement == changed.modelArrangement
                   && back.modelReader == changed.modelReader
+                  && back.newspaperModelArrangement == changed.newspaperModelArrangement
+                  && back.newspaperModelReader == changed.newspaperModelReader
                   && back.modelMemoryGB == changed.modelMemoryGB,
               describeRequest(Recogniser.makeRequest(back)) + " conf=\(back.confidence)"
                   + " model=\(back.modelArrangement.rawValue) \(back.modelReader) \(back.modelMemoryGB) GB")
@@ -12235,7 +12241,16 @@ do {
               refused.2 == .failed && refused.1.contains("not offered") && refused.0.isEmpty,
               "\(String(describing: refused.2)) \(refused.1)")
     }
-    let unlaid = publish(.regions, "falcon-ocr")
+    // This page is print, and Falcon-OCR and Vision on regions are offered on newspapers only
+    // (ie-readers): the page keeps Vision's reading, with neither run (Vision on regions would
+    // fail the file here, the layout model not being downloaded).
+    for name in ["falcon-ocr", "vision"] {
+        let kept = publish(.regions, name)
+        check("\(name) on regions leaves a print page Vision's reading and publishes",
+              kept.2 == .succeeded && kept.0.contains("words") && !kept.0.contains("wordz"),
+              "\(String(describing: kept.2)) \(kept.1) | \(kept.0)")
+    }
+    let unlaid = publish(.regions, "paddleocr-vl")
     check("a shipped reader on regions with no layout model downloaded fails the file, saying so",
           unlaid.2 == .failed && unlaid.1.contains("layout model has not been downloaded") && unlaid.0.isEmpty,
           "\(String(describing: unlaid.2)) \(unlaid.1)")
@@ -12261,6 +12276,124 @@ do {
           "\(String(describing: noRuntime.2)) \(noRuntime.1)")
     unsetenv("VISIONOCR_MODEL_HOME")
     unsetenv("VISIONOCR_READER_SCRIPT")
+    resetPrefs()
+}
+}  // end of section
+
+section("each page goes to the reader set for its kind (C57, ie-readers)") {
+
+do {
+    var base = Prefs.Snapshot.current()
+    base.modelArrangement = .align
+    base.modelReader = "print-reader"
+    check("unset, newspaper pages are read as the rest",
+          base.model(for: .newspaper).modelReader == "print-reader" && base.model(for: .newspaper).modelArrangement == .align)
+    var both = base
+    both.newspaperModelArrangement = .regions
+    both.newspaperModelReader = "vision"
+    check("set, a newspaper page takes the newspaper pair and every other page the main one",
+          both.model(for: .newspaper).modelReader == "vision" && both.model(for: .newspaper).modelArrangement == .regions
+              && both.model(for: .other).modelReader == "print-reader" && both.model(for: .other).modelArrangement == .align)
+    var newsOnly = Prefs.Snapshot.current()
+    newsOnly.modelArrangement = .off
+    newsOnly.newspaperModelArrangement = .regions
+    check("a reader for newspapers alone is on", newsOnly.modelOn && !Prefs.Snapshot.current().modelOn)
+    // As stored: unset or empty is the main pair's, a value that is no arrangement is off.
+    let stored = d
+    stored.set("", forKey: Prefs.newspaperModelArrangement)
+    let empty = Prefs.Snapshot.current(stored).newspaperModelArrangement
+    stored.set("bogus", forKey: Prefs.newspaperModelArrangement)
+    let bogus = Prefs.Snapshot.current(stored).newspaperModelArrangement
+    stored.removeObject(forKey: Prefs.newspaperModelArrangement)
+    check("a stored newspaper arrangement reads empty as unset and nonsense as off",
+          empty == nil && bogus == .off && Prefs.Snapshot.current(stored).newspaperModelArrangement == nil,
+          "\(String(describing: empty)) \(String(describing: bogus))")
+    check("the helper refuses a newspaper arrangement that is none",
+          Recogniser.helperSettings(from: Recogniser.helperArguments(both).map { $0 == "regions" ? "bogus" : $0 }) == nil
+              && Recogniser.helperSettings(from: Recogniser.helperArguments(both))?.newspaperModelReader == "vision")
+
+    // Through `recognisePage(at:)`, the helper's and the app's one call: the same bitmap read as
+    // print, and as a paste-up (`flatten` wrote regions beside it), goes to each kind's reader.
+    let dir = tmp.appendingPathComponent("model-kinds")
+    try? FileManager.default.removeItem(at: dir)
+    try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+    let source = dir.appendingPathComponent("scan.pdf")
+    makeScannedPDF(at: source, lines: ["The model reader's words", "reach the text layer"])
+    let pngs = dir.appendingPathComponent("pages")
+    try? FileManager.default.createDirectory(at: pngs, withIntermediateDirectories: true)
+    let bitmaps = (try? Flattener.flatten(source, to: dir.appendingPathComponent("rebuilt.pdf"), mode: .blackAndWhite,
+                                          pngDirectory: pngs)) ?? []
+    func reader(_ name: String, _ words: String) -> String {
+        let url = dir.appendingPathComponent(name)
+        try? "#!/bin/sh\nprintf '%s\\n' \"\(words)\" > \"$2\"\n".write(to: url, atomically: true, encoding: .utf8)
+        try? FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: url.path)
+        return url.path
+    }
+    let printReader = reader("print.sh", "The model reader's printz reach the text layer")
+    let newsReader = reader("news.sh", "The model reader's newz reach the text layer")
+    guard let first = bitmaps.first.flatMap(Recogniser.imageURL(of:)) else {
+        check("the kinds' fixture flattens", false); resetPrefs(); exit(1)
+    }
+    // Every file `flatten` wrote beside the page, under a second stem, with regions beside it.
+    let stem = first.deletingPathExtension().lastPathComponent
+    let pasted = pngs.appendingPathComponent("pasted.png")
+    for name in (try? FileManager.default.contentsOfDirectory(atPath: pngs.path)) ?? [] where name.hasPrefix(stem + ".") {
+        try? FileManager.default.copyItem(at: pngs.appendingPathComponent(name),
+                                          to: pngs.appendingPathComponent("pasted" + name.dropFirst(stem.count)))
+    }
+    try? JSONEncoder().encode([SearchableWriter.BoundingBox(x: 0, y: 0, width: 1, height: 1)])
+        .write(to: pngs.appendingPathComponent("pasted" + Recogniser.regionsSuffix))
+    var heard: [String] = []
+    func text(_ page: URL, _ settings: Prefs.Snapshot, stopped: String? = nil) -> String {
+        heard = []
+        return ((try? Recogniser.recognisePage(at: page, settings: settings, modelStopped: stopped,
+                                               onModelFallback: { why, _ in heard.append(why) })) ?? nil)?
+            .map(\.text).joined(separator: " ") ?? "nil"
+    }
+    var routed = Prefs.Snapshot.current()
+    routed.modelArrangement = .align
+    routed.modelReader = printReader
+    let inherited = (text(first, routed), text(pasted, routed))
+    check("with no newspaper pair, print and a paste-up both take the main reader",
+          inherited.0.contains("printz") && inherited.1.contains("printz"), "\(inherited)")
+    routed.newspaperModelArrangement = .align
+    routed.newspaperModelReader = newsReader
+    let split = (text(first, routed), text(pasted, routed))
+    check("with one, the print page takes the main reader and the paste-up the newspaper one",
+          split.0.contains("printz") && !split.0.contains("newz") && split.1.contains("newz") && !split.1.contains("printz"),
+          "\(split)")
+    routed.newspaperModelArrangement = .off
+    let visionNews = (text(first, routed), text(pasted, routed))
+    check("…and with newspapers off, the paste-up keeps Vision's reading",
+          visionNews.0.contains("printz") && visionNews.1.contains("words") && !visionNews.1.contains("printz"),
+          "\(visionNews)")
+    // A shipped reader is not run where it is not offered for the page's kind: Falcon-OCR on a
+    // whole newspaper page, set or inherited, leaves it Vision's reading, saying so, before any
+    // model is looked for (none is installed here), and the file goes on.
+    routed.newspaperModelArrangement = .align
+    routed.newspaperModelReader = "falcon-ocr"
+    let notOffered = text(pasted, routed)
+    check("falcon-ocr on a whole newspaper page leaves it Vision's reading, naming the kind",
+          notOffered.contains("words") && heard.count == 1 && heard[0].contains("not offered")
+              && heard[0].contains("on newspaper pages"), notOffered + " | " + heard.joined())
+    check("…while the print page beside it still takes the main reader", text(first, routed).contains("printz"))
+    var inheriting = Prefs.Snapshot.current()
+    inheriting.modelArrangement = .align
+    inheriting.modelReader = "falcon-ocr"
+    let inheritedNews = text(pasted, inheriting)
+    check("…and so does a paste-up inheriting Falcon-OCR on align as the main reader",
+          inheritedNews.contains("words") && heard.count == 1 && heard[0].contains("on newspaper pages"),
+          inheritedNews + " | " + heard.joined())
+    // After a stop on an earlier page, a page whose kind has a reader is not tried, saying so;
+    // one whose kind has none hears nothing.
+    let afterStop = text(first, routed, stopped: "over the cap")
+    check("after a stop, the next page with a reader keeps Vision's reading, saying it was not tried",
+          afterStop.contains("words") && !afterStop.contains("printz") && heard.count == 1
+              && heard[0].contains("not tried") && heard[0].contains("over the cap"), afterStop + " | " + heard.joined())
+    var newsReaderOnly = routed
+    newsReaderOnly.modelArrangement = .off
+    _ = text(first, newsReaderOnly, stopped: "over the cap")
+    check("…and a print page with no reader of its own hears nothing", heard.isEmpty, heard.joined())
     resetPrefs()
 }
 }  // end of section

@@ -364,6 +364,11 @@ enum Prefs {
     /// `x0 y0 x1 y1 label text`, tab-separated, the four as fractions of the image with a
     /// top-left origin (`Recogniser.modelBlocks`).
     static let modelReader = "modelReader"
+    /// The arrangement and reader for newspaper pages (`Recogniser.pageKind`), when they are
+    /// read otherwise than the rest (C57, ie-readers). Unset, a newspaper page is read as
+    /// every other page is, by `modelArrangement` and `modelReader`.
+    static let newspaperModelArrangement = "newspaperModelArrangement"
+    static let newspaperModelReader = "newspaperModelReader"
     /// The most memory a model reader may hold, in GB, before `ModelGuard` stops it and the
     /// page keeps Vision's reading (C57, ie-guard): the memory slider `ocr-integrate-settings`
     /// gives a control. Measured as the reader's whole process group's physical footprint,
@@ -455,6 +460,9 @@ enum Prefs {
         var minTextHeight: Double
         var modelArrangement: ModelArrangement = .off
         var modelReader: String = ""
+        /// Nil: newspaper pages are read as the rest (`Prefs.newspaperModelArrangement`).
+        var newspaperModelArrangement: ModelArrangement? = nil
+        var newspaperModelReader: String = ""
         var modelMemoryGB: Double = Prefs.defaultModelMemoryGB()
 
         /// Reads the live settings. Call on the main actor, once per batch.
@@ -482,6 +490,10 @@ enum Prefs {
                 modelArrangement: ModelArrangement(
                     rawValue: d.string(forKey: Prefs.modelArrangement) ?? "") ?? .off,
                 modelReader: d.string(forKey: Prefs.modelReader) ?? "",
+                // Unset or empty is the main pair's; a value that is no arrangement is off.
+                newspaperModelArrangement: (d.string(forKey: Prefs.newspaperModelArrangement))
+                    .flatMap { $0.isEmpty ? nil : ModelArrangement(rawValue: $0) ?? .off },
+                newspaperModelReader: d.string(forKey: Prefs.newspaperModelReader) ?? "",
                 // Unset reads 0, which would stop every reader at its first sample.
                 modelMemoryGB: d.double(forKey: Prefs.modelMemoryGB) > 0
                     ? d.double(forKey: Prefs.modelMemoryGB) : Prefs.defaultModelMemoryGB())
@@ -501,7 +513,7 @@ enum Prefs {
         warnDigitalText, rebuildImages, rebuildMode, useJBIG2, photoDetail,
         joinHyphenated, preserveAnnotations, writeRunReport, concurrency,
         checkForUpdates, skippedVersion, lastUpdateCheck, modelArrangement, modelReader,
-        modelMemoryGB,
+        newspaperModelArrangement, newspaperModelReader, modelMemoryGB,
     ]
 
     /// Set once the pre-rename settings have been brought across. Deliberately
