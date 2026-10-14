@@ -1951,12 +1951,34 @@ say so in the commit.
       Session 4: `mrcStencil`'s lift pinned by a check; round 1 spent, so moved behind the untried
       items. Round 2 is at max: judge C56's case for closing (Xin Qu's 2x 1.06 is PDFKit's stencil draw).
       (notes: ops/autonomous/notes/c56-heavy-type.md)
-- [ ] **c41-newspaper-scans** — read whole-page scans of small-town newspapers as well as their print
+
+## Parked
+
+Potential future work, not queued. Nothing here is offered to a session: the entries have no checkbox,
+so `next-item.sh` does not read them. To queue one, move it back into the queue as a `- [ ]` item.
+(C28 was parked here from 2026-09-21 until the owner brought it back on 2026-09-25 as
+`c28-first-principles`.)
+
+- **annot-r3** — the third adversarial review round on the annotation-preservation feature (on
+      `main`, off by default, unadvertised). Rounds one and two are recorded in `TODO.md`. Run the review
+      by subagent, fix what it finds that is real, and record the verdict on whether the feature is fit to
+      turn on. BOUND: one review round and its fixes.
+      Parked by the owner 2026-09-27: potential future work, not queued.
+      (origin: TODO.md §"Preserving annotations through re-OCR")
+- **zotero-2** — the Zotero library sweep: look for new classes of document the app handles badly.
+      Re-run step 1 of `TODO.md` §"2. The Zotero library sweep" first; its survey is dated. Copy
+      `zotero.sqlite` before querying it, because Zotero locks it, and never write the library. BOUND: one
+      step per session, with its output committed. Each confirmed defect it finds becomes a `BUGS.md` entry
+      and a queue item above this one.
+      Parked by the owner 2026-09-27: potential future work, not queued.
+      (origin: TODO.md §"2. The Zotero library sweep")
+- **c41-newspaper-scans** — read whole-page scans of small-town newspapers as well as their print
       allows (`BUGS.md` C41, split from C39) (uses: build) (blocked-on: hp-regions).
-      [hold] needs: owner — parked by the owner 2026-10-14 after round 2 session 1 (Codex): that session may
-      finish and land work that verifies, and no further session is started. Then move this item to Parked
-      with what was tried. The accurate mode is the route for newspapers; the fused-row check moved to
-      ocr-requeue.
+      Parked by the owner 2026-10-14: the accurate mode is the route for newspapers (assume Apple Silicon
+      with the mode on), and the fused-row question is measured in ocr-requeue. Round 2 session 1 (Codex) was
+      stopped unfinished: a newspaper-only search for gutters within twelve row heights split two fused rows
+      each on Helena and Billings and none on the other three; its uncommitted diff is
+      `$STATE/rescue/PARKED-c41-local-gutters-2026-10-14.patch`, not reviewed to the end (C41 has its notes).
       2026-10-07 (owner asked whether this still makes sense beside the accurate-mode work): it waits for
       hp-regions. ocr-lab-round3 measured Apple Vision on NewsBench at 1-CER 0.304 reading the whole page and
       0.741 reading DocLayout-YOLO regions, so cutting a newspaper page by layout region is a far larger gain on
@@ -1986,28 +2008,7 @@ say so in the commit.
       no Vision region reader; ruled gutters narrower than their boxes now split (Helena 1941 +3 rows, 1928
       +2). The comic's outer gutter choice is left (C41). Round 1 spent, so moved behind the untried items.
       Round 2 is at max: judge C41's case for closing, the misreads pointed at the accurate mode.
-      (origin: BUGS.md C41)
-
-## Parked
-
-Potential future work, not queued. Nothing here is offered to a session: the entries have no checkbox,
-so `next-item.sh` does not read them. To queue one, move it back into the queue as a `- [ ]` item.
-(C28 was parked here from 2026-09-21 until the owner brought it back on 2026-09-25 as
-`c28-first-principles`.)
-
-- **annot-r3** — the third adversarial review round on the annotation-preservation feature (on
-      `main`, off by default, unadvertised). Rounds one and two are recorded in `TODO.md`. Run the review
-      by subagent, fix what it finds that is real, and record the verdict on whether the feature is fit to
-      turn on. BOUND: one review round and its fixes.
-      Parked by the owner 2026-09-27: potential future work, not queued.
-      (origin: TODO.md §"Preserving annotations through re-OCR")
-- **zotero-2** — the Zotero library sweep: look for new classes of document the app handles badly.
-      Re-run step 1 of `TODO.md` §"2. The Zotero library sweep" first; its survey is dated. Copy
-      `zotero.sqlite` before querying it, because Zotero locks it, and never write the library. BOUND: one
-      step per session, with its output committed. Each confirmed defect it finds becomes a `BUGS.md` entry
-      and a queue item above this one.
-      Parked by the owner 2026-09-27: potential future work, not queued.
-      (origin: TODO.md §"2. The Zotero library sweep")
+      (context: BUGS.md C41, parked)
 
 ## HOLD — owner-only, never auto-executed
 
