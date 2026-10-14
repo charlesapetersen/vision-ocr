@@ -17,6 +17,9 @@
 #       verdicts, and a RED verdict carrying the note still names only its failing steps; the gate runs a real
 #       suite past any stamp when its own last real suite is missing or 24 hours old, and records each one.
 #   [5] two trees at once: no test.lock wait, the shared cache write serialised, one suite per tree.
+#   [6] the light tier (lt-tier): VISIONOCR_TIER and VISIONOCR_SECTIONS reach a hand-run suite, a light run
+#       alone skips the heavy lock, no partial run writes or honours a stamp, and the pre-commit hook and the
+#       health gate run their suite with neither variable whatever the caller exported.
 # Each section is then re-run against deliberately broken copies, each of which must turn it red; a copy
 # whose anchor is missing or not unique, or that leaves the file unchanged, is a failure, not a pass.
 # ~5 min. USAGE: ops/autonomous/tests/prove-run-tests.sh
@@ -25,6 +28,7 @@ HERE="$(cd "$(dirname "$0")" && pwd)"
 OPS="$(cd "$HERE/.." && pwd)"
 ROOT="$(cd "$OPS/../.." && pwd)"
 RT_REAL="$ROOT/run_tests.sh"; TL_REAL="$OPS/test-lock.sh"; GATE_REAL="$OPS/health-gate.sh"
+HOOK_REAL="$ROOT/.githooks/pre-commit"
 . "$HERE/lib-fake-suite.sh"
 T="$(mktemp -d)"
 trap 'kill $(jobs -p) 2>/dev/null; rm -rf "$T"' EXIT
@@ -36,7 +40,8 @@ export HOME="$T/home"; mkdir -p "$HOME"
 export MAC_HEAVY_LOCK="$T/heavy/mac-heavy.lock" MAC_HEAVY_POLL=1 VISIONOCR_HEAVY_DELEGATE=""
 export AGENT_MANAGER_STATE="$T/am-state" VISIONOCR_MAC_HEAVY="$OPS/mac-heavy-lock.sh"
 unset MAC_HEAVY_HELD VISIONOCR_TEST_LOCK_HELD VISIONOCR_SUITE_NOTE VISIONOCR_TEST_LOCK_DIR VISIONOCR_SUITE_LABEL \
-      VISIONOCR_TEST_CACHE VISIONOCR_SUITE_STAMPS VISIONOCR_SUITE_STAMP VISIONOCR_SUITE_FRESH VISIONOCR_SUITE_STAMP_TTL
+      VISIONOCR_TEST_CACHE VISIONOCR_SUITE_STAMPS VISIONOCR_SUITE_STAMP VISIONOCR_SUITE_FRESH VISIONOCR_SUITE_STAMP_TTL \
+      VISIONOCR_TIER VISIONOCR_SECTIONS
 FB="$T/fakebin"; fake_bin "$FB"; export SHELL="$FB/loginsh"
 # test-lock.sh asks `pgrep -x tests` about the whole machine, where a real suite may be running; this says none.
 # It also puts the system directories first on PATH, so the fakes are put back in front of them in every bash
@@ -350,8 +355,56 @@ check_concurrent() {
   unset FAKE_COMPILE_SLEEP FAKE_RUN_SLEEP VISIONOCR_TEST_CACHE VISIONOCR_SUITE_STAMP
 }
 
+# ── [6] the light tier (lt-tier): a partial run is never the suite ────────────────────────────────────
+# envs_since N — the env lines (what ./build/tests saw) after line N of $FAKE_LOG, ';'-joined.
+envs_since() { tail -n +"$(( $1 + 1 ))" "$FAKE_LOG" | sed -n 's/^env //p' | tr '\n' ';'; }
+stamps() { ls "$VISIONOCR_STATE/suite-stamps" 2>/dev/null | wc -l | tr -d ' '; }
+check_tier() {
+  local l h out
+  fresh tier
+  export VISIONOCR_TEST_CACHE=off
+  # run_tests.sh: the variables reach the suite, a light run alone skips the heavy lock, and no partial run
+  # writes or honours a stamp.
+  l=$(log_lines); VISIONOCR_TIER=light rt || fail "a light run exited non-zero: $(tail -2 "$X/out" | tr '\n' ' ')"
+  [ "$(envs_since "$l")" = "tier=light sections=unset;" ] || fail "the light run's suite saw: $(envs_since "$l")"
+  tail -n +"$((l+1))" "$FAKE_LOG" | grep -q '^run tests .* heavy=no ' || fail "a light run took the heavy lock: $(grep '^run' "$FAKE_LOG" | tail -1)"
+  [ "$(stamps)" = 0 ] || fail "a light run wrote a green stamp"
+  VISIONOCR_TIER=light tlrun light-probe
+  grep -q "	light-probe \[compiled-partial\]	" "$VISIONOCR_SUITE_TIMINGS" \
+    || fail "a light run's ledger row does not say partial: $(tail -1 "$VISIONOCR_SUITE_TIMINGS")"
+  l=$(log_lines); VISIONOCR_SECTIONS='a|b' rt
+  [ "$(envs_since "$l")" = "tier=unset sections=a|b;" ] || fail "the sections run's suite saw: $(envs_since "$l")"
+  tail -n +"$((l+1))" "$FAKE_LOG" | grep -q '^run tests .* heavy=yes ' || fail "a VISIONOCR_SECTIONS run skipped the heavy lock"
+  [ "$(stamps)" = 0 ] || fail "a VISIONOCR_SECTIONS run wrote a green stamp"
+  rt; [ "$(stamps)" = 1 ] || fail "a full run wrote no stamp ($(stamps))"
+  l=$(log_lines); VISIONOCR_TIER=light rt
+  [ "$(runs_since "$l")" = 1 ] || fail "a light run was skipped on a full run's stamp"
+  l=$(log_lines); VISIONOCR_TIER=full rt
+  [ "$(runs_since "$l")" = 0 ] || fail "VISIONOCR_TIER=full is not the suite: it ignored the stamp"
+  # The hook: a commit staging code runs the suite with neither variable, whatever the committer exported.
+  h="$X/hooktree"; fake_tree "$RT" "$h"
+  mkdir -p "$h/.githooks" "$h/ops/autonomous"
+  cp "$HOOK" "$h/.githooks/pre-commit"; cp "$TL" "$h/ops/autonomous/test-lock.sh"
+  cp "$OPS/mac-heavy-lock.sh" "$h/ops/autonomous/mac-heavy-lock.sh"; chmod +x "$h/.githooks/pre-commit" "$h/ops/autonomous/"*.sh
+  # Not App.swift, whose change makes the hook run ./build.sh; no stamp, which the full run above left.
+  git -C "$h" init -q >/dev/null 2>&1; git -C "$h" add Sources/Model.swift Tests >/dev/null 2>&1
+  l=$(log_lines)
+  out="$(cd "$h" && PATH="$FB:$PATH" BASH_ENV="$T/preload.sh" VISIONOCR_SUITE_STAMP=off \
+         VISIONOCR_TIER=light VISIONOCR_SECTIONS='a|b' \
+         bash .githooks/pre-commit 2>&1)" || fail "the hook refused a passing commit: $(tail -3 <<<"$out" | tr '\n' ' ')"
+  [ "$(envs_since "$l")" = "tier=unset sections=unset;" ] || fail "the hook's suite saw: '$(envs_since "$l")'"
+  # The gate's suite step, likewise.
+  gate_tree "$X/g6" 'echo "tier=${VISIONOCR_TIER-unset} sections=${VISIONOCR_SECTIONS-unset}" >> "$0.env"; echo "3/3 passed"' 0
+  VISIONOCR_TIER=light VISIONOCR_SECTIONS='a|b' VISIONOCR_STATE="$X/s-g6" VISIONOCR_GATE_ROOT="$X/g6" \
+    bash "$X/g6/ops/autonomous/health-gate.sh" > "$X/g6.out" 2>&1
+  grep -q '✓ suite' "$X/g6.out" || fail "the gate's suite step did not pass: $(grep -A1 '── suite' "$X/g6.out" | tail -1)"
+  [ -s "$X/g6/run_tests.sh.env" ] && ! grep -qv '^tier=unset sections=unset$' "$X/g6/run_tests.sh.env" \
+    || fail "the gate's suite saw: '$(tr '\n' ';' < "$X/g6/run_tests.sh.env" 2>/dev/null)'"
+  unset VISIONOCR_TEST_CACHE
+}
+
 # ── run each section on the real files, then on broken copies ─────────────────────────────────────────
-RT="$RT_REAL"; TL="$TL_REAL"; GATE="$GATE_REAL"
+RT="$RT_REAL"; TL="$TL_REAL"; GATE="$GATE_REAL"; HOOK="$HOOK_REAL"
 section() {   # $1 title · $2 check function
   local out; echo "$1"
   out="$("$2")"
@@ -429,6 +482,15 @@ mutant check_concurrent RT no-cache-write-lock 'mkdir -p "$CACHE" 2>/dev/null &&
 mutant check_concurrent TL one-entry-for-every-tree 'ENTRY="$LOCKDIR/wt-$(printf' 'ENTRY="$LOCKDIR/wt-shared" # $(printf'
 mutant check_concurrent RT run-phase-unlocked 'if [ -x "$HEAVY" ]; then' 'if false; then'
 mutant check_concurrent TL an-entry-per-caller 'ENTRY="$LOCKDIR/wt-$(printf' 'ENTRY="$LOCKDIR/wt-$$" # $(printf'
+
+section "[6] the light tier: a partial run is never the suite, and the hook and the gate run everything" check_tier
+mutant check_tier HOOK hook-passes-the-tier 'unset VISIONOCR_TIER VISIONOCR_SECTIONS' ':'
+mutant check_tier HOOK hook-passes-the-sections 'unset VISIONOCR_TIER VISIONOCR_SECTIONS' 'unset VISIONOCR_TIER'
+mutant check_tier GATE gate-passes-the-tier 'unset VISIONOCR_TIER VISIONOCR_SECTIONS' ':'
+mutant check_tier RT partial-run-stamps '  PARTIAL=1; PARTIAL_TAG=-partial; STAMP_ON=0' '  PARTIAL=1; PARTIAL_TAG=-partial'
+mutant check_tier RT partial-ledger-row-unmarked '  PARTIAL=1; PARTIAL_TAG=-partial; STAMP_ON=0' '  PARTIAL=1; STAMP_ON=0'
+mutant check_tier RT light-takes-heavy 'if [ "${VISIONOCR_TIER:-}" = light ] && [ -z "${VISIONOCR_SECTIONS:-}" ]; then' 'if false; then'
+mutant check_tier RT sections-skip-heavy 'if [ "${VISIONOCR_TIER:-}" = light ] && [ -z "${VISIONOCR_SECTIONS:-}" ]; then' 'if [ "${VISIONOCR_TIER:-}" = light ] || [ -n "${VISIONOCR_SECTIONS:-}" ]; then'
 
 echo ""
 echo "=================== $PASS passed, $FAIL failed ==================="

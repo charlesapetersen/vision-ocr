@@ -204,8 +204,96 @@ func installTripwires() {
 installTripwires()
 var trippedInSections = Tripwires.Counts()
 
+/// light-tier (lt-tier). A session's working run, never the suite: VISIONOCR_TIER=light runs only
+/// `lightSections`, and VISIONOCR_SECTIONS=a|b also runs every section whose name contains a or b
+/// (case-insensitive; `|` because names contain commas). A light section whose tripwires fire is a
+/// failure, so the tier cannot quietly grow heavy; a name here that no section has, or a
+/// VISIONOCR_SECTIONS entry that matches none, fails too. The hook and the health gate unset both
+/// variables, and run_tests.sh writes no green stamp while either is set. The list is the sections
+/// with no Vision, Flattener or process call in a full run's per-section TSV (SECTION-AUDIT-*.tsv).
+let lightSections: Set<String> = [
+    "\"one visual line\" means the same thing to the writer and to its instrument",
+    "a box sitting on top of a run is not the next fragment of its line",
+    "a helper is only worth it when there is something to overlap with",
+    "a retry cannot claim a path the batch it came from protected",
+    "a retry declined at the alert puts the batch back",
+    "a short fragment beside a tall one is one line, and keeps its space",
+    "a squashed run sits in the middle of its line's ink (C55)",
+    "adjacent fragments of one line keep their space",
+    "assembling no pages is refused",
+    "calibrated constants have not drifted",
+    "closely-spaced lines",
+    "defaults and ordering",
+    "drop box",
+    "every check runs inside a named section",
+    "every control VoiceOver cannot name from its own label has one",
+    "every door into a committed batch is shut",
+    "every recognition setting reaches the helper",
+    "every recognition setting reaches the request",
+    "files added during a run",
+    "importing a folder does not block the main actor",
+    "indeterminate progress",
+    "ink coverage cannot exceed one",
+    "ocr-newspaper-detect: a newspaper page is told from print by Vision's lines alone",
+    "open-when-finished picks a folder in every configuration",
+    "outline destinations of every form",
+    "outline destinations survive the page rewrite",
+    "output naming",
+    "presets",
+    "publishing",
+    "rejoining hyphenated words",
+    "repeated text in a column is not a duplicate",
+    "reporting a copy larger than its original",
+    "resolution decisions the corpus rests on",
+    "right-to-left text",
+    "safeInt cannot be handed something that traps",
+    "saying what the confidence setting means",
+    "settings survive the rename",
+    "telling a new version from an old one",
+    "text layer page geometry",
+    "the accurate mode's settings route each kind of page to the reader chosen for it (C57, ocr-integrate-settings)",
+    "the import interlock counts imports, not drops",
+    "the layout model's letterbox, decoding and crops are the lab's (C57, ie-layout)",
+    "the suite's preferences domain is its own",
+    "the unplaced-lines message names pages, not text",
+    "the written run report",
+    "two inputs with the same name",
+    "unplaced lines are reported per file",
+    "what each file's row shows",
+    "wrapping a dropped image",
+]
+let suiteEnv = ProcessInfo.processInfo.environment
+let tierName = suiteEnv["VISIONOCR_TIER"] ?? ""
+if !["", "full", "light"].contains(tierName) {
+    print("VISIONOCR_TIER is '\(tierName)': it must be light, full or unset")
+    exit(2)
+}
+let tierLight = tierName == "light"
+let namedSections = (suiteEnv["VISIONOCR_SECTIONS"] ?? "").split(separator: "|")
+    .map { $0.trimmingCharacters(in: .whitespaces).lowercased() }.filter { !$0.isEmpty }
+let partialRun = tierLight || !namedSections.isEmpty
+var namedSectionsMatched = Set<String>()
+var lightSectionsRun = Set<String>()
+var sectionsSkipped = 0
+if partialRun {
+    print("PARTIAL RUN — " + (tierLight ? "the light tier" : "")
+          + (tierLight && !namedSections.isEmpty ? " and " : "")
+          + (namedSections.isEmpty ? "" : "sections matching \(namedSections.joined(separator: " | "))")
+          + ". This is not the suite: a commit runs every section.")
+}
+func sectionSelected(_ name: String) -> Bool {
+    guard partialRun else { return true }
+    let lower = name.lowercased()
+    let named = namedSections.filter { lower.contains($0) }
+    namedSectionsMatched.formUnion(named)
+    // The last section holds the partial run's own checks, so it always runs.
+    return !named.isEmpty || (tierLight && lightSections.contains(name))
+        || name == "every check runs inside a named section"
+}
+
 func section(_ name: String, _ body: () -> Void) {
     precondition(currentSection == nil, "section '\(name)' opened inside '\(currentSection ?? "")'")
+    guard sectionSelected(name) else { sectionsSkipped += 1; return }
     print("\n" + name)
     currentSection = name
     let c0 = checks, f0 = failures, t0 = Date()
@@ -213,9 +301,14 @@ func section(_ name: String, _ body: () -> Void) {
     body()
     let secs = Date().timeIntervalSince(t0)
     let w1 = Tripwires.shared.snapshot()
+    let v = w1.vision - w0.vision, f = w1.flatten - w0.flatten, p = w1.process - w0.process
+    if tierLight && lightSections.contains(name) {
+        lightSectionsRun.insert(name)
+        check("a light section calls no Vision, Flattener or process",
+              v == 0 && f == 0 && p == 0, "vision \(v), flatten \(f), process \(p): move it out of lightSections")
+    }
     currentSection = nil
     sectionsRun += 1
-    let v = w1.vision - w0.vision, f = w1.flatten - w0.flatten, p = w1.process - w0.process
     trippedInSections.vision += v; trippedInSections.flatten += f; trippedInSections.process += p
     let names = w1.launched.keys.filter { w1.launched[$0] != w0.launched[$0] }
         .sorted().joined(separator: ",")
@@ -23820,6 +23913,44 @@ check("renderGrey, renderRGB, saturationThumbnail and flatten each count once",
       "\(drew)")
 }  // end of section
 
+// lt-tier. The full suite runs the light tier in a child of its own, so a commit that makes a light
+// section call Vision, the Flattener or a process fails here, not only in some later session's light run.
+section("the light tier runs its sections alone, and stays light") {
+if partialRun {
+    print("  (not run: a partial run does not start another)")
+} else {
+    func child(_ env: [String: String]) -> (rc: Int32, out: String) {
+        let log = tmp.appendingPathComponent("lt-tier-\(UUID().uuidString).log")
+        FileManager.default.createFile(atPath: log.path, contents: nil)
+        let p = Process()
+        p.executableURL = URL(fileURLWithPath: CommandLine.arguments[0]).standardizedFileURL
+        var e = ProcessInfo.processInfo.environment
+        e["VISIONOCR_SECTION_TIMINGS"] = tmp.appendingPathComponent("lt-tier-\(UUID().uuidString).tsv").path
+        e["VISIONOCR_TEST_DOMAIN"] = testDomain + "-light"
+        for (k, v) in env { e[k] = v }
+        p.environment = e
+        guard let h = try? FileHandle(forWritingTo: log) else { return (-1, "no log") }
+        p.standardOutput = h; p.standardError = h
+        do { try p.run() } catch { return (-1, "\(error)") }
+        p.waitUntilExit(); try? h.close()
+        return (p.terminationStatus, (try? String(contentsOf: log, encoding: .utf8)) ?? "")
+    }
+    let light = child(["VISIONOCR_TIER": "light"])
+    check("a light run passes, runs the \(lightSections.count) light sections and no other",
+          light.rc == 0 && light.out.contains("PARTIAL RUN: \(lightSections.count) of ")
+            && light.out.contains("every section the light tier names exists and ran"),
+          "exit \(light.rc): " + light.out.split(separator: "\n").filter { $0.contains("FAIL") || $0.contains("PARTIAL") }
+            .prefix(5).joined(separator: " / "))
+    let none = child(["VISIONOCR_SECTIONS": "no section is called this"])
+    check("a VISIONOCR_SECTIONS entry that matches nothing fails the run",
+          none.rc == 1 && none.out.contains("FAIL every VISIONOCR_SECTIONS entry matches a section"), "exit \(none.rc)")
+    let named = child(["VISIONOCR_SECTIONS": "REJOINING hyphenated| inside a named "])
+    check("…and one that matches runs that section, case aside, and the last, which may be named too",
+          named.rc == 0 && named.out.contains("PARTIAL RUN: 2 of ") && named.out.contains("\nrejoining hyphenated words\n"),
+          "exit \(named.rc)")
+}
+}  // end of section
+
 // lt-sections-rest. Every check above runs in a named section; this one checks that.
 section("every check runs inside a named section") {
 check("every check so far ran inside a named section",
@@ -23831,6 +23962,23 @@ if let url = sectionTimings {
           rows.count == sectionsRun
             && rows.allSatisfy { $0.split(separator: "\t", omittingEmptySubsequences: false).count == 8 },
           "\(rows.count) rows for \(sectionsRun) sections at \(url.path)")
+}
+// lt-tier. Only a partial run asks: a renamed light section would otherwise drop out of the tier unseen.
+if tierLight {
+    let missing = lightSections.subtracting(lightSectionsRun).subtracting([currentSection ?? ""])
+    check("every section the light tier names exists and ran", missing.isEmpty,
+          "no section is named \(missing.sorted().map { "'\($0)'" }.joined(separator: ", "))")
+    // Code between sections runs in a light run too, and the light run takes no heavy lock.
+    let now = Tripwires.shared.snapshot()
+    let ov = now.vision - trippedInSections.vision, of = now.flatten - trippedInSections.flatten
+    let op = now.process - trippedInSections.process
+    check("…and the code between sections called no Vision, Flattener or process either",
+          ov == 0 && of == 0 && op == 0, "vision \(ov), flatten \(of), process \(op) outside sections")
+}
+if !namedSections.isEmpty {
+    let unmatched = namedSections.filter { !namedSectionsMatched.contains($0) }
+    check("every VISIONOCR_SECTIONS entry matches a section", unmatched.isEmpty,
+          "nothing matches \(unmatched.map { "'\($0)'" }.joined(separator: ", "))")
 }
 }  // end of section
 
@@ -23851,6 +23999,9 @@ if skippedBlocks.isEmpty {
     print("\n\(total) check(s) skipped, in \(skippedBlocks.count) block(s):")
     for b in skippedBlocks { print("  \(b.label) — \(b.checks): \(b.reason)") }
     print("so this run exercised \(checks) of a possible \(checks + total).")
+}
+if partialRun {
+    print("\nPARTIAL RUN: \(sectionsRun) of \(sectionsRun + sectionsSkipped) sections ran; this is not the suite.")
 }
 print("\n\(checks - failures)/\(checks) passed")
 exit(failures == 0 ? 0 : 1)

@@ -86,6 +86,13 @@ STAMP_ON=1; [ "${VISIONOCR_SUITE_STAMP:-}" = off ] && STAMP_ON=0
 # A cache or stamp directory inside this tree could be staged; refuse it rather than write there.
 case "$CACHE/" in "$PWD"/*) echo "run_tests: the binary cache $CACHE is inside the tree — not using it." >&2; CACHE_ON=0 ;; esac
 case "$STAMPS/" in "$PWD"/*) echo "run_tests: the stamp directory $STAMPS is inside the tree — not using it." >&2; STAMP_ON=0 ;; esac
+# light-tier (lt-tier): VISIONOCR_TIER=light or VISIONOCR_SECTIONS=a|b runs part of the suite (Tests/main.swift
+# says which). A partial run neither honours a stamp nor writes one, so it can never stand for the suite.
+PARTIAL=0; PARTIAL_TAG=""
+if [ -n "${VISIONOCR_SECTIONS:-}" ] || { [ -n "${VISIONOCR_TIER:-}" ] && [ "$VISIONOCR_TIER" != full ]; }; then
+  PARTIAL=1; PARTIAL_TAG=-partial; STAMP_ON=0
+  echo "run_tests: PARTIAL RUN (VISIONOCR_TIER=${VISIONOCR_TIER:-} VISIONOCR_SECTIONS=${VISIONOCR_SECTIONS:-}) — no green stamp; this is not the suite." >&2
+fi
 
 # _note WORD — tell test-lock.sh how this run went (compiled / cache-hit / stamp-skip), for its timing ledger.
 _note() { [ -n "${VISIONOCR_SUITE_NOTE:-}" ] && printf '%s\n' "$1" > "$VISIONOCR_SUITE_NOTE" 2>/dev/null; return 0; }
@@ -277,7 +284,8 @@ if ! _build make-plate-fixtures key_plates "$PLATES" _plates; then
   echo "           otherwise pass by having no fixtures to route." >&2
   exit 1
 fi
-case "$BUILT" in *compiled*) _note compiled ;; *) _note cache-hit ;; esac
+# A partial run's ledger row says so, so its two seconds are not read as a suite's.
+case "$BUILT" in *compiled*) _note "compiled$PARTIAL_TAG" ;; *) _note "cache-hit$PARTIAL_TAG" ;; esac
 echo "run_tests: binaries ready in $(( $(date +%s) - c_t0 ))s ($BUILT )"
 
 # THE RUN, and only the run, under the machine-wide heavy lock shared with Archive Suite (mac-heavy-lock.sh):
@@ -288,12 +296,18 @@ HEAVY="${VISIONOCR_MAC_HEAVY:-ops/autonomous/mac-heavy-lock.sh}"
 # light-tier (lt-sections): one TSV per run of each section's checks and seconds, beside suite-timings.tsv,
 # kept a fortnight. VISIONOCR_SECTION_TIMINGS names another path.
 SECTIONS_DIR="$STATE_DIR/section-timings"
-SECTION_TSV="${VISIONOCR_SECTION_TIMINGS:-$SECTIONS_DIR/$(date +%Y%m%d-%H%M%S)-$$.tsv}"
+# A partial run's file is named so, and is not mistaken for a full run's table.
+SECTION_TSV="${VISIONOCR_SECTION_TIMINGS:-$SECTIONS_DIR/$(date +%Y%m%d-%H%M%S)-$$$PARTIAL_TAG.tsv}"
 [ -n "${VISIONOCR_SECTION_TIMINGS:-}" ] || find "$SECTIONS_DIR" -name '*.tsv' -mtime +14 -delete 2>/dev/null || true
 RUN=(env VISIONOCR_HELPER="$PWD/$HELPER" VISIONOCR_PLATE_FIXTURES="$PWD/$PLATES"
      VISIONOCR_SECTION_TIMINGS="$SECTION_TSV" "./$BIN")
 rc=0
-if [ -x "$HEAVY" ]; then
+# The light tier alone runs without the heavy lock: measured 2026-10-14, its run is 2.1 s wall and 2.0 s CPU
+# (443 MB), against ~258 s for the whole suite's, and its sections fail if they call Vision, the Flattener or a
+# process. VISIONOCR_SECTIONS can name heavy sections, so a run with it takes the lock like the suite.
+if [ "${VISIONOCR_TIER:-}" = light ] && [ -z "${VISIONOCR_SECTIONS:-}" ]; then
+  "${RUN[@]}" || rc=$?
+elif [ -x "$HEAVY" ]; then
   MAC_HEAVY_TOUCH="${VISIONOCR_TEST_LOCK_DIR:-}" "$HEAVY" run --label "${VISIONOCR_SUITE_LABEL:-suite}" -- "${RUN[@]}" || rc=$?
 else
   echo "run_tests: $HEAVY is missing — running WITHOUT the machine-wide heavy lock." >&2

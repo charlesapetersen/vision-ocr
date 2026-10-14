@@ -1797,7 +1797,7 @@ say so in the commit.
         backoff boundary and went red under the slower lock calls; it now waits for the 8 s nap.
       DONE WHEN the three sub-boxes are ticked. The hook and the gate still run the full suite. ESTIMATE: 3 sessions.
       BOUND: rule 10. (context: owner request 2026-10-07, ~/Claude/Agent Manager/EFFICIENCY-PLAN.md item 10)
-- [ ] **light-tier** — a light test tier of the sections that never call Vision, with per-section timing, so a
+- [x] **light-tier** — a light test tier of the sections that never call Vision, with per-section timing, so a
       session's working runs take a fraction of the suite's time. (uses: build)
       WHY. EFFICIENCY-PLAN item 11. Session dev-loop runs are the largest single suite cost: 40 session runs since
       30 Sep took 6.5 h, against 3.8 h for 20 hook runs. The run phase is 258 s of the 382 s; it is heavy because
@@ -1834,7 +1834,7 @@ say so in the commit.
         503 checks, 3.0 s; 38 touch all three (896 checks, 295 s). Mutant (renderRGB's tripwire removed): 11 rows'
         flatten counts changed and the self-check went red. Not counted: pixel loops on a check's own buffers;
         work a section leaves running is charged to the section open when it lands. Suite 1884 -> 1889/1889.
-      - [ ] **lt-tier** — `VISIONOCR_TIER=light` runs only the sections the audit found clean, and
+      - [x] **lt-tier** — `VISIONOCR_TIER=light` runs only the sections the audit found clean, and
         `VISIONOCR_SECTIONS=a,b` runs named sections. (blocked-on: lt-audit) (uses: build) A light run whose tripwires fire fails,
         so the tier cannot quietly grow heavy. The hook, the gate and the green stamp ignore both variables and run
         everything. Whether a light run takes the heavy lock is this box's call, from its measured CPU. The resume
@@ -1842,6 +1842,16 @@ say so in the commit.
         before committing. DONE WHEN the light run's time is recorded here, a harness shows the hook and the gate
         running the full suite with either variable set, and a mutant letting the variable reach the hook turns it
         red. ESTIMATE: 1 session.
+        Done 2026-10-14. The light tier is 49 of 119 sections (the audit's 47 and two C57 ones added since).
+        Measured: its run phase is 2.07 s wall, 2.0 s CPU and 443 MB (twice), against ~258 s for the suite's;
+        575 checks pass. So a light-only run skips the heavy lock; a VISIONOCR_SECTIONS run takes it. The
+        separator is `|`, matching names by case-insensitive substring. Partial runs write no stamp and honour
+        none, and their ledger row and section TSV say partial. Hook, gate and `Tools/mutate.py` unset both.
+        `prove-run-tests.sh` [6]: 0 failures on the real files, and 7 mutants caught (hook or gate passing
+        either variable, a partial stamp, heavy-lock choice both ways, an unmarked ledger row). A full-suite
+        section runs the light tier as a child, so a commit fails if a light section turns heavy. Mutant: with
+        "end-to-end runs" listed as light, the light run fails (vision 4, flatten 5, process 10).
+        Suite 1969 -> 1972/1972.
       DONE WHEN the four sub-boxes are ticked. ESTIMATE: 4 sessions. BOUND: rule 10.
       (context: owner request 2026-10-07, ~/Claude/Agent Manager/EFFICIENCY-PLAN.md item 11)
 - [ ] **queue-notes** — sessions write an item's round notes to a file of its own, not into its `QUEUE.md` body.

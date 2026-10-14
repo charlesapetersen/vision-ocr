@@ -1734,9 +1734,12 @@ def run_suite(where):
     refused a green tree, and a re-run SURVIVED mutant hit its own stamp and scored
     MISMATCH. VISIONOCR_SUITE_FRESH=1 runs it regardless; VISIONOCR_SUITE_STAMP=off
     stops a passing mutant from stamping a mutated tree. A skip line still printed is
-    read as no count.
+    read as no count. A light-tier variable (VISIONOCR_TIER, VISIONOCR_SECTIONS) left in
+    the caller's environment would run part of the suite, so neither reaches it.
     """
     env = dict(os.environ, VISIONOCR_SUITE_FRESH="1", VISIONOCR_SUITE_STAMP="off")
+    env.pop("VISIONOCR_TIER", None)
+    env.pop("VISIONOCR_SECTIONS", None)
     proc = subprocess.run(["./run_tests.sh"], cwd=where, capture_output=True, text=True, env=env)
     out = proc.stdout + proc.stderr
     total = None

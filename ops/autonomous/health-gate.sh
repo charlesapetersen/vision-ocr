@@ -66,6 +66,9 @@ ROOT="${VISIONOCR_GATE_ROOT:-$(cd "$(dirname "$0")/../.." && pwd)}"
 cd "$ROOT" 2>/dev/null || { echo "health-gate: cannot cd to repo root '$ROOT'" >&2; exit 2; }
 ROOT="$(pwd)"    # canonicalise, so a relative override still yields absolute "$ROOT/..." paths
 OPS="$ROOT/ops/autonomous"
+# light-tier (lt-tier): a session's working-run variables never reach the gate's suite, which runs every
+# section. ops/autonomous/tests/prove-run-tests.sh [6] holds it.
+unset VISIONOCR_TIER VISIONOCR_SECTIONS
 
 # Deliberately NOT exported: VISIONOCR_UNATTENDED. In the sibling project the equivalent
 # (ARCHIVE_UNATTENDED=1) was load-bearing — it armed self-guards inside the scripts the gate invokes,

@@ -4,6 +4,7 @@
 # anything. Every call is appended to $FAKE_LOG:
 #   compile <output name> heavy=<yes|no> testlock=<yes|no> args=<swiftc args>
 #   run <binary name> build=<n> heavy=<yes|no> label=<heavy-lock holder label>
+#   env tier=<VISIONOCR_TIER or unset> sections=<VISIONOCR_SECTIONS or unset>   (the line after each run)
 # where build=<n> is the compile count at the moment that binary was written, so a run served from the cache
 # shows the build number of the compile that made it. Knobs (environment): FAKE_SWIFT_VERSION, FAKE_SDK,
 # FAKE_SDKPATH, FAKE_BUILD, FAKE_ARCH, FAKE_JBIG2, FAKE_QPDF, FAKE_LOGIN_DIR (the login shell's tools, with
@@ -39,6 +40,7 @@ cat > "$out" <<EOS
 # made by fake compile $$ (so two compiles of one key differ, as prove-run-tests [5] needs)
 h=no; [ -d "\$MAC_HEAVY_LOCK" ] && h=yes
 echo "run \${0##*/} build=$n heavy=\$h label=\$(sed -n 's/^label=//p' "\$MAC_HEAVY_LOCK/owner" 2>/dev/null)" >> "\$FAKE_LOG"
+echo "env tier=\${VISIONOCR_TIER-unset} sections=\${VISIONOCR_SECTIONS-unset}" >> "\$FAKE_LOG"
 [ -n "\${FAKE_RUN_EDIT:-}" ] && echo "// edited during the run" >> "\$FAKE_RUN_EDIT"
 if [ -n "\${FAKE_RUN_SLEEP:-}" ]; then
   ra="\$FAKE_LOG.running"; mkdir -p "\$ra"

@@ -9,6 +9,9 @@ cd "$(git rev-parse --show-toplevel)"
 # A GUI-launched shell has almost no PATH, and so does a git hook invoked from
 # some editors — swiftc and mac-ocr both go missing and the run reports nonsense.
 export PATH="/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:$PATH"
+# light-tier (lt-tier): a session's working-run variables never reach the commit's suite, which runs every
+# section. ops/autonomous/tests/prove-run-tests.sh [6] holds it.
+unset VISIONOCR_TIER VISIONOCR_SECTIONS
 
 # --no-renames: with rename detection a `git mv` lists only its destination, so moving
 # Tools/make-plate-fixtures.swift (which run_tests.sh builds) to another name under Tools/
