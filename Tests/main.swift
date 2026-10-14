@@ -12398,6 +12398,76 @@ do {
 }
 }  // end of section
 
+section("the accurate mode's settings route each kind of page to the reader chosen for it (C57, ocr-integrate-settings)") {
+
+do {
+    typealias AR = Prefs.AccurateReader
+    resetPrefs()
+    // The lab's keys, as hybrid-run.sh writes them: honoured with the mode off, ignored with it on.
+    d.set("fill", forKey: Prefs.modelArrangement); d.set("/lab/reader.sh", forKey: Prefs.modelReader)
+    var s = Prefs.Snapshot.current(d)
+    check("the accurate mode is off by default, and off it leaves the lab's model keys as they were",
+          !d.bool(forKey: Prefs.accurateMode) && s.modelArrangement == .fill && s.modelReader == "/lab/reader.sh"
+              && s.newspaperModelArrangement == nil, "\(s.modelArrangement) \(s.modelReader)")
+    d.set(true, forKey: Prefs.accurateMode)
+    s = Prefs.Snapshot.current(d)
+    check("…on with nothing chosen, every page is Vision's and newspapers do not take the print pair",
+          !s.modelOn && s.modelReader.isEmpty && s.newspaperModelArrangement == .off,
+          "\(s.modelArrangement) \(s.modelReader) \(String(describing: s.newspaperModelArrangement))")
+    d.set(AR.falcon.rawValue, forKey: Prefs.accurateReader)
+    d.set(AR.paddle.rawValue, forKey: Prefs.accurateNewspaperReader)
+    s = Prefs.Snapshot.current(d)
+    let onPrint = s.model(for: .other), news = s.model(for: .newspaper)
+    check("…Falcon-OCR on print runs as align, PaddleOCR-VL on newspapers as regions",
+          onPrint.modelArrangement == .align && onPrint.modelReader == "falcon-ocr"
+              && news.modelArrangement == .regions && news.modelReader == "paddleocr-vl",
+          "\(onPrint.modelArrangement) \(onPrint.modelReader) \(news.modelArrangement) \(news.modelReader)")
+    d.set(AR.visionRegions.rawValue, forKey: Prefs.accurateReader)
+    d.set(AR.visionRegions.rawValue, forKey: Prefs.accurateNewspaperReader)
+    s = Prefs.Snapshot.current(d)
+    check("…Vision on regions is offered on newspapers and run as Vision alone off them",
+          s.model(for: .newspaper).modelReader == ModelRuntime.visionRegions && s.modelArrangement == .off,
+          "\(s.model(for: .newspaper).modelReader) \(s.modelArrangement)")
+    d.set(AR.falcon.rawValue, forKey: Prefs.accurateReader)
+    d.set(3.0, forKey: Prefs.modelMemoryGB)
+    s = Prefs.Snapshot.current(d)
+    check("…a choice that no longer fits under the memory setting runs as Vision, and is not offered",
+          s.modelArrangement == .off && !AR.offered(.other, memoryGB: 3).contains(.falcon)
+              && AR.offered(.other, memoryGB: 4) == [.vision, .paddle, .falcon],
+          "\(s.modelArrangement) \(AR.offered(.other, memoryGB: 3))")
+    resetPrefs()
+
+    // Every route the settings can produce is one the engine was approved to run.
+    var outside: [String] = []
+    for reader in AR.allCases where reader != .vision {
+        for kind in [Recogniser.PageKind.newspaper, .other] where reader.figures(kind) != nil {
+            let route = reader.route(kind)
+            if ModelRuntime.offered(route.reader)?[kind]?.contains(route.arrangement) != true {
+                outside.append("\(reader.rawValue) on \(kind.rawValue)")
+            }
+        }
+    }
+    check("every reader the settings offer runs in an arrangement approved for that kind of page",
+          outside.isEmpty, outside.joined(separator: ", "))
+    check("the table reads the comparison's figures in a user's words",
+          AR.falcon.cells(.other) == ["about 6", "about 14 s a page, 4.1× Vision", "3.9 GB", "1.1 GB"]
+              && AR.vision.cells(.newspaper) == ["about 296", "about 23 s a page", "no extra", "none"]
+              && AR.visionRegions.cells(.newspaper)?.last == "72 MB" && AR.visionRegions.cells(.other) == nil,
+          "\(AR.falcon.cells(.other) ?? []) \(AR.vision.cells(.newspaper) ?? [])")
+    let bare = ["VISIONOCR_MODEL_HOME": tmp.appendingPathComponent("no-models").path]
+    check("the panel can say what a chosen reader still needs downloaded",
+          AR.vision.missing(.newspaper, environment: bare).isEmpty
+              && AR.visionRegions.missing(.newspaper, environment: bare) == ["the layout model"]
+              && AR.falcon.missing(.other, environment: bare) == ["the shared runtime", "Falcon-OCR"]
+              && AR.paddle.missing(.other, environment: bare) == ["the shared runtime", "PaddleOCR-VL", "the layout model"],
+          "\(AR.falcon.missing(.other, environment: bare)) \(AR.paddle.missing(.other, environment: bare))")
+    let panel = (try? String(contentsOfFile: "Sources/SettingsView.swift", encoding: .utf8)) ?? ""
+    check("the settings panel shows the accurate mode",
+          panel.contains("accurateSection\n") && panel.contains("@AppStorage(Prefs.accurateMode)"),
+          panel.isEmpty ? "could not read SettingsView.swift" : "not shown")
+}
+}  // end of section
+
 section("a model reader runs under its memory guard and falls back to Vision (C57, ie-guard)") {
 
 do {
@@ -12407,9 +12477,9 @@ do {
               && ModelGuard.verdict(footprintMB: 10, capMB: 5120, pressure: 4, swapGrowthMB: 0)?.contains("critical") == true
               && ModelGuard.verdict(footprintMB: 10, capMB: 5120, pressure: 1, swapGrowthMB: 2049)?.contains("swap") == true)
     let gb: UInt64 = 1_073_741_824
-    check("the memory setting defaults to 5 GB from 16 GB up, and the same share below",
+    check("the memory setting defaults to 5 GB from 16 GB up, and to the slider's lowest step below",
           Prefs.defaultModelMemoryGB(physicalBytes: 18 * gb) == 5 && Prefs.defaultModelMemoryGB(physicalBytes: 16 * gb) == 5
-              && Prefs.defaultModelMemoryGB(physicalBytes: 8 * gb) == 2.5,
+              && Prefs.defaultModelMemoryGB(physicalBytes: 8 * gb) == 4 && Prefs.modelMemoryRange == 4...12,
           "\(Prefs.defaultModelMemoryGB(physicalBytes: 8 * gb))")
     check("the guard's footprint sees this process", ModelGuard.footprintMB(leader: getpid(), group: nil) > 10, "\(ModelGuard.footprintMB(leader: getpid(), group: nil)) MB")
 

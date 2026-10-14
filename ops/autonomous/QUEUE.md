@@ -1624,6 +1624,10 @@ say so in the commit.
       is no worse with the mode off, and the suite passes. No release: that stays the owner's. ESTIMATE: 2-3
       sessions. Sub-boxes: the settings and table, the timing run, the downloads. BOUND: rule 10.
       (context: owner request 2026-10-02, split 2026-10-04, approach 2026-10-12)
+      - [x] **is-settings** — the switch, the choices per kind, the slider and the table. Done 2026-10-13: the Accurate
+            mode box (`Prefs.AccurateReader`, `Snapshot.applyAccurateMode`); `BUGS.md` C57, settings sub-box 1.
+      - [ ] **is-timing** — "Measure on this Mac" over bundled sample pages, replacing the speed column with its date.
+      - [ ] **is-downloads** — the runtime, the layout model and each model downloaded on first use, sizes stated.
 - [ ] **ocr-requeue** — make the rest of the queue build on the accurate mode. (uses: build,model:12)
       (blocked-on: ocr-integrate-settings) (effort: medium)
       Re-measure every later open item's named pages with the mode on. Close an item whose DONE WHEN the mode

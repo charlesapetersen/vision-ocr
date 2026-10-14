@@ -20207,6 +20207,25 @@ Falcon 21.39% (table 21.35%), PaddleOCR-VL 21.83% (21.83%), Vision regions 26.49
 other kind's reader running after a stop; both run under one memory cap, and pressure or swap is the machine's. Next: `ocr-integrate-settings` gives the
 pairs their controls; until then no user can reach them, so the entry stays open.
 
+#### Settings sub-box 1, the mode, its choices and the table (`ocr-integrate-settings`, 2026-10-13)
+
+An "Accurate mode" box in the panel, off by default (`Prefs.accurateMode`). On: a memory slider, 4 to 12 GB in
+whole steps (default 5 GB from 16 GB up and now 4 GB below, the lowest step, with a warning; it was 2.5 GB on 8 GB);
+one reader per kind, `accurateNewspaperReader` and `accurateReader`, offering only `Prefs.AccurateReader`s approved
+for that kind whose memory fits; beside each, the table of section 6 of `OCR-COMPARE-DECISION-2026-10-13.md`, read
+from `OCR-COMPARE-2026-10-13.tsv` (wm_share, secs, peak_mb). Downloads are decimal MB from the runtime plan
+(Falcon 1,080, PaddleOCR-VL 700, plus the layout model's 72 where the arrangement cuts regions), so they read
+1.1/1.2 GB and 0.8 GB where the draft, from `du`'s binary units, read 1.0/1.1 and 0.75. `Snapshot.current` turns
+the choices into the engine's two pairs, newspapers always set apart (Vision is `.off`, not unset, so a newspaper
+never takes Falcon's print `align`); off, the lab's keys are read as before, and no user has them set. A stored choice
+that stops fitting under the slider runs as Vision and the panel says so; moving the slider puts it back to Vision
+rather than keeping it to return later (review). Under each kind the panel names what the chosen reader still
+lacks (`AccurateReader.missing`: runtime, model, layout model). [measured] Rendered offscreen
+(`ImageRenderer`) at 4 GB and 3 GB: chosen reader bold, readers over the slider greyed. A check walks every offered
+reader and kind through `ModelRuntime.offered`, so the settings cannot route outside the approvals. Not yet: the
+timing run and the downloads (a model chosen before it is downloaded fails the file, saying so, as since ie-runtime;
+rejected: falling back to Vision there, which would publish a reading the user did not choose with nothing to see).
+
 ## Robustness and correctness of reporting
 
 ### R1 · jbig2 and qpdf children are never registered for cancellation — FIXED

@@ -375,11 +375,140 @@ enum Prefs {
     /// which, unlike its resident size, counts MLX's Metal buffers.
     static let modelMemoryGB = "modelMemoryGB"
 
-    /// 5 GB on a Mac with 16 GB or more (owner, 2026-10-12); below that the same share of
-    /// what the Mac has, 2.5 GB on 8 GB. Falcon-OCR's whole-page reading peaked at 3.4 GB.
+    /// 5 GB on a Mac with 16 GB or more, and below that the slider's lowest step, with a
+    /// warning (owner, 2026-10-12). Falcon-OCR's whole-page reading peaked at 3.9 GB.
     static func defaultModelMemoryGB(physicalBytes: UInt64 = ProcessInfo.processInfo.physicalMemory) -> Double {
-        let gb = Double(physicalBytes) / 1_073_741_824
-        return gb >= 16 ? 5 : (gb * 5 / 16 * 10).rounded() / 10
+        physicalGB(physicalBytes) >= 16 ? 5 : modelMemoryRange.lowerBound
+    }
+
+    /// The memory slider's span, in whole GB (owner, 2026-10-12).
+    static let modelMemoryRange: ClosedRange<Double> = 4...12
+
+    static func physicalGB(_ bytes: UInt64 = ProcessInfo.processInfo.physicalMemory) -> Double {
+        Double(bytes) / 1_073_741_824
+    }
+
+    /// The accurate mode (C57, `ocr-integrate-settings`). Off by default, and off, no model
+    /// is run or downloaded. On, each kind of page is read by the reader chosen for it in
+    /// `accurateReader` and `accurateNewspaperReader` (`AccurateReader` raw values; unset is
+    /// Vision), and the lab's `modelArrangement` keys are not read.
+    static let accurateMode = "accurateMode"
+    static let accurateReader = "accurateReader"
+    static let accurateNewspaperReader = "accurateNewspaperReader"
+
+    /// The readers the accurate mode offers, with the figures the settings show beside them:
+    /// `OCR-COMPARE-2026-10-13.tsv`'s rows for the arrangements the owner approved
+    /// (`OCR-COMPARE-DECISION-2026-10-13.md`), measured on this project's 67-page sample on
+    /// one Mac. Speed is ours until a timing run on the user's Mac replaces it.
+    enum AccurateReader: String, CaseIterable {
+        case vision, visionRegions = "vision-regions", paddle = "paddleocr-vl", falcon = "falcon-ocr"
+
+        var name: String {
+            switch self {
+            case .vision: return "Vision (built in)"
+            case .visionRegions: return "Vision with layout regions"
+            case .paddle: return "PaddleOCR-VL"
+            case .falcon: return "Falcon-OCR"
+            }
+        }
+
+        struct Figures: Equatable {
+            /// Words wrong or missing, of every 1,000 (`wm_share`).
+            let wrongPer1000: Int
+            /// The app's time a page (`secs`).
+            let secondsPerPage: Double
+            /// The reader's largest guard peak, in GB; 0 for Vision alone.
+            let memoryGB: Double
+            /// The model and, where its arrangement cuts regions, the layout model; not the
+            /// runtime, which the models share (`runtimeDownloadMB`).
+            let downloadMB: Int
+        }
+
+        /// The runtime every model reader shares, as a download (`OCR-RUNTIME-PLAN-2026-10-13.md`:
+        /// 134 MB packed, 439-445 MB on disk). Sizes here are decimal MB: the plan's 1.08 GB and
+        /// 0.70 GB for the models, where the comparison's header gave `du`'s binary 1.0 G and 682 M.
+        static let runtimeDownloadMB = 134
+        static let layoutDownloadMB = 72
+        static let paddleDownloadMB = 700
+        static let falconDownloadMB = 1080
+
+        /// This reader's figures on `kind`, or nil where it is not offered: Vision on regions
+        /// off newspapers gave no real advantage (1.20% to 1.09% at twice the time).
+        func figures(_ kind: Recogniser.PageKind) -> Figures? {
+            switch (self, kind) {
+            case (.vision, .newspaper):        return Figures(wrongPer1000: 296, secondsPerPage: 23.1, memoryGB: 0, downloadMB: 0)
+            case (.vision, .other):            return Figures(wrongPer1000: 12, secondsPerPage: 3.4, memoryGB: 0, downloadMB: 0)
+            case (.visionRegions, .newspaper): return Figures(wrongPer1000: 265, secondsPerPage: 33.0, memoryGB: 0.6,
+                                                              downloadMB: Self.layoutDownloadMB)
+            case (.visionRegions, .other):     return nil
+            case (.paddle, .newspaper):        return Figures(wrongPer1000: 218, secondsPerPage: 59.8, memoryGB: 2.5,
+                                                              downloadMB: Self.paddleDownloadMB + Self.layoutDownloadMB)
+            case (.paddle, .other):            return Figures(wrongPer1000: 7, secondsPerPage: 13.2, memoryGB: 2.4,
+                                                              downloadMB: Self.paddleDownloadMB + Self.layoutDownloadMB)
+            case (.falcon, .newspaper):        return Figures(wrongPer1000: 214, secondsPerPage: 67.6, memoryGB: 3.7,
+                                                              downloadMB: Self.falconDownloadMB + Self.layoutDownloadMB)
+            case (.falcon, .other):            return Figures(wrongPer1000: 6, secondsPerPage: 13.8, memoryGB: 3.9, downloadMB: Self.falconDownloadMB)
+            }
+        }
+
+        /// The arrangement and `modelReader` name the helper runs this reader as on `kind`
+        /// (`ModelRuntime.readers`' approved arrangements): `.off` is Vision alone.
+        func route(_ kind: Recogniser.PageKind) -> (arrangement: ModelArrangement, reader: String) {
+            switch self {
+            case .vision: return (.off, "")
+            case .visionRegions: return (.regions, ModelRuntime.visionRegions)
+            case .paddle: return (.regions, rawValue)
+            case .falcon: return (kind == .newspaper ? .regions : .align, rawValue)
+            }
+        }
+
+        /// The settings table's cells for this reader on `kind`, in words a user reads: words
+        /// wrong or missing, speed, memory, download. Nil where it is not offered.
+        func cells(_ kind: Recogniser.PageKind) -> [String]? {
+            guard let f = figures(kind), let base = AccurateReader.vision.figures(kind) else { return nil }
+            let seconds = String(format: "%.0f", f.secondsPerPage)
+            let times = self == .vision ? "" : String(format: ", %.1f× Vision", f.secondsPerPage / base.secondsPerPage)
+            let download = f.downloadMB == 0 ? "none"
+                : f.downloadMB < 500 ? "\(f.downloadMB) MB"
+                : String(format: "%.1f GB", Double(f.downloadMB) / 1000)
+            return ["about \(f.wrongPer1000)", "about \(seconds) s a page\(times)",
+                    f.memoryGB == 0 ? "no extra" : String(format: "%.1f GB", f.memoryGB), download]
+        }
+
+        /// What this reader still needs downloaded before it can read `kind`, in the order a
+        /// user would fetch them; empty when it is ready. A run that lacks one fails the file,
+        /// saying which (`ModelRuntime.command`, `LayoutModel.model`).
+        func missing(_ kind: Recogniser.PageKind,
+                     environment: [String: String] = ProcessInfo.processInfo.environment) -> [String] {
+            let home = ModelRuntime.home(environment)
+            var out: [String] = []
+            if let model = ModelRuntime.readers[rawValue] {
+                if !Runner.isRunnable(home.appendingPathComponent("Runtime/bin/python3").path) {
+                    out.append("the shared runtime")
+                }
+                let cache = "Models/hub/models--" + model.repo.replacingOccurrences(of: "/", with: "--")
+                if !FileManager.default.fileExists(atPath: home.appendingPathComponent(cache).path) {
+                    out.append(name)
+                }
+            }
+            if route(kind).arrangement == .regions,
+               !FileManager.default.fileExists(atPath: LayoutModel.url(environment).path) {
+                out.append("the layout model")
+            }
+            return out
+        }
+
+        /// The readers offered on `kind` whose memory fits under the slider. Vision is always one.
+        static func offered(_ kind: Recogniser.PageKind, memoryGB: Double) -> [AccurateReader] {
+            allCases.filter { reader in reader.figures(kind).map { $0.memoryGB <= memoryGB } ?? false }
+        }
+
+        /// The stored choice as it is run: Vision when it is unset, unknown, not offered on
+        /// `kind`, or no longer fits under the slider.
+        static func chosen(_ raw: String?, _ kind: Recogniser.PageKind, memoryGB: Double) -> AccurateReader {
+            AccurateReader(rawValue: raw ?? "").flatMap { offered(kind, memoryGB: memoryGB).contains($0) ? $0 : nil }
+                ?? .vision
+        }
     }
 
     /// `modelArrangement`'s values. `align` keeps Vision's lines, boxes and order and
@@ -467,7 +596,7 @@ enum Prefs {
 
         /// Reads the live settings. Call on the main actor, once per batch.
         static func current(_ d: UserDefaults = Prefs.store) -> Snapshot {
-            Snapshot(
+            var snapshot = Snapshot(
                 mode: Mode(rawValue: d.string(forKey: Prefs.mode) ?? "") ?? .searchablePDF,
                 textFormat: TextFormat(rawValue: d.string(forKey: Prefs.textFormat) ?? "")
                     ?? .text,
@@ -497,6 +626,22 @@ enum Prefs {
                 // Unset reads 0, which would stop every reader at its first sample.
                 modelMemoryGB: d.double(forKey: Prefs.modelMemoryGB) > 0
                     ? d.double(forKey: Prefs.modelMemoryGB) : Prefs.defaultModelMemoryGB())
+            if d.bool(forKey: Prefs.accurateMode) { snapshot.applyAccurateMode(d) }
+            return snapshot
+        }
+
+        /// The accurate mode's choices in place of the lab's model keys: each kind's reader as
+        /// `AccurateReader.chosen` resolves it, newspapers always set apart so that they never
+        /// take the print reader's arrangement.
+        mutating func applyAccurateMode(_ d: UserDefaults) {
+            let other = AccurateReader.chosen(d.string(forKey: Prefs.accurateReader), .other, memoryGB: modelMemoryGB)
+                .route(.other)
+            let news = AccurateReader.chosen(d.string(forKey: Prefs.accurateNewspaperReader), .newspaper,
+                                             memoryGB: modelMemoryGB).route(.newspaper)
+            modelArrangement = other.arrangement
+            modelReader = other.reader
+            newspaperModelArrangement = news.arrangement
+            newspaperModelReader = news.reader
         }
     }
 
@@ -514,6 +659,7 @@ enum Prefs {
         joinHyphenated, preserveAnnotations, writeRunReport, concurrency,
         checkForUpdates, skippedVersion, lastUpdateCheck, modelArrangement, modelReader,
         newspaperModelArrangement, newspaperModelReader, modelMemoryGB,
+        accurateMode, accurateReader, accurateNewspaperReader,
     ]
 
     /// Set once the pre-rename settings have been brought across. Deliberately
@@ -648,6 +794,9 @@ enum Prefs {
             modelArrangement: ModelArrangement.off.rawValue,
             modelReader: "",
             modelMemoryGB: defaultModelMemoryGB(),
+            accurateMode: false,
+            accurateReader: AccurateReader.vision.rawValue,
+            accurateNewspaperReader: AccurateReader.vision.rawValue,
 
             // On by default. The cost is a few kilobytes of text per batch in
             // the directory macOS already keeps logs in; the benefit is that a

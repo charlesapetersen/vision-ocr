@@ -62,6 +62,13 @@ struct SettingsView: View {
     /// preset X" flag — see `Prefs.Preset.apply`.
     @State private var presetSummary = ""
 
+    // Accurate mode
+    @AppStorage(Prefs.accurateMode) private var accurateMode = false
+    @AppStorage(Prefs.accurateReader) private var accurateReader = Prefs.AccurateReader.vision.rawValue
+    @AppStorage(Prefs.accurateNewspaperReader) private var accurateNewspaperReader =
+        Prefs.AccurateReader.vision.rawValue
+    @AppStorage(Prefs.modelMemoryGB) private var modelMemoryGB = Prefs.defaultModelMemoryGB()
+
     // Behaviour
     @AppStorage(Prefs.openWhenDone) private var openWhenDone = true
     @AppStorage(Prefs.writeRunReport) private var writeRunReport = true
@@ -113,6 +120,7 @@ struct SettingsView: View {
                 VStack(alignment: .leading, spacing: 13) {
                     recognitionSection
                     modeSection
+                    accurateSection
                     behaviourSection
                     commandPreview
                 }
@@ -495,6 +503,107 @@ struct SettingsView: View {
                             + "text is broken.")
             }
         }
+    }
+
+    // MARK: - Accurate mode
+
+    /// The readers the owner approved for each kind of page (C57), off by default. The
+    /// pickers offer only what fits under the memory slider; a stored choice that stops
+    /// fitting is run as Vision (`Prefs.AccurateReader.chosen`), which the table shows.
+    private var accurateSection: some View {
+        Box("Accurate mode") {
+            Toggle("Read with a stronger model (slower, needs a download)", isOn: $accurateMode)
+                .help("Runs a text-recognition model on this Mac alongside Vision for each "
+                      + "kind of page, chosen below. Nothing is downloaded or run while this "
+                      + "is off, and your documents never leave your Mac either way.")
+            if accurateMode {
+                Row("Memory", labelWidth) {
+                    Slider(value: $modelMemoryGB, in: Prefs.modelMemoryRange, step: 1)
+                        .frame(width: 180)
+                        .accessibilityLabel("Most memory a model may use")
+                    Text("\(Int(modelMemoryGB)) GB at most")
+                        .font(.system(.caption, design: .monospaced))
+                    Spacer()
+                }
+                .help("A model that needs more than this is stopped and the page keeps "
+                      + "Vision's reading. Readers that need more are not offered.")
+                // A choice the slider no longer allows is put back to Vision, rather than kept
+                // and quietly brought back when the slider is raised again.
+                .onChange(of: modelMemoryGB) { gb in
+                    accurateReader = Prefs.AccurateReader.chosen(accurateReader, .other, memoryGB: gb).rawValue
+                    accurateNewspaperReader = Prefs.AccurateReader.chosen(accurateNewspaperReader, .newspaper,
+                                                                          memoryGB: gb).rawValue
+                }
+                if Prefs.physicalGB() < 16 {
+                    Row("", labelWidth) {
+                        Label("This Mac has \(Int(Prefs.physicalGB().rounded())) GB. A model "
+                              + "reading a page may slow other apps; keep the memory low.",
+                              systemImage: "exclamationmark.triangle")
+                            .font(.caption2).foregroundStyle(.orange)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+                accurateKind("Newspapers", .newspaper, $accurateNewspaperReader)
+                accurateKind("Other pages", .other, $accurateReader)
+                Text("Words wrong or missing are out of every 1,000, measured on 67 pages of "
+                     + "our own sample; your documents may differ. Speed is ours, on one Mac. "
+                     + "The models share one more download, about "
+                     + "\(Prefs.AccurateReader.runtimeDownloadMB) MB.")
+                    .font(.caption2).foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+    }
+
+    /// One kind of page: its reader picker and the table of what each offered reader costs.
+    @ViewBuilder
+    private func accurateKind(_ title: String, _ kind: Recogniser.PageKind,
+                              _ choice: Binding<String>) -> some View {
+        let fits = Prefs.AccurateReader.offered(kind, memoryGB: modelMemoryGB)
+        let chosen = Prefs.AccurateReader.chosen(choice.wrappedValue, kind, memoryGB: modelMemoryGB)
+        Row(title, labelWidth) {
+            Picker("", selection: Binding(get: { chosen.rawValue }, set: { choice.wrappedValue = $0 })) {
+                ForEach(fits, id: \.self) { Text($0.name).tag($0.rawValue) }
+            }
+            .labelsHidden().frame(width: 220)
+            .accessibilityLabel("Reader for \(title.lowercased())")
+            Spacer()
+        }
+        if let stored = Prefs.AccurateReader(rawValue: choice.wrappedValue), stored != chosen,
+           let need = stored.figures(kind)?.memoryGB {
+            Row("", labelWidth) {
+                Text("\(stored.name) needs \(String(format: "%.1f", need)) GB, more than the memory "
+                     + "allowed, so Vision reads these pages.")
+                    .font(.caption2).foregroundStyle(.orange)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        let missing = chosen.missing(kind)
+        if !missing.isEmpty {
+            Row("", labelWidth) {
+                Text("Not downloaded yet: \(missing.joined(separator: ", ")). Until it is, a file "
+                     + "holding these pages stops with a message rather than being read.")
+                    .font(.caption2).foregroundStyle(.orange)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        Grid(alignment: .leading, horizontalSpacing: 10, verticalSpacing: 2) {
+            GridRow {
+                ForEach(["Reader", "Wrong or missing", "Speed", "Memory", "Download"], id: \.self) {
+                    Text($0).bold()
+                }
+            }
+            ForEach(Prefs.AccurateReader.allCases.filter { $0.figures(kind) != nil }, id: \.self) { reader in
+                GridRow {
+                    Text(reader.name)
+                    ForEach(Array((reader.cells(kind) ?? []).enumerated()), id: \.offset) { Text($0.element) }
+                }
+                .foregroundStyle(fits.contains(reader) ? .primary : .tertiary)
+                .fontWeight(reader == chosen ? .semibold : .regular)
+            }
+        }
+        .font(.caption2)
+        .padding(.leading, labelWidth + 8)
     }
 
     // MARK: - Behaviour
