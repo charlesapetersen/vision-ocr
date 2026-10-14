@@ -1,0 +1,2 @@
+# Round notes are appended by one session per tag; a union merge keeps both sides of a concurrent append.
+ops/autonomous/notes/*.md merge=union

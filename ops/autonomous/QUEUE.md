@@ -66,7 +66,8 @@ say so in the commit.
 
 10. **Bounds are sessions, in two rounds (owner, 2026-10-02).** A product item may take up to four
    sessions in its first round, with any number of code commits in each; a session counts when it works on
-   the item, whether it commits or not, and adds a dated line to the item saying which session of which
+   the item, whether it commits or not, and adds a dated line to the item's notes file,
+   `ops/autonomous/notes/<tag>.md`, saying which session of which
    round it was. If the item is still open after four, it moves behind the untried items. When it comes
    back it gets a second round of up to four sessions, all at `max` (add `(effort: max)`). If it is still
    open after the second round it leaves the queue: the session closes it `WONTFIX` with the case in its
@@ -1854,7 +1855,7 @@ say so in the commit.
         Suite 1969 -> 1972/1972.
       DONE WHEN the four sub-boxes are ticked. ESTIMATE: 4 sessions. BOUND: rule 10.
       (context: owner request 2026-10-07, ~/Claude/Agent Manager/EFFICIENCY-PLAN.md item 11)
-- [ ] **queue-notes** — sessions write an item's round notes to a file of its own, not into its `QUEUE.md` body.
+- [x] **queue-notes** — sessions write an item's round notes to a file of its own, not into its `QUEUE.md` body.
       (uses: light)
       WHY. EFFICIENCY-PLAN item 17. Sessions append dated notes into item bodies (ocr-lab-round3 carries six this
       week), so this file grows and two sessions editing it collide; the queue analysis names it one of the shared
@@ -1869,6 +1870,7 @@ say so in the commit.
       pins that with a mutant, `next-item.sh`'s output on the tree is unchanged, and this session's own round note
       is in `ops/autonomous/notes/queue-notes.md`. ESTIMATE: 1 session. BOUND: rule 10.
       (context: owner request 2026-10-07, ~/Claude/Agent Manager/EFFICIENCY-PLAN.md item 17)
+      (notes: ops/autonomous/notes/queue-notes.md)
 - [ ] **bugs-split** — one file per `BUGS.md` entry, with `BUGS.md` kept as their index, so a session reads and
       writes only the entry it works. (uses: light,build)
       WHY. EFFICIENCY-PLAN item 17. `BUGS.md` is 2.2 MB (2,237,810 bytes on 2026-10-07) and every session that

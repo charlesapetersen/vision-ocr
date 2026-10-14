@@ -80,6 +80,8 @@
 #     resolved, which is the same shape rule `bugs-entry.sh` uses to decide what an entry is. The cost of
 #     that choice, stated plainly: a typo that is not tag-shaped (`C2X`) is skipped rather than reported.
 #     A tag-shaped typo (`C42`) IS reported, and that is the form typos actually take.
+#   * a notes file `notes/<tag>.md` (rule 10's round notes) whose tag is no item in the queue:
+#     `NOTES-ORPHAN`. `VISIONOCR_NOTES` overrides the directory, which defaults to `notes/` beside the queue.
 #
 # ⚠️ PARSING MIRRORS `next-item.sh` DELIBERATELY, and that is the load-bearing property of this file. Same
 # anchored checkbox regex, same code-fence and blockquote skipping, same leading `**`/backtick strip, same
@@ -206,6 +208,9 @@ ST_BUGS
 - [ ] **i-origin-missing** — origin cite on a tag that is NOT in the register: CITE-MISSING. (origin: BUGS.md C77)
 - [ ] **j-origin-elsewhere** — origin cite naming another file: skipped, silent. (origin: ops/autonomous/README.md D18)
 ST_QUEUE
+  mkdir -p "$st_dir/notes"
+  echo "2026-10-14: round 1, session 1." > "$st_dir/notes/h-origin-open-open.md"
+  echo "2026-10-14: round 1, session 1." > "$st_dir/notes/zz-removed-item.md"
 
   # Re-invoke THIS file by an absolute path resolved from `$0`, not `$0` itself: a relative `$0` is only
   # valid from the caller's cwd, and the summary line the count assertions read is what a wrong path would
@@ -214,7 +219,7 @@ ST_QUEUE
   st_self="$(cd "$(dirname "$0")" && pwd)/$(basename "$0")"
   st_say; [ -r "$st_self" ] || { echo "self-test: FAIL cannot resolve myself at $st_self" >&2; st_fail=1; }
   st_out="$(VISIONOCR_QUEUE="$st_dir/QUEUE.md" VISIONOCR_BUGS="$st_dir/BUGS.md" \
-            QUEUE_COHERENCE_QUIET=0 bash "$st_self" 2>&1)"; st_rc=$?
+            VISIONOCR_NOTES="$st_dir/notes" QUEUE_COHERENCE_QUIET=0 bash "$st_self" 2>&1)"; st_rc=$?
 
   st_say; [ "$st_rc" = 1 ] || { echo "self-test: FAIL exit — expected 1 (drift), got $st_rc" >&2; st_fail=1; }
 
@@ -260,8 +265,11 @@ ST_QUEUE
   st_reject "origin/open/open-is-agreement"     "h-origin-open-open"
   # GUARD (4) the counts. N_CITED = 5 (four single-origin rows plus the mixed one); 8 items in all. This is
   # what moves even when a finding's presence happens not to.
+  # GUARD (6) notes files: one whose tag is an item stays silent, one whose tag is not is reported.
+  st_reject "notes/item-has-notes"  "NOTES-ORPHAN h-origin-open-open"
+  st_want   "notes/orphan"          "queue-coherence: NOTES-ORPHAN zz-removed-item"
   st_want  "summary counts"      "(10 items, 6 citing BUGS.md)"
-  st_want  "finding total"       "4 item(s) disagree"
+  st_want  "finding total"       "5 item(s) disagree"
 
   if [ "$st_fail" = 0 ]; then echo "check-queue-coherence: self-test ok ($st_checks checks)"; exit 0; fi
   echo "check-queue-coherence: SELF-TEST FAILED" >&2; exit 5
@@ -439,6 +447,22 @@ while IFS="$TAB" read -r kind line st tag cites; do
       "WOULD-REDO $tag $line $closed_tags"
   fi
 done < "$ITEMS"
+
+# ---- the notes files -------------------------------------------------------------------------------------
+# A session writes an item's round notes to `notes/<tag>.md` beside the queue (rule 10), not into the item's
+# body. A notes file whose tag is no item in the queue, ticked or not, belongs to work that was renamed or
+# removed: its notes are now attached to nothing a session will be pointed at.
+NOTES="${VISIONOCR_NOTES:-$(dirname "$QUEUE")/notes}"
+if [ -d "$NOTES" ]; then
+  for nf in "$NOTES"/*.md; do
+    [ -f "$nf" ] || continue
+    nt="$(basename "$nf" .md)"
+    awk -F"$TAB" -v t="$nt" '$1 == "ITEM" && $4 == t { f = 1; exit } END { exit !f }' "$ITEMS" && continue
+    finding "notes" \
+      "notes/$nt.md  is the notes file of $nt, which is no item in QUEUE.md → rename it to the item's tag, or, if the item left the queue, move it to docs/history/notes/" \
+      "NOTES-ORPHAN $nt"
+  done
+fi
 
 # ---- report ----------------------------------------------------------------------------------------------
 N_FIND="$(grep -c . "$FIND" || true)"

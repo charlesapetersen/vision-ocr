@@ -314,6 +314,13 @@ status. A **missing** prerequisite tag counts as unmet, so a typo blocks loudly 
 of order. `[hold]` / `needs: owner` items are printed but never offered. `(not-before: YYYY-MM-DD)` holds an
 item that needs elapsed time until that date (`blocked:not-before:<date>`); a malformed date blocks too.
 
+An item's round notes (rule 10's dated line, what each session tried) live in `ops/autonomous/notes/<tag>.md`,
+appended by the session working that tag, so `QUEUE.md` stays the order and two sessions do not collide in
+it. The item gains one `(notes: ops/autonomous/notes/<tag>.md)` line when its file is created; bodies written
+before 2026-10-14 keep their old dated lines. `.gitattributes` merges the notes files with `merge=union`, and
+`check-queue-coherence.sh` reports a notes file whose tag is no queue item as `NOTES-ORPHAN`; a commit that
+removes an item from the queue moves its notes file to `docs/history/notes/`.
+
 ## Reading BUGS.md without spending the session on it
 
 `BUGS.md` is ~480 KB ≈ 120,000 tokens. A session that reads it whole has nothing left to work with, so

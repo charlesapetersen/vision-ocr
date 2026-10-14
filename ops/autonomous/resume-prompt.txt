@@ -164,6 +164,10 @@ STEP 4 — COMMIT AND PUSH.
   the same commit as the fix, update the `BUGS.md` entry (status, date, before and after), a
   `CHANGELOG.md` `## Unreleased` line for anything a user would notice, the `./run_tests.sh` count and
   the list of open entries in `CLAUDE.md` if either changed, and the queue box, ticked only on the commit that finishes the item.
+  Round notes (rule 10's dated line, what was tried) go to `ops/autonomous/notes/<tag>.md`, appended, never
+  into the item's body in `QUEUE.md`; only the session working that tag writes it. When you create the file,
+  add one line to the item's body: `(notes: ops/autonomous/notes/<tag>.md)`. A commit that removes an item
+  from the queue moves its notes file to `docs/history/notes/`.
   Commit subject: one plain declarative sentence saying what changed for the app or what was measured, no
   prefix. Body: under about fifteen lines, with the before and after figures and the suite result you saw.
   End it with `Co-Authored-By: Claude <the model you are running as> <noreply@anthropic.com>`.
