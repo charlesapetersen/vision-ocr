@@ -12223,15 +12223,19 @@ do {
               && Array(argv[5...10]) == ["--prompt", "plain", "--seconds", "540", "--max-side", "3300"]
               && argv[11] == "HF_HOME=" + modelHome.appendingPathComponent("Models").path && argv[12] == "OFFLINE=1",
           shipped.1 + " | " + argv.joined(separator: " "))
-    // Only the approved arrangements this build serves: no fill, no regions before the layout
-    // model, and PaddleOCR-VL never on a whole page.
-    for (arrangement, name) in [(Prefs.ModelArrangement.regions, "falcon-ocr"), (.fill, "falcon-ocr"),
-                                (.align, "paddleocr-vl")] {
+    // Only the approved arrangements: no fill, PaddleOCR-VL never on a whole page, and Vision by
+    // name only on its regions.
+    for (arrangement, name) in [(Prefs.ModelArrangement.fill, "falcon-ocr"), (.align, "paddleocr-vl"),
+                                (.align, "vision")] {
         let refused = publish(arrangement, name)
         check("\(name) under \(arrangement.rawValue) fails the file, saying it is not offered",
               refused.2 == .failed && refused.1.contains("not offered") && refused.0.isEmpty,
               "\(String(describing: refused.2)) \(refused.1)")
     }
+    let unlaid = publish(.regions, "falcon-ocr")
+    check("a shipped reader on regions with no layout model downloaded fails the file, saying so",
+          unlaid.2 == .failed && unlaid.1.contains("layout model has not been downloaded") && unlaid.0.isEmpty,
+          "\(String(describing: unlaid.2)) \(unlaid.1)")
     let paddleEnv = ["VISIONOCR_MODEL_HOME": modelHome.path, "VISIONOCR_READER_SCRIPT": script.path]
     let undownloaded = try? ModelRuntime.command(reader: "paddleocr-vl", image: source, out: argvFile,
                                                  crops: script, environment: paddleEnv)
@@ -12255,6 +12259,70 @@ do {
     unsetenv("VISIONOCR_MODEL_HOME")
     unsetenv("VISIONOCR_READER_SCRIPT")
     resetPrefs()
+}
+}  // end of section
+
+section("the layout model's letterbox, decoding and crops are the lab's (C57, ie-layout)") {
+
+do {
+    // Expected values from cv2 4.x/5.0 `resize(..., INTER_AREA)` and layout-regions.py, run 2026-10-13.
+    let small: [UInt8] = (0..<5).flatMap { (i: Int) -> [UInt8] in (0..<7).map { (j: Int) -> UInt8 in UInt8((i * 37 + j * 11) % 256) } }
+    let wide: [UInt8] = (0..<17).flatMap { (i: Int) -> [UInt8] in
+        (0..<23).map { (j: Int) -> UInt8 in UInt8((i * 53 + j * 29 + i * j) % 256) } }
+    let wideExpected: [UInt8] = [
+        61, 129, 159, 111, 78, 146, 168, 115, 95, 143, 176, 142, 87, 152, 167, 126, 122, 137, 142, 116, 77,
+        135, 149, 111, 131, 144, 98, 115, 165, 143, 151, 109, 105, 153, 133, 121, 154, 137, 124, 156, 80, 152,
+        143, 101, 163, 128, 112, 156, 126, 122, 152, 105, 133, 119, 104, 146, 149, 106, 156, 104, 90, 143, 124,
+        120, 151, 116, 161, 100, 126, 122]
+    let shrunk = LayoutModel.areaShrink(small, width: 7, height: 5, to: 3, 2)
+    let shrunk2 = LayoutModel.areaShrink(wide, width: 23, height: 17, to: 10, 7)
+    check("the area shrink is cv2's INTER_AREA, pixel for pixel",
+          shrunk == [37, 63, 88, 126, 151, 177] && shrunk2 == wideExpected, "\(shrunk) \(shrunk2)")
+    // A page under the box is enlarged as cv2 enlarges it (5 x 4 to 13 x 9), to within 1 of
+    // cv2's fixed point, not put in at its own size with the boxes scaled as if it had been.
+    let tiny: [UInt8] = (0..<4).flatMap { (i: Int) -> [UInt8] in (0..<5).map { (j: Int) -> UInt8 in UInt8((i * 53 + j * 29 + i * j) % 256) } }
+    let tinyExpected: [Int] = [
+        0, 0, 12, 29, 29, 52, 58, 64, 87, 87, 104, 116, 116, 0, 0, 12, 29, 29, 52, 58, 64, 87, 87, 104, 116, 116,
+        40, 40, 51, 70, 70, 93, 99, 105, 129, 129, 147, 159, 159, 53, 53, 65, 83, 83, 107, 113, 119, 143, 143, 161,
+        173, 173, 80, 80, 91, 110, 110, 134, 141, 147, 171, 171, 189, 202, 202, 106, 106, 118, 137, 137, 162, 168,
+        174, 199, 199, 218, 230, 230, 119, 119, 132, 151, 151, 175, 182, 188, 213, 213, 193, 180, 180, 159, 159,
+        172, 191, 191, 217, 223, 229, 255, 255, 121, 31, 31, 159, 159, 172, 191, 191, 217, 223, 229, 255, 255, 121,
+        31, 31]
+    let grown = LayoutModel.areaEnlarge(tiny, width: 5, height: 4, to: 13, 9)
+    check("a page smaller than the layout model's input is enlarged as cv2 enlarges it",
+          grown.count == tinyExpected.count && zip(grown, tinyExpected).allSatisfy { abs(Int($0) - $1) <= 1 },
+          "\(grown)")
+    let boxes = [(2550, 3300), (4961, 3508), (1700, 2200)].map { LayoutModel.Letterbox.of(width: $0.0, height: $0.1) }
+    check("the letterbox pads only to a multiple of 32, split about the middle",
+          boxes.map { [$0.width, $0.height, $0.left, $0.top] } == [[800, 1024, 4, 0], [1024, 736, 0, 6], [800, 1024, 4, 0]],
+          boxes.map { "\($0.width)x\($0.height)+\($0.left)+\($0.top)" }.joined(separator: " "))
+
+    // A 64 x 64 input has 64 + 16 + 4 anchors. One, the 8-px level's (2, 1), says plain text
+    // at 0.9, its box 1.5 cells left, 0.5 up, 2 right and 1 down of its centre (20, 12).
+    let n = 84
+    var raw = [Float](repeating: 0, count: 14 * n)
+    let a = 1 * 8 + 2
+    raw[0 * n + a] = 1.5; raw[1 * n + a] = 0.5; raw[2 * n + a] = 2; raw[3 * n + a] = 1
+    raw[(4 + 1) * n + a] = 0.9
+    let found = LayoutModel.decode(raw, width: 64, height: 64) ?? []
+    check("decoding takes the best pairs, the box from its anchor's distances times its stride",
+          found.count == 300 && found[0].label == 1 && found[0].score == 0.9
+              && [found[0].x0, found[0].y0, found[0].x1, found[0].y1] == [8, 8, 36, 20],
+          found.prefix(1).map { "\($0)" }.joined())
+    check("an output of another shape than the model's is refused, not read as no regions",
+          LayoutModel.decode(Array(raw.dropLast()), width: 64, height: 64) == nil)
+
+    // One text block with a title over most of it (dropped), a second column, a table (not
+    // read) and a sliver of a running head under 2 px tall (dropped): two crops, columns in turn.
+    let crops = LayoutModel.crops([
+        (label: "title", score: 0.8, x0: 12, y0: 12, x1: 98, y1: 48),
+        (label: "plain text", score: 0.7, x0: 200, y0: 10, x1: 300, y1: 60),
+        (label: "plain text", score: 0.9, x0: 10, y0: 10, x1: 100, y1: 50),
+        (label: "table", score: 0.95, x0: 400, y0: 400, x1: 500, y1: 500),
+        (label: "abandon", score: 0.5, x0: 10, y0: 100, x1: 100, y1: 101.4)], pageWidth: 1000, pageHeight: 1000)
+    check("crops keep the better of two boxes over one block, in column order, and drop slivers and tables",
+          crops.map { [$0.x, $0.y, $0.width, $0.height] } == [[10, 10, 90, 40], [200, 10, 100, 50]],
+          crops.map { "\($0)" }.joined(separator: " "))
 }
 }  // end of section
 

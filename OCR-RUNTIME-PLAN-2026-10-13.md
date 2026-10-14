@@ -89,8 +89,8 @@ Options considered and rejected:
 ## The layout model: Core ML, run by the helper itself
 
 Vision on regions is the newspaper choice for a user who downloads no model, so DocLayout-YOLO cannot depend on the
-Python runtime. The plan is to convert it to Core ML once, on our side, and to ship the compiled model (about
-38 MB at 16 bits, against the ONNX file's 75 MB at 32 bits [reasoned from the file's size]). The helper runs it with
+Python runtime. It is converted to Core ML once, on our side (`ops/ocrlab/convert-layout.py`; 72 MB at 32 bits,
+measured; done in ie-layout). Its weights are AGPL-3.0, so it is downloaded like the models, not put in the app. The helper runs it with
 Core ML and does the lab's pre- and post-processing in Swift: the letterbox to 1,024 px on grey 114
 (`layout-regions.py`), the box decoding, and `dedupe-regions.py`'s merge. The test is that the Swift path gives the
 lab's regions on the sample pages, and that Vision on regions reproduces its `OCR-COMPARE-2026-10-13.tsv` figures.

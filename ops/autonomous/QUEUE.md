@@ -1589,8 +1589,10 @@ say so in the commit.
             page equal to the lab's, behind a test. Done 2026-10-13: `modelReader` `falcon-ocr` / `paddleocr-vl` (`ModelRuntime`, `Resources/read-model.py`). Falcon
             align on s03 and s05, in-process and through the helper, publishes the text ocr-compare-run did (identical);
             PaddleOCR-VL's crop call waits for ie-layout to give it regions.
-      - [ ] **ie-layout** — DocLayout-YOLO as Core ML in the helper. (blocked-on: ocr-hybrid-approve) (uses: build)
-            Its pre- and post-processing and dedupe in Swift, giving the lab's regions on the sample.
+      - [x] **ie-layout** — DocLayout-YOLO as Core ML in the helper. (blocked-on: ocr-hybrid-approve) (uses: build)
+            Its pre- and post-processing and dedupe in Swift, giving the lab's regions on the sample. Done 2026-10-13:
+            `LayoutModel`, `ops/ocrlab/convert-layout.py`. Crops identical on 8 PNG pages; through the helper 6 of 7
+            regions pages publish ocr-compare-run's layer exactly, s46 vision 10 words apart (JPEG decoder, C57).
       - [ ] **ie-guard** — the memory guard and fallback. (blocked-on: ie-runtime) (uses: build,model:12)
             The guard and the fallback to Vision with a message, behind a test that overruns the cap.
       - [ ] **ie-readers** — wire in the approved readers. (blocked-on: ie-layout, ie-guard) (uses: build,model:12)

@@ -20145,6 +20145,25 @@ in-process, or by `falcon-ocr` through the helper (a two-file batch, `s03` and `
 `ocr-compare-run`'s own `falcon-align` output for both pages; Vision's alone differs on `s03`. PaddleOCR-VL's crop
 form is wired and its arguments checked, but it has no caller until ie-layout cuts regions.
 
+#### Sub-box 3, the layout model in the app (2026-10-13)
+
+`LayoutModel`: DocLayout-YOLO converted from its published PyTorch weights to Core ML (`ops/ocrlab/convert-layout.py`,
+72 MB at 32 bits, ranged input; run on the CPU, 0.4-0.7 s a page, 393 MB peak in a one-process tool) [measured].
+Its boxes and scores match the lab's ONNX build's top 300 to 0.00015 px and 1e-5 on 8 pages. The app makes the
+letterbox (cv2's INTER_AREA reproduced pixel for pixel), the anchors and top-300 selection, the stand-in order,
+the dedupe and the size filter, and writes `reader-regions.sh`'s blocks itself (`layoutBlocks`). `modelReader`
+`vision`, `paddleocr-vl` or `falcon-ocr` under `regions` now runs with no lab script. [measured] Crops identical to
+the lab's on 8 PNG pages (595 crops). Through `score-gate` and the helper, published layers identical to
+`ocr-compare-run`'s on 6 of 7: vision-regions s03 s43, paddle-regions s03 s46, falcon-regions s43 s45. vision-regions
+s46 differs by 10 of 5,281 words: from the grey JPEG, ImageIO and PIL decode 0.9% of pixels 1 apart, and 4 of 200
+crops move 1 px; deterministic run to run. Not chased: the decoder is the platform's, and the figure changes nothing
+at that size. The model's weights are AGPL-3.0, so it is a download beside the runtime, not in the app; whether
+the release may offer an AGPL download is the owner's call at release. Landed by the next session (the first
+died before its suite compiled). Review there found a page under 1,024 px on its longer side (a pocket book at 150 dpi)
+put in at its own size with the boxes scaled as if enlarged, silently misplacing every crop: it is enlarged now
+as cv2's INTER_AREA enlarges (`areaEnlarge`, within 1 of cv2 5.0 on a 5x4 to 13x9 case, 6 of 117 pixels 1 apart)
+[measured]. A model output of the wrong shape fails the file instead of reading as no regions. Next: ie-guard.
+
 ## Robustness and correctness of reporting
 
 ### R1 · jbig2 and qpdf children are never registered for cancellation — FIXED

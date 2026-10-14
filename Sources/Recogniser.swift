@@ -2,6 +2,7 @@ import Foundation
 import PDFKit
 import Vision
 import CoreGraphics
+import CoreML
 
 /// Recognition, done here rather than through the `mac-ocr` subprocess.
 ///
@@ -944,10 +945,11 @@ enum Recogniser {
         guard settings.modelArrangement != .off, !isCancelled() else { return fitted }
         // The grey render when there is one: a model reads grey better than Otsu's 1-bit.
         let shown = FileManager.default.fileExists(atPath: greyURL.path) ? greyURL : pageURL
-        // A shipped reader runs only in the arrangements the owner approved for it and this
-        // build can serve: regions waits for the layout model (ie-layout), fill was not approved.
-        if let shipped = ModelRuntime.readers[settings.modelReader],
-           !shipped.arrangements.contains(settings.modelArrangement) {
+        // A shipped reader runs only in the arrangements the owner approved for it; Vision on
+        // regions only on regions.
+        if let shipped = ModelRuntime.readers[settings.modelReader].map(\.arrangements)
+            ?? (settings.modelReader == ModelRuntime.visionRegions ? [.regions] : nil),
+           !shipped.contains(settings.modelArrangement) {
             throw Failure.modelReader("\(settings.modelReader) is not offered for the "
                 + "\(settings.modelArrangement.rawValue) arrangement in this build")
         }
@@ -2236,7 +2238,9 @@ enum Recogniser {
                                 aspect: Double, settings: Prefs.Snapshot = .current(),
                                 isCancelled: () -> Bool = { false })
         throws -> [SearchableWriter.Observation] {
-        let raw = try modelReading(of: shown, reader: reader, isCancelled: isCancelled)
+        let raw = ModelRuntime.readers[reader] != nil || reader == ModelRuntime.visionRegions
+            ? try layoutBlocks(of: shown, reader: reader, isCancelled: isCancelled)
+            : try modelReading(of: shown, reader: reader, isCancelled: isCancelled)
         guard var blocks = modelBlocks(raw) else {
             throw Failure.modelReader("\(reader) wrote something other than blocks")
         }
@@ -2258,6 +2262,44 @@ enum Recogniser {
             if isCancelled() { throw Failure.cancelled }
         }
         return regionAligned(lines, blocks: blocks, aspect: aspect)
+    }
+
+    /// The blocks `reader-regions.sh` writes, made in the app (C57, ie-layout): the page cut by
+    /// `LayoutModel`, each crop read by the shipped `reader` one a line, or left unread for
+    /// Vision when it is `ModelRuntime.visionRegions`, written as that script writes them,
+    /// five places a fraction, so `modelBlocks` reads the same blocks the lab's did. A
+    /// reading with another count of lines than crops fails the file, as there.
+    static func layoutBlocks(of shown: URL, reader: String, isCancelled: () -> Bool = { false }) throws -> String {
+        guard let image = loadImage(at: shown) else {
+            throw Failure.modelReader("the page image \(shown.lastPathComponent) could not be read for its layout")
+        }
+        let crops = try LayoutModel.crops(of: image)
+        if isCancelled() { throw Failure.cancelled }
+        guard !crops.isEmpty else { return "" }
+        var texts = [String](repeating: "", count: crops.count)
+        var label = visionRegionLabel
+        if reader != ModelRuntime.visionRegions {
+            label = "region"
+            let list = FileManager.default.temporaryDirectory
+                .appendingPathComponent("visionocr-crops-\(UUID().uuidString).tsv")
+            defer { try? FileManager.default.removeItem(at: list) }
+            let rows = crops.enumerated().map { String(format: "c%03d.png\t%d\t%d\t%d\t%d\tno", $0.offset + 1,
+                                                        $0.element.x, $0.element.y, $0.element.width, $0.element.height) }
+            try ("name\tx\ty\tw\th\toverlap\n" + rows.joined(separator: "\n") + "\n")
+                .write(to: list, atomically: true, encoding: .utf8)
+            var read = try modelReading(of: shown, reader: reader, crops: list, isCancelled: isCancelled)
+                .components(separatedBy: "\n")
+            if read.last == "" { read.removeLast() }
+            guard read.count == crops.count else {
+                throw Failure.modelReader("\(reader) read \(read.count) lines for \(crops.count) regions")
+            }
+            texts = read.map { $0.split(whereSeparator: { $0.isWhitespace }).joined(separator: " ") }
+        }
+        let w = Double(image.width), h = Double(image.height)
+        return zip(crops, texts).map { c, text in
+            String(format: "%.5f\t%.5f\t%.5f\t%.5f\t", Double(c.x) / w, Double(c.y) / h,
+                   Double(c.x + c.width) / w, Double(c.y + c.height) / h) + label + "\t" + text
+        }.joined(separator: "\n") + "\n"
     }
 
     /// The label of a block a regions reader cut and did not read, for Vision to read.
@@ -4858,16 +4900,19 @@ enum ModelRuntime {
     struct Reader: Equatable {
         let repo: String
         let prompt: String
-        /// Where the app may run it: the approved arrangements this build can serve. Falcon-OCR's
-        /// and PaddleOCR-VL's `regions` join when the layout model does; PaddleOCR-VL is never
-        /// offered on a whole page, which its input cap of about 1 MP rules out.
+        /// Where the app may run it: the arrangements the owner approved. PaddleOCR-VL is never
+        /// offered on a whole page, which its input cap of about 1 MP rules out; neither on `fill`.
         let arrangements: Set<Prefs.ModelArrangement>
     }
 
     static let readers: [String: Reader] = [
-        "falcon-ocr": Reader(repo: "tiiuae/Falcon-OCR", prompt: "plain", arrangements: [.align]),
-        "paddleocr-vl": Reader(repo: "mlx-community/PaddleOCR-VL-1.6-4bit", prompt: "OCR:", arrangements: []),
+        "falcon-ocr": Reader(repo: "tiiuae/Falcon-OCR", prompt: "plain", arrangements: [.align, .regions]),
+        "paddleocr-vl": Reader(repo: "mlx-community/PaddleOCR-VL-1.6-4bit", prompt: "OCR:", arrangements: [.regions]),
     ]
+
+    /// `modelReader`'s name for Vision reading `LayoutModel`'s regions itself: the regions
+    /// arrangement with no model but the layout one.
+    static let visionRegions = "vision"
 
     /// Where the runtime (`Runtime/bin/python3`, `ops/ocrlab/make-runtime.sh`) and the
     /// models (`Models/`, the Hub's cache layout) live. `VISIONOCR_MODEL_HOME` moves it,
@@ -4926,5 +4971,295 @@ enum ModelRuntime {
         return Command(executable: python,
                        arguments: ["-I", script.path, model.repo, image.path, out.path, "--prompt", model.prompt] + limits,
                        environment: env)
+    }
+}
+
+/// DocLayout-YOLO DocStructBench, the layout model the regions arrangement cuts a page with,
+/// run by the helper through Core ML so that Vision on regions needs no runtime (C57, ie-layout).
+/// It reproduces the lab's `layout-regions.py --model yolo`, `dedupe-regions.py` and the
+/// size filter in `reader-regions.sh`, step for step: the regions are the ones `ocr-compare-run`
+/// was measured on. The model is the one-to-one head converted from the published PyTorch
+/// weights (`ops/ocrlab/convert-layout.py`); its boxes and scores match the lab's ONNX
+/// build's to 0.0002 px and 1e-5. Its weights are AGPL-3.0, so it is downloaded, not bundled.
+enum LayoutModel {
+    static let labels = ["title", "plain text", "abandon", "figure", "figure_caption", "table",
+                         "table_caption", "table_footnote", "isolate_formula", "formula_caption"]
+    /// `dedupe-regions.py`'s: regions no reader is given. `figure` stays, as there:
+    /// the model boxes some headlines as figures.
+    static let unread: Set<String> = ["image", "chart", "table", "seal", "isolate_formula", "formula",
+                                      "formula_number"]
+    static let side = 1024
+    static let confidence: Float = 0.25
+    static let detections = 300
+
+    /// `<home>/Models/doclayout-yolo.mlmodelc` (`ModelRuntime.home`).
+    static func url(_ environment: [String: String] = ProcessInfo.processInfo.environment) -> URL {
+        ModelRuntime.home(environment).appendingPathComponent("Models/doclayout-yolo.mlmodelc")
+    }
+
+    private static let lock = NSLock()
+    private static var loaded: (path: String, model: MLModel)?
+
+    /// The model, loaded once a process. On the CPU only: Core ML's GPU compiler rejects
+    /// this graph (an MPSGraph assertion, 2026-10-13), and the CPU is what was measured.
+    static func model(_ environment: [String: String] = ProcessInfo.processInfo.environment) throws -> MLModel {
+        let url = url(environment)
+        lock.lock(); defer { lock.unlock() }
+        if let loaded, loaded.path == url.path { return loaded.model }
+        guard FileManager.default.fileExists(atPath: url.path) else {
+            throw Recogniser.Failure.modelReader("the layout model has not been downloaded to \(url.path)")
+        }
+        let configuration = MLModelConfiguration()
+        configuration.computeUnits = .cpuOnly
+        do {
+            let model = try MLModel(contentsOf: url, configuration: configuration)
+            loaded = (url.path, model)
+            return model
+        } catch {
+            throw Recogniser.Failure.modelReader("the layout model could not be loaded (\(error.localizedDescription))")
+        }
+    }
+
+    /// OpenCV's `INTER_AREA` shrink of one 8-bit channel, `src` `w` x `h` to `dw` x `dh`:
+    /// each output pixel the coverage-weighted mean of the source pixels under it, summed in
+    /// `Float` row by row as `cv::resize` does, rounded half to even. Bit-for-bit is the aim,
+    /// because the lab's regions came from cv2's.
+    static func areaShrink(_ src: [UInt8], width w: Int, height h: Int, to dw: Int, _ dh: Int) -> [UInt8] {
+        func table(_ s: Int, _ d: Int) -> [[(Int, Float)]] {
+            let scale = Double(s) / Double(d)
+            return (0..<d).map { dx in
+                let fs1 = Double(dx) * scale, fs2 = fs1 + scale
+                let cell = min(scale, Double(s) - fs1)
+                var s2 = Int(fs2.rounded(.down))
+                s2 = min(s2, s - 1)
+                let s1 = min(Int(fs1.rounded(.up)), s2)
+                var out: [(Int, Float)] = []
+                if Double(s1) - fs1 > 1e-3 { out.append((s1 - 1, Float((Double(s1) - fs1) / cell))) }
+                for sx in s1..<s2 { out.append((sx, Float(1 / cell))) }
+                if fs2 - Double(s2) > 1e-3 { out.append((s2, Float(min(min(fs2 - Double(s2), 1), cell) / cell))) }
+                return out
+            }
+        }
+        let xs = table(w, dw), ys = table(h, dh)
+        var dst = [UInt8](repeating: 0, count: dw * dh)
+        var buf = [Float](repeating: 0, count: dw), sum = [Float](repeating: 0, count: dw)
+        for dy in 0..<dh {
+            for i in 0..<dw { sum[i] = 0 }
+            for (sy, beta) in ys[dy] {
+                let row = sy * w
+                for dx in 0..<dw {
+                    var b: Float = 0
+                    for (sx, alpha) in xs[dx] { b += Float(src[row + sx]) * alpha }
+                    buf[dx] = b
+                }
+                for dx in 0..<dw { sum[dx] += beta * buf[dx] }
+            }
+            for dx in 0..<dw { dst[dy * dw + dx] = UInt8(max(0, min(255, sum[dx].rounded(.toNearestOrEven)))) }
+        }
+        return dst
+    }
+
+    /// OpenCV's `INTER_AREA` enlargement of one 8-bit channel, `src` `w` x `h` to `dw` x `dh`:
+    /// cv2 then interpolates between the two source pixels nearest each output pixel, with
+    /// `area_mode`'s weights (`resize.cpp`). Summed in `Double` where cv2 uses fixed point, so
+    /// a pixel can sit 1 apart from its; the lab measured no page small enough to take this path.
+    static func areaEnlarge(_ src: [UInt8], width w: Int, height h: Int, to dw: Int, _ dh: Int) -> [UInt8] {
+        func table(_ s: Int, _ d: Int) -> [(Int, Double)] {
+            let scale = Double(s) / Double(d), inverse = Double(d) / Double(s)
+            return (0..<d).map { dx in
+                var sx = Int((Double(dx) * scale).rounded(.down))
+                var f = Double(dx + 1) - Double(sx + 1) * inverse
+                f = f <= 0 ? 0 : f - f.rounded(.down)
+                if sx >= s - 1 { sx = s - 1; f = 0 }
+                return (sx, f)
+            }
+        }
+        let xs = table(w, dw), ys = table(h, dh)
+        var dst = [UInt8](repeating: 0, count: dw * dh)
+        for dy in 0..<dh {
+            let (sy, fy) = ys[dy], sy1 = min(sy + 1, h - 1)
+            for dx in 0..<dw {
+                let (sx, fx) = xs[dx], sx1 = min(sx + 1, w - 1)
+                let top = Double(src[sy * w + sx]) * (1 - fx) + Double(src[sy * w + sx1]) * fx
+                let bottom = Double(src[sy1 * w + sx]) * (1 - fx) + Double(src[sy1 * w + sx1]) * fx
+                dst[dy * dw + dx] = UInt8(max(0, min(255, (top * (1 - fy) + bottom * fy).rounded(.toNearestOrEven))))
+            }
+        }
+        return dst
+    }
+
+    /// The page's three channels as the lab fed them, blue, green, red (`cv2.COLOR_RGB2BGR`),
+    /// each `width * height` bytes. A grey image is drawn in grey, so no colour matching
+    /// touches its values, and given as three equal channels.
+    static func channels(of image: CGImage) -> [[UInt8]]? {
+        let w = image.width, h = image.height
+        if image.colorSpace?.model == .monochrome {
+            var grey = [UInt8](repeating: 255, count: w * h)
+            let drawn = grey.withUnsafeMutableBytes { raw -> Bool in
+                guard let ctx = CGContext(data: raw.baseAddress, width: w, height: h, bitsPerComponent: 8,
+                                          bytesPerRow: w, space: CGColorSpaceCreateDeviceGray(),
+                                          bitmapInfo: CGImageAlphaInfo.none.rawValue) else { return false }
+                ctx.draw(image, in: CGRect(x: 0, y: 0, width: w, height: h))
+                return true
+            }
+            return drawn ? [grey, grey, grey] : nil
+        }
+        var rgba = [UInt8](repeating: 255, count: w * h * 4)
+        let drawn = rgba.withUnsafeMutableBytes { raw -> Bool in
+            guard let ctx = CGContext(data: raw.baseAddress, width: w, height: h, bitsPerComponent: 8,
+                                      bytesPerRow: w * 4, space: CGColorSpaceCreateDeviceRGB(),
+                                      bitmapInfo: CGImageAlphaInfo.noneSkipLast.rawValue) else { return false }
+            ctx.draw(image, in: CGRect(x: 0, y: 0, width: w, height: h))
+            return true
+        }
+        guard drawn else { return nil }
+        return [2, 1, 0].map { c in (0..<(w * h)).map { rgba[$0 * 4 + c] } }
+    }
+
+    /// The letterbox `layout-regions.py` makes: the longer side to 1,024, the shorter
+    /// rounded, then grey 114 to the next multiple of 32 split about the middle.
+    struct Letterbox {
+        let width: Int, height: Int, scale: Double, left: Int, top: Int
+        static func of(width w: Int, height h: Int, side: Int = LayoutModel.side) -> Letterbox {
+            let r = min(Double(side) / Double(h), Double(side) / Double(w))
+            let rh = Int((Double(h) * r).rounded(.toNearestOrEven)), rw = Int((Double(w) * r).rounded(.toNearestOrEven))
+            let ph = ((side - rh) % 32 + 32) % 32, pw = ((side - rw) % 32 + 32) % 32
+            return Letterbox(width: rw + pw, height: rh + ph, scale: r, left: pw / 2, top: ph / 2)
+        }
+    }
+
+    /// The model's top detections, as `ops.v10postprocess` keeps them: the 300 anchors
+    /// whose best class scores highest, then the 300 best (anchor, class) pairs of those.
+    /// `raw` is the model's `[1, 14, anchors]` output, `height` x `width` its input. Boxes
+    /// are in the input's pixels, `(x0, y0, x1, y1, score, class)`; nil when `raw` is not
+    /// that shape, a model other than the one this was written for.
+    static func decode(_ raw: [Float], width: Int, height: Int)
+        -> [(x0: Double, y0: Double, x1: Double, y1: Double, score: Float, label: Int)]? {
+        var anchors: [(x: Double, y: Double, stride: Double)] = []
+        for s in [8, 16, 32] {
+            for y in 0..<(height / s) { for x in 0..<(width / s) { anchors.append((Double(x) + 0.5, Double(y) + 0.5, Double(s))) } }
+        }
+        let n = anchors.count, nc = labels.count
+        guard raw.count == n * (4 + nc) else { return nil }
+        func at(_ row: Int, _ a: Int) -> Float { raw[row * n + a] }
+        let best = (0..<n).map { a in (4..<(4 + nc)).map { at($0, a) }.max() ?? 0 }
+        let top = Array((0..<n).sorted { best[$0] != best[$1] ? best[$0] > best[$1] : $0 < $1 }.prefix(detections))
+        var pairs: [(anchor: Int, label: Int, score: Float)] = []
+        for a in top { for c in 0..<nc { pairs.append((a, c, at(4 + c, a))) } }
+        let chosen = pairs.enumerated()
+            .sorted { $0.element.score != $1.element.score ? $0.element.score > $1.element.score : $0.offset < $1.offset }
+            .prefix(detections).map(\.element)
+        return chosen.map { p in
+            let a = anchors[p.anchor]
+            return ((a.x - Double(at(0, p.anchor))) * a.stride, (a.y - Double(at(1, p.anchor))) * a.stride,
+                    (a.x + Double(at(2, p.anchor))) * a.stride, (a.y + Double(at(3, p.anchor))) * a.stride,
+                    p.score, p.label)
+        }
+    }
+
+    /// From the detections above `confidence`, in page pixels, to the crops a region
+    /// reader reads, `(x, y, width, height)` in reading order: `layout-regions.py`'s
+    /// stand-in order (columns by x-centre, top to bottom in each) and its clip to the page,
+    /// `dedupe-regions.py`'s drop of a box more than half inside a better-scoring one kept,
+    /// and `reader-regions.sh`'s drop of a crop under 2 px either way.
+    static func crops(_ found: [(label: String, score: Float, x0: Double, y0: Double, x1: Double, y1: Double)],
+                      pageWidth: Int, pageHeight: Int) -> [(x: Int, y: Int, width: Int, height: Int)] {
+        var regions = found.map { (order: 0, label: $0.label, score: $0.score, x0: $0.x0, y0: $0.y0, x1: $0.x1, y1: $0.y1) }
+        let byCentre = regions.indices.sorted {
+            let a = (regions[$0].x0 + regions[$0].x1) / 2, b = (regions[$1].x0 + regions[$1].x1) / 2
+            return a != b ? a < b : $0 < $1
+        }
+        var columns: [[Int]] = [], right = -1.0
+        for i in byCentre {
+            let o = regions[i]
+            if columns.isEmpty || (o.x0 + o.x1) / 2 > right {
+                columns.append([])
+                right = o.x1
+            }
+            columns[columns.count - 1].append(i)
+            right = columns[columns.count - 1].count > 1 ? max(right, o.x1) : o.x1
+        }
+        var k = 1
+        for column in columns {
+            for i in column.enumerated().sorted(by: {
+                regions[$0.element].y0 != regions[$1.element].y0
+                    ? regions[$0.element].y0 < regions[$1.element].y0 : $0.offset < $1.offset }).map(\.element) {
+                regions[i].order = k
+                k += 1
+            }
+        }
+        func clip(_ v: Double, _ hi: Int) -> Int { Int(max(0, min(Double(hi), v.rounded(.toNearestOrEven)))) }
+        // As written to and read back from regions.tsv: the score at three places.
+        let rows = regions.filter { !unread.contains($0.label) }.map {
+            (order: $0.order, score: (Double($0.score) * 1000).rounded(.toNearestOrEven) / 1000,
+             x0: clip($0.x0, pageWidth), y0: clip($0.y0, pageHeight), x1: clip($0.x1, pageWidth), y1: clip($0.y1, pageHeight))
+        }.sorted { $0.order < $1.order }
+        typealias Row = (order: Int, score: Double, x0: Int, y0: Int, x1: Int, y1: Int)
+        func inter(_ p: Row, _ q: Row) -> Int {
+            max(0, min(p.x1, q.x1) - max(p.x0, q.x0)) * max(0, min(p.y1, q.y1) - max(p.y0, q.y0))
+        }
+        var kept: [Row] = []
+        for r in rows.enumerated().sorted(by: { $0.element.score != $1.element.score
+                                              ? $0.element.score > $1.element.score : $0.offset < $1.offset }).map(\.element)
+        where kept.allSatisfy({ Double(inter(r, $0)) <= 0.5 * Double((r.x1 - r.x0) * (r.y1 - r.y0)) }) {
+            kept.append(r)
+        }
+        return kept.sorted { $0.order < $1.order }
+            .map { (x: $0.x0, y: $0.y0, width: $0.x1 - $0.x0, height: $0.y1 - $0.y0) }
+            .filter { $0.width >= 2 && $0.height >= 2 }
+    }
+
+    /// The crops of `image` a region reader reads, in reading order (`crops`).
+    static func crops(of image: CGImage,
+                      environment: [String: String] = ProcessInfo.processInfo.environment) throws
+        -> [(x: Int, y: Int, width: Int, height: Int)] {
+        let model = try model(environment)
+        guard let planes = channels(of: image) else {
+            throw Recogniser.Failure.modelReader("the page could not be drawn for the layout model")
+        }
+        let w = image.width, h = image.height
+        let box = Letterbox.of(width: w, height: h)
+        let rw = Int((Double(w) * box.scale).rounded(.toNearestOrEven)), rh = Int((Double(h) * box.scale).rounded(.toNearestOrEven))
+        let input = try MLMultiArray(shape: [1, 3, NSNumber(value: box.height), NSNumber(value: box.width)],
+                                     dataType: .float32)
+        let plane = box.width * box.height
+        input.withUnsafeMutableBufferPointer(ofType: Float.self) { p, _ in
+            for i in 0..<(3 * plane) { p[i] = 114 / 255 }
+            for (c, src) in planes.enumerated() {
+                // cv2 shrinks by area and enlarges linearly; a page under 1,024 px on its longer
+                // side (a pocket book at 150 dpi) is enlarged, so the boxes scale back onto it.
+                let sized = rw <= w && rh <= h ? areaShrink(src, width: w, height: h, to: rw, rh)
+                                               : areaEnlarge(src, width: w, height: h, to: rw, rh)
+                for y in 0..<min(rh, box.height - box.top) {
+                    for x in 0..<min(rw, box.width - box.left) {
+                        p[c * plane + (y + box.top) * box.width + x + box.left] = Float(sized[y * rw + x]) / 255
+                    }
+                }
+            }
+        }
+        let output: MLFeatureProvider
+        do {
+            output = try model.prediction(from: MLDictionaryFeatureProvider(dictionary: ["images": input]))
+        } catch {
+            throw Recogniser.Failure.modelReader("the layout model failed (\(error.localizedDescription))")
+        }
+        guard let raw = output.featureValue(for: "raw")?.multiArrayValue else {
+            throw Recogniser.Failure.modelReader("the layout model wrote no regions")
+        }
+        var values = [Float](repeating: 0, count: raw.count)
+        raw.withUnsafeBufferPointer(ofType: Float.self) { p in
+            // The output can be strided; read it by its own strides, row then anchor.
+            let n = raw.shape[2].intValue, rs = raw.strides[1].intValue, cs = raw.strides[2].intValue
+            for row in 0..<raw.shape[1].intValue { for a in 0..<n { values[row * n + a] = p[row * rs + a * cs] } }
+        }
+        guard let decoded = decode(values, width: box.width, height: box.height) else {
+            throw Recogniser.Failure.modelReader("the layout model wrote \(values.count) values, not its regions' shape")
+        }
+        let found = decoded
+            .filter { $0.score > confidence }
+            .map { d in (label: labels[d.label], score: d.score,
+                         x0: (d.x0 - Double(box.left)) / box.scale, y0: (d.y0 - Double(box.top)) / box.scale,
+                         x1: (d.x1 - Double(box.left)) / box.scale, y1: (d.y1 - Double(box.top)) / box.scale) }
+        return crops(found, pageWidth: w, pageHeight: h)
     }
 }
