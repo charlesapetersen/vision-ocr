@@ -6,7 +6,7 @@ unless marked *reasoned* or *unverified*.
 
 Status: `OPEN` · `FIXED` · `WONTFIX` (with a reason)
 
-**13 open (2026-09-27): `C28`, `C41`, and `C42`-`C52` from `ux-read`. `C27` closed `FIXED` 2026-09-25, and `C28` is `HALF FIXED` as of 2026-08-22, its
+**2 open (2026-10-14): `C41` and `C57`; `C56` closed `FIXED` 2026-10-14. `C27` closed `FIXED` 2026-09-25, and `C28` was `HALF FIXED` as of 2026-08-22, its
 shape term WIRED into `pageIsAllText()` as a third refusal condition once all five of its questions were
 measured. `C29` closed `FIXED` 2026-09-25.**
 ✅ **`C28`'s ONE REMAINING MEASUREMENT IS TAKEN AS OF 2026-09-02 AND IT IS THE MOVE THE ENTRY CALLS *"the
@@ -2724,7 +2724,7 @@ denominator for "asserts width, not order".
 
 ### C55 · Some runs are drawn below their ink, so a drag over the line copies the line above — FIXED 2026-10-06 (fix 15fb588, 2026-10-05; `___ 2` p1's ad column accepted)
 
-### C56 · Pages that arrive 1-bit, or are re-gridded, come out with heavier type than the source — OPEN
+### C56 · Pages that arrive 1-bit, or are re-gridded, come out with heavier type than the source — FIXED 2026-10-14
 
 ### C57 · Old print and newspapers are read with more words wrong or missing than the approved on-device models leave — OPEN
 

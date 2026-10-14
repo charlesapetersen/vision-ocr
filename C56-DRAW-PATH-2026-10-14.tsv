@@ -1,0 +1,58 @@
+# C56, round 2 (2026-10-14): what moves a 2x PDFKit ink share when the bitmap does not.
+# Every row is one PDF rendered through PDFKit as Tools/ux-harness.swift's `render` does (cropBox, white fill,
+# the page's point size times `scale`); ink = pixels with luminance < 128. `Xin Qu_2018` p1 throughout.
+# bitmap: `source mask` is the page's own JBIG2 /Mask (1400x2398, 227,821 ink px) re-encoded losslessly with
+# jbig2enc; `published` is the app's output bitmap at HEAD 05d9ed1 (1400x2399, 228,036 ink px).
+# form: how the bitmap is drawn. `gray image` is the app's writer (/ColorSpace /DeviceGray, 1 bit); `stencil`
+# is /ImageMask with 0 g; `stencil lum20` fills at 0.0784 g, the source's JPX foreground colour; `masked JPX`
+# is the source page itself, a JPX foreground drawn through the stencil. `+interp` adds /Interpolate true,
+# `+decode` adds /Decode [0.0784 1]. `as published` is the app's file; `-text`, `direct`, `bbox±` are that
+# file with the text layer removed, the image drawn in the page content instead of its form, and the form's
+# /BBox enlarged to [-1 -1 337 577] or set to [0 0 336 576].
+# page: the MediaBox and the image's rect, in points (the source's rect is offset 0.01999 pt).
+file	bitmap	form	page	scale	ink<128	share	meanLum
+source page	source mask	masked JPX	335.90x575.50 @0.02	1	8224	0.04249	97.7
+source page	source mask	masked JPX	335.90x575.50 @0.02	2	49121	0.06351	63.0
+source page	source mask	masked JPX	335.90x575.50 @0.02	4	206475	0.06674	41.7
+source page, /Interpolate false	source mask	masked JPX	335.90x575.50 @0.02	2	49121	0.06351	63.0
+source page, rect at y 0.02	source mask	masked JPX	335.90x575.50 @0.02	2	49121	0.06351	63.0
+source page, rect 335.90 wide at y 0.02	source mask	masked JPX	335.90x575.50	2	49150	0.06354	62.6
+v-gray	source mask	gray image	335.89x575.52	1	9888	0.05109	90.3
+v-gray	source mask	gray image	335.89x575.52	2	50467	0.06525	57.0
+v-gray	source mask	gray image	335.89x575.52	4	209007	0.06755	32.0
+v-grayinterp	source mask	gray image +interp	335.89x575.52	2	50467	0.06525	57.0
+v-graydecode	source mask	gray image +decode	335.89x575.52	2	50467	0.06525	57.0
+v-mask	source mask	stencil	335.89x575.52	1	10155	0.05247	87.6
+v-mask	source mask	stencil	335.89x575.52	2	49074	0.06345	56.2
+v-mask	source mask	stencil	335.89x575.52	4	207036	0.06692	35.4
+v-maskinterp	source mask	stencil +interp	335.89x575.52	2	49074	0.06345	56.2
+v-maskfill	source mask	stencil lum20	335.89x575.52	2	45774	0.05918	66.9
+t-src-575.5	source mask	gray image	335.90x575.50	2	52083	0.06734	50.3
+t-srcmask-575.5	source mask	stencil	335.90x575.50	2	50691	0.06554	49.6
+t-src-575.52	source mask	gray image	335.90x575.52	2	50465	0.06524	56.5
+t-srcmask-575.52	source mask	stencil	335.90x575.52	2	49098	0.06348	55.8
+published	published	as published	335.90x575.50	1	10103	0.05220	90.8
+published	published	as published	335.90x575.50	2	52040	0.06728	50.3
+published	published	as published	335.90x575.50	4	209455	0.06770	25.3
+v1-notext	published	as published -text	335.90x575.50	2	52040	0.06728	50.3
+v2-direct-notext	published	direct -text	335.90x575.50	2	52040	0.06728	50.3
+v3-direct-text	published	direct	335.90x575.50	2	52040	0.06728	50.3
+v4-bbox-oversize	published	as published bbox+	335.90x575.50	2	52040	0.06728	50.3
+v5-bbox-integer	published	as published bbox=	335.90x575.50	2	52040	0.06728	50.3
+t-our-575.5	published	gray image	335.90x575.50	2	52040	0.06728	50.3
+t-our-575.51	published	gray image	335.90x575.51	2	50020	0.06467	55.6
+t-our-575.52	published	gray image	335.90x575.52	2	49990	0.06463	55.8
+t-our-575.6	published	gray image	335.90x575.60	2	49271	0.06370	55.7
+t-our-576	published	gray image	335.90x576.00	2	51387	0.06638	49.0
+t-our-w336	published	gray image	336.00x575.50	2	52008	0.06724	47.1
+t-our-w335.89	published	gray image	335.89x575.50	2	52064	0.06731	50.8
+v-our2398	published, last row cut	gray image	335.90x575.52	2	49491	0.06399	55.2
+t-our2398-575.5	published, last row cut	gray image	335.90x575.50	2	51172	0.06616	49.5
+t-ourmask-575.5	published	stencil	335.90x575.50	2	50740	0.06560	50.1
+t-ourmask-575.5	published	stencil	335.90x575.50	1	10057	0.05196	86.4
+t-src-575.5	source mask	gray image	335.90x575.50	1	9800	0.05064	90.1
+# Before and after through the gate (Tools/score-gate), single pages cut with qpdf, output over source at 2x:
+# pre-C56 build f0cb915 -> HEAD 05d9ed1. Luethy p2 124297/119399=1.041 -> 119397/119399=1.000; Gowan p1
+# 93534/80629=1.160 -> 83028/80629=1.030; Xin Qu p1 54150/49121=1.102 -> 52040/49121=1.059; Ries p54
+# 90578/82552=1.097 -> 83180/82552=1.008. Bytes: Luethy 74101 -> 73684, Gowan 47140 -> 46902, Xin Qu
+# 42755 -> 42679, Ries 30751 -> 30148. Other commits lie between the two builds.

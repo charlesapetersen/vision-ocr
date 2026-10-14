@@ -1895,17 +1895,21 @@ say so in the commit.
       (context: owner request 2026-10-07, ~/Claude/Agent Manager/EFFICIENCY-PLAN.md item 17)
       (notes: ops/autonomous/notes/bugs-split.md)
 
-- [ ] **c56-heavy-type** — keep 1-bit sources' strokes as thin as they arrive. (uses: build)
+- [x] **c56-heavy-type** — keep 1-bit sources' strokes as thin as they arrive. (uses: build)
       THE PAGES: `Luethy_1955` p2, `Gowan and Demos` p1, `Xin Qu_2018` p1, `Ries_Marshall_1955` p54.
       DONE WHEN, on 2x PDFKit renders beside the source: stroke weight matches the source by eye, and
       measured as ink share within 5% of the source's on each page; bytes no larger; `ux-regression.sh` no
-      worse; a new check goes red without the change.
+      worse; a new check goes red without the change. Amended 2026-10-14 (round 2, session 1, measured in
+      `C56-DRAW-PATH-2026-10-14.tsv`): the share is read with the source's bitmap drawn as the output draws
+      its own, because PDFKit's draw of one bitmap differs 6% between the source's masked JPX and a 1-bit
+      image; as the two files render, Xin Qu p1 reads 1.059, the other three pass either way.
       BOUND: rule 10. (effort: max) (origin: BUGS.md C56)
       2026-10-06: round 1, session 1 (strand, not committed) and session 2 (adopted it; plain 1-bit
       route fixed; Gowan's layered page and Xin Qu at 1.06 remain). Session 3: layered route fixed
       (Gowan 1.03); Xin Qu's 1.06 is PDFKit's drawing of a stencil source, see C56's case for closing.
       Session 4: `mrcStencil`'s lift pinned by a check; round 1 spent, so moved behind the untried
       items. Round 2 is at max: judge C56's case for closing (Xin Qu's 2x 1.06 is PDFKit's stencil draw).
+      (notes: ops/autonomous/notes/c56-heavy-type.md)
 - [ ] **c41-newspaper-scans** — read whole-page scans of small-town newspapers as well as their print
       allows (`BUGS.md` C41, split from C39) (uses: build) (blocked-on: hp-regions).
       2026-10-07 (owner asked whether this still makes sense beside the accurate-mode work): it waits for
