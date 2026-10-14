@@ -1635,13 +1635,54 @@ say so in the commit.
             Open only until the owner publishes the `models-1` release from `$STATE/model-files/` (RUN.md NEEDS
             OWNER); then check one download from it in the built app and tick this. ux-regression with the mode
             off, on 2b33b23 (2026-10-14): 0 worse, 0 better, 43 pages, 30 documents; that criterion is met.
+            2026-10-14 (owner): `models-1` is published (prerelease, not latest; v1.15.0 stays latest), holding the
+            two pinned archives unchanged plus NOTICE.txt with their licences. Both release URLs fetched and match
+            the pinned SHA-256. Nothing is bundled into the app (owner's call: the DMG stays small). What remains
+            is the one download check in the built app; then tick this.
+- [ ] **ocr-model-dialogs** — download and enable a reader in one dialog, and choose which kind of page uses
+      it in another, so no download starts without a confirmation that states its size. (uses: build)
+      (blocked-on: ocr-integrate-settings)
+      Owner, 2026-10-14: a download of 1 GB or more must never surprise the user. Today choosing a reader for
+      a kind of page starts its download straight away.
+      - A models dialog: each reader with its download size (the shared runtime and layout model counted once,
+        with the first reader that needs them), its memory need and what it reads well. Downloading and
+        enabling a reader takes an explicit confirmation naming the total size before anything is fetched.
+        Progress, Stop and the installed state show there.
+      - A page-kind dialog: for each kind of page, a choice among Vision and the readers already downloaded and
+        enabled. A reader that is not downloaded is not offered there; a line points to the models dialog.
+      - The rest stays as it is: the mode off by default, the pins, the memory slider, the timing run.
+      LICENCES (owner asked that this be noted, 2026-10-14, read from the Hugging Face cards that day): the
+      layout model's weights, `juliozhao/DocLayout-YOLO-DocStructBench` and the wybxc ONNX copy we convert, are
+      Apache-2.0; only the DocLayout-YOLO code on GitHub is AGPL-3.0, and the app does not ship or run it.
+      Falcon-OCR and PaddleOCR-VL 1.6 (and the mlx-community 4-bit build) are Apache-2.0, not gated. One grey
+      area: Ultralytics argues models trained with its framework are AGPL; the authors published these weights
+      as Apache-2.0 and we rely on that. Four places call the weights AGPL and should say Apache-2.0 weights,
+      AGPL code: `OCR-RUNTIME-PLAN-2026-10-13.md` line 93, `bugs/C57.md` lines 51-52, the doc comment in
+      `Sources/Recogniser.swift` near line 5177, and `ops/ocrlab/convert-layout.py` lines 6 and 55 (the last
+      changes the converted model's description, so leave it unless the archive is rebuilt and re-pinned).
+      DONE WHEN, in the built app: choosing a reader for a kind of page never starts a download; a download
+      starts only from the models dialog's confirmation, which states the size; a reader not downloaded cannot
+      be chosen for a kind of page; `ux-regression.sh` is no worse with the mode off; the suite passes.
+      ESTIMATE: 1-2 sessions. BOUND: rule 10. (context: owner request 2026-10-14)
+      - [ ] **md-models** — the models dialog with the confirmation that states the size, and the licence
+            wording fixed in the first three places above. (blocked-on: ocr-integrate-settings)
+      - [ ] **md-kinds** — the page-kind dialog offering only downloaded, enabled readers, and choosing one no
+            longer starts a download. (blocked-on: md-models)
 - [ ] **ocr-requeue** — make the rest of the queue build on the accurate mode. (uses: build,model:12)
       (blocked-on: ocr-integrate-settings) (effort: medium)
       Re-measure every later open item's named pages with the mode on. Close an item whose DONE WHEN the mode
       already meets, citing the measurement, and re-scope the rest so their DONE WHEN is checked with the mode
       on as well as off and their fixes work with it. Add the mode's rows to `ops/ux-regression/set.tsv`. Give
-      each re-scoped item an ESTIMATE under rule 11. ESTIMATE: 1 session. BOUND: rule 10.
-      (context: owner request 2026-10-02)
+      each re-scoped item an ESTIMATE under rule 11.
+      NEWSPAPERS (owner, 2026-10-14): in analysis, assume a user reading newspaper pages has an Apple Silicon
+      Mac with the accurate mode on. Judge newspaper items by the mode-on result; the mode-off result is a
+      regression floor only, not a target.
+      FUSED ROWS (owner, 2026-10-14): measure, not infer, whether the accurate mode's region reading removes
+      the rows fused across printed columns that C41 describes. On C41's five whole-page scans, published with
+      the mode on (Falcon-OCR and PaddleOCR-VL, regions) and off, count through PDFKit the rows that join text
+      from two columns, and record both counts per page in `bugs/C41.md`. C41's item is parked, so this is
+      where that question is answered. ESTIMATE: 1-2 sessions. BOUND: rule 10.
+      (context: owner request 2026-10-02, fused-row check added 2026-10-14)
 - [x] **c54-pale-typing** — publish pale typewriting on layered pages as solid as the source shows it.
       2026-10-05: round 1, session 1, FIXED (pale-ink stencil re-cut, `Flattener.paleInkLevels`).
       THE PAGES: `Herbert Marks papers` p12, `_1939_Former students` p9, `Atkinson_1939` p2, `Ford_1941` p2.
@@ -1912,6 +1953,10 @@ say so in the commit.
       (notes: ops/autonomous/notes/c56-heavy-type.md)
 - [ ] **c41-newspaper-scans** — read whole-page scans of small-town newspapers as well as their print
       allows (`BUGS.md` C41, split from C39) (uses: build) (blocked-on: hp-regions).
+      [hold] needs: owner — parked by the owner 2026-10-14 after round 2 session 1 (Codex): that session may
+      finish and land work that verifies, and no further session is started. Then move this item to Parked
+      with what was tried. The accurate mode is the route for newspapers; the fused-row check moved to
+      ocr-requeue.
       2026-10-07 (owner asked whether this still makes sense beside the accurate-mode work): it waits for
       hp-regions. ocr-lab-round3 measured Apple Vision on NewsBench at 1-CER 0.304 reading the whole page and
       0.741 reading DocLayout-YOLO regions, so cutting a newspaper page by layout region is a far larger gain on
