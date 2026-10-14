@@ -65,6 +65,8 @@
 #   bugs-entry.sh --list [--file PATH]       the same, for every entry
 #   Default file: $ROOT/BUGS.md, where $ROOT is this script's grandparent directory. `--file` and
 #   $VISIONOCR_BUGS (the same variable `next-item.sh` reads) both override it.
+#   An entry may live in `bugs/<TAG>.md` beside that file (bugs-split): then the register holds only its
+#   heading line, as an index, and the entry is printed from the file. Status and lists read the index.
 #
 # EXIT: 0 found / printed at least one line · 1 not found, or `--list-open` found nothing open (a real
 #       state, not an error — a session may test for it) · 2 usage error, or a register with no
@@ -110,6 +112,12 @@ case "$MODE" in
   entry|status) [ -n "$WANT" ] || { echo "bugs-entry: $MODE needs a TAG" >&2; exit 2; } ;;
 esac
 [ -f "$BUGS" ] || { echo "bugs-entry: no register file at $BUGS" >&2; exit 2; }
+# An entry file that exists but gives no lines would fall back to the index line alone, which reads as a
+# heading with no body. Refuse it instead.
+EF="$(dirname "$BUGS")/bugs/$WANT.md"
+if [ "$MODE" = entry ] && [ -e "$EF" ] && { [ ! -f "$EF" ] || [ ! -r "$EF" ] || [ ! -s "$EF" ]; }; then
+  echo "bugs-entry: $EF exists but is not a readable, non-empty file" >&2; exit 2
+fi
 
 # The parser reports its tallies on stderr (found / entries seen / lines printed) so that stdout stays pure
 # — a session pipes this straight into a prompt. A temp file rather than a var, because the awk runs INSIDE a
@@ -126,7 +134,7 @@ trap 'rm -f "$META_F"' EXIT
 #
 # POSIX awk only: /usr/bin/awk on macOS has no 3-arg match(), so every capture goes through
 # match()/RSTART/RLENGTH/substr.
-awk -v mode="$MODE" -v want="$WANT" '
+awk -v mode="$MODE" -v want="$WANT" -v edir="$(dirname "$BUGS")/bugs" '
   function tidy(s) { gsub(/^[[:space:]]+|[[:space:]]+$/, "", s); return s }
   # Status = everything after the LAST em dash on the heading. Walk forward, keeping the last tail seen.
   function status_of(h,   st, rest) {
@@ -161,7 +169,7 @@ awk -v mode="$MODE" -v want="$WANT" '
   fence                    { if (inwant) print; next }
 
   # A `## ` section heading ends whatever entry was being printed; it is never an entry itself.
-  /^##[[:space:]]/ && !/^###/ { inwant = 0; next }
+  /^##[[:space:]]/ && !/^###/ { inwant = 0; leftover = 0; next }
 
   /^###[[:space:]]/ {
     h = $0; sub(/^###[[:space:]]+/, "", h)
@@ -171,7 +179,7 @@ awk -v mode="$MODE" -v want="$WANT" '
     # An entry tag is a letter prefix plus an integer, optionally dotted. Anything else is a prose
     # sub-heading inside an entry — see the header. It is NOT an entry, and it must not end one either.
     if (tag == "" || tag !~ /^[A-Za-z]+[0-9]+([.][0-9]+)*$/) { if (inwant) print; next }
-    inwant = 0
+    inwant = 0; leftover = 0
     st = status_of(h); if (st == "") st = "(none)"
     seen_any++
     if (mode == "entry" || mode == "status") {
@@ -179,6 +187,16 @@ awk -v mode="$MODE" -v want="$WANT" '
         if (found) next                        # first occurrence wins, as in next-item.sh
         found = 1
         if (mode == "status") { print st; exit }
+        # bugs-split: an entry moved to `bugs/<TAG>.md` keeps only its heading here, as the index line, and
+        # its file holds heading and body. The tag shape rule above keeps `/` and `..` out of the path.
+        ef = edir "/" tag ".md"
+        if ((getline line < ef) > 0) {
+          print line
+          while ((getline line < ef) > 0) print line
+          close(ef)
+          leftover = 1                         # a body still under the index line is reported, not dropped
+          next
+        }
         inwant = 1; print $0
       }
       next
@@ -191,7 +209,11 @@ awk -v mode="$MODE" -v want="$WANT" '
   }
 
   inwant { print }
-  END { print "##META##\t" (found ? 1 : 0) "\t" seen_any+0 "\t" n_out+0 > "/dev/stderr" }
+  leftover && NF { extra++ }
+  END {
+    if (extra) print "bugs-entry: " want " was printed from bugs/" want ".md, but BUGS.md still holds " extra " body lines under its index line" > "/dev/stderr"
+    print "##META##\t" (found ? 1 : 0) "\t" seen_any+0 "\t" n_out+0 > "/dev/stderr"
+  }
 ' "$BUGS" 2>"$META_F" | awk '
   # Trim trailing blank lines off an entry body so consecutive entries do not read as one blank-padded blob.
   /^[[:space:]]*$/ { blanks = blanks $0 "\n"; next }

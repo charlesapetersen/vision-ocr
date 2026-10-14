@@ -21,7 +21,7 @@ staged=$(git diff --cached --name-only --no-renames)
 
 touches_sources=$(echo "$staged" | grep -c '^Sources/' || true)
 touches_tests=$(echo "$staged"   | grep -c '^Tests/'   || true)
-touches_bugs=$(echo "$staged"    | grep -c '^BUGS.md$' || true)
+touches_bugs=$(echo "$staged"    | grep -cE '^(BUGS\.md|bugs/[^/]+\.md)$' || true)
 
 if [ "$touches_sources" -gt 0 ] && [ "$touches_tests" -eq 0 ] && [ "$touches_bugs" -eq 0 ]; then
   echo "note: Sources/ changed with no test and no BUGS.md entry."
@@ -33,8 +33,19 @@ fi
 # second max-effort session on its item: this session must run at max, and $STATE/attempts.tsv must
 # already hold a max-effort attempt on the same item. The daemon exports all three variables. Interactive
 # commits (no VISIONOCR_UNATTENDED) are not affected; the owner can close anything.
-if [ "$touches_bugs" -gt 0 ] && [ "${VISIONOCR_UNATTENDED:-}" = 1 ] \
-   && git diff --cached -U0 -- BUGS.md | grep -qE '^\+### [A-Z]+[0-9]+ .*WONTFIX'; then
+# bugs-split: an entry may live in `bugs/<TAG>.md`, so the heading is read there too, and a heading counts as a
+# close only when HEAD did not already give that tag WONTFIX, in the index or in its file. Moving a closed
+# entry into its file adds its heading again; that is not a close. ops/autonomous/tests/prove-bugs-split.sh.
+wf_closes() {
+  git diff --cached -U0 -- BUGS.md bugs/ | sed -n 's/^+### \([A-Z][A-Z]*[0-9][0-9]*\) .*WONTFIX.*/\1/p' | sort -u |
+  while read -r t; do
+    # A here-string, not a pipe: under pipefail a missing `bugs/$t.md`, or `grep -q` closing the pipe early,
+    # fails the pipeline and every move would read as a close.
+    was="$(git show HEAD:BUGS.md 2>/dev/null; git show "HEAD:bugs/$t.md" 2>/dev/null)"
+    grep -qE "^### $t .*WONTFIX" <<<"$was" || echo "$t"
+  done
+}
+if [ "$touches_bugs" -gt 0 ] && [ "${VISIONOCR_UNATTENDED:-}" = 1 ] && [ -n "$(wf_closes)" ]; then
   wf_state="${VISIONOCR_STATE:-$HOME/.local/state/visionocr-autonomous}"
   wf_prior=$(awk -F'\t' -v t="${VISIONOCR_HEAD_ITEM:-}" '$1==t && $3=="max"{c++} END{print c+0}' "$wf_state/attempts.tsv" 2>/dev/null)
   if [ "${VISIONOCR_SESSION_EFFORT:-}" != max ] || [ "${wf_prior:-0}" -lt 1 ]; then

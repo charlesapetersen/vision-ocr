@@ -1878,7 +1878,7 @@ say so in the commit.
       workers" 7, proposal e). Its readers are `next-item.sh`, `check-queue-coherence.sh`, `bugs-entry.sh`, the
       pre-commit hook's rule-8 check and the health gate's document checks; all of them parse the entry headings
       `### <TAG> · <title> — <STATUS>`.
-      - [ ] **bs-readers** — entries may live in `bugs/<TAG>.md`, and `BUGS.md` holds each entry's heading line as
+      - [x] **bs-readers** — entries may live in `bugs/<TAG>.md`, and `BUGS.md` holds each entry's heading line as
         an index; `bugs-entry.sh` and the hook's rule-8 check read the entry file. (uses: light) Move no entries
         yet. DONE WHEN a fixture entry moved to a file reads the same through `bugs-entry.sh` and the rule-8 check,
         and a mutant that reads only `BUGS.md` turns the fixture red. ESTIMATE: 1 session.
@@ -1893,6 +1893,7 @@ say so in the commit.
         index, the resolver and coherence outputs are unchanged, and the health gate is green. ESTIMATE: 1 session.
       DONE WHEN the three sub-boxes are ticked. ESTIMATE: 3 sessions. BOUND: rule 10.
       (context: owner request 2026-10-07, ~/Claude/Agent Manager/EFFICIENCY-PLAN.md item 17)
+      (notes: ops/autonomous/notes/bugs-split.md)
 
 - [ ] **c56-heavy-type** — keep 1-bit sources' strokes as thin as they arrive. (uses: build)
       THE PAGES: `Luethy_1955` p2, `Gowan and Demos` p1, `Xin Qu_2018` p1, `Ries_Marshall_1955` p54.
