@@ -12452,7 +12452,7 @@ do {
     check("the table reads the comparison's figures in a user's words",
           AR.falcon.cells(.other) == ["about 6", "about 14 s a page, 4.1× Vision", "3.9 GB", "1.1 GB"]
               && AR.vision.cells(.newspaper) == ["about 296", "about 23 s a page", "no extra", "none"]
-              && AR.visionRegions.cells(.newspaper)?.last == "72 MB" && AR.visionRegions.cells(.other) == nil,
+              && AR.visionRegions.cells(.newspaper)?.last == "65 MB" && AR.visionRegions.cells(.other) == nil,
           "\(AR.falcon.cells(.other) ?? []) \(AR.vision.cells(.newspaper) ?? [])")
     let bare = ["VISIONOCR_MODEL_HOME": tmp.appendingPathComponent("no-models").path]
     check("the panel can say what a chosen reader still needs downloaded",
@@ -12493,8 +12493,11 @@ do {
     let home = dir.appendingPathComponent("model home")
     let bin = home.appendingPathComponent("Runtime/bin")
     try? FileManager.default.createDirectory(at: bin, withIntermediateDirectories: true)
+    // At the pinned revision, which is what makes a model count as downloaded.
+    guard case .hub(_, let falconRevision, _) = ModelDownloads.Item.falcon.plan else { return }
     try? FileManager.default.createDirectory(
-        at: home.appendingPathComponent("Models/hub/models--tiiuae--Falcon-OCR"), withIntermediateDirectories: true)
+        at: home.appendingPathComponent("Models/hub/models--tiiuae--Falcon-OCR/snapshots/\(falconRevision)"),
+        withIntermediateDirectories: true)
     let python = bin.appendingPathComponent("python3")
     func standIn(_ body: String) {
         try? ("#!/bin/sh\n" + body).write(to: python, atomically: true, encoding: .utf8)
@@ -12602,6 +12605,196 @@ do {
     unsetenv("VISIONOCR_MODEL_HOME")
     unsetenv("VISIONOCR_READER_SCRIPT")
     resetPrefs()
+}
+}  // end of section
+
+section("the accurate mode downloads what a chosen reader lacks, checked, staged and moved into place whole (C57, is-downloads)") {
+
+do {
+    typealias AR = Prefs.AccurateReader
+    typealias MD = ModelDownloads
+    let fm = FileManager.default
+    let root = tmp.appendingPathComponent("model downloads")
+    try? fm.removeItem(at: root)
+    try? fm.createDirectory(at: root, withIntermediateDirectories: true)
+
+    // The sizes the table states are the bytes each download fetches.
+    check("the table's download sizes are the downloads' own",
+          AR.runtimeDownloadMB == MD.Item.runtime.downloadMB && AR.layoutDownloadMB == MD.Item.layout.downloadMB
+              && AR.falconDownloadMB == MD.Item.falcon.downloadMB && AR.paddleDownloadMB == MD.Item.paddle.downloadMB,
+          MD.Item.allCases.map { "\($0.rawValue) \($0.downloadMB)" }.joined(separator: ", "))
+    let hex = { (s: String, n: Int) in s.count == n && s.allSatisfy { "0123456789abcdef".contains($0) } }
+    var malformed: [String] = []
+    for item in MD.Item.allCases {
+        switch item.plan {
+        case .archive(let file, _, _):
+            if !hex(file.sha256, 64) || file.bytes <= 0 { malformed.append(item.rawValue) }
+        case .hub(_, let revision, let files):
+            if !hex(revision, 40) || files.isEmpty || files.contains(where: { !hex($0.sha256, 64) || $0.bytes <= 0 }) {
+                malformed.append(item.rawValue)
+            }
+        }
+    }
+    check("every download is pinned to a size and a SHA-256, each model to a revision",
+          malformed.isEmpty, malformed.joined(separator: ", "))
+    check("each model is fetched from its reader's own repository into the Hub's layout, the layout model beside them",
+          MD.Item.falcon.plan.destination == "Models/hub/models--tiiuae--Falcon-OCR"
+              && ModelRuntime.readers["falcon-ocr"]?.repo == "tiiuae/Falcon-OCR"
+              && ModelRuntime.readers["paddleocr-vl"].map { MD.Item.paddle.plan.destination.hasSuffix($0.repo.replacingOccurrences(of: "/", with: "--")) } == true
+              && MD.Item.layout.plan.destination == "Models/doclayout-yolo.mlmodelc")
+
+    // Nothing is fetched while the mode is off; on, a reader needs what it lacks and no more.
+    let bare = ["VISIONOCR_MODEL_HOME": root.appendingPathComponent("empty home").path]
+    check("with the mode off, no reader needs a download",
+          MD.needed(accurateMode: false, .paddle, .other, environment: bare).isEmpty
+              && MD.needed(accurateMode: false, .falcon, .newspaper, environment: bare).isEmpty)
+    check("with it on, a chosen reader needs what it lacks, in order",
+          MD.needed(accurateMode: true, .falcon, .other, environment: bare) == [.runtime, .falcon]
+              && MD.needed(accurateMode: true, .falcon, .newspaper, environment: bare) == [.runtime, .falcon, .layout]
+              && MD.needed(accurateMode: true, .visionRegions, .newspaper, environment: bare) == [.layout]
+              && MD.needed(accurateMode: true, .vision, .newspaper, environment: bare).isEmpty)
+
+    // A source standing in for the release and the Hub, as `VISIONOCR_MODEL_SOURCE` gives it.
+    let source = root.appendingPathComponent("source")
+    try? fm.createDirectory(at: source, withIntermediateDirectories: true)
+    func file(_ url: URL, _ data: Data) -> MD.File {
+        try? fm.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try? data.write(to: url)
+        return MD.File(path: url.lastPathComponent, bytes: Int64(data.count), sha256: (try? MD.sha256(url)) ?? "")
+    }
+    func tgz(_ name: String, _ entries: [String: String]) -> MD.File {
+        let work = root.appendingPathComponent("pack-\(name)")
+        try? fm.removeItem(at: work)
+        for (path, body) in entries {
+            let url = work.appendingPathComponent(path)
+            try? fm.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
+            try? Data(body.utf8).write(to: url)
+            if path.hasSuffix("python3") { try? fm.setAttributes([.posixPermissions: 0o755], ofItemAtPath: url.path) }
+        }
+        let archive = source.appendingPathComponent(name)
+        let tar = Process()
+        tar.executableURL = URL(fileURLWithPath: "/usr/bin/tar")
+        tar.arguments = ["-czf", archive.path, "-C", work.path]
+            + Set(entries.keys.map { String($0.split(separator: "/")[0]) }).sorted()
+        try? tar.run()
+        tar.waitUntilExit()
+        return MD.File(path: name, bytes: Int64((try? Data(contentsOf: archive))?.count ?? 0),
+                       sha256: (try? MD.sha256(archive)) ?? "")
+    }
+    final class Outcome: @unchecked Sendable { var done = false; var error: Error? }
+    func install(_ plan: MD.Plan, _ home: URL, from: URL? = nil, cancelled: Bool = false) -> Error? {
+        let outcome = Outcome()
+        let src = MD.Source(release: from ?? source, hub: from ?? source)
+        Task.detached {
+            if cancelled { withUnsafeCurrentTask { $0?.cancel() } }
+            do { try await MD.install(plan, home: home, source: src) } catch { outcome.error = error }
+            outcome.done = true
+        }
+        return pump(until: { outcome.done }, seconds: 30) ? outcome.error : MD.Failure.fetch("timed out")
+    }
+    func leftovers(_ dir: URL) -> [String] {
+        ((try? fm.contentsOfDirectory(atPath: dir.path)) ?? []).filter { $0.hasPrefix(".download-") }
+    }
+
+    let home = root.appendingPathComponent("home")
+    let env = ["VISIONOCR_MODEL_HOME": home.path]
+    let runtime = MD.Plan.archive(tgz("runtime.tgz", ["runtime/bin/python3": "#!/bin/sh\nexit 0\n"]),
+                                  top: "runtime", destination: "Runtime")
+    // At the pinned revision: a model at any other is not the one the table measured.
+    guard case .hub(_, let revision, _) = MD.Item.falcon.plan else { check("falcon is a Hub download", false); return }
+    let hubDir = source.appendingPathComponent("tiiuae/Falcon-OCR/resolve/\(revision)")
+    let falcon = MD.Plan.hub(repo: "tiiuae/Falcon-OCR", revision: revision, files: [
+        file(hubDir.appendingPathComponent("config.json"), Data("{}".utf8)),
+        file(hubDir.appendingPathComponent("model.safetensors"), Data(repeating: 7, count: 300_000)),
+    ])
+    // A runtime left from before that no longer runs gives way to the new one.
+    try? fm.createDirectory(at: home.appendingPathComponent("Runtime/bin"), withIntermediateDirectories: true)
+    let runtimeError = install(runtime, home)
+    let falconError = install(falcon, home)
+    let snapshot = home.appendingPathComponent("Models/hub/models--tiiuae--Falcon-OCR/snapshots/\(revision)")
+    check("a checked download installs the runtime and a model where the reader finds them",
+          runtimeError == nil && falconError == nil && MD.Item.runtime.installed(env) && MD.Item.falcon.installed(env)
+              && AR.falcon.missing(.other, environment: env).isEmpty
+              && (try? String(contentsOf: home.appendingPathComponent("Models/hub/models--tiiuae--Falcon-OCR/refs/main"),
+                              encoding: .utf8)) == revision
+              && (try? Data(contentsOf: snapshot.appendingPathComponent("model.safetensors")))?.count == 300_000,
+          "\(String(describing: runtimeError)) \(String(describing: falconError)) \(AR.falcon.missing(.other, environment: env))")
+    check("…and leaves no staging behind", leftovers(home).isEmpty && leftovers(home.appendingPathComponent("Models/hub")).isEmpty)
+
+    // A file that is not the pinned one installs nothing.
+    let other = root.appendingPathComponent("other home")
+    let wrong = MD.Plan.hub(repo: "mlx-community/PaddleOCR-VL-1.6-4bit", revision: revision, files: [
+        MD.File(path: "config.json", bytes: 2, sha256: String(repeating: "0", count: 64)),
+    ])
+    _ = file(source.appendingPathComponent("mlx-community/PaddleOCR-VL-1.6-4bit/resolve/\(revision)/config.json"), Data("{}".utf8))
+    let mismatch = install(wrong, other)
+    check("a download that does not match its SHA-256 is refused and nothing is installed",
+          (mismatch as? MD.Failure) == .mismatch && !MD.Item.paddle.installed(["VISIONOCR_MODEL_HOME": other.path])
+              && leftovers(other.appendingPathComponent("Models/hub")).isEmpty,
+          String(describing: mismatch))
+    // An archive holding more than the one directory it promised is not unpacked into place.
+    let stray = MD.Plan.archive(tgz("stray.tgz", ["doclayout-yolo.mlmodelc/model.mil": "x", "elsewhere/x": "y"]),
+                                top: "doclayout-yolo.mlmodelc", destination: "Models/doclayout-yolo.mlmodelc")
+    let unpack = install(stray, other)
+    check("an archive with anything beside its one directory installs nothing",
+          (unpack as? MD.Failure) == .unpack && !MD.Item.layout.installed(["VISIONOCR_MODEL_HOME": other.path])
+              && leftovers(other.appendingPathComponent("Models")).isEmpty,
+          String(describing: unpack))
+    let missingFile = install(MD.Plan.archive(MD.File(path: "absent.tgz", bytes: 1, sha256: String(repeating: "0", count: 64)),
+                                              top: "runtime", destination: "Runtime"), other)
+    check("a download that cannot be fetched says so and installs nothing",
+          missingFile != nil && !MD.Item.runtime.installed(["VISIONOCR_MODEL_HOME": other.path]),
+          String(describing: missingFile))
+    let stale = root.appendingPathComponent("stale home")
+    try? fm.createDirectory(at: stale.appendingPathComponent("Models/hub/models--tiiuae--Falcon-OCR/snapshots/0000"),
+                            withIntermediateDirectories: true)
+    check("a model cached at another revision is not taken for the download",
+          !MD.Item.falcon.installed(["VISIONOCR_MODEL_HOME": stale.path]))
+    let stopped = install(runtime, other, cancelled: true)
+    check("a stopped download installs nothing", stopped is CancellationError
+              && !MD.Item.runtime.installed(["VISIONOCR_MODEL_HOME": other.path]) && leftovers(other).isEmpty,
+          String(describing: stopped))
+    try? fm.createDirectory(at: other.appendingPathComponent("Models/hub/.download-left"), withIntermediateDirectories: true)
+    MD.sweep(home: other)
+    check("staging left by a quit is swept before the next download", leftovers(other.appendingPathComponent("Models/hub")).isEmpty)
+
+    // The runner the panel drives, over a source without the files.
+    let runnerHome = root.appendingPathComponent("runner home")
+    setenv("VISIONOCR_MODEL_HOME", runnerHome.path, 1)
+    setenv("VISIONOCR_MODEL_SOURCE", root.appendingPathComponent("no source").path, 1)
+    d.set(true, forKey: Prefs.accurateMode)
+    final class Flags: @unchecked Sendable { var stoppedClean = false; var ready = false }
+    let flags = Flags()
+    Task { @MainActor in
+        let r = DownloadRunner.shared
+        r.start([.layout])
+        r.stop()
+        flags.stoppedClean = r.current == nil && !r.covers([.layout])
+        r.start([.layout])
+        flags.ready = true
+    }
+    _ = pump(until: { flags.ready }, seconds: 5)
+    let ended = pump(until: { MainActor.assumeIsolated {
+        DownloadRunner.shared.current == nil && DownloadRunner.shared.failed != nil } }, seconds: 20)
+    let said = MainActor.assumeIsolated { DownloadRunner.shared.failure([.layout]) ?? "" }
+    check("a download started again straight after a stop runs, and its failure is said rather than dropped",
+          flags.stoppedClean && ended && said.contains("failed") && !MD.Item.layout.installed(), said)
+    d.set(false, forKey: Prefs.accurateMode)
+    flags.ready = false
+    Task { @MainActor in
+        DownloadRunner.shared.start([.layout])
+        flags.ready = true
+    }
+    _ = pump(until: { flags.ready }, seconds: 5)
+    _ = pump(until: { false }, seconds: 0.5)
+    let idle = MainActor.assumeIsolated {
+        DownloadRunner.shared.current == nil && DownloadRunner.shared.failed == nil && !DownloadRunner.shared.covers([.layout])
+    }
+    check("with the mode off, the runner downloads nothing even when asked", idle)
+    unsetenv("VISIONOCR_MODEL_HOME")
+    unsetenv("VISIONOCR_MODEL_SOURCE")
+    resetPrefs()
+    try? fm.removeItem(at: root)
 }
 }  // end of section
 

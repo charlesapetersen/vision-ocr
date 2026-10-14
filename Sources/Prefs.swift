@@ -424,13 +424,13 @@ enum Prefs {
             let downloadMB: Int
         }
 
-        /// The runtime every model reader shares, as a download (`OCR-RUNTIME-PLAN-2026-10-13.md`:
-        /// 134 MB packed, 439-445 MB on disk). Sizes here are decimal MB: the plan's 1.08 GB and
-        /// 0.70 GB for the models, where the comparison's header gave `du`'s binary 1.0 G and 682 M.
+        /// What each download fetches, in decimal MB: `ModelDownloads.Item.downloadMB`, which the
+        /// helper does not compile, so the suite holds the two equal. The runtime is 433 MB on disk,
+        /// the layout model 72 MB.
         static let runtimeDownloadMB = 134
-        static let layoutDownloadMB = 72
-        static let paddleDownloadMB = 700
-        static let falconDownloadMB = 1080
+        static let layoutDownloadMB = 65
+        static let paddleDownloadMB = 715
+        static let falconDownloadMB = 1085
 
         /// This reader's figures on `kind`, or nil where it is not offered: Vision on regions
         /// off newspapers gave no real advantage (1.20% to 1.09% at twice the time).
@@ -508,29 +508,6 @@ enum Prefs {
                 : String(format: "%.1f GB", Double(f.downloadMB) / 1000)
             return ["about \(f.wrongPer1000)", "about \(seconds) s a page\(times)",
                     f.memoryGB == 0 ? "no extra" : String(format: "%.1f GB", f.memoryGB), download]
-        }
-
-        /// What this reader still needs downloaded before it can read `kind`, in the order a
-        /// user would fetch them; empty when it is ready. A run that lacks one fails the file,
-        /// saying which (`ModelRuntime.command`, `LayoutModel.model`).
-        func missing(_ kind: Recogniser.PageKind,
-                     environment: [String: String] = ProcessInfo.processInfo.environment) -> [String] {
-            let home = ModelRuntime.home(environment)
-            var out: [String] = []
-            if let model = ModelRuntime.readers[rawValue] {
-                if !Runner.isRunnable(home.appendingPathComponent("Runtime/bin/python3").path) {
-                    out.append("the shared runtime")
-                }
-                let cache = "Models/hub/models--" + model.repo.replacingOccurrences(of: "/", with: "--")
-                if !FileManager.default.fileExists(atPath: home.appendingPathComponent(cache).path) {
-                    out.append(name)
-                }
-            }
-            if route(kind).arrangement == .regions,
-               !FileManager.default.fileExists(atPath: LayoutModel.url(environment).path) {
-                out.append("the layout model")
-            }
-            return out
         }
 
         /// The readers offered on `kind` whose memory fits under the slider. Vision is always one.

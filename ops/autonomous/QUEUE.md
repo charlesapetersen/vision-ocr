@@ -1630,6 +1630,9 @@ say so in the commit.
             Done 2026-10-14: `TimingRun` on pages it draws (not bundled: the sample is third-party), our figures
             scaled by this Mac against `referenceSeconds`; about 5 minutes; `BUGS.md` C57, settings sub-box 2.
       - [ ] **is-downloads** — the runtime, the layout model and each model downloaded on first use, sizes stated.
+            2026-10-14: built and checked (`ModelDownloads`, `DownloadRunner`; `BUGS.md` C57, settings sub-box 3).
+            Open only until the owner publishes the `models-1` release from `$STATE/model-files/` (RUN.md NEEDS
+            OWNER); then check one download from it in the built app and tick this.
 - [ ] **ocr-requeue** — make the rest of the queue build on the accurate mode. (uses: build,model:12)
       (blocked-on: ocr-integrate-settings) (effort: medium)
       Re-measure every later open item's named pages with the mode on. Close an item whose DONE WHEN the mode

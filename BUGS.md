@@ -20244,6 +20244,29 @@ bundling public-domain scans (curl to the Library of Congress was refused here; 
 and of bundle size). Not measured: how cold the first run after a download is; each leg pays its model's load, as
 the reference did. Review: classifier routing comment corrected (a misread page ends the run, saying so).
 
+#### Settings sub-box 3, the downloads (`ocr-integrate-settings`, is-downloads, 2026-10-14)
+
+`ModelDownloads` and `DownloadRunner`. Choosing a reader starts downloading what it lacks: the runtime and the layout
+model as one `.tgz` each, and each model file by file from Hugging Face at the revision measured, laid out as the
+Hub's cache. The size is stated in the table and on the button, with a progress row and Stop download. Every file is
+checked against a pinned size and SHA-256, staged beside its destination, and moved into place whole. Staging left by
+a quit is swept at the next download. Nothing starts while the mode is off, and turning it off stops a download.
+The table's sizes are now the bytes fetched: runtime 134 MB, layout 65 MB (was 72, its size on disk), PaddleOCR-VL
+715 MB (was 700), Falcon-OCR 1,085 MB (was 1,080). [measured] Into an empty scratch home, the two models came live
+from Hugging Face (1,085 MB in 98 s, 715 MB in 67 s). The runtime and the layout model came from a local copy of the
+archives standing in for the release. Then a timing run over that home ran all seven legs with no fallback, within
+2-7% of `referenceSeconds` (e.g. Falcon-OCR newspaper 96.3 s against 96.2). Review: a Stop landing before the URL
+task started hung the download for good (reproduced 20/20 with a 10 ms delay; 0/20 with the fix); a restart straight
+after a Stop was dropped; a download for a reader no longer chosen had no Stop; a model cached at another revision
+counted as installed. All four were fixed with checks. Not covered by a check: a cancel mid-transfer, which `file://`
+cannot hold open. Not checked in a VM GUI.
+**Still open: the release.** `Source.published` points at this repository's `models-1` release, which does not exist,
+so the runtime and the layout model 404 in the shipped app today (the models do not wait on it). The archives whose
+hashes are pinned are in `$STATE/model-files/` (`runtime.tgz`, `doclayout-yolo.tgz`); publishing them is the owner's
+call (RUN.md NEEDS OWNER). The runtime cannot be rebuilt to the same hash (tar keeps mtimes), so a different archive
+needs a new pin. Rejected: fetching the runtime on first use as
+CPython plus wheels from PyPI (slower, more ways to fail, and the layout model would still need hosting).
+
 ## Robustness and correctness of reporting
 
 ### R1 · jbig2 and qpdf children are never registered for cancellation — FIXED

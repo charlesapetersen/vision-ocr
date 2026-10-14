@@ -19,10 +19,14 @@ an older entry mentions "Window ▸ Vision Reader Window", the menu item is now
   what Preview's reading order follows (C52, `Marth_1982` p2).
 - Settings has an Accurate mode box, off by default: switched on, it picks a stronger on-device reader for
   newspapers and for other pages, beside a table of how accurate, how fast, how much memory and how large a
-  download each one is, with a slider for the most memory a model may use. The downloads are still to come.
+  download each one is, with a slider for the most memory a model may use.
 - The Accurate mode box has "Measure on this Mac": a run of about five minutes that times each reader you
   have downloaded on a few pages and changes the speed column from our Mac's figures to estimates for yours.
   It does not measure accuracy.
+- Choosing a reader in the Accurate mode box downloads what it still needs, with each download's size stated
+  beforehand, a progress bar and a Stop button: about 1.2 GB for Falcon-OCR with its runtime, and 0.9 GB for
+  PaddleOCR-VL with its runtime and the layout model. Every file is checked before it is installed, and a
+  stopped or failed download leaves nothing behind. Nothing is downloaded while the mode is off.
 - The run report has a `Model reader` row. It reads `off`: the setting that takes words from a stronger OCR
   model is being built, is not yet in the panel, and changes nothing unless it is set.
 - On newspaper scans with a rule printed down the gap between columns, a line the recogniser read on into the

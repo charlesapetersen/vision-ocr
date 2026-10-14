@@ -70,6 +70,7 @@ struct SettingsView: View {
     @AppStorage(Prefs.modelMemoryGB) private var modelMemoryGB = Prefs.defaultModelMemoryGB()
     @AppStorage(Prefs.accurateTiming) private var accurateTimingData = Data()
     @ObservedObject private var timingRun = TimingRunner.shared
+    @ObservedObject private var downloads = DownloadRunner.shared
     private var timing: Prefs.AccurateTiming? { Prefs.AccurateTiming(accurateTimingData) }
 
     // Behaviour
@@ -519,6 +520,8 @@ struct SettingsView: View {
                 .help("Runs a text-recognition model on this Mac alongside Vision for each "
                       + "kind of page, chosen below. Nothing is downloaded or run while this "
                       + "is off, and your documents never leave your Mac either way.")
+                // Turning the mode off stops a download under way.
+                .onChange(of: accurateMode) { on in if !on { downloads.stop() } }
             if accurateMode {
                 Row("Memory", labelWidth) {
                     Slider(value: $modelMemoryGB, in: Prefs.modelMemoryRange, step: 1)
@@ -546,6 +549,7 @@ struct SettingsView: View {
                             .fixedSize(horizontal: false, vertical: true)
                     }
                 }
+                downloadRow
                 accurateKind("Newspapers", .newspaper, $accurateNewspaperReader)
                 accurateKind("Other pages", .other, $accurateReader)
                 Text("Words wrong or missing are out of every 1,000, measured on 67 pages of "
@@ -556,6 +560,27 @@ struct SettingsView: View {
                     .font(.caption2).foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
                 timingRow
+            }
+        }
+    }
+
+    /// The download under way, whichever reader it is for, or how the last one ended.
+    @ViewBuilder
+    private var downloadRow: some View {
+        if downloads.current != nil {
+            Row("Download", labelWidth) {
+                ProgressView(value: downloads.fraction).frame(width: 120)
+                Button("Stop download") { downloads.stop() }
+                Text(downloads.status ?? "")
+                    .font(.caption2).foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                Spacer()
+            }
+        } else if let status = downloads.status, downloads.failed == nil {
+            Row("Download", labelWidth) {
+                Text(status).font(.caption2).foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                Spacer()
             }
         }
     }
@@ -591,7 +616,12 @@ struct SettingsView: View {
         let fits = Prefs.AccurateReader.offered(kind, memoryGB: modelMemoryGB)
         let chosen = Prefs.AccurateReader.chosen(choice.wrappedValue, kind, memoryGB: modelMemoryGB)
         Row(title, labelWidth) {
-            Picker("", selection: Binding(get: { chosen.rawValue }, set: { choice.wrappedValue = $0 })) {
+            // Choosing a reader is its first use: what it lacks starts downloading, its size shown.
+            Picker("", selection: Binding(get: { chosen.rawValue }, set: { raw in
+                choice.wrappedValue = raw
+                let reader = Prefs.AccurateReader.chosen(raw, kind, memoryGB: modelMemoryGB)
+                downloads.start(ModelDownloads.needed(accurateMode: accurateMode, reader, kind))
+            })) {
                 ForEach(fits, id: \.self) { Text($0.name).tag($0.rawValue) }
             }
             .labelsHidden().frame(width: 220)
@@ -607,13 +637,17 @@ struct SettingsView: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
-        let missing = chosen.missing(kind)
-        if !missing.isEmpty {
+        let missing = ModelDownloads.needed(accurateMode: accurateMode, chosen, kind)
+        if !missing.isEmpty, !downloads.covers(missing) {
             Row("", labelWidth) {
-                Text("Not downloaded yet: \(missing.joined(separator: ", ")). Until it is, a file "
-                     + "holding these pages stops with a message rather than being read.")
+                Button("Download \(DownloadRunner.size(missing))") { downloads.start(missing) }
+                Text([downloads.failure(missing),
+                      "Not downloaded yet: " + missing.map { "\($0.name) (\(DownloadRunner.size([$0])))" }
+                        .joined(separator: ", ") + ". Until it is, a file holding these pages stops with "
+                        + "a message rather than being read."].compactMap { $0 }.joined(separator: " "))
                     .font(.caption2).foregroundStyle(.orange)
                     .fixedSize(horizontal: false, vertical: true)
+                Spacer()
             }
         }
         Grid(alignment: .leading, horizontalSpacing: 10, verticalSpacing: 2) {
@@ -875,6 +909,103 @@ private struct Box<Content: View>: View {
                 .background(RoundedRectangle(cornerRadius: 8)
                     .fill(Color.secondary.opacity(0.07)))
         }
+    }
+}
+
+/// The accurate mode's downloads (`ModelDownloads`), one item at a time, kept outside the panel
+/// so that closing Settings neither stops them nor lets a second copy of one start beside it.
+@MainActor
+final class DownloadRunner: ObservableObject {
+    static let shared = DownloadRunner()
+
+    /// What is downloading, and how far it has got, 0...1.
+    @Published private(set) var current: ModelDownloads.Item?
+    @Published private(set) var fraction = 0.0
+    /// What the download is doing, or how the last one ended; nil before any.
+    @Published private(set) var status: String?
+    /// The item the last download failed on, with why; cleared when one is started again.
+    @Published private(set) var failed: (item: ModelDownloads.Item, why: String)?
+    private var queue: [ModelDownloads.Item] = []
+    private var task: Task<Void, Never>?
+    /// Which run is current: a stopped one may take seconds to unwind (hashing a 1 GB file),
+    /// and must neither report nor clear what a run started after it is doing.
+    private var generation = 0
+    private var swept = false
+
+    func start(_ items: [ModelDownloads.Item]) {
+        for item in items where item != current && !queue.contains(item) { queue.append(item) }
+        guard task == nil, !queue.isEmpty else { return }
+        if !swept {
+            ModelDownloads.sweep(home: ModelRuntime.home())
+            swept = true
+        }
+        failed = nil
+        generation += 1
+        let mine = generation
+        task = Task { await drain(mine) }
+    }
+
+    /// Stops at once, as far as the panel is concerned; nothing stopped is installed.
+    func stop() {
+        guard task != nil || !queue.isEmpty else { return }
+        queue = []
+        task?.cancel()
+        task = nil
+        generation += 1
+        if let current { status = "Stopped; \(current.name) was not installed." }
+        current = nil
+    }
+
+    /// Whether every one of `items` is downloading or waiting to.
+    func covers(_ items: [ModelDownloads.Item]) -> Bool {
+        !items.isEmpty && items.allSatisfy { $0 == current || queue.contains($0) }
+    }
+
+    private func drain(_ mine: Int) async {
+        // The mode can be turned off where this panel cannot see it, by an imported settings file.
+        while mine == generation, !queue.isEmpty, Prefs.store.bool(forKey: Prefs.accurateMode) {
+            let item = queue.removeFirst()
+            if item.installed() { continue }
+            current = item
+            fraction = 0
+            status = "Downloading \(item.name), \(Self.size([item]))…"
+            let total = Double(item.plan.bytes)
+            do {
+                try await ModelDownloads.install(item.plan, home: ModelRuntime.home(),
+                                                 source: .current()) { bytes in
+                    let f = min(1, Double(bytes) / total)
+                    DispatchQueue.main.async {
+                        let me = DownloadRunner.shared
+                        if me.generation == mine, f - me.fraction >= 0.005 || f == 1 { me.fraction = f }
+                    }
+                }
+                guard mine == generation else { return }
+                status = "Downloaded \(item.name)."
+            } catch {
+                // Stopped: `stop` has said so, and a later run may be under way.
+                guard mine == generation else { return }
+                queue = []
+                let why = error.localizedDescription
+                failed = (item, why)
+                status = "\(item.name) could not be downloaded: \(why)."
+            }
+        }
+        guard mine == generation else { return }
+        queue = []
+        current = nil
+        task = nil
+    }
+
+    /// Why the last download of one of `items` failed, as a sentence; nil if none did.
+    func failure(_ items: [ModelDownloads.Item]) -> String? {
+        guard let failed, items.contains(failed.item) else { return nil }
+        return "The last try failed: \(failed.why)."
+    }
+
+    /// The download size of `items`, as the table states it.
+    nonisolated static func size(_ items: [ModelDownloads.Item]) -> String {
+        let mb = items.reduce(0) { $0 + $1.downloadMB }
+        return mb < 1000 ? "\(mb) MB" : String(format: "%.1f GB", Double(mb) / 1000)
     }
 }
 
