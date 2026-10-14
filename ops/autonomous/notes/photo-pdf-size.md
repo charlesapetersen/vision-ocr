@@ -41,3 +41,15 @@ the new checks go red with the three fixes taken out; a separate verifier passed
 bytes, word counts and PDFKit findString (executives 3, Marshall 1, treatise 2, before and after).
 Next: pps-ladder. Baker sits at about 78 KB at both shipped Photo detail steps, so the ladder needs steps
 that the all-text rule does not override (the stencil's resolution, the background factor on accepted pages).
+
+## 2026-10-14 — pps-ladder (Opus 5.5, medium)
+
+Published from a scratch copy of `Sources/` (not committed) in which `textPageBackgroundDownsample` and
+`textPageForegroundDownsample` read `PPS_BG`/`PPS_FG`; Photo detail balanced, so each step is the factor
+set. Steps 1/2..1/8 with the foreground at twice the background: 244,910 / 148,616 / 112,950 / 87,482 /
+78,643 B, 463 words each; Maximum is 813,098 B. The stencil is the same at every step, so the type does
+not change; the signature and the paper do. 60 KB needs a smaller stencil (ours 37.6 KB at 236 ppi,
+ABBYY's 23 KB at 290). Files and crops: `$STATE/photo-size-ladder/` (third-party, not committed).
+Recommended 1/4 in `PHOTO-SIZE-DECISION-2026-10-14.md`; the question is under RUN.md's NEEDS OWNER.
+For pps-ship: the factors are applied in `mrcLayers` (`bgFactor`/`fgFactor`), on pages `pageIsAllText()`
+accepts; an image-input step needs a way to tell `mrcLayers` the page came from an image file.

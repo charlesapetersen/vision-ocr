@@ -1994,10 +1994,11 @@ say so in the commit.
       - [x] **pps-route** — the cause found and fixed, the page size inferred, and the page layered. Record the
             cause and the size before and after in `ops/autonomous/notes/photo-pdf-size.md`. Done 2026-10-14:
             Baker 831 KB -> 79 KB (Falcon-OCR 830 -> 78), 591.6x792 pt, words 463/465 kept.
-      - [ ] **pps-ladder** — publish Baker at four or five compression steps from about 60 KB to about 300 KB,
+      - [x] **pps-ladder** — publish Baker at four or five compression steps from about 60 KB to about 300 KB,
             write `PHOTO-SIZE-DECISION-<date>.md` with each step's bytes and a 2x PDFKit crop of the same
             passage beside the source (include the signature and a line with small type), and recommend one.
-            (blocked-on: pps-route)
+            (blocked-on: pps-route) Done 2026-10-14: `PHOTO-SIZE-DECISION-2026-10-14.md`, steps 245/149/113/87/79
+            KB (background 1/2 to 1/8; the 37.6 KB stencil puts 60 KB out of reach); recommended 1/4, 113 KB.
       - [ ] **pps-owner-pick** — the owner picks the step. Tick it with the date and the owner's words.
             (blocked-on: pps-ladder) [hold] needs: owner — legibility is the owner's judgement
       - [ ] **pps-ship** — make the picked step the default for image inputs, and check DONE WHEN above.
