@@ -23462,6 +23462,39 @@ one this whole entry exists to stay on. **If a future door ever puts a re-spelle
 `files` — a bookmark restore, a resumed batch read back from disk — key this map through `key()`
 first.**
 
+#### The same defect, recorded a second time (formerly a second `### R63` heading, merged 2026-10-14)
+*(found 2026-08-14, late, and **recorded nowhere until now** — see the note at the end of this
+entry, which is the more useful half of it.)*
+
+The Extract Text route caught everything and reported `.failed` with the error's description.
+`Recogniser.extract` throws `Failure.cancelled` when the user cancels, and that error's
+description is **"Cancelled."** So pressing Cancel put a red ✗ against every in-flight file,
+with "Cancelled." given as the reason it *failed*:
+
+```
+outcome: failed    message: "Cancelled."
+```
+
+It is not only cosmetic. Those files are counted as failures in the run report, and they stay
+in `failedFiles` — which is exactly what **Retry Failed** offers to re-run, so a cancel left the
+user holding a batch that claims it broke.
+
+**The searchable route already gets this right in seven separate places**, each with its own
+comment saying why — R14: "a cancelled jbig2 child surfaces here as a throw, and is a
+cancellation, not a broken file." The eighth site, on the other route, had none. **Fixed** by
+making that rule a function, `OCRModel.outcome(for:cancelled:)`, so a ninth site cannot hold a
+different opinion. Four checks, including the inverse row that a genuine failure during a
+cancelled batch is still a failure — otherwise cancelling would paper over every broken file in
+the run. Mutant: `R63-cancel-is-not-a-failure`.
+
+**Where this entry came from, because it is a process finding as much as a defect.** R63 existed
+as **one sentence of prose in an uncommitted `TODO.md`** and nothing else: no register entry, no
+`REVIEW` entry, no evidence, no reproduction, nowhere in the repo or in any worktree. The
+session that found it was cut off before writing it down. Everything else that session left
+behind was recoverable from git in minutes; this was not recoverable at all, and had to be
+reproduced from scratch to be fixed. **A defect that exists only as a sentence is a defect
+nobody can act on** — the register entry is the artefact, not the observation.
+
 ### R64 · The run report carried the document's own text — FIXED
 *(found 2026-08-14 by the whole-codebase review; `REVIEW-2026-08-14.md` A4.1. Highest
 severity per line changed in the sweep.)*
@@ -23880,39 +23913,6 @@ which is deliberately broader than the parser needs (it also refuses U+2028 and 
 the cost of over-refusing a path this app generates itself is nothing and the cost of
 under-refusing one is a silently short list. Four checks, one per newline form. Mutant:
 `A13.3-newline-guard-is-every-newline`.
-
-### R63 · Cancelling a Plain Text run reported every in-flight file as failed — FIXED
-*(found 2026-08-14, late, and **recorded nowhere until now** — see the note at the end of this
-entry, which is the more useful half of it.)*
-
-The Extract Text route caught everything and reported `.failed` with the error's description.
-`Recogniser.extract` throws `Failure.cancelled` when the user cancels, and that error's
-description is **"Cancelled."** So pressing Cancel put a red ✗ against every in-flight file,
-with "Cancelled." given as the reason it *failed*:
-
-```
-outcome: failed    message: "Cancelled."
-```
-
-It is not only cosmetic. Those files are counted as failures in the run report, and they stay
-in `failedFiles` — which is exactly what **Retry Failed** offers to re-run, so a cancel left the
-user holding a batch that claims it broke.
-
-**The searchable route already gets this right in seven separate places**, each with its own
-comment saying why — R14: "a cancelled jbig2 child surfaces here as a throw, and is a
-cancellation, not a broken file." The eighth site, on the other route, had none. **Fixed** by
-making that rule a function, `OCRModel.outcome(for:cancelled:)`, so a ninth site cannot hold a
-different opinion. Four checks, including the inverse row that a genuine failure during a
-cancelled batch is still a failure — otherwise cancelling would paper over every broken file in
-the run. Mutant: `R63-cancel-is-not-a-failure`.
-
-**Where this entry came from, because it is a process finding as much as a defect.** R63 existed
-as **one sentence of prose in an uncommitted `TODO.md`** and nothing else: no register entry, no
-`REVIEW` entry, no evidence, no reproduction, nowhere in the repo or in any worktree. The
-session that found it was cut off before writing it down. Everything else that session left
-behind was recoverable from git in minutes; this was not recoverable at all, and had to be
-reproduced from scratch to be fixed. **A defect that exists only as a sentence is a defect
-nobody can act on** — the register entry is the artefact, not the observation.
 
 ### R76 · A cancelled text extraction still replaced the user's previous output — FIXED
 *(found 2026-08-14 by the whole-codebase review; `REVIEW-2026-08-14.md` A2.2, text half. The
