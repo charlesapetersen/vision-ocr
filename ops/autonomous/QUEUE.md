@@ -1882,7 +1882,7 @@ say so in the commit.
         an index; `bugs-entry.sh` and the hook's rule-8 check read the entry file. (uses: light) Move no entries
         yet. DONE WHEN a fixture entry moved to a file reads the same through `bugs-entry.sh` and the rule-8 check,
         and a mutant that reads only `BUGS.md` turns the fixture red. ESTIMATE: 1 session.
-      - [ ] **bs-index-check** — `check-queue-coherence.sh` and `next-item.sh` read the index, and a check fails
+      - [x] **bs-index-check** — `check-queue-coherence.sh` and `next-item.sh` read the index, and a check fails
         when an index line and its file's heading disagree. (blocked-on: bs-readers) (uses: light) DONE WHEN both
         give identical output on the tree, and a mutant making index and file disagree turns the check red.
         ESTIMATE: 1 session.

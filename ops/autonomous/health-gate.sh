@@ -349,7 +349,8 @@ step gate-fix-proof bash "$OPS/tests/prove-gate-fix.sh"
 step mac-heavy-proof bash "$OPS/tests/prove-mac-heavy-lock.sh"
 
 # ~1 s, fixtures only. An entry moved to `bugs/<TAG>.md` reads the same through `bugs-entry.sh`, and the
-# pre-commit hook's rule-8 check sees a WONTFIX close written in that file (QUEUE.md bugs-split).
+# pre-commit hook's rule-8 check sees a WONTFIX close written in that file, and the coherence check reports
+# a file whose heading disagrees with its index line (QUEUE.md bugs-split).
 step bugs-split-proof bash "$OPS/tests/prove-bugs-split.sh"
 
 if [ "$QUICK" = 1 ]; then

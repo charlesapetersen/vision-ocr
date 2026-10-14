@@ -11,13 +11,18 @@
 #   [3] the pre-commit hook's rule-8 check refuses, in an unattended session below max effort, a WONTFIX close
 #       written inline in `BUGS.md`, and one written in an entry's file, with or without its index line; it lets
 #       a move of an already-WONTFIX entry into its file through; it lets the second max-effort session close;
-#   [4] a mutant hook that reads only `BUGS.md` lets the file-only close through, so [3] goes red.
+#   [4] a mutant hook that reads only `BUGS.md` lets the file-only close through, so [3] goes red;
+#   [5] (bs-index-check) `next-item.sh` and `check-queue-coherence.sh` print the same over both registers; the
+#       coherence check reports an entry file whose heading disagrees with its index line, or has none, and a
+#       mutant coherence check without that block stays green over the disagreement.
 # USAGE:  ops/autonomous/tests/prove-bugs-split.sh
 set -uo pipefail
 export PATH="/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:${PATH:-}"
 
 HERE="$(cd "$(dirname "$0")" && pwd)"
 RESOLVER="$HERE/../bugs-entry.sh"
+NEXT="$HERE/../next-item.sh"
+COHERE="$HERE/../check-queue-coherence.sh"
 HOOK="$HERE/../../../.githooks/pre-commit"
 T="$(mktemp -d -t vo-bugs-split)" || exit 2
 trap 'rm -rf "$T"' EXIT
@@ -117,6 +122,59 @@ cmp -s "$HOOK" "$T/mutant-hook" && bad "the hook mutation did not apply"
 [ "$(hook_says "$T/mutant-hook" medium)" = allowed ] \
   && ok "the mutant lets the file-only close through, so [3] would be red" \
   || bad "the mutant still refuses: [3] cannot tell it from the real hook"
+
+echo "[5] the queue's readers read the index, and the index check sees a disagreement"
+# Origin cites on an open entry, a closed one and the moved closed ones, and a prerequisite met only by a moved
+# entry's status (C24 FIXED), so next-item.sh's output depends on the register.
+printf '%s\n' '# Queue' '' \
+  '- [ ] **q-one** — open work. (origin: BUGS.md C1)' \
+  '- [ ] **q-two** — after C24. (blocked-on: C24)' \
+  '- [x] **q-three** — shipped. (origin: BUGS.md C24)' \
+  '- [x] **q-four** — declined. (origin: BUGS.md C2)' > "$T/QUEUE.md"
+mkdir -p "$T/notes"
+reads() {        # $1 register dir, $2 coherence script: next-item and coherence output, with exit codes
+  for s in "$NEXT" "$2"; do
+    VISIONOCR_QUEUE="$T/QUEUE.md" VISIONOCR_BUGS="$1/BUGS.md" VISIONOCR_NOTES="$T/notes" \
+      QUEUE_COHERENCE_QUIET=0 bash "$s" "$T" 2>&1; echo "exit $?"
+  done
+}
+a="$(reads "$T/inline" "$COHERE")"; b="$(reads "$T/split" "$COHERE")"
+[ "$a" = "$b" ] && ok "next-item.sh and the coherence check print the same over both registers" \
+  || bad "they differ: inline '$a' / split '$b'"
+case "$b" in *"ok	q-two	"*) ok "q-two is offered: C24's status was read from the index" ;;
+  *) bad "q-two is not offered over the split register: $b" ;; esac
+cp -R "$T/split" "$T/drift"
+sed -i '' '1s/— FIXED \*(twice)\*$/— OPEN/' "$T/drift/bugs/C24.md"
+out="$(reads "$T/drift" "$COHERE")"
+case "$out" in *"INDEX-DISAGREE C24"*"exit 1") ok "a file heading that disagrees with its index line is reported, exit 1" ;;
+  *) bad "the disagreement was not reported: $out" ;; esac
+cp "$T/drift/bugs/C24.md" "$T/drift/bugs/C7.md"; cp "$T/split/bugs/C24.md" "$T/drift/bugs/C24.md"
+out="$(reads "$T/drift" "$COHERE")"
+case "$out" in *"INDEX-MISSING C7"*"exit 1") ok "an entry file with no index line is reported" ;;
+  *) bad "the missing index line was not reported: $out" ;; esac
+case "$out" in *"INDEX-DISAGREE"*) bad "an agreeing file was reported as disagreeing" ;;
+  *) ok "an agreeing file is silent" ;; esac
+rm "$T/drift/bugs/C7.md"
+# A struck heading resolves (bugs-entry.sh strips `~~`), so it must not read as missing; a second C24 heading,
+# and a file no tag names, are entries no session can reach.
+cp -R "$T/split" "$T/edge"
+sed -i '' 's/^### C2 · prefix of C24 — WONTFIX$/### ~~C2 · prefix of C24~~ — WONTFIX/' "$T/edge/BUGS.md"
+sed -i '' '1s/.*/### ~~C2 · prefix of C24~~ — WONTFIX/' "$T/edge/bugs/C2.md"
+printf '%s\n' '' '### C24 · recorded twice — FIXED' '' 'Second body.' >> "$T/edge/BUGS.md"
+echo '# notes' > "$T/edge/bugs/README.md"
+out="$(reads "$T/edge" "$COHERE")"
+case "$out" in *"INDEX-MISSING C2"*|*"INDEX-DISAGREE C2"*) bad "a struck index line was not found: $out" ;;
+  *) ok "a struck heading's file is matched to its index line" ;; esac
+case "$out" in *"INDEX-DUPLICATE C24"*) ok "a second heading for a moved tag is reported" ;;
+  *) bad "the duplicate C24 heading was not reported: $out" ;; esac
+case "$out" in *"INDEX-BADNAME README"*) ok "a file not named for a tag is reported" ;;
+  *) bad "bugs/README.md was not reported: $out" ;; esac
+sed -i '' '1s/— FIXED \*(twice)\*$/— OPEN/' "$T/drift/bugs/C24.md"
+sed 's|^if \[ -d "\$EDIR" \]; then$|if false; then|' "$COHERE" > "$T/mutant-cohere.sh"
+cp "$RESOLVER" "$T/bugs-entry.sh"   # the mutant runs from $T and reads the register through its sibling resolver
+cmp -s "$COHERE" "$T/mutant-cohere.sh" && bad "the coherence mutation did not apply"
+case "$(reads "$T/drift" "$T/mutant-cohere.sh")" in *"queue-coherence: OK"*) ok "a coherence check without the index block stays green over it" ;;
+  *) bad "the mutant still reports the disagreement: the fixture cannot tell them apart" ;; esac
 
 echo "prove-bugs-split: $PASS passed, $FAIL failed"
 [ "$FAIL" -eq 0 ]

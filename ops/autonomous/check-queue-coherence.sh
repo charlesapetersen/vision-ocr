@@ -464,6 +464,52 @@ if [ -d "$NOTES" ]; then
   done
 fi
 
+# ---- the entry files -------------------------------------------------------------------------------------
+# bugs-split: an entry moved to `bugs/<TAG>.md` keeps its heading line in the register as the index, and the
+# file's first line is that same heading. Everything that reads status (this file, `next-item.sh`, the lists in
+# `bugs-entry.sh`) reads the index, and a session reads the file, so the two must be the same line; a status
+# changed in one alone would close an entry for the queue and leave it open for the session, or the reverse.
+EDIR="$(dirname "$BUGS")/bugs"
+if [ -d "$EDIR" ]; then
+  for ef in "$EDIR"/*.md; do
+    [ -f "$ef" ] || continue
+    et="$(basename "$ef" .md)"
+    # bugs-entry.sh only resolves tag-shaped names, so any other file there is one no session can reach.
+    if ! printf '%s\n' "$et" | grep -Eq '^[A-Za-z]+[0-9]+([.][0-9]+)*$'; then
+      finding "index" \
+        "bugs/$et.md  is not named for an entry tag → bugs-entry.sh never reads it; rename it or move it out of bugs/" \
+        "INDEX-BADNAME $(printf '%s' "$et" | tr -c 'A-Za-z0-9._-' '_')"
+      continue
+    fi
+    first="$(head -1 "$ef")"
+    # The index line: the first entry heading outside a fence whose tag is exactly $et, as bugs-entry.sh finds it,
+    # then a tab and how many such headings there are. A second one is an entry the resolver never reaches.
+    idx="$(awk -v t="$et" '
+      /^[[:space:]]*(```|~~~)/ { fence = !fence; next }
+      fence { next }
+      /^###[[:space:]]/ {
+        h = $0; sub(/^###[[:space:]]+/, "", h); sub(/^~~/, "", h)
+        if (match(h, /^[A-Za-z0-9][A-Za-z0-9._-]*/) && substr(h, 1, RLENGTH) == t) { if (!n++) line = $0 }
+      }
+      END { if (n) print n "\t" line }' "$BUGS")"
+    n_idx="${idx%%"$TAB"*}"; idx="${idx#*"$TAB"}"
+    if [ -n "$idx" ] && [ "$n_idx" -gt 1 ]; then
+      finding "index" \
+        "bugs/$et.md  has $n_idx headings tagged $et in BUGS.md → bugs-entry.sh reads only the first; merge them into the file or retag one" \
+        "INDEX-DUPLICATE $et"
+    fi
+    if [ -z "$idx" ]; then
+      finding "index" \
+        "bugs/$et.md  has no index line in BUGS.md → bugs-entry.sh cannot find it and the queue cannot read its status" \
+        "INDEX-MISSING $et"
+    elif [ "$idx" != "$first" ]; then
+      finding "index" \
+        "bugs/$et.md  begins '$first' but its index line in BUGS.md is '$idx' → make them the same line" \
+        "INDEX-DISAGREE $et"
+    fi
+  done
+fi
+
 # ---- report ----------------------------------------------------------------------------------------------
 N_FIND="$(grep -c . "$FIND" || true)"
 if [ "$N_FIND" -eq 0 ]; then
