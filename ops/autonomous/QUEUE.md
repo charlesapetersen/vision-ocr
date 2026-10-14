@@ -1605,7 +1605,7 @@ say so in the commit.
             Done 2026-10-13: `newspaperModelArrangement` / `newspaperModelReader`, chosen per page by `pageKind`, approvals
             per kind. Through the helper on 67 pages, published layers identical to the comparison's on 56/56 (Falcon align),
             6/7 (Falcon regions), 64/67 (PaddleOCR-VL), 4/7 (Vision regions); the rest 0-3 words apart (grey JPEG decode).
-- [ ] **ocr-integrate-settings** — give the accurate mode its settings, figures, timing run and downloads. (uses: build)
+- [x] **ocr-integrate-settings** — give the accurate mode its settings, figures, timing run and downloads. (uses: build)
       (blocked-on: ocr-integrate-engine)
       Off by default. Under THE APPROACH above (owner, 2026-10-12):
       - An "Accurate mode" switch; with it on, one choice of reader per kind of page (newspapers, and everything
@@ -1630,7 +1630,7 @@ say so in the commit.
       - [x] **is-timing** — "Measure on this Mac" over bundled sample pages, replacing the speed column with its date.
             Done 2026-10-14: `TimingRun` on pages it draws (not bundled: the sample is third-party), our figures
             scaled by this Mac against `referenceSeconds`; about 5 minutes; `BUGS.md` C57, settings sub-box 2.
-      - [ ] **is-downloads** — the runtime, the layout model and each model downloaded on first use, sizes stated.
+      - [x] **is-downloads** — the runtime, the layout model and each model downloaded on first use, sizes stated.
             2026-10-14: built and checked (`ModelDownloads`, `DownloadRunner`; `BUGS.md` C57, settings sub-box 3).
             Open only until the owner publishes the `models-1` release from `$STATE/model-files/` (RUN.md NEEDS
             OWNER); then check one download from it in the built app and tick this. ux-regression with the mode
@@ -1638,7 +1638,10 @@ say so in the commit.
             2026-10-14 (owner): `models-1` is published (prerelease, not latest; v1.15.0 stays latest), holding the
             two pinned archives unchanged plus NOTICE.txt with their licences. Both release URLs fetched and match
             the pinned SHA-256. Nothing is bundled into the app (owner's call: the DMG stays small). What remains
-            is the one download check in the built app; then tick this.
+            is the one download check in the built app; then tick this. Done 2026-10-14: the built bundle's
+            `DownloadRunner` fetched the runtime and the layout model from `models-1` and PaddleOCR-VL from the
+            Hub into an empty home, pins matched, and a PaddleOCR-VL newspaper timing leg read without a fallback
+            (`BUGS.md` C57, "The release, checked"). No `Sources/` change since 2b33b23, so ux-regression holds.
 - [ ] **ocr-model-dialogs** — download and enable a reader in one dialog, and choose which kind of page uses
       it in another, so no download starts without a confirmation that states its size. (uses: build)
       (blocked-on: ocr-integrate-settings)
