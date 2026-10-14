@@ -1988,8 +1988,8 @@ say so in the commit.
       prints at a plausible physical size; the file is under 250 KB at the default, at the step the owner picks
       below; the words selectable are at least those of today's output (pdftotext: 463 Vision, 465 Falcon-OCR,
       467 PaddleOCR-VL); a check goes red without the fix; `ux-regression.sh` is no worse; the suite passes.
-      Only one camera page is in hand, so say what other image inputs (testdocs or a photo the session makes)
-      the fix was also tried on. ESTIMATE: 2-3 sessions. BOUND: rule 10. (context: owner request 2026-10-14)
+      Try the fix on more photos than Baker: the owner's archive photos (see `pk-photo-pages` for the folder
+      and its tags), at least a clipping, a table and a handwritten page, and say what each came to. ESTIMATE: 2-3 sessions. BOUND: rule 10. (context: owner request 2026-10-14)
       (notes: ops/autonomous/notes/photo-pdf-size.md)
       - [x] **pps-route** — the cause found and fixed, the page size inferred, and the page layered. Record the
             cause and the size before and after in `ops/autonomous/notes/photo-pdf-size.md`. Done 2026-10-14:
@@ -2029,6 +2029,83 @@ say so in the commit.
             "Measure on this Mac" row is, let Stop cancel it, and keep the button for re-running. A check goes red
             without it. (blocked-on: sp-accurate)
       - [ ] **sp-rest** — the other Settings boxes' labels and help text in plain words. (blocked-on: sp-accurate)
+- [ ] **page-kinds-three** — three kinds of page in Choose by Kind of Page: scanned newspapers, scanned
+      documents that are not newspapers, and photographed documents, with photographs recognised by
+      themselves. (uses: build,model:12)
+      THE ASK (owner, 2026-10-14). Today `Recogniser.PageKind` is `newspaper` or `other`
+      (`ocr-newspaper-detect`, `PAGE-KIND-2026-10-12.tsv`).
+      - "Other documents" must still cover what is neither: born-digital pages and screenshots, which Vision
+        reads almost perfectly. Name the second kind so it covers them, or show them under it.
+      - A photographed newspaper is both kinds. Choose which reader it gets, state the rule in the dialog and
+        record the option rejected (suggested: newspaper wins, since column layout is the harder problem).
+      - Handwriting is not a kind here. Measure the readers on the Handwritten photos anyway; if one is clearly
+        better, propose a fourth kind to the owner in the item's notes rather than building it.
+      DETECTING A PHOTOGRAPH, per page: an image file's camera EXIF (Make, Model, lens) is the strongest signal;
+      without it (an image in a PDF), the page's paper edge against a background (Vision's document
+      segmentation), uneven lighting across the page, and a camera's pixel sizes. A phone-scanner app's
+      flattened, de-skewed PDF reads as a scan and should count as one. DONE WHEN for detection: Baker
+      (`owner-supplied/baker-00187/`) and the photos from `pk-photo-pages` are called photographs, with their EXIF
+      and with it stripped, and no page of
+      the 67-page sample or the 85 others in `PAGE-KIND-2026-10-12.tsv` is.
+      FIGURES: no reader has been measured on photographs; the bake-off sample is all scans. Measure Vision,
+      PaddleOCR-VL and Falcon-OCR on the photographed pages and put the result in the settings table, labelled
+      as measured on a small sample.
+      DONE WHEN, in the built app: the dialog offers the three kinds; each routes to its chosen reader; detection
+      meets the line above; `ux-regression.sh` is no worse with the mode off and on; the suite passes.
+      ESTIMATE: 3 sessions. BOUND: rule 10. (context: owner request 2026-10-14)
+      - [ ] **pk-photo-pages** — draw the photographed sample from the owner's archive photos (owner, 2026-10-14):
+            `~/Desktop/Google Drive/Archival Photos JPEGS` (plain local disk, about 100,000 files: JPEG, 854 HEIC,
+            1,116 PDFs). Read it only; copy the sample into `$STATE/photo-sample/`. Finder tags name the form of
+            the page (`mdfind -onlyin <dir> "kMDItemUserTags == 'Clippings'"`): Clippings 1,140, Handwritten
+            286, Statistics 1,304 (tables), Notes 83; untagged-by-form photos are mostly typed letters and
+            reports. Most carry camera EXIF (Pixel 6 and iPad seen). Take about 30 pages across several archive
+            folders: typed, Clippings, Statistics, Handwritten, and some of the PDFs (photos without EXIF), plus
+            Baker. Make truth for a few lines of each the way `TRUTH-CALIBRATE-2026-09-29.tsv` was made, and
+            list the sample in a dated TSV.
+      - [ ] **pk-photo-detect** — the photograph detector, checked as above. (blocked-on: pk-photo-pages)
+      - [ ] **pk-photo-measure** — the three readers measured on the photographs, and the table's figures for
+            the new kind. (blocked-on: pk-photo-pages)
+      - [ ] **pk-settings** — the three kinds in the dialog and the routing, with the overlap rule.
+            (blocked-on: pk-photo-detect, pk-photo-measure, sp-accurate)
+- [ ] **model-throughput** — measure whether keeping a model loaded between pages, or running two model readers
+      at once, makes a batch read with Falcon-OCR or PaddleOCR-VL finish sooner. (uses: build,model:12)
+      THE QUESTION (owner, 2026-10-14): with the large models, does reading several files at once still help as
+      it does with Vision, or should model reading be serial? TODAY: `Recogniser.modelReading` holds
+      `visionocr-model-reader.lock`, so only one model reading runs at a time across every helper, while
+      Vision, compression and publishing for other files go on in parallel. Its comment says each reading loads
+      the model, which suggests a fresh process and a weight load per page; the load's share of a page's time
+      has not been measured.
+      MEASURE, per reader, on one batch of about ten pages (newspaper and other), with the Mac otherwise idle:
+      (a) today's batch wall time at concurrency 1 and at the default; (b) the load's share of one page's time;
+      (c) two readers at once, by lifting the lock in a scratch build, with peak memory. Use the existing
+      `ModelGuard` caps; stop a leg that passes the memory setting.
+      DONE WHEN the figures are in `MODEL-THROUGHPUT-<date>.tsv` and the item's notes say, in a few lines, which
+      change (if any) would shorten a batch and by how much, and whether it depends on the Mac's memory. If the
+      answer is a code change, queue it as its own item with an ESTIMATE; do not build it here.
+      ESTIMATE: 1 session. BOUND: rule 10. (context: owner request 2026-10-14)
+- [ ] **layout-compare** — compare three layout detectors on the final text of newspaper pages, and find out
+      whether the regions explain C41's fused rows. (uses: build,model:12)
+      THE ASK (owner, 2026-10-14). The app cuts newspaper pages with DocLayout-YOLO (DocStructBench, Core ML,
+      `ModelDownloads` `.layout`). The only comparison, `OCR-LAYOUT-2026-10-07.tsv`, used one newspaper page and
+      measured how much ink fell inside a text region (YOLO 0.952, PP-DocLayoutV3 0.818), not the text read
+      from the regions. docling-layout-heron was named in `PRIOR-ART-2026-10-07.md` and never tried.
+      MEASURE. For DocLayout-YOLO, PP-DocLayoutV3 and docling-layout-heron: cut the 11 newspaper pages of
+      `OCR-SAMPLE-2026-10-04.tsv` and have Vision, PaddleOCR-VL and Falcon-OCR read each detector's regions, as
+      `ocr-compare-run` did (`hybrid-run.sh`, scored by `ux-harness --truth`, so the figures sit beside
+      `OCR-COMPARE-2026-10-13.tsv`). Per detector and reader: words wrong or missing, Find, time per page, peak
+      memory, download, licence of the weights. A detector with no reading order gets the app's column sort;
+      say so. Run it as one detached, resumable job under the heavy lock (rule 11).
+      FUSED ROWS. On C41's five whole-page scans (counts in `bugs/C41.md`: at least 30 mode off, 34 with either
+      model): for each fused row, find whether the region that produced it spans two printed columns, or whether
+      the rows are joined after reading (the merge, the writer, or PDFKit's line building). Count both, per
+      detector, and write the answer in `bugs/C41.md`.
+      DONE WHEN `LAYOUT-COMPARE-<date>.tsv` holds the figures, `bugs/C41.md` says where the fused rows come
+      from, and the item's notes recommend keeping DocLayout-YOLO or switching, with the gain measured. A switch
+      or a fix for the fused rows is queued as its own item with an ESTIMATE; do not build it here.
+      ESTIMATE: 2 sessions. BOUND: rule 10. (context: owner request 2026-10-14)
+      - [ ] **lc-run** — fit-test PP-DocLayoutV3 and docling-layout-heron on this Mac, then the detached job and its
+            table.
+      - [ ] **lc-fused** — the fused-row attribution on C41's five scans. (blocked-on: lc-run)
 
 ## Parked
 
