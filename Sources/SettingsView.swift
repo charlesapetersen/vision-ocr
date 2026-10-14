@@ -68,6 +68,9 @@ struct SettingsView: View {
     @AppStorage(Prefs.accurateNewspaperReader) private var accurateNewspaperReader =
         Prefs.AccurateReader.vision.rawValue
     @AppStorage(Prefs.modelMemoryGB) private var modelMemoryGB = Prefs.defaultModelMemoryGB()
+    @AppStorage(Prefs.accurateTiming) private var accurateTimingData = Data()
+    @ObservedObject private var timingRun = TimingRunner.shared
+    private var timing: Prefs.AccurateTiming? { Prefs.AccurateTiming(accurateTimingData) }
 
     // Behaviour
     @AppStorage(Prefs.openWhenDone) private var openWhenDone = true
@@ -546,12 +549,38 @@ struct SettingsView: View {
                 accurateKind("Newspapers", .newspaper, $accurateNewspaperReader)
                 accurateKind("Other pages", .other, $accurateReader)
                 Text("Words wrong or missing are out of every 1,000, measured on 67 pages of "
-                     + "our own sample; your documents may differ. Speed is ours, on one Mac. "
-                     + "The models share one more download, about "
+                     + "our own sample; your documents may differ. "
+                     + TimingRunner.speedNote(timing)
+                     + " The models share one more download, about "
                      + "\(Prefs.AccurateReader.runtimeDownloadMB) MB.")
                     .font(.caption2).foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
+                timingRow
             }
+        }
+    }
+
+    /// "Measure on this Mac": times the readers that are ready here and replaces the speed
+    /// column (`TimingRun`). Speed only; the accuracy column stays ours.
+    @ViewBuilder
+    private var timingRow: some View {
+        let legs = TimingRun.legs(memoryGB: modelMemoryGB)
+        Row("Speed", labelWidth) {
+            if timingRun.running {
+                Button("Stop") { timingRun.stop() }
+                ProgressView().controlSize(.small)
+            } else {
+                Button("Measure on this Mac") { timingRun.start(legs, memoryGB: modelMemoryGB) }
+                    .help("Reads a few pages drawn for the purpose with each reader that is "
+                          + "downloaded and fits the memory allowed, and puts this Mac's speed in "
+                          + "the tables. It does not measure accuracy, and it does not start "
+                          + "while files are being read.")
+            }
+            Text(timingRun.running ? timingRun.status ?? ""
+                 : [timingRun.status, TimingRunner.plan(legs)].compactMap { $0 }.joined(separator: " "))
+                .font(.caption2).foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+            Spacer()
         }
     }
 
@@ -596,7 +625,9 @@ struct SettingsView: View {
             ForEach(Prefs.AccurateReader.allCases.filter { $0.figures(kind) != nil }, id: \.self) { reader in
                 GridRow {
                     Text(reader.name)
-                    ForEach(Array((reader.cells(kind) ?? []).enumerated()), id: \.offset) { Text($0.element) }
+                    ForEach(Array((reader.cells(kind, timing: timing) ?? []).enumerated()), id: \.offset) {
+                        Text($0.element)
+                    }
                 }
                 .foregroundStyle(fits.contains(reader) ? .primary : .tertiary)
                 .fontWeight(reader == chosen ? .semibold : .regular)
@@ -844,5 +875,69 @@ private struct Box<Content: View>: View {
                 .background(RoundedRectangle(cornerRadius: 8)
                     .fill(Color.secondary.opacity(0.07)))
         }
+    }
+}
+
+/// The one "Measure on this Mac" run, kept outside the panel so that closing Settings neither
+/// loses it nor lets a second start beside it. Its result goes to `Prefs.accurateTiming`, which
+/// the panel reads; a run that fails or is stopped stores nothing and keeps the last result.
+@MainActor
+final class TimingRunner: ObservableObject {
+    static let shared = TimingRunner()
+
+    @Published private(set) var running = false
+    /// What the run is doing, or how the last one ended; nil before any run.
+    @Published private(set) var status: String?
+    private var control: RunControl?
+
+    func start(_ legs: [TimingRun.Leg], memoryGB: Double) {
+        guard !running, !legs.isEmpty else { return }
+        // A batch beside it would be timed too, and its model would share the memory.
+        guard !RunControl.isAnyRunning else {
+            status = "Files are being read; measure when they have finished."
+            return
+        }
+        let control = RunControl()
+        self.control = control
+        running = true
+        status = "Starting…"
+        DispatchQueue.global(qos: .userInitiated).async {
+            let result = Result { try TimingRun.run(legs, memoryGB: memoryGB, control: control) { text in
+                DispatchQueue.main.async { TimingRunner.shared.status = text }
+            } }
+            DispatchQueue.main.async {
+                let me = TimingRunner.shared
+                me.running = false
+                me.control = nil
+                switch result {
+                case .success(let timing):
+                    Prefs.store.set(timing.data, forKey: Prefs.accurateTiming)
+                    let models = legs.filter { $0.reader != .vision }.count
+                    me.status = models == 0 ? "Measured Vision on this Mac."
+                        : "Measured Vision and \(models) model reading\(models == 1 ? "" : "s") on this Mac."
+                case .failure(let error):
+                    me.status = "Nothing was changed: " + error.localizedDescription
+                }
+            }
+        }
+    }
+
+    func stop() { control?.cancel() }
+
+    /// What a run would time and about how long it takes here.
+    nonisolated static func plan(_ legs: [TimingRun.Leg]) -> String {
+        let models = legs.filter { $0.reader != .vision }
+        let minutes = max(1, Int((TimingRun.estimate(legs) / 60).rounded(.up)))
+        return models.isEmpty
+            ? "Times Vision only: no model reader is downloaded yet. About \(minutes) min."
+            : "Times Vision and \(models.count) model reading\(models.count == 1 ? "" : "s"), about \(minutes) min on our Mac."
+    }
+
+    /// The table's footnote on speed: whose it is.
+    nonisolated static func speedNote(_ timing: Prefs.AccurateTiming?) -> String {
+        guard let timing, !timing.seconds.isEmpty else { return "Speed is ours, on one Mac." }
+        let date = DateFormatter.localizedString(from: timing.measured, dateStyle: .medium, timeStyle: .none)
+        return "Speed is estimated for this Mac from a timing run on \(date); a speed marked (ours) "
+            + "is from our Mac."
     }
 }

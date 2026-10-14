@@ -462,12 +462,47 @@ enum Prefs {
             }
         }
 
+        /// Seconds a page `TimingRun` took over its own pages, each reader as the settings run
+        /// it, on the Mac `figures` were measured on (2026-10-14). A timing run elsewhere scales
+        /// `figures`' speed by its time against this one, so the column keeps the 67-page
+        /// sample's mix of pages and takes the user's Mac's speed.
+        func referenceSeconds(_ kind: Recogniser.PageKind) -> Double? {
+            switch (self, kind) {
+            // The mean of two runs, which agreed within 2-5% a reader.
+            case (.vision, .newspaper):        return 39.6
+            case (.vision, .other):            return 2.9
+            case (.visionRegions, .newspaper): return 51.5
+            case (.visionRegions, .other):     return nil
+            case (.paddle, .newspaper):        return 77.7
+            case (.paddle, .other):            return 10.1
+            case (.falcon, .newspaper):        return 96.2
+            case (.falcon, .other):            return 10.3
+            }
+        }
+
+        /// Seconds a page on `kind`: ours, or ours scaled by `timing`'s run on this Mac, and
+        /// which. Nil where the reader is not offered.
+        func speed(_ kind: Recogniser.PageKind, timing: AccurateTiming?) -> (seconds: Double, measured: Bool)? {
+            guard let f = figures(kind) else { return nil }
+            if let mine = timing?.seconds[AccurateTiming.key(self, kind)], mine > 0,
+               let reference = referenceSeconds(kind), reference > 0 {
+                return (f.secondsPerPage * mine / reference, true)
+            }
+            return (f.secondsPerPage, false)
+        }
+
         /// The settings table's cells for this reader on `kind`, in words a user reads: words
-        /// wrong or missing, speed, memory, download. Nil where it is not offered.
-        func cells(_ kind: Recogniser.PageKind) -> [String]? {
-            guard let f = figures(kind), let base = AccurateReader.vision.figures(kind) else { return nil }
-            let seconds = String(format: "%.0f", f.secondsPerPage)
-            let times = self == .vision ? "" : String(format: ", %.1f× Vision", f.secondsPerPage / base.secondsPerPage)
+        /// wrong or missing, speed, memory, download. Nil where it is not offered. Speed is
+        /// `timing`'s where it timed this reader, and then against Vision timed in the same run.
+        func cells(_ kind: Recogniser.PageKind, timing: AccurateTiming? = nil) -> [String]? {
+            guard let f = figures(kind), let speed = speed(kind, timing: timing),
+                  let base = AccurateReader.vision.speed(kind, timing: speed.measured ? timing : nil)
+            else { return nil }
+            let seconds = String(format: "%.0f", speed.seconds)
+            let times = (self == .vision ? "" : String(format: ", %.1f× Vision", speed.seconds / base.seconds))
+                // Beside readers this Mac timed, one it did not says so.
+                + (!speed.measured && timing?.seconds.keys.contains { $0.hasSuffix(".\(kind.rawValue)") } == true
+                   ? " (ours)" : "")
             let download = f.downloadMB == 0 ? "none"
                 : f.downloadMB < 500 ? "\(f.downloadMB) MB"
                 : String(format: "%.1f GB", Double(f.downloadMB) / 1000)
@@ -509,6 +544,55 @@ enum Prefs {
             AccurateReader(rawValue: raw ?? "").flatMap { offered(kind, memoryGB: memoryGB).contains($0) ? $0 : nil }
                 ?? .vision
         }
+    }
+
+    /// The last "Measure on this Mac" run (`TimingRun`), stored as JSON under `accurateTiming`:
+    /// when it ran and the seconds a page each reader took over the run's pages. It measures
+    /// speed only; accuracy stays ours.
+    static let accurateTiming = "accurateTiming"
+
+    struct AccurateTiming: Codable, Equatable {
+        var measured: Date
+        /// Keyed `key(reader, kind)`.
+        var seconds: [String: Double]
+        /// The `referenceSeconds` and pages it was measured against, and the Mac it ran on: a
+        /// timing from other pages, or carried to another Mac with the settings, is no timing.
+        var reference: Int
+        var machine: String
+
+        /// Raise it whenever `referenceSeconds`, `TimingRun`'s pages or what a leg runs changes.
+        static let referenceVersion = 1
+
+        static func key(_ reader: AccurateReader, _ kind: Recogniser.PageKind) -> String {
+            "\(reader.rawValue).\(kind.rawValue)"
+        }
+
+        /// The Mac's model identifier, `Mac15,6` or the like.
+        static var thisMachine: String {
+            var size = 0
+            sysctlbyname("hw.model", nil, &size, nil, 0)
+            var bytes = [CChar](repeating: 0, count: max(size, 1))
+            sysctlbyname("hw.model", &bytes, &size, nil, 0)
+            return String(cString: bytes)
+        }
+
+        init(measured: Date, seconds: [String: Double], reference: Int = referenceVersion,
+             machine: String = thisMachine) {
+            self.measured = measured
+            self.seconds = seconds
+            self.reference = reference
+            self.machine = machine
+        }
+
+        /// Nil for no run yet, for data this build cannot read, and for a timing measured
+        /// against another reference or on another Mac.
+        init?(_ data: Data?) {
+            guard let data, let t = try? JSONDecoder().decode(AccurateTiming.self, from: data),
+                  t.reference == Self.referenceVersion, t.machine == Self.thisMachine else { return nil }
+            self = t
+        }
+
+        var data: Data { (try? JSONEncoder().encode(self)) ?? Data() }
     }
 
     /// `modelArrangement`'s values. `align` keeps Vision's lines, boxes and order and
@@ -659,7 +743,7 @@ enum Prefs {
         joinHyphenated, preserveAnnotations, writeRunReport, concurrency,
         checkForUpdates, skippedVersion, lastUpdateCheck, modelArrangement, modelReader,
         newspaperModelArrangement, newspaperModelReader, modelMemoryGB,
-        accurateMode, accurateReader, accurateNewspaperReader,
+        accurateMode, accurateReader, accurateNewspaperReader, accurateTiming,
     ]
 
     /// Set once the pre-rename settings have been brought across. Deliberately
@@ -711,8 +795,8 @@ enum Prefs {
     /// user having already said "don't offer me 1.9.0 again", so resetting it
     /// re-offered a version they had dismissed; `lastUpdateCheck` is bookkeeping
     /// that decides when the next request is due, and clearing it makes the app ask
-    /// again immediately.
-    static let notASetting: Set<String> = [skippedVersion, lastUpdateCheck]
+    /// again immediately. `accurateTiming` is a measurement of this Mac, minutes to redo.
+    static let notASetting: Set<String> = [skippedVersion, lastUpdateCheck, accurateTiming]
 
     /// Defaults chosen to match mac-ocr's own defaults, so an untouched
     /// settings panel behaves exactly like running the CLI bare.
@@ -730,9 +814,12 @@ enum Prefs {
     /// The registration itself is in-memory, so a tool calling
     /// `register(migrate: false)` gets exactly the shipped defaults and writes
     /// nothing at all. Every tool passes false; only the app migrates.
-    static func register(migrate: Bool = true) {
+    ///
+    /// `store` is for a run that wants the shipped defaults and none of the user's
+    /// settings (`TimingRun`): a scratch domain registered here and never written.
+    static func register(migrate: Bool = true, into store: UserDefaults = Prefs.store) {
         if migrate { migrateFromPreviousName() }
-        Prefs.store.register(defaults: [
+        store.register(defaults: [
             mode: Mode.searchablePDF.rawValue,
             besideOriginal: false,
             openWhenDone: true,

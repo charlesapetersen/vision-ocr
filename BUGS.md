@@ -20226,6 +20226,24 @@ reader and kind through `ModelRuntime.offered`, so the settings cannot route out
 timing run and the downloads (a model chosen before it is downloaded fails the file, saying so, as since ie-runtime;
 rejected: falling back to Vision there, which would publish a reading the user did not choose with nothing to see).
 
+#### Settings sub-box 2, the timing run (`ocr-integrate-settings`, is-timing, 2026-10-14)
+
+"Measure on this Mac" under the tables (`TimingRun`, `TimingRunner`). It times Vision on each kind, and each reader that
+is downloaded and fits under the slider, through `makeSearchablePDF` under the shipped defaults, on pages it draws
+itself: a 12×17 in six-column broadsheet at 200 dpi and two book pages at 300 dpi, grey scans with fixed words. They
+are drawn because the sample is third-party. A run is stored only if every leg succeeds with no fallback to Vision.
+The table then shows our figure × (this Mac's seconds / `referenceSeconds`, the same run on this Mac). The ratio is
+used because the drawn pages are not the sample's mix (Vision takes 40 s on the broadsheet against the sample's
+23 s). [measured] Two reference runs here (a third, on a larger seven-column page, was dropped) agreed within 2-5%
+per reader: newspapers Vision 39.6 s, Vision regions 51.5, PaddleOCR-VL 77.7, Falcon-OCR 96.2; book pages Vision 2.9,
+PaddleOCR-VL 10.1, Falcon-OCR 10.3. A full run takes about 5 minutes. A timing is tied to the reference version and
+the Mac's model identifier. Reset to Defaults keeps it. A reader it did not time is marked "(ours)". It refuses to
+start beside a batch; a batch started during it is not prevented. Rendered offscreen with a timing 1.5× slower:
+every timed speed is 1.5× ours. Rejected: showing the drawn pages' raw seconds (not comparable with the table), and
+bundling public-domain scans (curl to the Library of Congress was refused here; the drawn pages are free of licences
+and of bundle size). Not measured: how cold the first run after a download is; each leg pays its model's load, as
+the reference did. Review: classifier routing comment corrected (a misread page ends the run, saying so).
+
 ## Robustness and correctness of reporting
 
 ### R1 · jbig2 and qpdf children are never registered for cancellation — FIXED

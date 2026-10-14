@@ -1626,7 +1626,9 @@ say so in the commit.
       (context: owner request 2026-10-02, split 2026-10-04, approach 2026-10-12)
       - [x] **is-settings** — the switch, the choices per kind, the slider and the table. Done 2026-10-13: the Accurate
             mode box (`Prefs.AccurateReader`, `Snapshot.applyAccurateMode`); `BUGS.md` C57, settings sub-box 1.
-      - [ ] **is-timing** — "Measure on this Mac" over bundled sample pages, replacing the speed column with its date.
+      - [x] **is-timing** — "Measure on this Mac" over bundled sample pages, replacing the speed column with its date.
+            Done 2026-10-14: `TimingRun` on pages it draws (not bundled: the sample is third-party), our figures
+            scaled by this Mac against `referenceSeconds`; about 5 minutes; `BUGS.md` C57, settings sub-box 2.
       - [ ] **is-downloads** — the runtime, the layout model and each model downloaded on first use, sizes stated.
 - [ ] **ocr-requeue** — make the rest of the queue build on the accurate mode. (uses: build,model:12)
       (blocked-on: ocr-integrate-settings) (effort: medium)

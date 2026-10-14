@@ -20,6 +20,9 @@ an older entry mentions "Window ▸ Vision Reader Window", the menu item is now
 - Settings has an Accurate mode box, off by default: switched on, it picks a stronger on-device reader for
   newspapers and for other pages, beside a table of how accurate, how fast, how much memory and how large a
   download each one is, with a slider for the most memory a model may use. The downloads are still to come.
+- The Accurate mode box has "Measure on this Mac": a run of about five minutes that times each reader you
+  have downloaded on a few pages and changes the speed column from our Mac's figures to estimates for yours.
+  It does not measure accuracy.
 - The run report has a `Model reader` row. It reads `off`: the setting that takes words from a stronger OCR
   model is being built, is not yet in the panel, and changes nothing unless it is set.
 - On newspaper scans with a rule printed down the gap between columns, a line the recogniser read on into the

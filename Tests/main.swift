@@ -12468,6 +12468,143 @@ do {
 }
 }  // end of section
 
+section("\"Measure on this Mac\" times the ready readers on drawn pages and rescales the speed column (C57, is-timing)") {
+
+do {
+    typealias AR = Prefs.AccurateReader
+    resetPrefs()
+    let dir = tmp.appendingPathComponent("timing run")
+    try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+
+    // The pages: drawn, so nothing third-party ships; scans with no text layer, of two sizes.
+    let news = dir.appendingPathComponent("news.pdf"), book = dir.appendingPathComponent("book.pdf")
+    try? TimingRun.drawPages(.newspaper, to: news)
+    try? TimingRun.drawPages(.other, to: book)
+    let newsDoc = PDFDocument(url: news), bookDoc = PDFDocument(url: book)
+    check("the timing pages are a broadsheet and two book pages, scans with no text layer",
+          newsDoc?.pageCount == 1 && bookDoc?.pageCount == 2
+              && newsDoc?.page(at: 0)?.bounds(for: .mediaBox).size == CGSize(width: 864, height: 1224)
+              && bookDoc?.page(at: 1)?.bounds(for: .mediaBox).size == CGSize(width: 396, height: 612)
+              && (newsDoc?.string ?? "x").isEmpty && (bookDoc?.string ?? "x").isEmpty,
+          "\(newsDoc?.pageCount ?? -1) \(bookDoc?.pageCount ?? -1) \(newsDoc?.string?.count ?? -1)")
+
+    // What a run times: Vision always, and a model only once it is downloaded and fits.
+    let bare = ["VISIONOCR_MODEL_HOME": dir.appendingPathComponent("no-models").path]
+    let home = dir.appendingPathComponent("model home")
+    let bin = home.appendingPathComponent("Runtime/bin")
+    try? FileManager.default.createDirectory(at: bin, withIntermediateDirectories: true)
+    try? FileManager.default.createDirectory(
+        at: home.appendingPathComponent("Models/hub/models--tiiuae--Falcon-OCR"), withIntermediateDirectories: true)
+    let python = bin.appendingPathComponent("python3")
+    func standIn(_ body: String) {
+        try? ("#!/bin/sh\n" + body).write(to: python, atomically: true, encoding: .utf8)
+        try? FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: python.path)
+    }
+    standIn("exit 1\n")
+    let withFalcon = ["VISIONOCR_MODEL_HOME": home.path]
+    let leg = { (r: AR, k: Recogniser.PageKind) in TimingRun.Leg(reader: r, kind: k) }
+    check("a run times Vision on each kind, and a model only when it is downloaded and fits the memory",
+          TimingRun.legs(memoryGB: 12, environment: bare) == [leg(.vision, .newspaper), leg(.vision, .other)]
+              && TimingRun.legs(memoryGB: 12, environment: withFalcon)
+                  == [leg(.vision, .newspaper), leg(.vision, .other), leg(.falcon, .other)]
+              && TimingRun.legs(memoryGB: 3, environment: withFalcon) == [leg(.vision, .newspaper), leg(.vision, .other)],
+          "\(TimingRun.legs(memoryGB: 12, environment: withFalcon).map { "\($0.reader).\($0.kind)" })")
+
+    // Its settings are the shipped defaults with the leg's reader on every page, not the user's.
+    d.set(true, forKey: Prefs.fast)
+    let s = TimingRun.settings(leg(.falcon, .newspaper), memoryGB: 7)
+    let v = TimingRun.settings(leg(.vision, .other), memoryGB: 7)
+    check("a leg runs under the shipped defaults, its reader on every page whatever its kind, under the user's cap",
+          !s.fast && s.modelArrangement == .regions && s.modelReader == "falcon-ocr"
+              && s.newspaperModelArrangement == .regions && s.newspaperModelReader == "falcon-ocr"
+              && s.modelMemoryGB == 7 && !v.modelOn && v.newspaperModelArrangement == .off,
+          "\(s.fast) \(s.modelArrangement) \(s.modelReader) \(String(describing: s.newspaperModelArrangement))")
+    resetPrefs()
+
+    // The column: ours scaled by this Mac's time against the reference Mac's on the same pages.
+    let ref = AR.falcon.referenceSeconds(.other) ?? 0, visionRef = AR.vision.referenceSeconds(.other) ?? 0
+    let timing = Prefs.AccurateTiming(measured: Date(timeIntervalSince1970: 0), seconds: [
+        Prefs.AccurateTiming.key(.falcon, .other): ref * 2, Prefs.AccurateTiming.key(.vision, .other): visionRef])
+    check("every offered reader has reference seconds for the scaling",
+          AR.allCases.allSatisfy { r in [Recogniser.PageKind.newspaper, .other].allSatisfy {
+              r.figures($0) == nil || (r.referenceSeconds($0) ?? 0) > 0 } }, "")
+    check("a reader twice as slow here as on our Mac reads twice our speed figure, against Vision timed with it",
+          AR.falcon.speed(.other, timing: timing).map { abs($0.seconds - 27.6) < 0.01 && $0.measured } == true
+              && AR.falcon.cells(.other, timing: timing)?[1] == "about 28 s a page, 8.1× Vision"
+              && AR.paddle.speed(.other, timing: timing).map { $0.seconds == 13.2 && !$0.measured } == true
+              && AR.paddle.cells(.other, timing: timing)?[1] == "about 13 s a page, 3.9× Vision (ours)"
+              && AR.paddle.cells(.newspaper, timing: timing)?[1] == "about 60 s a page, 2.6× Vision"
+              && AR.falcon.cells(.other) == ["about 6", "about 14 s a page, 4.1× Vision", "3.9 GB", "1.1 GB"],
+          "\(AR.falcon.cells(.other, timing: timing) ?? [])")
+    check("the timing is stored as data and read back, and unreadable data is no timing",
+          Prefs.AccurateTiming(timing.data) == timing && Prefs.AccurateTiming(Data()) == nil
+              && Prefs.AccurateTiming(nil) == nil && Prefs.allKeys.contains(Prefs.accurateTiming), "")
+    var elsewhere = timing, older = timing
+    elsewhere.machine = "Another Mac"
+    older.reference = Prefs.AccurateTiming.referenceVersion - 1
+    check("…and a timing from another Mac, or against other reference pages, is no timing",
+          Prefs.AccurateTiming(elsewhere.data) == nil && Prefs.AccurateTiming(older.data) == nil
+              && !timing.machine.isEmpty, timing.machine)
+    check("the footnote says whose speed the table shows",
+          TimingRunner.speedNote(nil) == "Speed is ours, on one Mac."
+              && TimingRunner.speedNote(timing).hasPrefix("Speed is estimated for this Mac from a timing run on "), "")
+
+    // The run itself, through the production pipeline, on the two book pages.
+    let script = dir.appendingPathComponent("read-model.py")
+    try? "".write(to: script, atomically: true, encoding: .utf8)
+    setenv("VISIONOCR_MODEL_HOME", home.path, 1)
+    setenv("VISIONOCR_READER_SCRIPT", script.path, 1)
+    var stopped = false
+    do {
+        let cancelled = RunControl()
+        cancelled.cancel()
+        do { _ = try TimingRun.run([leg(.vision, .other)], memoryGB: 5, control: cancelled) { _ in } }
+        catch TimingRun.Failure.cancelled { stopped = true } catch {}
+    }
+    check("a stopped run times nothing", stopped, "")
+    var failed = ""
+    do { _ = try TimingRun.run([leg(.falcon, .other)], memoryGB: 5, control: RunControl()) { _ in } }
+    catch { failed = error.localizedDescription }
+    check("a model that fails ends the run with nothing measured: Vision's fallback is not its speed",
+          failed.hasPrefix("Falcon-OCR on pages other than newspapers did not finish"), failed)
+    standIn("printf '%s\\n' \"Stand-in words for the timing run\" > \"$5\"\n")
+    var heard: [String] = []
+    let ran = try? TimingRun.run([leg(.vision, .other), leg(.falcon, .other)], memoryGB: 5, control: RunControl(),
+                                 now: { Date(timeIntervalSince1970: 86_400) }) { heard.append($0) }
+    check("a run times each leg through the pipeline and returns seconds a page with its date",
+          ran?.measured == Date(timeIntervalSince1970: 86_400) && ran?.seconds.count == 2
+              && (ran?.seconds["vision.other"] ?? 0) > 0 && (ran?.seconds["falcon-ocr.other"] ?? 0) > 0
+              && heard == ["Timing Vision (built in) on pages other than newspapers (1 of 2)…",
+                           "Timing Falcon-OCR on pages other than newspapers (2 of 2)…"],
+          "\(ran?.seconds ?? [:]) \(heard)")
+
+    // The panel's runner: refuses beside a batch, and stores what a finished run measured.
+    MainActor.assumeIsolated {
+        let runner = TimingRunner.shared
+        var batch: RunControl? = RunControl()
+        runner.start([leg(.vision, .other)], memoryGB: 5)
+        check("the timing run does not start while files are being read",
+              batch != nil && !runner.running
+                  && runner.status == "Files are being read; measure when they have finished."
+                  && d.data(forKey: Prefs.accurateTiming) == nil, runner.status ?? "")
+        batch = nil
+        runner.start([leg(.vision, .other)], memoryGB: 5)
+        let began = Date()
+        while runner.running && Date().timeIntervalSince(began) < 120 {
+            RunLoop.main.run(until: Date().addingTimeInterval(0.2))
+        }
+        let stored = Prefs.AccurateTiming(d.data(forKey: Prefs.accurateTiming))
+        check("…and once they have, it runs and stores this Mac's seconds a page for the table",
+              !runner.running && (stored?.seconds["vision.other"] ?? 0) > 0
+                  && runner.status == "Measured Vision on this Mac.",
+              "\(runner.status ?? "") \(stored?.seconds ?? [:])")
+    }
+    unsetenv("VISIONOCR_MODEL_HOME")
+    unsetenv("VISIONOCR_READER_SCRIPT")
+    resetPrefs()
+}
+}  // end of section
+
 section("a model reader runs under its memory guard and falls back to Vision (C57, ie-guard)") {
 
 do {
@@ -14513,7 +14650,7 @@ do {
     check("…while the settings themselves are still reset",
           !Prefs.notASetting.contains(Prefs.useJBIG2)
             && !Prefs.notASetting.contains(Prefs.mode)
-            && Prefs.notASetting.count == 2)
+            && Prefs.notASetting.count == 3 && Prefs.notASetting.contains(Prefs.accurateTiming))
 
     // A5.4. A `RunControl` does not exist until `run()`, so the quit gate read
     // false for the whole committed-but-not-running window and the app could quit
