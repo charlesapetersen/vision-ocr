@@ -23,10 +23,13 @@ an older entry mentions "Window ▸ Vision Reader Window", the menu item is now
 - The Accurate mode box has "Measure on this Mac": a run of about five minutes that times each reader you
   have downloaded on a few pages and changes the speed column from our Mac's figures to estimates for yours.
   It does not measure accuracy.
-- Choosing a reader in the Accurate mode box downloads what it still needs, with each download's size stated
-  beforehand, a progress bar and a Stop button: about 1.2 GB for Falcon-OCR with its runtime, and 0.9 GB for
-  PaddleOCR-VL with its runtime and the layout model. Every file is checked before it is installed, and a
-  stopped or failed download leaves nothing behind. Nothing is downloaded while the mode is off.
+- The Accurate mode box has two dialogs. Models lists each reader with its download size, the memory it needs
+  and what it reads well, and downloads one only after a confirmation that names the total: about 1.3 GB for
+  Falcon-OCR with the shared runtime and layout model, 0.9 GB for PaddleOCR-VL, less for whichever comes
+  second. Progress and a Stop button show there. Choose by Kind of Page picks the reader for newspapers and
+  for other pages among Vision and the readers already downloaded and enabled; choosing one never starts a
+  download. Every file is checked before it is installed, and a stopped or failed download leaves nothing
+  behind. Nothing is downloaded while the mode is off.
 - The run report has a `Model reader` row. It reads `off`: the setting that takes words from a stronger OCR
   model is being built, is not yet in the panel, and changes nothing unless it is set.
 - On newspaper scans with a rule printed down the gap between columns, a line the recogniser read on into the

@@ -12503,6 +12503,8 @@ do {
           !d.bool(forKey: Prefs.accurateMode) && s.modelArrangement == .fill && s.modelReader == "/lab/reader.sh"
               && s.newspaperModelArrangement == nil, "\(s.modelArrangement) \(s.modelReader)")
     d.set(true, forKey: Prefs.accurateMode)
+    // Each is enabled, as the models dialog leaves it after its download (ocr-model-dialogs).
+    for reader in AR.downloadable { AR.setEnabled(reader, true, d) }
     s = Prefs.Snapshot.current(d)
     check("…on with nothing chosen, every page is Vision's and newspapers do not take the print pair",
           !s.modelOn && s.modelReader.isEmpty && s.newspaperModelArrangement == .off,
@@ -12888,6 +12890,107 @@ do {
     unsetenv("VISIONOCR_MODEL_SOURCE")
     resetPrefs()
     try? fm.removeItem(at: root)
+}
+}  // end of section
+
+section("a reader is downloaded only from the models dialog's confirmation, and only a downloaded, enabled one can be chosen for a kind of page (ocr-model-dialogs)") {
+
+do {
+    typealias AR = Prefs.AccurateReader
+    let fm = FileManager.default
+    resetPrefs()
+    let home = tmp.appendingPathComponent("model dialogs home")
+    try? fm.removeItem(at: home)
+    let bare = ["VISIONOCR_MODEL_HOME": home.path]
+
+    // The models dialog lists every reader that needs a download, each with all it needs for
+    // every kind of page it is offered on, so a later page-kind choice never needs another.
+    check("the models dialog lists the three model readers, each downloaded whole",
+          AR.downloadable == [.visionRegions, .paddle, .falcon]
+              && AR.falcon.allNeeds == [.runtime, .falcon, .layout] && AR.paddle.allNeeds == [.runtime, .paddle, .layout]
+              && AR.visionRegions.allNeeds == [.layout] && AR.vision.allNeeds.isEmpty,
+          "\(AR.downloadable) \(AR.falcon.allNeeds)")
+    check("…with the memory each needs at most",
+          AR.falcon.memoryNeedGB == 3.9 && AR.paddle.memoryNeedGB == 2.5 && AR.visionRegions.memoryNeedGB == 0.6,
+          "\(AR.falcon.memoryNeedGB) \(AR.paddle.memoryNeedGB)")
+    // The shared runtime and layout model are counted while they are missing, and not after.
+    check("on an empty home, a reader's download counts the shared runtime and layout model",
+          AR.falcon.toFetch(environment: bare) == [.runtime, .falcon, .layout]
+              && DownloadRunner.size(AR.falcon.toFetch(environment: bare)) == "1.3 GB",
+          DownloadRunner.size(AR.falcon.toFetch(environment: bare)))
+    try? fm.createDirectory(at: home.appendingPathComponent("Models/doclayout-yolo.mlmodelc"),
+                            withIntermediateDirectories: true)
+    check("…and once the layout model is in place, the next reader's does not",
+          AR.paddle.toFetch(environment: bare) == [.runtime, .paddle] && AR.visionRegions.toFetch(environment: bare).isEmpty,
+          "\(AR.paddle.toFetch(environment: bare))")
+    let words = AR.confirmation(.falcon, [.runtime, .falcon, .layout])
+    check("the confirmation names the total and each part of it",
+          words.hasPrefix("This downloads 1.3 GB") && words.contains("the shared runtime (134 MB)")
+              && words.contains("Falcon-OCR (1.1 GB)") && words.contains("the layout model (65 MB)"), words)
+
+    // Enabling, and what the page-kind dialog offers.
+    let d = Prefs.store
+    check("nothing is enabled by default", AR.enabled(d).isEmpty && Prefs.allKeys.contains(Prefs.accurateEnabled))
+    check("a reader not enabled is not offered for a kind of page, even downloaded",
+          AR.ready(.newspaper, memoryGB: 8, enabled: [], environment: bare) == [.vision])
+    AR.setEnabled(.visionRegions, true, d)
+    AR.setEnabled(.falcon, true, d)
+    check("…enabled and downloaded, it is",
+          AR.enabled(d) == [.visionRegions, .falcon]
+              && AR.ready(.newspaper, memoryGB: 8, enabled: AR.enabled(d), environment: bare) == [.vision, .visionRegions],
+          "\(AR.enabled(d)) \(AR.ready(.newspaper, memoryGB: 8, enabled: AR.enabled(d), environment: bare))")
+    check("…and one enabled but not downloaded is not offered",
+          !AR.ready(.other, memoryGB: 8, enabled: [.falcon, .paddle], environment: bare).contains(.falcon)
+              && AR.ready(.other, memoryGB: 8, enabled: [.falcon, .paddle], environment: bare) == [.vision])
+    check("the page-kind table says why a reader is not offered",
+          AR.vision.state(.other, memoryGB: 4, enabled: [], environment: bare) == "built in"
+              && AR.visionRegions.state(.newspaper, memoryGB: 8, enabled: [.visionRegions], environment: bare) == "ready"
+              && AR.visionRegions.state(.newspaper, memoryGB: 8, enabled: [], environment: bare) == "not enabled"
+              && AR.falcon.state(.other, memoryGB: 8, enabled: [.falcon], environment: bare) == "not downloaded"
+              && AR.falcon.state(.other, memoryGB: 3, enabled: [.falcon], environment: bare) == "needs more memory")
+    // A choice the models dialog has not enabled (an imported settings file) runs as Vision,
+    // and the panel says so rather than claiming it runs or stops.
+    d.set(true, forKey: Prefs.accurateMode)
+    d.set(AR.paddle.rawValue, forKey: Prefs.accurateReader)
+    d.set(8.0, forKey: Prefs.modelMemoryGB)
+    check("a reader chosen but not enabled is run as Vision",
+          Prefs.Snapshot.current(d).modelArrangement == .off
+              && AR.chosen(AR.paddle.rawValue, .other, memoryGB: 8, enabled: [.falcon]) == .vision
+              && AR.chosen(AR.paddle.rawValue, .other, memoryGB: 8, enabled: [.paddle]) == .paddle,
+          "\(Prefs.Snapshot.current(d).modelArrangement)")
+    check("…and the panel's warnings say which of three things holds a reader back",
+          AR.warning("paddleocr-vl", .other, "other pages", memoryGB: 8, enabled: [], environment: bare)
+                == "PaddleOCR-VL is not enabled in Models, so Vision reads other pages."
+              && AR.warning("falcon-ocr", .other, "other pages", memoryGB: 3, enabled: [.falcon], environment: bare)?
+                .hasPrefix("Falcon-OCR needs 3.9 GB, more than the memory allowed") == true
+              && AR.warning("falcon-ocr", .other, "other pages", memoryGB: 8, enabled: [.falcon], environment: bare)?
+                .contains("is not downloaded") == true
+              && AR.warning("vision-regions", .newspaper, "newspapers", memoryGB: 8, enabled: [.visionRegions],
+                            environment: bare) == nil
+              && AR.warning("vision", .other, "other pages", memoryGB: 8, enabled: [], environment: bare) == nil)
+    d.set(AR.visionRegions.rawValue, forKey: Prefs.accurateNewspaperReader)
+    d.set(AR.falcon.rawValue, forKey: Prefs.accurateReader)
+    AR.setEnabled(.visionRegions, false, d)
+    check("disabling a reader puts the pages that had it back to Vision, and leaves the rest",
+          d.string(forKey: Prefs.accurateNewspaperReader) == AR.vision.rawValue
+              && d.string(forKey: Prefs.accurateReader) == AR.falcon.rawValue && AR.enabled(d) == [.falcon],
+          "\(d.string(forKey: Prefs.accurateNewspaperReader) ?? "nil") \(AR.enabled(d))")
+
+    // The panel: one place starts a download, inside the confirmation, and the page-kind
+    // picker is built from the ready readers. The picker that downloaded on choosing is gone.
+    let panel = (try? String(contentsOfFile: "Sources/SettingsView.swift", encoding: .utf8)) ?? ""
+    let starts = panel.components(separatedBy: "downloads.start(").count - 1
+    let alert = panel.range(of: ".alert(confirming").map { a in
+        panel[a.upperBound...].range(of: "} message:").map { panel[a.upperBound..<$0.lowerBound] } } ?? nil
+    check("the settings start a download in one place only, the models dialog's confirmation",
+          starts == 1 && alert?.contains("downloads.start(reader.toFetch())") == true
+              && !panel.contains("ModelDownloads.needed("),
+          panel.isEmpty ? "could not read SettingsView.swift" : "\(starts) calls")
+    check("…and the page-kind picker offers the ready readers",
+          panel.contains("ForEach(ready, id: \\.self) { Text($0.name).tag($0.rawValue) }")
+              && panel.contains("AccurateModelsDialog()") && panel.contains("AccuratePageKindsDialog()"))
+    resetPrefs()
+    try? fm.removeItem(at: home)
 }
 }  // end of section
 

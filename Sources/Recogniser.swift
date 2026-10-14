@@ -5174,7 +5174,8 @@ enum ModelGuard {
 /// size filter in `reader-regions.sh`, step for step: the regions are the ones `ocr-compare-run`
 /// was measured on. The model is the one-to-one head converted from the published PyTorch
 /// weights (`ops/ocrlab/convert-layout.py`); its boxes and scores match the lab's ONNX
-/// build's to 0.0002 px and 1e-5. Its weights are AGPL-3.0, so it is downloaded, not bundled.
+/// build's to 0.0002 px and 1e-5. Its weights are Apache-2.0 (only DocLayout-YOLO's code, which the
+/// app neither ships nor runs, is AGPL-3.0); it is downloaded, not bundled, to keep the app small.
 enum LayoutModel {
     static let labels = ["title", "plain text", "abandon", "figure", "figure_caption", "table",
                          "table_caption", "table_footnote", "isolate_formula", "formula_caption"]

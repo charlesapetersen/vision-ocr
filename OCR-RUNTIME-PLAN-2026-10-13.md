@@ -90,7 +90,7 @@ Options considered and rejected:
 
 Vision on regions is the newspaper choice for a user who downloads no model, so DocLayout-YOLO cannot depend on the
 Python runtime. It is converted to Core ML once, on our side (`ops/ocrlab/convert-layout.py`; 72 MB at 32 bits,
-measured; done in ie-layout). Its weights are AGPL-3.0, so it is downloaded like the models, not put in the app. The helper runs it with
+measured; done in ie-layout). Its weights are Apache-2.0 (the DocLayout-YOLO code is AGPL-3.0, and is not shipped); it is downloaded like the models, not put in the app. The helper runs it with
 Core ML and does the lab's pre- and post-processing in Swift: the letterbox to 1,024 px on grey 114
 (`layout-regions.py`), the box decoding, and `dedupe-regions.py`'s merge. The test is that the Swift path gives the
 lab's regions on the sample pages, and that Vision on regions reproduces its `OCR-COMPARE-2026-10-13.tsv` figures.

@@ -362,4 +362,70 @@ extension Prefs.AccurateReader {
                  environment: [String: String] = ProcessInfo.processInfo.environment) -> [String] {
         needs(kind).filter { !$0.installed(environment) }.map(\.name)
     }
+
+    /// The model readers the models dialog lists: every reader that needs a download.
+    static var downloadable: [Prefs.AccurateReader] { allCases.filter { !$0.allNeeds.isEmpty } }
+
+    /// What it needs for every kind of page it is offered on, in the order they are fetched: the
+    /// models dialog downloads a reader whole, so a page-kind choice never needs another download.
+    var allNeeds: [ModelDownloads.Item] {
+        var out: [ModelDownloads.Item] = []
+        for kind in [Recogniser.PageKind.other, .newspaper] where figures(kind) != nil {
+            for item in needs(kind) where !out.contains(item) { out.append(item) }
+        }
+        return out
+    }
+
+    /// What the models dialog's confirmation fetches for it: what it needs and lacks. The shared
+    /// runtime and layout model are counted only while they are not installed, so the reader
+    /// downloaded first carries them and the next does not.
+    func toFetch(environment: [String: String] = ProcessInfo.processInfo.environment) -> [ModelDownloads.Item] {
+        allNeeds.filter { !$0.installed(environment) }
+    }
+
+    /// The readers a kind of page may be given in the page-kind dialog: Vision, and each reader
+    /// that fits under the memory slider, is enabled and has everything it needs for `kind`.
+    static func ready(_ kind: Recogniser.PageKind, memoryGB: Double, enabled: Set<Prefs.AccurateReader>,
+                      environment: [String: String] = ProcessInfo.processInfo.environment) -> [Prefs.AccurateReader] {
+        offered(kind, memoryGB: memoryGB).filter {
+            $0 == .vision || (enabled.contains($0) && $0.missing(kind, environment: environment).isEmpty)
+        }
+    }
+
+    /// Its state for `kind` on this Mac, in the page-kind dialog's words.
+    func state(_ kind: Recogniser.PageKind, memoryGB: Double, enabled: Set<Prefs.AccurateReader>,
+               environment: [String: String] = ProcessInfo.processInfo.environment) -> String {
+        if self == .vision { return "built in" }
+        if let need = figures(kind)?.memoryGB, need > memoryGB { return "needs more memory" }
+        if !missing(kind, environment: environment).isEmpty { return "not downloaded" }
+        return enabled.contains(self) ? "ready" : "not enabled"
+    }
+
+    /// Why `kind`'s pages are not read by the reader stored for them, `raw`, or nil when they
+    /// are: it needs more memory than allowed or is not enabled, and Vision reads them; or it is
+    /// enabled but not downloaded, and a file holding them stops with a message
+    /// (`ModelRuntime.command`).
+    static func warning(_ raw: String, _ kind: Recogniser.PageKind, _ title: String, memoryGB: Double,
+                        enabled: Set<Prefs.AccurateReader>,
+                        environment: [String: String] = ProcessInfo.processInfo.environment) -> String? {
+        guard let stored = Prefs.AccurateReader(rawValue: raw), stored != .vision,
+              let need = stored.figures(kind)?.memoryGB else { return nil }
+        if need > memoryGB {
+            return "\(stored.name) needs \(String(format: "%.1f", need)) GB, more than the memory allowed, "
+                + "so Vision reads \(title)."
+        }
+        if !enabled.contains(stored) {
+            return "\(stored.name) is not enabled in Models, so Vision reads \(title)."
+        }
+        guard !stored.missing(kind, environment: environment).isEmpty else { return nil }
+        return "\(stored.name) is chosen for \(title) but is not downloaded; download it in Models, or choose "
+            + "another reader. Until then, a file holding these pages stops with a message rather than being read."
+    }
+
+    /// The confirmation's sentence: the total and what makes it up.
+    static func confirmation(_ reader: Prefs.AccurateReader, _ items: [ModelDownloads.Item]) -> String {
+        "This downloads \(DownloadRunner.size(items)) from the internet: "
+            + items.map { "\($0.name) (\(DownloadRunner.size([$0])))" }.joined(separator: ", ")
+            + ". Once it is in place, \(reader.name) can be chosen for a kind of page."
+    }
 }

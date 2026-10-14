@@ -395,6 +395,10 @@ enum Prefs {
     static let accurateMode = "accurateMode"
     static let accurateReader = "accurateReader"
     static let accurateNewspaperReader = "accurateNewspaperReader"
+    /// The model readers the user has downloaded and enabled in the models dialog
+    /// (`ocr-model-dialogs`), as comma-separated `AccurateReader` raw values. Only these, once
+    /// downloaded, are offered for a kind of page (`AccurateReader.ready`).
+    static let accurateEnabled = "accurateEnabledReaders"
 
     /// The readers the accurate mode offers, with the figures the settings show beside them:
     /// `OCR-COMPARE-2026-10-13.tsv`'s rows for the arrangements the owner approved
@@ -516,10 +520,49 @@ enum Prefs {
         }
 
         /// The stored choice as it is run: Vision when it is unset, unknown, not offered on
-        /// `kind`, or no longer fits under the slider.
-        static func chosen(_ raw: String?, _ kind: Recogniser.PageKind, memoryGB: Double) -> AccurateReader {
+        /// `kind`, no longer fits under the slider, or, given `enabled`, is a model reader not
+        /// enabled in the models dialog.
+        static func chosen(_ raw: String?, _ kind: Recogniser.PageKind, memoryGB: Double,
+                           enabled: Set<AccurateReader>? = nil) -> AccurateReader {
             AccurateReader(rawValue: raw ?? "").flatMap { offered(kind, memoryGB: memoryGB).contains($0) ? $0 : nil }
+                .flatMap { $0 == .vision || enabled?.contains($0) != false ? $0 : nil }
                 ?? .vision
+        }
+
+        /// What it reads well, for the models dialog: from `figures`, in words.
+        var readsWell: String {
+            switch self {
+            case .vision: return "Built in; fast on every kind of page."
+            case .visionRegions: return "Newspapers: Vision reading each block of the layout on its own."
+            case .paddle: return "Print and newspapers, at under half Falcon-OCR's memory."
+            case .falcon: return "The fewest words wrong or missing, on print and on newspapers."
+            }
+        }
+
+        /// The most memory it needs on any kind of page it is offered on, in GB.
+        var memoryNeedGB: Double {
+            [Recogniser.PageKind.newspaper, .other].compactMap { figures($0)?.memoryGB }.max() ?? 0
+        }
+
+        /// The readers enabled in the models dialog, read from `d`.
+        static func enabled(_ d: UserDefaults) -> Set<AccurateReader> {
+            enabled(raw: d.string(forKey: Prefs.accurateEnabled) ?? "")
+        }
+
+        static func enabled(raw: String) -> Set<AccurateReader> {
+            Set(raw.split(separator: ",").compactMap { AccurateReader(rawValue: String($0)) })
+        }
+
+        /// Enables or disables `reader`. Disabling it puts each kind of page that had it back to
+        /// Vision, as the memory slider does with a reader it stops allowing.
+        static func setEnabled(_ reader: AccurateReader, _ on: Bool, _ d: UserDefaults) {
+            var set = enabled(d)
+            if on { set.insert(reader) } else { set.remove(reader) }
+            d.set(allCases.filter(set.contains).map(\.rawValue).joined(separator: ","), forKey: Prefs.accurateEnabled)
+            guard !on else { return }
+            for key in [Prefs.accurateReader, Prefs.accurateNewspaperReader] where d.string(forKey: key) == reader.rawValue {
+                d.set(AccurateReader.vision.rawValue, forKey: key)
+            }
         }
     }
 
@@ -692,13 +735,14 @@ enum Prefs {
         }
 
         /// The accurate mode's choices in place of the lab's model keys: each kind's reader as
-        /// `AccurateReader.chosen` resolves it, newspapers always set apart so that they never
-        /// take the print reader's arrangement.
+        /// `AccurateReader.chosen` resolves it, a reader not enabled being Vision, newspapers
+        /// always set apart so that they never take the print reader's arrangement.
         mutating func applyAccurateMode(_ d: UserDefaults) {
-            let other = AccurateReader.chosen(d.string(forKey: Prefs.accurateReader), .other, memoryGB: modelMemoryGB)
-                .route(.other)
+            let enabled = AccurateReader.enabled(d)
+            let other = AccurateReader.chosen(d.string(forKey: Prefs.accurateReader), .other, memoryGB: modelMemoryGB,
+                                              enabled: enabled).route(.other)
             let news = AccurateReader.chosen(d.string(forKey: Prefs.accurateNewspaperReader), .newspaper,
-                                             memoryGB: modelMemoryGB).route(.newspaper)
+                                             memoryGB: modelMemoryGB, enabled: enabled).route(.newspaper)
             modelArrangement = other.arrangement
             modelReader = other.reader
             newspaperModelArrangement = news.arrangement
@@ -720,7 +764,7 @@ enum Prefs {
         joinHyphenated, preserveAnnotations, writeRunReport, concurrency,
         checkForUpdates, skippedVersion, lastUpdateCheck, modelArrangement, modelReader,
         newspaperModelArrangement, newspaperModelReader, modelMemoryGB,
-        accurateMode, accurateReader, accurateNewspaperReader, accurateTiming,
+        accurateMode, accurateReader, accurateNewspaperReader, accurateEnabled, accurateTiming,
     ]
 
     /// Set once the pre-rename settings have been brought across. Deliberately
@@ -861,6 +905,7 @@ enum Prefs {
             accurateMode: false,
             accurateReader: AccurateReader.vision.rawValue,
             accurateNewspaperReader: AccurateReader.vision.rawValue,
+            accurateEnabled: "",
 
             // On by default. The cost is a few kilobytes of text per batch in
             // the directory macOS already keeps logs in; the benefit is that a

@@ -1642,7 +1642,7 @@ say so in the commit.
             `DownloadRunner` fetched the runtime and the layout model from `models-1` and PaddleOCR-VL from the
             Hub into an empty home, pins matched, and a PaddleOCR-VL newspaper timing leg read without a fallback
             (`BUGS.md` C57, "The release, checked"). No `Sources/` change since 2b33b23, so ux-regression holds.
-- [ ] **ocr-model-dialogs** — download and enable a reader in one dialog, and choose which kind of page uses
+- [x] **ocr-model-dialogs** — download and enable a reader in one dialog, and choose which kind of page uses
       it in another, so no download starts without a confirmation that states its size. (uses: build)
       (blocked-on: ocr-integrate-settings)
       Owner, 2026-10-14: a download of 1 GB or more must never surprise the user. Today choosing a reader for
@@ -1667,9 +1667,12 @@ say so in the commit.
       starts only from the models dialog's confirmation, which states the size; a reader not downloaded cannot
       be chosen for a kind of page; `ux-regression.sh` is no worse with the mode off; the suite passes.
       ESTIMATE: 1-2 sessions. BOUND: rule 10. (context: owner request 2026-10-14)
-      - [ ] **md-models** — the models dialog with the confirmation that states the size, and the licence
+      Done 2026-10-14, session 1: Settings' Accurate mode box opens Models (download and enable, confirmation
+      naming the total) and Choose by Kind of Page (only ready readers); a reader not enabled runs as Vision.
+      Checked on off-screen renders of the built views, ux-regression 0 worse over 43 pages, suite green.
+      - [x] **md-models** — the models dialog with the confirmation that states the size, and the licence
             wording fixed in the first three places above. (blocked-on: ocr-integrate-settings)
-      - [ ] **md-kinds** — the page-kind dialog offering only downloaded, enabled readers, and choosing one no
+      - [x] **md-kinds** — the page-kind dialog offering only downloaded, enabled readers, and choosing one no
             longer starts a download. (blocked-on: md-models)
 - [ ] **ocr-requeue** — make the rest of the queue build on the accurate mode. (uses: build,model:12)
       (blocked-on: ocr-integrate-settings) (effort: medium)

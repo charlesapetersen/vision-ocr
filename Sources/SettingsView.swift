@@ -72,6 +72,9 @@ struct SettingsView: View {
     @ObservedObject private var timingRun = TimingRunner.shared
     @ObservedObject private var downloads = DownloadRunner.shared
     private var timing: Prefs.AccurateTiming? { Prefs.AccurateTiming(accurateTimingData) }
+    @AppStorage(Prefs.accurateEnabled) private var accurateEnabled = ""
+    @State private var showModels = false
+    @State private var showPageKinds = false
 
     // Behaviour
     @AppStorage(Prefs.openWhenDone) private var openWhenDone = true
@@ -511,15 +514,16 @@ struct SettingsView: View {
 
     // MARK: - Accurate mode
 
-    /// The readers the owner approved for each kind of page (C57), off by default. The
-    /// pickers offer only what fits under the memory slider; a stored choice that stops
-    /// fitting is run as Vision (`Prefs.AccurateReader.chosen`), which the table shows.
+    /// The readers the owner approved for each kind of page (C57), off by default. A stored
+    /// choice that stops fitting under the memory slider is run as Vision
+    /// (`Prefs.AccurateReader.chosen`), which `PageKindWarnings` says.
     private var accurateSection: some View {
         Box("Accurate mode") {
             Toggle("Read with a stronger model (slower, needs a download)", isOn: $accurateMode)
                 .help("Runs a text-recognition model on this Mac alongside Vision for each "
-                      + "kind of page, chosen below. Nothing is downloaded or run while this "
-                      + "is off, and your documents never leave your Mac either way.")
+                      + "kind of page, chosen below. Nothing is downloaded until you confirm "
+                      + "a download in Models, nothing is run while this is off, and your "
+                      + "documents never leave your Mac either way.")
                 // Turning the mode off stops a download under way.
                 .onChange(of: accurateMode) { on in if !on { downloads.stop() } }
             if accurateMode {
@@ -549,40 +553,50 @@ struct SettingsView: View {
                             .fixedSize(horizontal: false, vertical: true)
                     }
                 }
-                downloadRow
-                accurateKind("Newspapers", .newspaper, $accurateNewspaperReader)
-                accurateKind("Other pages", .other, $accurateReader)
-                Text("Words wrong or missing are out of every 1,000, measured on 67 pages of "
-                     + "our own sample; your documents may differ. "
-                     + TimingRunner.speedNote(timing)
-                     + " The models share one more download, about "
-                     + "\(Prefs.AccurateReader.runtimeDownloadMB) MB.")
-                    .font(.caption2).foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
+                // Downloading and choosing are two dialogs (`ocr-model-dialogs`): a reader is
+                // fetched only from the models dialog's confirmation, which states its size, and the
+                // page-kind dialog offers only readers already downloaded and enabled.
+                Row("Readers", labelWidth) {
+                    Button("Models…") { showModels = true }
+                        .help("Download and enable the stronger readers. Each download asks first "
+                              + "and states its size.")
+                    Text(modelsSummary).font(.caption2).foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Spacer()
+                }
+                DownloadProgressRow(labelWidth: labelWidth)
+                Row("Page kinds", labelWidth) {
+                    Button("Choose by Kind of Page…") { showPageKinds = true }
+                        .help("Choose the reader for newspapers and for other pages, among Vision and "
+                              + "the readers downloaded and enabled.")
+                    Text(kindsSummary).font(.caption2).foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Spacer()
+                }
+                PageKindWarnings(labelWidth: labelWidth)
                 timingRow
             }
         }
+        .sheet(isPresented: $showModels) { AccurateModelsDialog() }
+        .sheet(isPresented: $showPageKinds) { AccuratePageKindsDialog() }
     }
 
-    /// The download under way, whichever reader it is for, or how the last one ended.
-    @ViewBuilder
-    private var downloadRow: some View {
-        if downloads.current != nil {
-            Row("Download", labelWidth) {
-                ProgressView(value: downloads.fraction).frame(width: 120)
-                Button("Stop download") { downloads.stop() }
-                Text(downloads.status ?? "")
-                    .font(.caption2).foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-                Spacer()
-            }
-        } else if let status = downloads.status, downloads.failed == nil {
-            Row("Download", labelWidth) {
-                Text(status).font(.caption2).foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-                Spacer()
-            }
-        }
+    /// Each model reader's state: not downloaded, downloaded, enabled.
+    private var modelsSummary: String {
+        let enabled = Prefs.AccurateReader.enabled(raw: accurateEnabled)
+        return Prefs.AccurateReader.downloadable.map { reader in
+            "\(reader.name) " + (!reader.toFetch().isEmpty ? "not downloaded"
+                                 : enabled.contains(reader) ? "enabled" : "downloaded, not enabled")
+        }.joined(separator: "; ") + "."
+    }
+
+    /// Which reader each kind of page is read with.
+    private var kindsSummary: String {
+        let enabled = Prefs.AccurateReader.enabled(raw: accurateEnabled)
+        let news = Prefs.AccurateReader.chosen(accurateNewspaperReader, .newspaper, memoryGB: modelMemoryGB,
+                                               enabled: enabled)
+        let other = Prefs.AccurateReader.chosen(accurateReader, .other, memoryGB: modelMemoryGB, enabled: enabled)
+        return "Newspapers: \(news.name). Other pages: \(other.name)."
     }
 
     /// "Measure on this Mac": times the readers that are ready here and replaces the speed
@@ -607,68 +621,6 @@ struct SettingsView: View {
                 .fixedSize(horizontal: false, vertical: true)
             Spacer()
         }
-    }
-
-    /// One kind of page: its reader picker and the table of what each offered reader costs.
-    @ViewBuilder
-    private func accurateKind(_ title: String, _ kind: Recogniser.PageKind,
-                              _ choice: Binding<String>) -> some View {
-        let fits = Prefs.AccurateReader.offered(kind, memoryGB: modelMemoryGB)
-        let chosen = Prefs.AccurateReader.chosen(choice.wrappedValue, kind, memoryGB: modelMemoryGB)
-        Row(title, labelWidth) {
-            // Choosing a reader is its first use: what it lacks starts downloading, its size shown.
-            Picker("", selection: Binding(get: { chosen.rawValue }, set: { raw in
-                choice.wrappedValue = raw
-                let reader = Prefs.AccurateReader.chosen(raw, kind, memoryGB: modelMemoryGB)
-                downloads.start(ModelDownloads.needed(accurateMode: accurateMode, reader, kind))
-            })) {
-                ForEach(fits, id: \.self) { Text($0.name).tag($0.rawValue) }
-            }
-            .labelsHidden().frame(width: 220)
-            .accessibilityLabel("Reader for \(title.lowercased())")
-            Spacer()
-        }
-        if let stored = Prefs.AccurateReader(rawValue: choice.wrappedValue), stored != chosen,
-           let need = stored.figures(kind)?.memoryGB {
-            Row("", labelWidth) {
-                Text("\(stored.name) needs \(String(format: "%.1f", need)) GB, more than the memory "
-                     + "allowed, so Vision reads these pages.")
-                    .font(.caption2).foregroundStyle(.orange)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-        }
-        let missing = ModelDownloads.needed(accurateMode: accurateMode, chosen, kind)
-        if !missing.isEmpty, !downloads.covers(missing) {
-            Row("", labelWidth) {
-                Button("Download \(DownloadRunner.size(missing))") { downloads.start(missing) }
-                Text([downloads.failure(missing),
-                      "Not downloaded yet: " + missing.map { "\($0.name) (\(DownloadRunner.size([$0])))" }
-                        .joined(separator: ", ") + ". Until it is, a file holding these pages stops with "
-                        + "a message rather than being read."].compactMap { $0 }.joined(separator: " "))
-                    .font(.caption2).foregroundStyle(.orange)
-                    .fixedSize(horizontal: false, vertical: true)
-                Spacer()
-            }
-        }
-        Grid(alignment: .leading, horizontalSpacing: 10, verticalSpacing: 2) {
-            GridRow {
-                ForEach(["Reader", "Wrong or missing", "Speed", "Memory", "Download"], id: \.self) {
-                    Text($0).bold()
-                }
-            }
-            ForEach(Prefs.AccurateReader.allCases.filter { $0.figures(kind) != nil }, id: \.self) { reader in
-                GridRow {
-                    Text(reader.name)
-                    ForEach(Array((reader.cells(kind, timing: timing) ?? []).enumerated()), id: \.offset) {
-                        Text($0.element)
-                    }
-                }
-                .foregroundStyle(fits.contains(reader) ? .primary : .tertiary)
-                .fontWeight(reader == chosen ? .semibold : .regular)
-            }
-        }
-        .font(.caption2)
-        .padding(.leading, labelWidth + 8)
     }
 
     // MARK: - Behaviour
@@ -909,6 +861,216 @@ private struct Box<Content: View>: View {
                 .background(RoundedRectangle(cornerRadius: 8)
                     .fill(Color.secondary.opacity(0.07)))
         }
+    }
+}
+
+/// The download under way, whichever reader it is for, or how the last one ended.
+private struct DownloadProgressRow: View {
+    let labelWidth: CGFloat
+    @ObservedObject private var downloads = DownloadRunner.shared
+
+    var body: some View {
+        if downloads.current != nil {
+            Row("Download", labelWidth) {
+                ProgressView(value: downloads.fraction).frame(width: 120)
+                Button("Stop Download") { downloads.stop() }
+                Text(downloads.status ?? "")
+                    .font(.caption2).foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                Spacer()
+            }
+        } else if let status = downloads.status {
+            Row("Download", labelWidth) {
+                Text(status).font(.caption2).foregroundStyle(downloads.failed == nil ? Color.secondary : .orange)
+                    .fixedSize(horizontal: false, vertical: true)
+                Spacer()
+            }
+        }
+    }
+}
+
+/// Why a kind of page is not read by the reader stored for it (`AccurateReader.warning`).
+private struct PageKindWarnings: View {
+    let labelWidth: CGFloat
+    @AppStorage(Prefs.accurateReader) private var accurateReader = Prefs.AccurateReader.vision.rawValue
+    @AppStorage(Prefs.accurateNewspaperReader) private var accurateNewspaperReader =
+        Prefs.AccurateReader.vision.rawValue
+    @AppStorage(Prefs.accurateEnabled) private var enabledRaw = ""
+    @AppStorage(Prefs.modelMemoryGB) private var modelMemoryGB = Prefs.defaultModelMemoryGB()
+    @ObservedObject private var downloads = DownloadRunner.shared
+
+    var body: some View {
+        ForEach(lines, id: \.self) { line in
+            Row("", labelWidth) {
+                Text(line).font(.caption2).foregroundStyle(.orange)
+                    .fixedSize(horizontal: false, vertical: true)
+                Spacer()
+            }
+        }
+    }
+
+    private var lines: [String] {
+        let enabled = Prefs.AccurateReader.enabled(raw: enabledRaw)
+        return [(Recogniser.PageKind.newspaper, "newspapers", accurateNewspaperReader),
+                (.other, "other pages", accurateReader)].compactMap { kind, title, raw in
+            Prefs.AccurateReader.warning(raw, kind, title, memoryGB: modelMemoryGB, enabled: enabled)
+        }
+    }
+}
+
+/// The two accurate-mode dialogs' one way out; not "Done", which the panel's own footer is named.
+private struct DialogDone: View {
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        HStack {
+            Spacer()
+            Button("Close") { dismiss() }.keyboardShortcut(.defaultAction)
+        }
+    }
+}
+
+/// The models dialog: each model reader with what it downloads, the memory it needs and what it
+/// reads well. A download starts only from the confirmation, which names the total size.
+struct AccurateModelsDialog: View {
+    @AppStorage(Prefs.accurateEnabled) private var enabledRaw = ""
+    @AppStorage(Prefs.modelMemoryGB) private var modelMemoryGB = Prefs.defaultModelMemoryGB()
+    @ObservedObject private var downloads = DownloadRunner.shared
+    @State private var confirming: Prefs.AccurateReader?
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Models").font(.headline)
+            Text("Each reader runs on this Mac, and your documents never leave it. Downloading one asks "
+                 + "first and states its size. The shared runtime (\(Prefs.AccurateReader.runtimeDownloadMB) MB) "
+                 + "and the layout model (\(Prefs.AccurateReader.layoutDownloadMB) MB) are downloaded once, "
+                 + "with the first reader that needs them, and counted in that reader's size.")
+                .font(.caption).foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+            Grid(alignment: .leading, horizontalSpacing: 12, verticalSpacing: 8) {
+                GridRow {
+                    ForEach(["Reader", "Download", "Memory", "Reads well", ""], id: \.self) { Text($0).bold() }
+                }
+                ForEach(Prefs.AccurateReader.downloadable, id: \.self) { reader in
+                    let fetch = reader.toFetch()
+                    GridRow {
+                        Text(reader.name)
+                        Text(fetch.isEmpty ? "downloaded" : DownloadRunner.size(fetch))
+                        Text(String(format: "%.1f GB", reader.memoryNeedGB))
+                            .foregroundStyle(reader.memoryNeedGB > modelMemoryGB ? Color.orange : .primary)
+                            .help(reader.memoryNeedGB > modelMemoryGB
+                                  ? "More than the \(Int(modelMemoryGB)) GB the memory setting allows." : "")
+                        Text(reader.readsWell).fixedSize(horizontal: false, vertical: true)
+                        action(reader, fetch)
+                    }
+                }
+            }
+            .font(.caption)
+            DownloadProgressRow(labelWidth: 70)
+            DialogDone()
+        }
+        .padding(16)
+        .frame(width: 660)
+        .alert(confirming.map { "Download \($0.name)?" } ?? "",
+               isPresented: Binding(get: { confirming != nil }, set: { if !$0 { confirming = nil } }),
+               presenting: confirming) { reader in
+            Button("Download \(DownloadRunner.size(reader.toFetch()))") {
+                Prefs.AccurateReader.setEnabled(reader, true, Prefs.store)
+                downloads.start(reader.toFetch())
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: { reader in
+            Text(Prefs.AccurateReader.confirmation(reader, reader.toFetch()))
+        }
+    }
+
+    @ViewBuilder
+    private func action(_ reader: Prefs.AccurateReader, _ fetch: [ModelDownloads.Item]) -> some View {
+        if !fetch.isEmpty, downloads.covers(fetch) {
+            Text("Downloading…").foregroundStyle(.secondary)
+        } else if fetch.isEmpty {
+            Toggle("Enabled", isOn: Binding(
+                get: { Prefs.AccurateReader.enabled(raw: enabledRaw).contains(reader) },
+                set: { Prefs.AccurateReader.setEnabled(reader, $0, Prefs.store) }))
+                .accessibilityLabel("Enable \(reader.name)")
+        } else {
+            Button("Download and Enable…") { confirming = reader }
+                .accessibilityLabel("Download and enable \(reader.name)")
+        }
+    }
+}
+
+/// The page-kind dialog: for each kind of page, a choice among Vision and the readers already
+/// downloaded and enabled, beside the table of what each costs. Choosing never downloads.
+struct AccuratePageKindsDialog: View {
+    @AppStorage(Prefs.accurateReader) private var accurateReader = Prefs.AccurateReader.vision.rawValue
+    @AppStorage(Prefs.accurateNewspaperReader) private var accurateNewspaperReader =
+        Prefs.AccurateReader.vision.rawValue
+    @AppStorage(Prefs.accurateEnabled) private var enabledRaw = ""
+    @AppStorage(Prefs.modelMemoryGB) private var modelMemoryGB = Prefs.defaultModelMemoryGB()
+    @AppStorage(Prefs.accurateTiming) private var accurateTimingData = Data()
+    @ObservedObject private var downloads = DownloadRunner.shared
+    private let labelWidth: CGFloat = 100
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Readers by Kind of Page").font(.headline)
+            kind("Newspapers", .newspaper, $accurateNewspaperReader)
+            kind("Other pages", .other, $accurateReader)
+            PageKindWarnings(labelWidth: labelWidth)
+            Text("Only Vision and the readers downloaded and enabled in Models are offered here; a reader "
+                 + "not downloaded and enabled is listed in grey. Words wrong or missing are out of every 1,000, measured "
+                 + "on 67 pages of our own sample; your documents may differ. "
+                 + TimingRunner.speedNote(Prefs.AccurateTiming(accurateTimingData)))
+                .font(.caption2).foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+            DialogDone()
+        }
+        .padding(16)
+        .frame(width: 720)
+    }
+
+    @ViewBuilder
+    private func kind(_ title: String, _ kind: Recogniser.PageKind, _ choice: Binding<String>) -> some View {
+        let enabled = Prefs.AccurateReader.enabled(raw: enabledRaw)
+        let ready = Prefs.AccurateReader.ready(kind, memoryGB: modelMemoryGB, enabled: enabled)
+        let chosen = Prefs.AccurateReader.chosen(choice.wrappedValue, kind, memoryGB: modelMemoryGB, enabled: enabled)
+        let timing = Prefs.AccurateTiming(accurateTimingData)
+        Row(title, labelWidth) {
+            // A stored choice that is no longer ready stays shown, marked, so the picker does not
+            // claim a reader that will not run; `PageKindWarnings` says what to do.
+            Picker("", selection: Binding(get: { chosen.rawValue }, set: { choice.wrappedValue = $0 })) {
+                ForEach(ready, id: \.self) { Text($0.name).tag($0.rawValue) }
+                if !ready.contains(chosen) {
+                    Text("\(chosen.name) (not downloaded)").tag(chosen.rawValue)
+                }
+            }
+            .labelsHidden().frame(width: 240)
+            .accessibilityLabel("Reader for \(title.lowercased())")
+            Spacer()
+        }
+        Grid(alignment: .leading, horizontalSpacing: 10, verticalSpacing: 2) {
+            GridRow {
+                ForEach(["Reader", "Wrong or missing", "Speed", "Memory", "Here"], id: \.self) {
+                    Text($0).bold()
+                }
+            }
+            // The last column is the reader's state on this Mac, not its download: the models
+            // dialog states that, counting the shared runtime and layout model this table cannot.
+            ForEach(Prefs.AccurateReader.allCases.filter { $0.figures(kind) != nil }, id: \.self) { reader in
+                GridRow {
+                    Text(reader.name)
+                    ForEach(Array((reader.cells(kind, timing: timing) ?? []).dropLast().enumerated()), id: \.offset) {
+                        Text($0.element)
+                    }
+                    Text(reader.state(kind, memoryGB: modelMemoryGB, enabled: enabled))
+                }
+                .foregroundStyle(ready.contains(reader) ? .primary : .tertiary)
+                .fontWeight(reader == chosen ? .semibold : .regular)
+            }
+        }
+        .font(.caption2)
+        .padding(.leading, labelWidth + 8)
     }
 }
 
