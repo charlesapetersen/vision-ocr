@@ -1964,6 +1964,68 @@ say so in the commit.
       Session 4: `mrcStencil`'s lift pinned by a check; round 1 spent, so moved behind the untried
       items. Round 2 is at max: judge C56's case for closing (Xin Qu's 2x 1.06 is PDFKit's stencil draw).
       (notes: ops/autonomous/notes/c56-heavy-type.md)
+- [ ] **photo-pdf-size** — make a phone photo of a typed page publish as a small PDF without losing legibility.
+      (uses: build)
+      THE PAGE (owner, 2026-10-14): `00187 — Baker.JPG`, a 1936x2592 phone photo of a typed 1950s letter with a
+      signature, uneven light and a cream background. It and the owner's outputs are in
+      `~/.local/state/visionocr-autonomous/owner-supplied/baker-00187/`. The owner finds the app's text far
+      better than ABBYY's, and the file far too large.
+      MEASURED 2026-10-14 (pdfimages, pdfinfo): the app's output is 830 KB with Vision, PaddleOCR-VL and
+      Falcon-OCR alike, so the reader does not matter. Each holds one 1936x2592 colour JPEG of 793 KB and a text
+      layer of about 37 KB. The owner's settings were rebuild on, `rebuildMode=auto`, JBIG2 on and
+      `photoDetail=smallest`, yet the page was not layered. ABBYY's file is 53 KB: a 1-bit JBIG2 text mask at
+      290 ppi (23 KB), a JPX background at 145 ppi (9.7 KB), a 72 ppi JPX foreground colour (1.9 KB) and a small
+      JPX picture (2.6 KB, likely the signature). The owner calls 53 KB "a little unreadable"; the target is
+      between the two. Second defect: the JPEG records 72 dpi, so the app's page is 1936x2592 pt (27x36
+      inches), where ABBYY's is 482x644 pt. That probably also feeds the routing, which reads resolution
+      from page size (`Flattener.wrapImage`).
+      WHAT TO DO. Find why the layered route was not taken for this page and fix it; give a camera image with
+      no real resolution a plausible page size (the session's call, stated: for example the size that puts
+      the text near a typed page's, or a letter-sized fit); then let the existing layered route compress it.
+      If the existing route cannot handle a photo's background (light falloff, paper tint), adjust it for
+      image inputs only and say what was changed.
+      DONE WHEN, on the published PDF read through PDFKit, with the mode off and with Falcon-OCR on: the page
+      prints at a plausible physical size; the file is under 250 KB at the default, at the step the owner picks
+      below; the words selectable are at least those of today's output (pdftotext: 463 Vision, 465 Falcon-OCR,
+      467 PaddleOCR-VL); a check goes red without the fix; `ux-regression.sh` is no worse; the suite passes.
+      Only one camera page is in hand, so say what other image inputs (testdocs or a photo the session makes)
+      the fix was also tried on. ESTIMATE: 2-3 sessions. BOUND: rule 10. (context: owner request 2026-10-14)
+      - [ ] **pps-route** — the cause found and fixed, the page size inferred, and the page layered. Record the
+            cause and the size before and after in `ops/autonomous/notes/photo-pdf-size.md`.
+      - [ ] **pps-ladder** — publish Baker at four or five compression steps from about 60 KB to about 300 KB,
+            write `PHOTO-SIZE-DECISION-<date>.md` with each step's bytes and a 2x PDFKit crop of the same
+            passage beside the source (include the signature and a line with small type), and recommend one.
+            (blocked-on: pps-route)
+      - [ ] **pps-owner-pick** — the owner picks the step. Tick it with the date and the owner's words.
+            (blocked-on: pps-ladder) [hold] needs: owner — legibility is the owner's judgement
+      - [ ] **pps-ship** — make the picked step the default for image inputs, and check DONE WHEN above.
+            (blocked-on: pps-owner-pick)
+- [ ] **settings-plain** — make Settings understandable to someone with no technical background, starting with
+      the Accurate mode box, and measure a reader's speed on its own once it is downloaded. (uses: build)
+      THE ASK (owner, 2026-10-14): refine the settings panel for a non-technical user, in particular the new
+      Accurate mode panel; and run the speed measurement automatically when the user downloads a new model.
+      TODAY (`Sources/SettingsView.swift` `accurateSection`, the Models and page-kind dialogs): the box exposes
+      a memory slider in GB, a models summary listing each reader's download state, a page-kinds summary, and a
+      "Measure on this Mac" button, with help text written for us. Names such as Falcon-OCR bf16, PaddleOCR-VL
+      4-bit, "regions", "align", the runtime and the layout model mean nothing to most users.
+      WHAT TO DO. Rewrite the Accurate mode box and its two dialogs so each control says, in everyday words,
+      what it does for the user's documents: which pages get better text, roughly how much slower, how much
+      disk and memory, and what happens if they do nothing. Keep the readers' names, but beside a plain
+      description. Lead with a sensible default so a user who changes nothing is well served. Then do the same
+      for the rest of Settings, lighter: labels and help text, not structure, unless a control is plainly
+      misplaced. Keep every behaviour; this is wording and layout, not new settings. A user-visible change goes
+      in `CHANGELOG.md` `## Unreleased`.
+      DONE WHEN: a verifying subagent reading off-screen renders of the built views, told to read as a
+      non-technical user, finds no term it cannot explain from the screen alone (list what it flagged and what
+      was done); the automatic timing works as below in the built app; the suite passes; no release.
+      ESTIMATE: 2 sessions. BOUND: rule 10. (context: owner request 2026-10-14)
+      - [ ] **sp-accurate** — the Accurate mode box, the Models dialog and the page-kind dialog rewritten in plain
+            words, checked on renders.
+      - [ ] **sp-auto-timing** — when a reader finishes downloading and is enabled, start the timing run for that
+            reader alone, once, without a click: wait while files are being read, show progress where the
+            "Measure on this Mac" row is, let Stop cancel it, and keep the button for re-running. A check goes red
+            without it. (blocked-on: sp-accurate)
+      - [ ] **sp-rest** — the other Settings boxes' labels and help text in plain words. (blocked-on: sp-accurate)
 
 ## Parked
 
