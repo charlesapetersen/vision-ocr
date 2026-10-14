@@ -1076,6 +1076,10 @@ enum Flattener {
             var dpiY = resolution(kCGImagePropertyDPIHeight)
             // A quarter turn swaps which axis each resolution describes.
             if [5, 6, 7, 8].contains(raw) { swap(&dpiX, &dpiY) }
+            if dpiX == 72, dpiY == 72, let fitted = cameraResolution(
+                width: image.width, height: image.height, properties: props) {
+                dpiX = fitted; dpiY = fitted
+            }
 
             return (image, CGRect(x: 0, y: 0,
                                   width: Double(image.width) * 72.0 / dpiX,
@@ -1106,6 +1110,31 @@ enum Flattener {
         }
         pdf.closePDF()
         return dest
+    }
+
+    /// The resolution to give a camera's photo of a page, or `nil` when the image
+    /// is not a camera's.
+    ///
+    /// photo-pdf-size. A camera records 72 dpi, which is no resolution at all, so
+    /// the owner's 1936x2592 phone photo of a typed letter became a 27x36 inch
+    /// page. A camera image is one whose TIFF dictionary names a Make or Model; a
+    /// scanner that names itself and declares a true 72 dpi is fitted too, which
+    /// changes its stated size and nothing else. The caller asks only when the
+    /// file declared 72 dpi or nothing. It is fitted
+    /// to a US Letter sheet in its own orientation, which puts Baker at 236 ppi
+    /// (592x792 pt; ABBYY assumed 290). Rejected: the paper's own size, which
+    /// needs its edge found in the photo, and A4, 3% larger on the long side, a
+    /// difference no reader would notice. Never below 72, so a small photo keeps
+    /// the size it had.
+    static func cameraResolution(width: Int, height: Int,
+                                 properties: [CFString: Any]?) -> Double? {
+        let tiff = properties?[kCGImagePropertyTIFFDictionary] as? [CFString: Any]
+        let named = [kCGImagePropertyTIFFMake, kCGImagePropertyTIFFModel].contains {
+            !((tiff?[$0] as? String) ?? "").trimmingCharacters(in: .whitespaces).isEmpty
+        }
+        guard named, width > 0, height > 0 else { return nil }
+        let short = Double(min(width, height)), long = Double(max(width, height))
+        return max(72, short / 8.5, long / 11)
     }
 
     /// Opens a PDF, unlocking it if a password is supplied. Returns nil when the

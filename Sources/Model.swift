@@ -1903,9 +1903,17 @@ final class OCRModel: ObservableObject {
         // An image input is wrapped as a one-page PDF first; everything below is
         // PDF-shaped. Without this, dropping a PNG failed with a message that
         // blamed the user's file.
+        //
+        // Into a directory of its own (photo-pdf-size). Wrapped into `scratch` it was
+        // `scratch/<name>.pdf`, the very path the rebuild below writes to, so the
+        // rebuild truncated its own source as it wrote it, and every image input
+        // reported that its page numbers and title could not be carried across.
         var file = inputFile
         if PDFDocument(url: file) == nil {
-            guard let wrapped = Flattener.wrapImage(file, into: scratch) else {
+            let input = work.appendingPathComponent("input")
+            guard (try? FileManager.default.createDirectory(
+                      at: input, withIntermediateDirectories: true)) != nil,
+                  let wrapped = Flattener.wrapImage(file, into: input) else {
                 report(.failed, "Could not read that file as a PDF or an image.")
                 return
             }
@@ -2472,8 +2480,11 @@ final class OCRModel: ObservableObject {
                 // C47. The source with the text taken off the pages that keep their
                 // own drawing, which the splice below takes them from.
                 let textless = work.appendingPathComponent("textless.pdf")
+                // `file`, not `inputFile`, for the annotation transplant's reason
+                // below: PDFKit cannot open a JPEG, so a dropped image skipped this
+                // whole loop and kept its full-size JPEG (photo-pdf-size: 831 KB).
                 if let jb = JBIG2.encoder,
-                   let source = Flattener.open(inputFile, password: password) {
+                   let source = Flattener.open(file, password: password) {
                     var relayered = 0, savedBytes = 0
                     // What layering saved on each page, for C47 to take back.
                     var layeredSaving: [Int: Int] = [:]

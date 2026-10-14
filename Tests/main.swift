@@ -16821,6 +16821,140 @@ do {
     } else {
         check("every sheet of a multi-page TIFF becomes a page", false, "wrapImage nil")
     }
+
+    // photo-pdf-size. A camera records 72 dpi, which made the owner's 1936x2592
+    // phone photo of a letter a 27x36 inch page. A camera's image is fitted to a
+    // Letter sheet instead; anything else keeps the size it declares.
+    let tiff = { (make: String) -> [CFString: Any] in
+        [kCGImagePropertyTIFFDictionary: [kCGImagePropertyTIFFMake: make]] }
+    let baker = Flattener.cameraResolution(width: 1936, height: 2592, properties: tiff("Apple"))
+    check("a camera's 1936x2592 photo is fitted to a Letter sheet, at 2592/11 ppi",
+          baker.map { abs($0 - 2592.0 / 11) < 0.01 } == true, "\(baker ?? -1)")
+    let wide = Flattener.cameraResolution(width: 2592, height: 1936, properties: tiff("Apple"))
+    check("…and a landscape one in its own orientation", wide == baker, "\(wide ?? -1)")
+    check("…and an image no camera names is not a camera's",
+          Flattener.cameraResolution(width: 1936, height: 2592, properties: tiff(" ")) == nil
+              && Flattener.cameraResolution(width: 1936, height: 2592, properties: [:]) == nil)
+    check("…and a small photo is never made larger than 72 dpi makes it",
+          Flattener.cameraResolution(width: 400, height: 300, properties: tiff("Apple")) == 72)
+    let camera = dir.appendingPathComponent("camera.jpg")
+    if let rep = NSBitmapImageRep(
+        bitmapDataPlanes: nil, pixelsWide: 1936, pixelsHigh: 2592,
+        bitsPerSample: 8, samplesPerPixel: 3, hasAlpha: false, isPlanar: false,
+        colorSpaceName: .deviceRGB, bytesPerRow: 0, bitsPerPixel: 0),
+       let cg = rep.cgImage,
+       let dest = CGImageDestinationCreateWithURL(camera as CFURL, "public.jpeg" as CFString, 1, nil) {
+        var props = tiff("Apple")
+        props[kCGImagePropertyDPIWidth] = 72.0
+        props[kCGImagePropertyDPIHeight] = 72.0
+        CGImageDestinationAddImage(dest, cg, props as CFDictionary)
+        _ = CGImageDestinationFinalize(dest)
+    }
+    if let wrapped = Flattener.wrapImage(camera, into: dir),
+       let box = PDFDocument(url: wrapped)?.page(at: 0)?.bounds(for: .mediaBox) {
+        check("a camera's photo of a page wraps as a Letter-high page, not a 27x36 inch one",
+              abs(box.height - 792) < 1 && abs(box.width - 1936 * 72 / (2592.0 / 11)) < 1,
+              "\(Int(box.width))x\(Int(box.height)) pt, wanted 592x792")
+    } else {
+        check("a camera's photo of a page wraps as a Letter-high page, not a 27x36 inch one",
+              false, "wrapImage nil")
+    }
+    resetPrefs()
+}
+}  // end of section
+
+// MARK: - A camera photo of a typed page, end to end
+
+// photo-pdf-size. The owner's phone photo of a typed letter published at 831 KB, one
+// full-size colour JPEG, with rebuild, JBIG2 and the smallest photo detail all on. The
+// layering pass opened the user's own file, a JPEG PDFKit cannot read, and so skipped
+// every image input. And the image was wrapped to the very path the rebuild writes, so
+// the rebuild truncated its own source and every image input said its page numbers and
+// title could not be carried across. With both fixed the page published at 78 KB.
+
+section("a camera photo of a typed page is sized and layered (photo-pdf-size)") {
+
+do {
+    resetPrefs()
+    d.set(true, forKey: Prefs.useJBIG2)
+    let dir = tmp.appendingPathComponent("photo-page-\(UUID().uuidString)")
+    try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: dir) }
+
+    // Typed lines on cream paper lit unevenly, as a phone sees a letter on a desk.
+    let w = 1200, h = 1600
+    let photo = dir.appendingPathComponent("letter.jpg")
+    if let rep = NSBitmapImageRep(
+        bitmapDataPlanes: nil, pixelsWide: w, pixelsHigh: h,
+        bitsPerSample: 8, samplesPerPixel: 4, hasAlpha: true, isPlanar: false,
+        colorSpaceName: .deviceRGB, bytesPerRow: 0, bitsPerPixel: 0),
+       let ctx = NSGraphicsContext(bitmapImageRep: rep) {
+        NSGraphicsContext.saveGraphicsState(); NSGraphicsContext.current = ctx
+        NSGradient(starting: NSColor(red: 0.93, green: 0.88, blue: 0.74, alpha: 1),
+                   ending: NSColor(red: 0.46, green: 0.42, blue: 0.33, alpha: 1))?
+            .draw(in: NSRect(x: 0, y: 0, width: w, height: h), angle: -60)
+        let attrs: [NSAttributedString.Key: Any] = [
+            .font: NSFont(name: "Courier", size: 30) ?? NSFont.systemFont(ofSize: 30),
+            .foregroundColor: NSColor(white: 0.12, alpha: 1)]
+        for i in 0..<24 {
+            ("line \(i + 1) of a typed letter about executive salaries" as NSString)
+                .draw(at: NSPoint(x: 90, y: CGFloat(h - 160 - i * 52)), withAttributes: attrs)
+        }
+        // A signature in blue ink, and a camera's grain over everything.
+        let pen = NSBezierPath()
+        pen.move(to: NSPoint(x: 600, y: 180))
+        for k in 1...12 {
+            pen.curve(to: NSPoint(x: 600 + k * 40, y: 180 + (k % 2 == 0 ? -30 : 50)),
+                      controlPoint1: NSPoint(x: 590 + k * 40, y: 260),
+                      controlPoint2: NSPoint(x: 610 + k * 40, y: 120))
+        }
+        pen.lineWidth = 5
+        NSColor(red: 0.15, green: 0.2, blue: 0.6, alpha: 1).setStroke()
+        pen.stroke()
+        NSGraphicsContext.current?.flushGraphics(); NSGraphicsContext.restoreGraphicsState()
+        if let px = rep.bitmapData {
+            var seed: UInt32 = 12345
+            for i in 0..<(rep.bytesPerRow * h) where i % 4 != 3 {
+                seed = seed &* 1_103_515_245 &+ 12345
+                let v = Int(px[i]) + Int((seed >> 16) % 25) - 12
+                px[i] = UInt8(max(0, min(255, v)))
+            }
+        }
+        if let cg = rep.cgImage,
+           let dest = CGImageDestinationCreateWithURL(photo as CFURL, "public.jpeg" as CFString, 1, nil) {
+            let props: [CFString: Any] = [
+                kCGImagePropertyDPIWidth: 72.0, kCGImagePropertyDPIHeight: 72.0,
+                kCGImagePropertyTIFFDictionary: [kCGImagePropertyTIFFMake: "Apple",
+                                                 kCGImagePropertyTIFFModel: "iPad mini 2"],
+                kCGImageDestinationLossyCompressionQuality: 0.9]
+            CGImageDestinationAddImage(dest, cg, props as CFDictionary)
+            _ = CGImageDestinationFinalize(dest)
+        }
+    }
+    let output = dir.appendingPathComponent("letter.ocr.pdf")
+    var outcome: Runner.Result.Outcome?
+    var message = ""
+    OCRModel.makeSearchablePDF(
+        file: photo, output: output, rebuild: true, rebuildMode: .auto, password: nil,
+        control: RunControl(), progress: { _, _ in },
+        report: { o, m in outcome = o; message = m })
+    check("the photo publishes", outcome == .succeeded, message)
+    let box = PDFDocument(url: output)?.page(at: 0)?.bounds(for: .mediaBox) ?? .zero
+    check("…on a Letter-high page, not a 17x22 inch one",
+          abs(box.height - 792) < 1, "\(Int(box.width))x\(Int(box.height)) pt")
+    // Layered: the type is a JBIG2 stencil over a small background. Unfixed, the page
+    // kept the one full-size colour JPEG and the file held no JBIG2 stream at all.
+    let raw = (try? Data(contentsOf: output)).map { String(decoding: $0, as: UTF8.self) } ?? ""
+    check("…layered, its type a JBIG2 stencil over the photo's paper",
+          raw.contains("/JBIG2Decode") && raw.contains("/DCTDecode"),
+          "JBIG2 \(raw.contains("/JBIG2Decode")), JPEG \(raw.contains("/DCTDecode"))")
+    let inBytes = OCRModel.fileSize(photo), outBytes = OCRModel.fileSize(output)
+    check("…and smaller than the photo it came from",
+          outBytes > 0 && outBytes < inBytes, "\(outBytes) B from \(inBytes) B")
+    check("…with its text layer", embeddedText(of: output).contains("typed letter"),
+          embeddedText(of: output).prefix(60).description)
+    check("…and no false word that its page numbers and title were lost",
+          !message.contains("could not be carried across"), message)
     resetPrefs()
 }
 }  // end of section

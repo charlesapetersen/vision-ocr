@@ -14,6 +14,10 @@ an older entry mentions "Window ▸ Vision Reader Window", the menu item is now
 
 ## Unreleased
 
+- A dropped photo or other image of a page is now compressed like a scanned page. A phone photo of a typed
+  letter came out at 830 KB as one full-size picture and now comes out at about 78 KB with the same text.
+  A camera's photo also gets a Letter-sized page instead of a 27x36 inch one, and image files no longer
+  report that their page numbers and title could not be carried across (photo-pdf-size).
 - A drag down one column of a scanned magazine or journal page stays in that column where it used to jump
   into the next one partway down: the text layer now sets each column's lines at one line pitch, which is
   what Preview's reading order follows (C52, `Marth_1982` p2).
