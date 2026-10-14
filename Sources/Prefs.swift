@@ -364,6 +364,18 @@ enum Prefs {
     /// `x0 y0 x1 y1 label text`, tab-separated, the four as fractions of the image with a
     /// top-left origin (`Recogniser.modelBlocks`).
     static let modelReader = "modelReader"
+    /// The most memory a model reader may hold, in GB, before `ModelGuard` stops it and the
+    /// page keeps Vision's reading (C57, ie-guard): the memory slider `ocr-integrate-settings`
+    /// gives a control. Measured as the reader's whole process group's physical footprint,
+    /// which, unlike its resident size, counts MLX's Metal buffers.
+    static let modelMemoryGB = "modelMemoryGB"
+
+    /// 5 GB on a Mac with 16 GB or more (owner, 2026-10-12); below that the same share of
+    /// what the Mac has, 2.5 GB on 8 GB. Falcon-OCR's whole-page reading peaked at 3.4 GB.
+    static func defaultModelMemoryGB(physicalBytes: UInt64 = ProcessInfo.processInfo.physicalMemory) -> Double {
+        let gb = Double(physicalBytes) / 1_073_741_824
+        return gb >= 16 ? 5 : (gb * 5 / 16 * 10).rounded() / 10
+    }
 
     /// `modelArrangement`'s values. `align` keeps Vision's lines, boxes and order and
     /// takes their words from one whole-page reading by the model
@@ -443,6 +455,7 @@ enum Prefs {
         var minTextHeight: Double
         var modelArrangement: ModelArrangement = .off
         var modelReader: String = ""
+        var modelMemoryGB: Double = Prefs.defaultModelMemoryGB()
 
         /// Reads the live settings. Call on the main actor, once per batch.
         static func current(_ d: UserDefaults = Prefs.store) -> Snapshot {
@@ -468,7 +481,10 @@ enum Prefs {
                 minTextHeight: d.double(forKey: Prefs.minTextHeight),
                 modelArrangement: ModelArrangement(
                     rawValue: d.string(forKey: Prefs.modelArrangement) ?? "") ?? .off,
-                modelReader: d.string(forKey: Prefs.modelReader) ?? "")
+                modelReader: d.string(forKey: Prefs.modelReader) ?? "",
+                // Unset reads 0, which would stop every reader at its first sample.
+                modelMemoryGB: d.double(forKey: Prefs.modelMemoryGB) > 0
+                    ? d.double(forKey: Prefs.modelMemoryGB) : Prefs.defaultModelMemoryGB())
         }
     }
 
@@ -485,6 +501,7 @@ enum Prefs {
         warnDigitalText, rebuildImages, rebuildMode, useJBIG2, photoDetail,
         joinHyphenated, preserveAnnotations, writeRunReport, concurrency,
         checkForUpdates, skippedVersion, lastUpdateCheck, modelArrangement, modelReader,
+        modelMemoryGB,
     ]
 
     /// Set once the pre-rename settings have been brought across. Deliberately
@@ -618,6 +635,7 @@ enum Prefs {
 
             modelArrangement: ModelArrangement.off.rawValue,
             modelReader: "",
+            modelMemoryGB: defaultModelMemoryGB(),
 
             // On by default. The cost is a few kilobytes of text per batch in
             // the directory macOS already keeps logs in; the benefit is that a

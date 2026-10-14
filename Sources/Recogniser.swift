@@ -52,12 +52,21 @@ enum Recogniser {
         case unreadablePage(Int)
         case unreadableRegions(String)
         case modelReader(String)
+        /// What a model reader needs and does not have (the runtime, a download, an approved
+        /// arrangement): every page would fail the same way, so it fails the file.
+        case modelSetup(String)
+        /// `ModelGuard` stopped the reader, or would not start it.
+        case modelMemory(String)
+        /// The reader ran past `readerSeconds`.
+        case modelTimeout(String)
 
         var errorDescription: String? {
             switch self {
             case .cancelled: return "Cancelled."
-            case .modelReader(let why):
+            case .modelReader(let why), .modelSetup(let why), .modelTimeout(let why):
                 return "The model reader set for this run could not read a page: \(why)."
+            case .modelMemory(let why):
+                return "The model reader set for this run was stopped to keep the Mac's memory free: \(why)."
             case .unreadableRegions(let what):
                 return "The columns of a pasted-up page could not be read (\(what))."
             case .unreadablePage(let n):
@@ -135,7 +144,9 @@ enum Recogniser {
         isCancelled: () -> Bool = { false },
         onPage: (Int, Int) -> Void = { _, _ in },
         register: (Process) -> Void = { _ in },
-        onFallback: (String) -> Void = { _ in }
+        onFallback: (String) -> Void = { _ in },
+        /// A page number and why a shipped model reader left that page Vision's reading.
+        onModelFallback: (Int, String) -> Void = { _, _ in }
     ) throws -> [Int: [SearchableWriter.Observation]] {
         var byPage: [Int: [SearchableWriter.Observation]] = [:]
 
@@ -174,7 +185,8 @@ enum Recogniser {
                     let recognised = try recogniseViaHelper(
                         images: work.map(\.image), settings: settings,
                         helper: helper, isCancelled: isCancelled, onPage: onPage,
-                        register: register)
+                        register: register,
+                        onModelFallback: { offset, note in onModelFallback(work[offset - 1].page, note) })
                     // Keyed back onto page numbers. `if let` and not `?? []`: the
                     // helper promises an entry for every image it was given and
                     // throws otherwise, so a missing one is a broken promise, and
@@ -198,6 +210,7 @@ enum Recogniser {
                                + "the app instead, which is slower.")
                 }
             }
+            var stopped: String?
             for item in work {
                 if isCancelled() { throw Failure.cancelled }
                 // The page number, not the position in the work list: a document
@@ -208,8 +221,13 @@ enum Recogniser {
                 // disagree on a mixed document. Cosmetic, and recorded rather than
                 // fixed: `BUGS.md` C29 `#### (A) SHIPPED` names it.
                 onPage(item.page - 1, total)
-                guard let read = try recognisePage(at: item.image, settings: settings,
-                                                   isCancelled: isCancelled) else {
+                guard let read = try recognisePage(at: item.image, settings: skippingModel(settings, after: stopped) {
+                                                       onModelFallback(item.page, $0)
+                                                   }, isCancelled: isCancelled,
+                                                   onModelFallback: { why, stop in
+                                                       onModelFallback(item.page, why)
+                                                       if stop { stopped = why }
+                                                   }) else {
                     throw Failure.unreadablePage(item.page)
                 }
                 byPage[item.page] = read
@@ -907,8 +925,13 @@ enum Recogniser {
     /// numbers and cells read as one (`greyReading`, C50). The boxes reaching into a column gutter are brought in to their ink last, on the
     /// merged lines (`fittedToGutters`): fitted reading by reading, a box moved in one
     /// and not the other could fall outside `finerReading`'s match.
+    ///
+    /// `onModelFallback` hears why a shipped model reader left the page Vision's reading, and
+    /// whether it was stopped (by its guard or its time bound), which the caller takes to mean
+    /// the rest of the document is not worth the reader's time (`skippingModel`).
     static func recognisePage(at image: URL, settings: Prefs.Snapshot,
-                              isCancelled: () -> Bool = { false })
+                              isCancelled: () -> Bool = { false },
+                              onModelFallback: (_ why: String, _ stopped: Bool) -> Void)
         throws -> [SearchableWriter.Observation]? {
         let coarse = recognitionImage(besides: image)
         let pageURL = readingImage(besides: image)
@@ -950,23 +973,47 @@ enum Recogniser {
         if let shipped = ModelRuntime.readers[settings.modelReader].map(\.arrangements)
             ?? (settings.modelReader == ModelRuntime.visionRegions ? [.regions] : nil),
            !shipped.contains(settings.modelArrangement) {
-            throw Failure.modelReader("\(settings.modelReader) is not offered for the "
+            throw Failure.modelSetup("\(settings.modelReader) is not offered for the "
                 + "\(settings.modelArrangement.rawValue) arrangement in this build")
         }
+        do {
+            return try modelPass(fitted, on: fitOn, shown: shown, settings: settings, isCancelled: isCancelled)
+        } catch {
+            // A reader the app ships that fails or is stopped by its guard leaves the page
+            // Vision's reading, saying so (C57, ie-guard). One given by path is the lab's, whose
+            // failure is a measurement, and what it needs and lacks fails every page alike.
+            guard ModelRuntime.readers[settings.modelReader] != nil
+                    || settings.modelReader == ModelRuntime.visionRegions,
+                  !isCancelled() else { throw error }
+            switch error as? Failure {
+            case .cancelled?, .modelSetup?: throw error
+            case .modelMemory(let why)?, .modelTimeout(let why)?: onModelFallback(why, true)
+            case .modelReader(let why)?: onModelFallback(why, false)
+            default: onModelFallback(error.localizedDescription, false)
+            }
+            return fitted
+        }
+    }
+
+    /// The model's part of `recognisePage(at:)`: the arrangement set, over Vision's `fitted` lines.
+    private static func modelPass(_ fitted: [SearchableWriter.Observation], on fitOn: CGImage, shown: URL,
+                                  settings: Prefs.Snapshot, isCancelled: () -> Bool)
+        throws -> [SearchableWriter.Observation] {
         if settings.modelArrangement == .fill {
             return try filledReading(of: fitted, on: fitOn, shown: shown, reader: settings.modelReader,
-                                     isCancelled: isCancelled)
+                                     memoryGB: settings.modelMemoryGB, isCancelled: isCancelled)
         }
         if settings.modelArrangement == .replace {
             return try replacedReading(of: fitted, on: fitOn, shown: shown, reader: settings.modelReader,
-                                       isCancelled: isCancelled)
+                                       memoryGB: settings.modelMemoryGB, isCancelled: isCancelled)
         }
         if settings.modelArrangement == .regions {
             return try regionedReading(of: fitted, shown: shown, reader: settings.modelReader,
                                        aspect: Double(fitOn.height) / Double(fitOn.width),
                                        settings: settings, isCancelled: isCancelled)
         }
-        let reading = try modelReading(of: shown, reader: settings.modelReader, isCancelled: isCancelled)
+        let reading = try modelReading(of: shown, reader: settings.modelReader, memoryGB: settings.modelMemoryGB,
+                                       isCancelled: isCancelled)
         // Nothing, over a page Vision read lines on, is a reader that failed quietly.
         if modelWords(reading).isEmpty && !fitted.isEmpty {
             throw Failure.modelReader("\(settings.modelReader) read nothing on a page holding "
@@ -1234,9 +1281,14 @@ enum Recogniser {
     /// runs past `readerSeconds` or writes no file: the run asked for the model's
     /// words, and a page published without them, saying nothing, is not the document
     /// that was asked for.
-    static func modelReading(of image: URL, reader: String, crops: URL? = nil,
+    ///
+    /// It runs under `ModelGuard`, with `memoryGB` (the memory setting) as its cap: stopped,
+    /// throwing `modelMemory`, when its process group's footprint passes it, the Mac's
+    /// memory pressure turns critical or swap grows past 2 GB, and not started at all
+    /// while the pressure is critical.
+    static func modelReading(of image: URL, reader: String, crops: URL? = nil, memoryGB: Double,
                              isCancelled: () -> Bool = { false }) throws -> String {
-        guard !reader.isEmpty else { throw Failure.modelReader("no reader is set") }
+        guard !reader.isEmpty else { throw Failure.modelSetup("no reader is set") }
         // One reader at a time across every process: a batch runs several helpers at
         // once, and each reading loads the model (Falcon-OCR peaks at 3.4 GB), so six at
         // once would ask more of an 18 GB Mac than it has. Released when the descriptor
@@ -1266,6 +1318,12 @@ enum Recogniser {
         process.standardInput = FileHandle.nullDevice
         process.standardOutput = FileHandle.nullDevice
         process.standardError = FileHandle.nullDevice
+        if ModelGuard.pressure() >= ModelGuard.critical {
+            throw Failure.modelMemory("the Mac's memory pressure was critical, so \(reader) was not started")
+        }
+        // A value written by hand may be anything; Int() traps on what does not fit.
+        let capMB = Int(min(max(memoryGB.isFinite ? memoryGB : Prefs.defaultModelMemoryGB(), 0), 1024) * 1024)
+        let swap0 = ModelGuard.swapUsedMB()
         do { try process.run() } catch {
             throw Failure.modelReader("\(reader) could not be started (\(error.localizedDescription))")
         }
@@ -1273,6 +1331,7 @@ enum Recogniser {
         readerGroup.pointee = group ?? 0
         defer { readerGroup.pointee = 0 }
         let deadline = Date().addingTimeInterval(readerSeconds)
+        var sampled = Date.distantPast
         while process.isRunning {
             if isCancelled() {
                 Runner.stop(process, knownGroup: group)
@@ -1280,7 +1339,17 @@ enum Recogniser {
             }
             if Date() > deadline {
                 Runner.stop(process, knownGroup: group)
-                throw Failure.modelReader("\(reader) took longer than \(Int(readerSeconds)) seconds")
+                throw Failure.modelTimeout("\(reader) took longer than \(Int(readerSeconds)) seconds")
+            }
+            if Date().timeIntervalSince(sampled) >= ModelGuard.every {
+                sampled = Date()
+                if let why = ModelGuard.verdict(
+                    footprintMB: ModelGuard.footprintMB(leader: process.processIdentifier, group: group),
+                    capMB: capMB, pressure: ModelGuard.pressure(),
+                    swapGrowthMB: ModelGuard.swapUsedMB() - swap0) {
+                    Runner.stop(process, knownGroup: group)
+                    throw Failure.modelMemory("\(reader) \(why)")
+                }
             }
             usleep(50_000)
         }
@@ -1717,7 +1786,8 @@ enum Recogniser {
     /// one reading for each crop fails the file, as `modelReading`'s other failures do,
     /// and so does one that reads nothing in any crop when Vision read words in one.
     static func filledReading(of lines: [SearchableWriter.Observation], on image: CGImage, shown: URL,
-                              reader: String, isCancelled: () -> Bool = { false })
+                              reader: String, memoryGB: Double = Prefs.defaultModelMemoryGB(),
+                              isCancelled: () -> Bool = { false })
         throws -> [SearchableWriter.Observation] {
         let w = image.width, h = image.height
         let scan = inkScan(of: image, strips: [(0, 1)])
@@ -1746,7 +1816,8 @@ enum Recogniser {
         do { try tsv.write(to: crops, atomically: true, encoding: .utf8) } catch {
             throw Failure.modelReader("its crops could not be written (\(error.localizedDescription))")
         }
-        var readings = try modelReading(of: shown, reader: reader, crops: crops, isCancelled: isCancelled)
+        var readings = try modelReading(of: shown, reader: reader, crops: crops, memoryGB: memoryGB,
+                                        isCancelled: isCancelled)
             .components(separatedBy: "\n")
         if readings.last == "" { readings.removeLast() }
         guard readings.count == targets.count else {
@@ -2139,9 +2210,10 @@ enum Recogniser {
     /// a page Vision read lines on, as `align`'s reader reading nothing does, and so does
     /// a page too large for `inkScan`, whose lines could not be found.
     static func replacedReading(of lines: [SearchableWriter.Observation], on image: CGImage, shown: URL,
-                                reader: String, isCancelled: () -> Bool = { false })
+                                reader: String, memoryGB: Double = Prefs.defaultModelMemoryGB(),
+                                isCancelled: () -> Bool = { false })
         throws -> [SearchableWriter.Observation] {
-        let raw = try modelReading(of: shown, reader: reader, isCancelled: isCancelled)
+        let raw = try modelReading(of: shown, reader: reader, memoryGB: memoryGB, isCancelled: isCancelled)
         guard let blocks = modelBlocks(raw) else {
             throw Failure.modelReader("\(reader) wrote something other than blocks")
         }
@@ -2239,8 +2311,8 @@ enum Recogniser {
                                 isCancelled: () -> Bool = { false })
         throws -> [SearchableWriter.Observation] {
         let raw = ModelRuntime.readers[reader] != nil || reader == ModelRuntime.visionRegions
-            ? try layoutBlocks(of: shown, reader: reader, isCancelled: isCancelled)
-            : try modelReading(of: shown, reader: reader, isCancelled: isCancelled)
+            ? try layoutBlocks(of: shown, reader: reader, memoryGB: settings.modelMemoryGB, isCancelled: isCancelled)
+            : try modelReading(of: shown, reader: reader, memoryGB: settings.modelMemoryGB, isCancelled: isCancelled)
         guard var blocks = modelBlocks(raw) else {
             throw Failure.modelReader("\(reader) wrote something other than blocks")
         }
@@ -2269,7 +2341,8 @@ enum Recogniser {
     /// Vision when it is `ModelRuntime.visionRegions`, written as that script writes them,
     /// five places a fraction, so `modelBlocks` reads the same blocks the lab's did. A
     /// reading with another count of lines than crops fails the file, as there.
-    static func layoutBlocks(of shown: URL, reader: String, isCancelled: () -> Bool = { false }) throws -> String {
+    static func layoutBlocks(of shown: URL, reader: String, memoryGB: Double = Prefs.defaultModelMemoryGB(),
+                             isCancelled: () -> Bool = { false }) throws -> String {
         guard let image = loadImage(at: shown) else {
             throw Failure.modelReader("the page image \(shown.lastPathComponent) could not be read for its layout")
         }
@@ -2287,7 +2360,8 @@ enum Recogniser {
                                                         $0.element.x, $0.element.y, $0.element.width, $0.element.height) }
             try ("name\tx\ty\tw\th\toverlap\n" + rows.joined(separator: "\n") + "\n")
                 .write(to: list, atomically: true, encoding: .utf8)
-            var read = try modelReading(of: shown, reader: reader, crops: list, isCancelled: isCancelled)
+            var read = try modelReading(of: shown, reader: reader, crops: list, memoryGB: memoryGB,
+                                        isCancelled: isCancelled)
                 .components(separatedBy: "\n")
             if read.last == "" { read.removeLast() }
             guard read.count == crops.count else {
@@ -4500,6 +4574,7 @@ enum Recogniser {
             "--confidence", "\(settings.confidence)",
             "--model-arrangement", settings.modelArrangement.rawValue,
             "--model-reader", settings.modelReader,
+            "--model-memory-gb", "\(settings.modelMemoryGB)",
         ]
     }
 
@@ -4541,7 +4616,8 @@ enum Recogniser {
               let confidence = number("--confidence"),
               let arrangement = values["--model-arrangement"]
                   .flatMap(Prefs.ModelArrangement.init(rawValue:)),
-              let reader = values["--model-reader"]
+              let reader = values["--model-reader"],
+              let memoryGB = number("--model-memory-gb")
         else { return nil }
 
         return Prefs.Snapshot(
@@ -4555,12 +4631,27 @@ enum Recogniser {
             fast: fast, languages: languages, languageCorrection: correction,
             confidence: confidence, pdfDPIAuto: true, pdfDPI: 0, password: "",
             customWords: words, minTextHeightOn: minOn, minTextHeight: minHeight,
-            modelArrangement: arrangement, modelReader: reader)
+            modelArrangement: arrangement, modelReader: reader, modelMemoryGB: memoryGB)
     }
 
     /// One page's worth of the helper's output, and the app's input.
+    /// `settings` for the next page of a document, with the model reader off once it has been
+    /// stopped on an earlier one (`stopped`, its reason), and `note` told why: a reader that ran
+    /// out of memory or time on one page would do it again on the next, a guard trip or ten
+    /// minutes each, and every page would end with Vision's reading anyway.
+    static func skippingModel(_ settings: Prefs.Snapshot, after stopped: String?,
+                              note: (String) -> Void) -> Prefs.Snapshot {
+        guard let stopped, settings.modelArrangement != .off else { return settings }
+        note("it was not tried, the model reader having been stopped on an earlier page: \(stopped)")
+        var off = settings
+        off.modelArrangement = .off
+        return off
+    }
+
     struct HelperPage: Codable {
         let observations: [SearchableWriter.Observation]
+        /// Why a shipped model reader left this page Vision's reading (`recognisePage(at:)`).
+        var modelFallback: String? = nil
     }
 
     /// Why a helper run was abandoned. Every case falls back to in-process
@@ -4641,7 +4732,8 @@ enum Recogniser {
         stallSeconds: Double = helperStallSeconds,
         isCancelled: () -> Bool = { false },
         onPage: (Int, Int) -> Void = { _, _ in },
-        register: (Process) -> Void = { _ in }
+        register: (Process) -> Void = { _ in },
+        onModelFallback: (Int, String) -> Void = { _, _ in }
     ) throws -> [Int: [SearchableWriter.Observation]] {
         let total = images.count
         guard total > 0 else { return [:] }
@@ -4808,6 +4900,7 @@ enum Recogniser {
         // `missingPages` is the net downstream, and this is the same refusal at
         // the point the gap is visible.
         var byPage: [Int: [SearchableWriter.Observation]] = [:]
+        var notes: [(Int, String)] = []
         let decoder = JSONDecoder()
         for index in 0..<total {
             let file = results.appendingPathComponent("\(index).json")
@@ -4818,7 +4911,11 @@ enum Recogniser {
                 throw HelperFailure.unreadableResult(index + 1)
             }
             byPage[index + 1] = page.observations
+            if let note = page.modelFallback { notes.append((index + 1, note)) }
         }
+        // Only once every page is in: a helper that fails after this is redone in-process,
+        // which says its own.
+        for (page, note) in notes { onModelFallback(page, note) }
         onPage(total, total)
         return byPage
     }
@@ -4949,19 +5046,19 @@ enum ModelRuntime {
     /// touches the network.
     static func command(reader: String, image: URL, out: URL, crops: URL?,
                         environment: [String: String] = ProcessInfo.processInfo.environment) throws -> Command {
-        guard let model = readers[reader] else { throw Recogniser.Failure.modelReader("\(reader) is not a shipped reader") }
+        guard let model = readers[reader] else { throw Recogniser.Failure.modelSetup("\(reader) is not a shipped reader") }
         let home = home(environment)
         let python = home.appendingPathComponent("Runtime/bin/python3")
         guard Runner.isRunnable(python.path) else {
-            throw Recogniser.Failure.modelReader("\(reader) needs the model runtime, which is not installed at \(python.path)")
+            throw Recogniser.Failure.modelSetup("\(reader) needs the model runtime, which is not installed at \(python.path)")
         }
         let models = home.appendingPathComponent("Models")
         let cached = models.appendingPathComponent("hub/models--" + model.repo.replacingOccurrences(of: "/", with: "--"))
         guard FileManager.default.fileExists(atPath: cached.path) else {
-            throw Recogniser.Failure.modelReader("\(reader) has not been downloaded to \(cached.path)")
+            throw Recogniser.Failure.modelSetup("\(reader) has not been downloaded to \(cached.path)")
         }
         guard let script = script(environment), FileManager.default.fileExists(atPath: script.path) else {
-            throw Recogniser.Failure.modelReader("\(reader)'s script is not in this build")
+            throw Recogniser.Failure.modelSetup("\(reader)'s script is not in this build")
         }
         let limits = crops.map { ["--crops", $0.path, "--one-line-each", "--max-tokens", "3000", "--seconds", "540"] }
             ?? ["--seconds", "540", "--max-side", "3300"]
@@ -4971,6 +5068,63 @@ enum ModelRuntime {
         return Command(executable: python,
                        arguments: ["-I", script.path, model.repo, image.path, out.path, "--prompt", model.prompt] + limits,
                        environment: env)
+    }
+}
+
+/// The limits a model reader runs under (C57, ie-guard): `ops/ocrlab/run-guarded.sh`'s, which the
+/// comparison was run under, with the memory setting (`Prefs.modelMemoryGB`) in place of its
+/// 12 GB. Memory is the physical footprint summed over the reader's process group: its resident
+/// size is blind to MLX, whose 3 GB Metal array read 30 MB of RSS (measured 2026-10-04).
+enum ModelGuard {
+    /// `kern.memorystatus_vm_pressure_level`'s critical: 1 normal, 2 warn, 4 critical.
+    static let critical: Int32 = 4
+    static let swapGrowthLimitMB = 2048
+    /// Seconds between samples; the lab's guard took one every 2.
+    static let every: Double = 0.5
+
+    /// Why the reader has to stop, or nil while it is within every limit.
+    static func verdict(footprintMB: Int, capMB: Int, pressure: Int32, swapGrowthMB: Int) -> String? {
+        if footprintMB > capMB {
+            return "used \(footprintMB) MB of memory, over the \(capMB) MB set for model readers"
+        }
+        if pressure >= critical { return "was running when the Mac's memory pressure turned critical" }
+        if swapGrowthMB > swapGrowthLimitMB { return "was running while swap grew by \(swapGrowthMB) MB" }
+        return nil
+    }
+
+    /// The footprint in MB of `group`'s processes, or of `leader` alone when it has no group of its own.
+    static func footprintMB(leader: pid_t, group: pid_t?) -> Int {
+        var pids = [leader]
+        if let group, group > 0 {
+            var buffer = [pid_t](repeating: 0, count: 256)
+            let bytes = proc_listpids(UInt32(PROC_PGRP_ONLY), UInt32(group), &buffer,
+                                      Int32(buffer.count * MemoryLayout<pid_t>.size))
+            if bytes > 0 {
+                pids = Array(buffer.prefix(Int(bytes) / MemoryLayout<pid_t>.size)).filter { $0 > 0 }
+                if !pids.contains(leader) { pids.append(leader) }
+            }
+        }
+        var total: UInt64 = 0
+        for pid in pids {
+            var info = rusage_info_v2()
+            let ok = withUnsafeMutablePointer(to: &info) {
+                $0.withMemoryRebound(to: rusage_info_t?.self, capacity: 1) { proc_pid_rusage(pid, RUSAGE_INFO_V2, $0) }
+            }
+            if ok == 0 { total += info.ri_phys_footprint }
+        }
+        return Int(total / 1_048_576)
+    }
+
+    static func pressure() -> Int32 {
+        var level: Int32 = 0
+        var size = MemoryLayout<Int32>.size
+        return sysctlbyname("kern.memorystatus_vm_pressure_level", &level, &size, nil, 0) == 0 ? level : 0
+    }
+
+    static func swapUsedMB() -> Int {
+        var usage = xsw_usage()
+        var size = MemoryLayout<xsw_usage>.size
+        return sysctlbyname("vm.swapusage", &usage, &size, nil, 0) == 0 ? Int(usage.xsu_used / 1_048_576) : 0
     }
 }
 
@@ -5007,7 +5161,7 @@ enum LayoutModel {
         lock.lock(); defer { lock.unlock() }
         if let loaded, loaded.path == url.path { return loaded.model }
         guard FileManager.default.fileExists(atPath: url.path) else {
-            throw Recogniser.Failure.modelReader("the layout model has not been downloaded to \(url.path)")
+            throw Recogniser.Failure.modelSetup("the layout model has not been downloaded to \(url.path)")
         }
         let configuration = MLModelConfiguration()
         configuration.computeUnits = .cpuOnly
@@ -5016,7 +5170,7 @@ enum LayoutModel {
             loaded = (url.path, model)
             return model
         } catch {
-            throw Recogniser.Failure.modelReader("the layout model could not be loaded (\(error.localizedDescription))")
+            throw Recogniser.Failure.modelSetup("the layout model could not be loaded (\(error.localizedDescription))")
         }
     }
 

@@ -1593,8 +1593,10 @@ say so in the commit.
             Its pre- and post-processing and dedupe in Swift, giving the lab's regions on the sample. Done 2026-10-13:
             `LayoutModel`, `ops/ocrlab/convert-layout.py`. Crops identical on 8 PNG pages; through the helper 6 of 7
             regions pages publish ocr-compare-run's layer exactly, s46 vision 10 words apart (JPEG decoder, C57).
-      - [ ] **ie-guard** — the memory guard and fallback. (blocked-on: ie-runtime) (uses: build,model:12)
-            The guard and the fallback to Vision with a message, behind a test that overruns the cap.
+      - [x] **ie-guard** — the memory guard and fallback. (blocked-on: ie-runtime) (uses: build,model:12)
+            The guard and the fallback to Vision with a message, behind a test that overruns the cap. Done 2026-10-13:
+            `ModelGuard` (footprint over `modelMemoryGB`, 5 GB default; critical pressure; swap +2 GB). A shipped reader
+            stopped or failing leaves the page Vision's reading, logged; after a stop the document's other pages skip it.
       - [ ] **ie-readers** — wire in the approved readers. (blocked-on: ie-layout, ie-guard) (uses: build,model:12)
             Vision regions, PaddleOCR-VL regions, Falcon align and regions wired in by page kind, each reproducing its `OCR-COMPARE-2026-10-13.tsv` row through the helper.
 - [ ] **ocr-integrate-settings** — give the accurate mode its settings, figures, timing run and downloads. (uses: build)

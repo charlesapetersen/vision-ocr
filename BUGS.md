@@ -20164,6 +20164,29 @@ put in at its own size with the boxes scaled as if enlarged, silently misplacing
 as cv2's INTER_AREA enlarges (`areaEnlarge`, within 1 of cv2 5.0 on a 5x4 to 13x9 case, 6 of 117 pixels 1 apart)
 [measured]. A model output of the wrong shape fails the file instead of reading as no regions. Next: ie-guard.
 
+#### Sub-box 4, the guard and the fallback (2026-10-13)
+
+`ModelGuard`, inside `modelReading`: `run-guarded.sh`'s three limits, sampled every 0.5 s. The reader's process
+group's physical footprint (`proc_pid_rusage`, the number `footprint` prints, Metal buffers included) may not
+pass `modelMemoryGB`, a new setting carried to the helper (`--model-memory-gb`): 5 GB on 16 GB or more, 5/16 of
+the Mac below (2.5 GB on 8 GB), the slider `ocr-integrate-settings` will give a control. Critical memory pressure
+or swap grown by 2 GB also stops it, and critical pressure keeps it from starting. A shipped reader (`falcon-ocr`,
+`paddleocr-vl`, `vision` on regions) stopped by the guard or failing at run time (exit, signal, no text, wrong
+count, 600 s) now leaves the page Vision's reading, and the file's log gets one line naming the pages and up to
+three reasons; after a stop (guard or time), the rest of the document is not tried, saying so per page. What a
+reader needs and lacks (runtime, download, arrangement) is `modelSetup` and still fails the file, and a reader given by path, the lab's, still
+fails it on anything, so a measurement never counts Vision's words as a model's. The run report's "Model reader"
+row names the limit. [measured] Tests: a perl stand-in holding ~290 MB under a 0.1 GB cap is stopped in seconds
+in the app and through the helper, the page publishes Vision's words with the message, and on two pages the
+reader starts once. Disabling the verdict (mutant) turns them red: see the commit. [measured from
+`guard.tsv`] Of `ocr-compare-run`'s 241 guarded readings none passed 5,120 MB: Falcon regions peaked at 4,892 (`s09`,
+228 MB under), Falcon align 3,947, PaddleOCR-VL regions 2,451; so the default stops none of the comparison's pages,
+narrowly. Not done: an 8 GB Mac's 2.5 GB default is under Falcon's 3.4-3.9 GB whole page, so there it is stopped on
+a document's first page and the rest are not tried; `ocr-integrate-settings` must offer only readers that fit the slider.
+Rejected: refusing to start below the cap's worth of reclaimable memory (the lab's `--need-gb`): on a Mac with
+sessions open it would refuse most pages that would have fitted. Pressure and swap are machine-wide, so another
+program's load can stop a reader; it says so, and nothing is lost. Next: ie-readers.
+
 ## Robustness and correctness of reporting
 
 ### R1 · jbig2 and qpdf children are never registered for cancellation — FIXED

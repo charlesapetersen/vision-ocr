@@ -11879,6 +11879,7 @@ do {
         "preserveAnnotations",  // object surgery after every page is written
         "modelArrangement", // a second reader after Vision's; its handover is checked
         "modelReader",      //   with the helper's, and its effect under ocr-hybrid-proto
+        "modelMemoryGB",    //   the model reader's memory guard (C57, ie-guard)
         "password",        // opens the document; never reaches the request
         "pdfDPIAuto",       // what to rasterise at when not rebuilding
         "pdfDPI",
@@ -11973,6 +11974,7 @@ do {
         "confidence": { $0.confidence = 0.4 },
         "modelArrangement": { $0.modelArrangement = .align },
         "modelReader": { $0.modelReader = "/usr/local/bin/reader --fast" },
+        "modelMemoryGB": { $0.modelMemoryGB = 7.5 },
     ]
 
     func describeRequest(_ r: VNRecognizeTextRequest) -> String {
@@ -12005,9 +12007,10 @@ do {
                   == describeRequest(Recogniser.makeRequest(changed))
                   && back.confidence == changed.confidence
                   && back.modelArrangement == changed.modelArrangement
-                  && back.modelReader == changed.modelReader,
+                  && back.modelReader == changed.modelReader
+                  && back.modelMemoryGB == changed.modelMemoryGB,
               describeRequest(Recogniser.makeRequest(back)) + " conf=\(back.confidence)"
-                  + " model=\(back.modelArrangement.rawValue) \(back.modelReader)")
+                  + " model=\(back.modelArrangement.rawValue) \(back.modelReader) \(back.modelMemoryGB) GB")
     }
 
     // The two list fields carry whatever the user typed, so a value is allowed
@@ -12256,6 +12259,122 @@ do {
     check("…and a shipped reader with no runtime installed fails the file, naming the runtime",
           noRuntime.2 == .failed && noRuntime.1.contains("model runtime") && noRuntime.0.isEmpty,
           "\(String(describing: noRuntime.2)) \(noRuntime.1)")
+    unsetenv("VISIONOCR_MODEL_HOME")
+    unsetenv("VISIONOCR_READER_SCRIPT")
+    resetPrefs()
+}
+}  // end of section
+
+section("a model reader runs under its memory guard and falls back to Vision (C57, ie-guard)") {
+
+do {
+    check("the guard stops a reader over its cap, at critical pressure, or when swap grows past 2 GB",
+          ModelGuard.verdict(footprintMB: 5120, capMB: 5120, pressure: 2, swapGrowthMB: 2048) == nil
+              && ModelGuard.verdict(footprintMB: 5121, capMB: 5120, pressure: 1, swapGrowthMB: 0)?.contains("5120 MB") == true
+              && ModelGuard.verdict(footprintMB: 10, capMB: 5120, pressure: 4, swapGrowthMB: 0)?.contains("critical") == true
+              && ModelGuard.verdict(footprintMB: 10, capMB: 5120, pressure: 1, swapGrowthMB: 2049)?.contains("swap") == true)
+    let gb: UInt64 = 1_073_741_824
+    check("the memory setting defaults to 5 GB from 16 GB up, and the same share below",
+          Prefs.defaultModelMemoryGB(physicalBytes: 18 * gb) == 5 && Prefs.defaultModelMemoryGB(physicalBytes: 16 * gb) == 5
+              && Prefs.defaultModelMemoryGB(physicalBytes: 8 * gb) == 2.5,
+          "\(Prefs.defaultModelMemoryGB(physicalBytes: 8 * gb))")
+    check("the guard's footprint sees this process", ModelGuard.footprintMB(leader: getpid(), group: nil) > 10, "\(ModelGuard.footprintMB(leader: getpid(), group: nil)) MB")
+
+    resetPrefs()
+    let dir = tmp.appendingPathComponent("model-guard")
+    try? FileManager.default.removeItem(at: dir)
+    try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+    let source = dir.appendingPathComponent("scan.pdf")
+    makeScannedPDF(at: source, lines: ["The model reader's words", "reach the text layer"])
+    func script(_ url: URL, _ body: String) {
+        try? ("#!/bin/sh\n" + body + "\n").write(to: url, atomically: true, encoding: .utf8)
+        try? FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: url.path)
+    }
+    // About 290 MB, held for a minute: over a 0.1 GB cap within the guard's first samples.
+    let hog = "exec /usr/bin/perl -e '$x = \"a\" x 150_000_000; sleep 60'"
+    let pages = dir.appendingPathComponent("pages")
+    try? FileManager.default.createDirectory(at: pages, withIntermediateDirectories: true)
+    let rebuilt = dir.appendingPathComponent("rebuilt.pdf")
+    let bitmaps = (try? Flattener.flatten(source, to: rebuilt, mode: .blackAndWhite, pngDirectory: pages)) ?? []
+
+    // A reader by path (the lab's) is stopped and fails the file: its failure is a measurement.
+    let labHog = dir.appendingPathComponent("hog.sh")
+    script(labHog, hog)
+    var settings = Prefs.Snapshot.current()
+    settings.modelArrangement = .align
+    settings.modelReader = labHog.path
+    settings.modelMemoryGB = 0.1
+    var began = Date()
+    var thrown: Error?
+    do { _ = try Recogniser.recogniseDocument(visible: rebuilt, bitmaps: bitmaps, settings: settings) } catch { thrown = error }
+    let stoppedIn = Date().timeIntervalSince(began)
+    if case .modelMemory(let why)? = thrown as? Recogniser.Failure {
+        check("a reader over the memory cap is stopped within seconds, saying so",
+              stoppedIn < 20 && why.contains("over the 102 MB"), "\(stoppedIn) s: \(why)")
+    } else {
+        check("a reader over the memory cap is stopped within seconds, saying so", false,
+              "\(stoppedIn) s: \(String(describing: thrown))")
+    }
+
+    // A shipped reader is stopped the same way and the page keeps Vision's reading, with a message,
+    // in the app and through the helper.
+    let home = dir.appendingPathComponent("model home")
+    let bin = home.appendingPathComponent("Runtime/bin")
+    try? FileManager.default.createDirectory(at: bin, withIntermediateDirectories: true)
+    try? FileManager.default.createDirectory(
+        at: home.appendingPathComponent("Models/hub/models--tiiuae--Falcon-OCR"), withIntermediateDirectories: true)
+    let readerScript = dir.appendingPathComponent("read-model.py")
+    try? "".write(to: readerScript, atomically: true, encoding: .utf8)
+    setenv("VISIONOCR_MODEL_HOME", home.path, 1)
+    setenv("VISIONOCR_READER_SCRIPT", readerScript.path, 1)
+    let python = bin.appendingPathComponent("python3")
+    func publish(_ name: String) -> (String, String, Runner.Result.Outcome?, [String]) {
+        d.set(Prefs.ModelArrangement.align.rawValue, forKey: Prefs.modelArrangement)
+        d.set("falcon-ocr", forKey: Prefs.modelReader)
+        d.set(0.1, forKey: Prefs.modelMemoryGB)
+        let out = dir.appendingPathComponent("\(name).ocr.pdf")
+        var outcome: Runner.Result.Outcome?, message = "", notes: [String] = []
+        OCRModel.makeSearchablePDF(file: source, output: out, rebuild: true, rebuildMode: .auto,
+                                   password: nil, control: RunControl(), progress: { _, _ in },
+                                   modelFallbackNote: { notes.append($0) },
+                                   report: { o, m in outcome = o; message = m })
+        return (embeddedText(of: out), message, outcome, notes)
+    }
+    script(python, hog)
+    began = Date()
+    let guarded = publish("guarded")
+    check("a shipped reader over the cap leaves the page Vision's reading and says so",
+          guarded.2 == .succeeded && guarded.0.contains("words") && Date().timeIntervalSince(began) < 30
+              && guarded.3.count == 1 && guarded.3[0].contains("page 1") && guarded.3[0].contains("over the 102 MB"),
+          "\(String(describing: guarded.2)) \(guarded.1) | \(guarded.3.joined()) | \(guarded.0)")
+    script(python, "exit 1")
+    let failing = publish("failing")
+    check("…and so does one that fails, naming its exit",
+          failing.2 == .succeeded && failing.0.contains("words") && failing.3.count == 1
+              && failing.3[0].contains("exited with status 1"),
+          "\(String(describing: failing.2)) \(failing.1) | \(failing.3.joined())")
+    // Two pages, the hog counting its starts: once stopped, the reader is not tried on the next page,
+    // which says so, in the app and through the helper.
+    let starts = dir.appendingPathComponent("starts.txt")
+    script(python, "echo x >> '\(starts.path)'\n" + hog)
+    settings.modelReader = "falcon-ocr"
+    for viaHelperRoute in [false, true] {
+        try? FileManager.default.removeItem(at: starts)
+        var helperFellBack: [String] = [], modelFellBack: [(Int, String)] = []
+        began = Date()
+        let read = try? Recogniser.recogniseDocument(visible: rebuilt, bitmaps: bitmaps + bitmaps, settings: settings,
+                                                     useHelper: viaHelperRoute, onFallback: { helperFellBack.append($0) },
+                                                     onModelFallback: { modelFellBack.append(($0, $1)) })
+        let texts = [1, 2].map { (read?[$0] ?? []).map(\.text).joined(separator: " ") }
+        let started = ((try? String(contentsOf: starts, encoding: .utf8)) ?? "").split(separator: "\n").count
+        check("\(viaHelperRoute ? "through the helper" : "in the app"), a reader stopped on page 1 is not tried on page 2, "
+              + "and both pages keep Vision's reading, saying why",
+              helperFellBack.isEmpty && texts.allSatisfy { $0.contains("words") } && Date().timeIntervalSince(began) < 30
+                  && started == 1 && modelFellBack.map(\.0) == [1, 2]
+                  && modelFellBack[0].1.contains("over the 102 MB") && modelFellBack[1].1.contains("not tried"),
+              "\(started) starts | " + texts.joined(separator: " / ") + " | " + helperFellBack.joined()
+                  + " | " + modelFellBack.map { "\($0.0): \($0.1)" }.joined(separator: " ; "))
+    }
     unsetenv("VISIONOCR_MODEL_HOME")
     unsetenv("VISIONOCR_READER_SCRIPT")
     resetPrefs()

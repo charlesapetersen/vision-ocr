@@ -1568,7 +1568,8 @@ final class OCRModel: ObservableObject {
                         digitalTextPageNote: digitalTextPageNote,
                         // The same logged channel: one closure called twice logs both
                         // lines (the parameter's doc comment), so sharing it loses none.
-                        unreadLineNote: digitalTextPageNote, report: report)
+                        unreadLineNote: digitalTextPageNote,
+                        modelFallbackNote: digitalTextPageNote, report: report)
                     return
                 }
 
@@ -1867,6 +1868,9 @@ final class OCRModel: ObservableObject {
         /// Called at most once per document, when pages were published with lines
         /// the recogniser read only as a garbled box (C53). Logged, like the two above.
         unreadLineNote: @escaping (String) -> Void = { _ in },
+        /// Called at most once per document, when a shipped model reader failed or was
+        /// stopped by its memory guard and pages kept Vision's reading (C57). Logged.
+        modelFallbackNote: @escaping (String) -> Void = { _ in },
         report: @escaping (Runner.Result.Outcome, String) -> Void
     ) {
         // Shares of the wall clock, measured on a 22-page run: rebuilding and
@@ -2220,6 +2224,7 @@ final class OCRModel: ObservableObject {
         // `var` only because `adopting` takes a closure and Swift will not let one
         // initialise a `let` declared outside it. Assigned exactly once.
         var byPage: [Int: [SearchableWriter.Observation]] = [:]
+        var modelFellBack: [(page: Int, why: String)] = []
         do {
             // `adopting`, not a bare `adopt`: the helper is a child, and quitting
             // the app must not leave it running (U2). One adoption for one
@@ -2235,7 +2240,8 @@ final class OCRModel: ObservableObject {
                                  ocrShare(done, total))
                     },
                     register: register,
-                    onFallback: fellBack)
+                    onFallback: fellBack,
+                    onModelFallback: { modelFellBack.append((page: $0, why: $1)) })
             }
         } catch {
             // A cancellation surfaces here as a throw, exactly as it does from the
@@ -2245,6 +2251,18 @@ final class OCRModel: ObservableObject {
             return
         }
         if control.isCancelled { report(.cancelled, "Cancelled."); return }
+        if !modelFellBack.isEmpty {
+            let byPage = modelFellBack.sorted { $0.page < $1.page }
+            var reasons: [(page: Int, why: String)] = []
+            for f in byPage where !reasons.contains(where: { $0.why == f.why }) { reasons.append(f) }
+            let pages = byPage.map(\.page)
+            modelFallbackNote("The model reader did not read "
+                + (pages.count == 1 ? "page \(pages[0]), which keeps" : "\(pages.count) pages ("
+                    + pages.prefix(10).map(String.init).joined(separator: ", ")
+                    + (pages.count > 10 ? ", …" : "") + "), which keep")
+                + " Vision's reading. " + reasons.prefix(3).map { "Page \($0.page): \($0.why)." }
+                    .joined(separator: " "))
+        }
         // The bilevel bitmaps have been read and compressed; nothing wants them
         // again. Deliberately not the whole directory — the picture pages' JPEGs
         // sit beside them and are the streams the assembly is about to embed.

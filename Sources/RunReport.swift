@@ -252,7 +252,8 @@ enum RunReport {
             // `Recogniser.recognisePage(at:)` is the only place the reader runs, so a
             // page that is not rebuilt keeps Vision's words whatever this says.
             rows.append(("Model reader", c.settings.modelArrangement == .off ? "off"
-                            : "\(c.settings.modelArrangement.rawValue), \(c.settings.modelReader)"
+                            : "\(c.settings.modelArrangement.rawValue), \(c.settings.modelReader), "
+                            + String(format: "stopped over %.1f GB", c.settings.modelMemoryGB)
                             + (c.rebuildImages ? "" : " — not used: pages are not rebuilt")))
         }
 
@@ -306,6 +307,7 @@ enum RunReport {
         "minTextHeight": "Minimum text height",
         "modelArrangement": "Model reader",
         "modelReader": "Model reader",
+        "modelMemoryGB": "Model reader",
     ]
 
     /// Rows that report something outside the snapshot, so the coverage check

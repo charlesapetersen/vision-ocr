@@ -129,12 +129,19 @@ let encoder = JSONEncoder()
 // asked here. Cheap, and it makes `cmp` a usable instrument.
 encoder.outputFormatting = .sortedKeys
 
+var modelStopped: String?
 for (index, line) in pages.enumerated() {
     let path = String(line)
     let observations: [SearchableWriter.Observation]
+    var modelFallback: String?
     do {
+        let pageSettings = Recogniser.skippingModel(settings, after: modelStopped) { modelFallback = $0 }
         guard let read = try Recogniser.recognisePage(at: URL(fileURLWithPath: path),
-                                                      settings: settings) else {
+                                                      settings: pageSettings,
+                                                      onModelFallback: { why, stop in
+                                                          modelFallback = why
+                                                          if stop { modelStopped = why }
+                                                      }) else {
             die(.unreadablePage, "page \(index + 1) could not be read: \(path)")
         }
         observations = read
@@ -142,7 +149,8 @@ for (index, line) in pages.enumerated() {
         die(.recognitionFailed,
             "page \(index + 1) could not be recognised: \(error.localizedDescription)")
     }
-    guard let data = try? encoder.encode(Recogniser.HelperPage(observations: observations)),
+    guard let data = try? encoder.encode(Recogniser.HelperPage(observations: observations,
+                                                                 modelFallback: modelFallback)),
           (try? data.write(to: output.appendingPathComponent("\(index).json"),
                            options: .atomic)) != nil
     else {
