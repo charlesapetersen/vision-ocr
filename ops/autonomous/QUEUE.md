@@ -1674,7 +1674,7 @@ say so in the commit.
             wording fixed in the first three places above. (blocked-on: ocr-integrate-settings)
       - [x] **md-kinds** — the page-kind dialog offering only downloaded, enabled readers, and choosing one no
             longer starts a download. (blocked-on: md-models)
-- [ ] **ocr-requeue** — make the rest of the queue build on the accurate mode. (uses: build,model:12)
+- [x] **ocr-requeue** — make the rest of the queue build on the accurate mode. (uses: build,model:12)
       (blocked-on: ocr-integrate-settings) (effort: medium)
       Re-measure every later open item's named pages with the mode on. Close an item whose DONE WHEN the mode
       already meets, citing the measurement, and re-scope the rest so their DONE WHEN is checked with the mode
@@ -1689,6 +1689,13 @@ say so in the commit.
       from two columns, and record both counts per page in `bugs/C41.md`. C41's item is parked, so this is
       where that question is answered. ESTIMATE: 1-2 sessions. BOUND: rule 10.
       (context: owner request 2026-10-02, fused-row check added 2026-10-14)
+      Done 2026-10-14, session 1: no later item was open (only the owner's holds), so none to close or
+      re-scope there; the parked c41-newspaper-scans is re-scoped in place. Fused rows [measured, C41]:
+      at least 30 over the five scans with the mode off, 34 with Falcon-OCR and with PaddleOCR-VL, on the
+      same lines; the mode does not remove them. `set.tsv` has ten `+accurate:<reader>` rows, which `ux-regression.sh` publishes
+      from a second gate run with the mode on (models in `$STATE/model-home`); baseline written, mode-off rows
+      0 worse, 0 better. Truth rows, off -> on: Helena 1941 wrong 1011 -> 818 (Falcon) / 827 (PaddleOCR-VL),
+      find 0.85 -> 0.96 / 0.93; Glazer 9 -> 0, Riesman p2 10 -> 1, Ries p54 7 -> 0 (Falcon); Xin Qu p24 83 -> 83 (PaddleOCR-VL read it, 11.7 s, no fallback logged; the layer differs in a few lines).
 - [x] **c54-pale-typing** — publish pale typewriting on layered pages as solid as the source shows it.
       2026-10-05: round 1, session 1, FIXED (pale-ink stencil re-cut, `Flattener.paleInkLevels`).
       THE PAGES: `Herbert Marks papers` p12, `_1939_Former students` p9, `Atkinson_1939` p2, `Ford_1941` p2.
@@ -1981,7 +1988,14 @@ so `next-item.sh` does not read them. To queue one, move it back into the queue 
 - **c41-newspaper-scans** — read whole-page scans of small-town newspapers as well as their print
       allows (`BUGS.md` C41, split from C39) (uses: build) (blocked-on: hp-regions).
       Parked by the owner 2026-10-14: the accurate mode is the route for newspapers (assume Apple Silicon
-      with the mode on), and the fused-row question is measured in ocr-requeue. Round 2 session 1 (Codex) was
+      with the mode on), and the fused-row question is measured in ocr-requeue.
+      RE-SCOPED 2026-10-14 by ocr-requeue, for when it is queued again: the mode leaves the fused rows as it
+      found them (at least 30 over the five pages off, 34 with Falcon and with PaddleOCR-VL, 16-17 on Kalispell;
+      `C41-FUSED-ACCURATE-2026-10-14.tsv`), because region words are aligned onto Vision's lines. The work is
+      to cut a Vision line where it crosses two layout regions before alignment, judged with the mode on
+      (`Tools/count-fused-rows.swift` oneRun to 0, or each one left named) and with it off as a regression
+      floor, the five pages' `+accurate` rows in `ops/ux-regression/set.tsv` no worse. Misreads with the mode
+      on are the model's, not this item's. ESTIMATE: 1-2 sessions. Round 2 session 1 (Codex) was
       stopped unfinished: a newspaper-only search for gutters within twelve row heights split two fused rows
       each on Helena and Billings and none on the other three; its uncommitted diff is
       `$STATE/rescue/PARKED-c41-local-gutters-2026-10-14.patch`, not reviewed to the end (C41 has its notes).

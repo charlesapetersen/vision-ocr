@@ -6,6 +6,9 @@
 #           pages: publish only these pages, cut out with `qpdf --empty --pages`. Measured 2026-09-28 on
 #           Boltanski p51, GELFAND p106, Xin Qu p24 and Surani p10: every harness column but the render
 #           times equal the whole-document run's in UX-RUN-2026-09-27-pages.tsv.
+#           +accurate:<reader> after either: published with the accurate mode on and <reader> chosen for
+#           every kind of page (`falcon-ocr`, `paddleocr-vl`), keyed `<source> [accurate:<reader>]`
+#           (ocr-requeue, 2026-10-14). Newspapers are judged with the mode on (owner, 2026-10-14).
 #   why     what the page stands for: an owner report, a defect class or a route
 owner/1954 - Why.pdf	2,5,6,8,9,10	whole	owner: C38 legibility, C31/C32 colour; p2 p6 layered (C31's p4 p7 are the same route, left out); p8 p9 C32 headings; p9 column leak; p10 red logo grey
 owner/1951 - Briefer Book Notes.pdf	1,3	whole	owner: C30 half unselectable, C33 p3; C48 page labels lost
@@ -37,3 +40,13 @@ document/_1939_Former students to Board re Merriam_.pdf	9	pages	legibility blind
 bookSection/Allen_2011_The Origins of Political Philosophy_Oxford University Press.pdf	8	pages	route: green scan
 newspaperArticle/Glazer_2003_Neoconservatives, Then and Now_New York Times.pdf	1	whole	route: green newspaper page
 book/Ibson_2006_Picturing men.pdf	66	pages	route: source /Rotate differs from the output's
+newspaperArticle/_1941_Fiedler's hiring at UM announced_Helena Independent.pdf	1	whole+accurate:falcon-ocr	C41 newspaper scan, accurate mode (regions)
+newspaperArticle/_1941_Fiedler's hiring at UM announced_Helena Independent.pdf	1	whole+accurate:paddleocr-vl	C41 newspaper scan, accurate mode (regions)
+newspaperArticle/_1926_Clapp defends Cox_Billings Gazette.pdf	1	whole+accurate:falcon-ocr	C41 newspaper scan, accurate mode
+newspaperArticle/_1939_Kalispell resident offering private creative writing courses, out of her home_Kalispell Daily Inter Lake.pdf	1	whole+accurate:falcon-ocr	C41 newspaper scan, accurate mode
+newspaperArticle/_1950_Comic_Independent Record.pdf	1	whole+accurate:falcon-ocr	C41 comic page, accurate mode
+document/October_2,_1960_(Page_24_of_25.pdf	1	whole+accurate:falcon-ocr	C41 newspaper scan, accurate mode
+newspaperArticle/Glazer_2003_Neoconservatives, Then and Now_New York Times.pdf	1	whole+accurate:falcon-ocr	route: green newspaper page, accurate mode
+journalArticle/Riesman_1949_Men, Women, and Marriage_Nation.pdf	2	whole+accurate:falcon-ocr	C52 column jumps, accurate mode (align)
+thesis/Ries_Marshall_1955_web.pdf	54	pages+accurate:falcon-ocr	C50 typewriter misreads, accurate mode (align)
+journalArticle/Xin Qu et al_2018_Executive stock option vesting conditions, corporate governance and CEO.pdf	24	pages+accurate:paddleocr-vl	C51 coefficient column, accurate mode (regions)

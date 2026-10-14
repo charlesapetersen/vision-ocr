@@ -11,7 +11,8 @@
 # per route (QUEUE.md rule 9). This builds `Tools/score-gate`, the helper and `Tools/ux-harness` from this
 # checkout, publishes every document in the set through the production pipeline, scores the named pages
 # with the harness, each document in its own process (a crash is a result, not an abort), and compares
-# every column with the baseline. About 5 minutes; it runs the pipeline, so run it alone, never beside a
+# every column with the baseline. About 16 minutes with the accurate rows below (2026-10-14); it runs the
+# pipeline, so run it alone, never beside a
 # suite.
 #
 # A page is WORSE when it gains a red flag, loses its row, or a measure moves the wrong way past its
@@ -23,8 +24,15 @@
 # WORSE if it now crashes differently (it no longer publishes, say); so is the gate exiting differently.
 # A page in the truth set (`$STATE/truth/<source>/p<N>`) also gets a `truth` row, keyed `T<N>`, from
 # `ux-harness --truth`: WORSE when copyErr or layerMiss rises, or find, elInk, elCol or the fig/hand share
-# falls, by more than 0.02, when splits welds or hyph rise at all, or when it gains a tflag. No model is
-# called, so it gives the same answer every time.
+# falls, by more than 0.02, when splits welds or hyph rise at all, or when it gains a tflag. Outside the
+# accurate rows below no model is called, so it gives the same answer every time.
+# A row whose mode reads `<mode>+accurate:<reader>` (`falcon-ocr`, `paddleocr-vl`) is published with the
+# accurate mode on and that reader chosen for every kind of page, from its own gate run, and its rows are
+# keyed `<source> [accurate:<reader>]`. Its models come from `VISIONOCR_MODEL_HOME` (default
+# `$STATE/model-home`); without them the run cannot run (exit 2), unless `VISIONOCR_UX_NO_ACCURATE=1`
+# leaves those rows out of the publish and of the comparison, saying so. The models' readings repeat:
+# Kalispell 1939 by Falcon-OCR 3 runs of 3 and Helena 1941 by PaddleOCR-VL 2 of 2 gave identical
+# `page.string` (`ocr-requeue`, 2026-10-14).
 # `cols` is reported when it changes and never counts either way. Timings are ignored. Vision is
 # deterministic here: a second run on unchanged code read 0 worse, 0 better (2026-09-28). The harness's own blind spots stand (see the queue item
 # `ux-regression-set`): legibility is unreliable, `find` strips punctuation, `echoes` cannot see C44.
@@ -56,6 +64,8 @@ def load(p):
         rows[(f[1], f[2])] = f
     return rows
 base, new = load(sys.argv[1]), load(sys.argv[2])
+if os.environ.get("VISIONOCR_UX_NO_ACCURATE") == "1":
+    base = {k: v for k, v in base.items() if " [accurate:" not in k[0]}
 PH = "page refWords leg1 leg2 inkRatio inkLum srcCol colKept find cols inside cover overInk wer prec recall splits welds echoes hyph midBreaks geom msSrc msOut flags".split()
 TH = "trWords contested scored right wrong missing added splits welds hyph copyErr find order fig hand visMiss layerMiss pairs elInk elCol tflags".split()
 DH = "pages bytes openMs open qpdf outline labels links annots title flags".split()
@@ -170,11 +180,14 @@ done
 if [ "$MODE" = score-one ]; then
     W="$1" n="$2" label="$3" mode="$4" pages="$5"
     src="$W/in/d$n.pdf" out="$W/pub/d$n.ocr.pdf" d="$W/score/d$n" rows="$W/score/d$n.rows"
+    case "$mode" in *+accurate:*) src="$W/in-${mode#*+accurate:}/d$n.pdf";; esac
+    mode="${mode%%+*}"
     mkdir -p "$d"
     list="$pages"
     [ "$mode" = pages ] && list="$(seq 1 "$(echo "$pages" | tr ',' '\n' | /usr/bin/wc -l | tr -d ' ')" | paste -sd, -)"
     # the truth set's pages, linked under the numbers the harness sees here (`pages` mode renumbers them)
-    tdir="$STATE/truth/${label%.pdf}" truth=()
+    base="${label% \[accurate:*\]}"
+    tdir="$STATE/truth/${base%.pdf}" truth=()
     i=0
     for p in $(echo "$pages" | tr ',' ' '); do
         i=$((i + 1)); q="$p"; [ "$mode" = pages ] && q="$i"
@@ -217,32 +230,72 @@ cp "$ROOT/Tools/ux-harness.swift" "$W/h/main.swift"
   swiftc -O -o "$W/ux" "$W/h/main.swift" ) > "$W/build.log" 2>&1 ||
     { echo "ux-regression: the tools do not build, see $W/build.log"; exit 2; }
 
-# the inputs, as d<N>.pdf in set order; jobs.txt carries what --score-one needs
+# the accurate mode's models; checked before anything is published
+export VISIONOCR_MODEL_HOME="${VISIONOCR_MODEL_HOME:-$STATE/model-home}"
+export VISIONOCR_READER_SCRIPT="$ROOT/Resources/read-model.py"
+NOACC="${VISIONOCR_UX_NO_ACCURATE:-0}"
+# (`ModelDownloads.Item.installed`: the runtime, the layout model, both readers' pinned snapshots)
+if [ "$NOACC" != 1 ] && /usr/bin/grep -q $'\t[a-z]*+accurate:' "$SET"; then
+    M="$VISIONOCR_MODEL_HOME"
+    for need in Runtime/bin/python3 Models/doclayout-yolo.mlmodelc \
+        Models/hub/models--tiiuae--Falcon-OCR/snapshots/fe757d59ecd79d4d68760162306a70a015761ad9 \
+        Models/hub/models--mlx-community--PaddleOCR-VL-1.6-4bit/snapshots/c8987b277bdd8aaec8bd265d154f391bd03ad165; do
+        [ -e "$M/$need" ] || { echo "ux-regression: the accurate rows need $M/$need (VISIONOCR_UX_NO_ACCURATE=1 leaves them out)"; exit 2; }
+    done
+fi
+
+# the inputs, as d<N>.pdf in set order, in in/ or, for the accurate mode, in-<reader>/; jobs.txt
+# carries what --score-one needs
 : > "$W/jobs.txt"
-n=0
+n=0 readers=""
 while IFS=$'\t' read -r source pages mode why; do
     case "$source" in ''|'#'*) continue;; esac
     n=$((n + 1))
     case "$source" in owner/*) src="$OWNER/${source#owner/}";; *) src="$TD/$source";; esac
     [ -f "$src" ] || { echo "ux-regression: $source is not at $src"; exit 2; }
-    if [ "$mode" = pages ]; then
-        qpdf --empty --pages "$src" "$pages" -- "$W/in/d$n.pdf" 2> "$W/in/d$n.qpdf.txt"
+    dir="$W/in" label="$source"
+    case "$mode" in
+        *+accurate:*) r="${mode#*+accurate:}"
+            [ "$NOACC" = 1 ] && continue
+            dir="$W/in-$r" label="$source [accurate:$r]"
+            case " $readers " in *" $r "*) ;; *) readers="$readers $r"; mkdir -p "$dir";; esac;;
+    esac
+    if [ "${mode%%+*}" = pages ]; then
+        qpdf --empty --pages "$src" "$pages" -- "$dir/d$n.pdf" 2> "$W/in/d$n.qpdf.txt"
         q=$?   # 3 is warnings only
         [ $q = 0 ] || [ $q = 3 ] || { echo "ux-regression: qpdf could not cut $source (exit $q)"; exit 2; }
-    else cp "$src" "$W/in/d$n.pdf"; fi
-    printf '%s\t%s\t%s\t%s\t%s\n' "$W" "$n" "$source" "$mode" "$pages" >> "$W/jobs.txt"
+    else cp "$src" "$dir/d$n.pdf"; fi
+    printf '%s\t%s\t%s\t%s\t%s\n' "$W" "$n" "$label" "$mode" "$pages" >> "$W/jobs.txt"
 done < "$SET"
+[ "$NOACC" = 1 ] && echo "ux-regression: the accurate-mode rows are left out (VISIONOCR_UX_NO_ACCURATE=1)"
 
-echo "ux-regression: publishing $n documents into $W/pub"
+echo "ux-regression: publishing $(/usr/bin/wc -l < "$W/jobs.txt" | tr -d ' ') documents into $W/pub"
 VISIONOCR_HELPER="$W/visionocr-recognise" "$W/gate" "$W/in" "$W/pub" > "$W/gate.log" 2>&1
 g=$?   # 1 is the gate's own hard checks failing, which is a result; anything else is a failed run
 [ $g -le 1 ] || { echo "ux-regression: the gate exited $g, see $W/gate.log"; exit 2; }
+for r in $readers; do
+    # the gate takes the mode from its argument domain, as the app's settings would hold it
+    VISIONOCR_HELPER="$W/visionocr-recognise" "$W/gate" "$W/in-$r" "$W/pub-$r" -accurateMode YES \
+        -accurateReader "$r" -accurateNewspaperReader "$r" -accurateEnabledReaders "$r" > "$W/gate-$r.log" 2>&1
+    a=$?
+    [ $a -le 1 ] || { echo "ux-regression: the $r gate exited $a, see $W/gate-$r.log"; exit 2; }
+    # a mode that did not take would publish Vision's reading under the accurate label
+    rep="$(sed -n 's/^Run report: //p' "$W/pub-$r/log.txt" | tail -1)"
+    /usr/bin/grep -q "Model reader .*$r" "$rep" 2>/dev/null ||
+        { echo "ux-regression: the $r gate's run report ($rep) does not name $r as the reader"; exit 2; }
+    # nor may a page the model did not read, which keeps Vision's reading (`Model.swift`'s fallback note)
+    if /usr/bin/grep -q "model reader did not read" "$W/pub-$r/log.txt" "$rep" 2>/dev/null; then
+        echo "ux-regression: $r did not read every page, see $W/pub-$r/log.txt"; exit 2
+    fi
+    [ $a -le $g ] || g=$a
+    for f in "$W/pub-$r/"*.pdf; do [ -e "$f" ] && mv "$f" "$W/pub/"; done
+done
 echo "ux-regression: scoring"
 tr '\t\n' '\0\0' < "$W/jobs.txt" | xargs -0 -n 5 -P 4 "$0" --score-one
 { printf '# ux-regression results %s, %s\n' "$(date +%Y-%m-%d)" "$(cd "$ROOT" && git rev-parse --short HEAD)"
   printf 'kind\tsource\tpage\t...\n'
   printf 'gate\tscore-gate\t-\texit %s\n' "$g"
-  i=0; while [ $i -lt $n ]; do i=$((i + 1)); cat "$W/score/d$i.rows"; done; } > "$W/results.tsv"
+  i=0; while [ $i -lt $n ]; do i=$((i + 1)); [ -f "$W/score/d$i.rows" ] && cat "$W/score/d$i.rows"; done; } > "$W/results.tsv"
 echo "ux-regression: results $W/results.tsv"
 rc=0
 if [ -f "$BASE" ]; then compare "$BASE" "$W/results.tsv"; rc=$?
