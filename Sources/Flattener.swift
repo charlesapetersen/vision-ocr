@@ -3386,14 +3386,6 @@ enum Flattener {
     static let textPageMarkDownsample = 3
     static let textPageForegroundDownsample = 16
 
-    /// photo-pdf-size. The all-text factors for a page that came from an image file, a
-    /// photo most often. At 8/16 a photographed table's faint typewriter digits broke
-    /// ("1979-80" drew as "1?79-6?") and a sheet of pencil figures became a smudge,
-    /// because uneven light leaves such strokes out of the stencil and only the
-    /// background holds them. At 4/8 both read; Baker 113 KB where 8/16 gave 79 KB.
-    static let imagePageBackgroundDownsample = 4
-    static let imagePageForegroundDownsample = 8
-
     /// The fraction of the page's ink that falls outside `region`.
     ///
     /// The outer sixteenth is ignored on every side. A scan carries the dark edge
@@ -3520,10 +3512,14 @@ enum Flattener {
     ///
     /// **Exceeding it returns `nil`, which the caller reads as "do not treat this page
     /// as all text".** That is the safe direction and it is safe for a reason specific
-    /// to this seam: refusing the all-text verdict only ever stores a page at *more*
-    /// resolution (`bgFactor = allText ? max(caller, 8) : caller`), so the worst a
-    /// truncation can cost is bytes on a page too dense to analyse. It cannot lose
-    /// content, which is why no report is owed for it under invariant 1.
+    /// to this seam: refusing the all-text verdict stores a page at the caller's own
+    /// factor (`bgFactor = allText ? max(caller, 8) : caller`), no coarser than all text
+    /// would have, so the worst a truncation can cost is bytes on a page too dense to
+    /// analyse. It cannot lose content, which is why no report is owed for it under
+    /// invariant 1. The one exception is a page from an image file with the
+    /// Photographed pages slider at 1/2 and Photo detail at Smallest files (3): refused,
+    /// it is stored at a third where all text would have kept a half, and the photo
+    /// layer at a third is still Smallest files' own published level.
     static let maximumShapeRuns = 8_000_000
 
     /// A maximal horizontal run of set pixels. `x1` is exclusive.
@@ -5283,7 +5279,7 @@ enum Flattener {
                           backgroundDownsample: Int = mrcBackgroundDownsample,
                           foregroundDownsample: Int = mrcForegroundDownsample,
                           inColour: Bool = false,
-                          fromImage: Bool = false,
+                          fromImage image: Prefs.ImageDetail? = nil,
                           stencil cut: (png: Data, width: Int, height: Int)? = nil) -> MRCLayers? {
         // No words means a plate with no text on it. An empty stencil would put
         // the whole page into a downsampled background — publishing a picture at
@@ -5308,7 +5304,7 @@ enum Flattener {
             return mrcLayers(for: page, boxes: boxes, into: directory, stem: stem,
                              backgroundDownsample: backgroundDownsample,
                              foregroundDownsample: foregroundDownsample, inColour: false,
-                             fromImage: fromImage)
+                             fromImage: image)
         }
         // C39. The finer stencil is cut first, before anything below is allocated, so
         // its Sauvola peak is the only one alive: `analyticMRCBytesPerPixel` at no more
@@ -5463,14 +5459,13 @@ enum Flattener {
             guard mask.count == w * h else { return nil }
             keepWordsAndInterior(&mask, region: region, width: w, height: h)
         }
-        let bgFactor = allText
-            ? max(backgroundDownsample, fromImage ? imagePageBackgroundDownsample
-                                                  : textPageBackgroundDownsample)
-            : backgroundDownsample
-        let fgFactor = allText
-            ? max(foregroundDownsample, fromImage ? imagePageForegroundDownsample
-                                                  : textPageForegroundDownsample)
-            : foregroundDownsample
+        // photo-pdf-size. A page that came from an image file takes the user's
+        // `ImageDetail` as it stands, finer or coarser than Photo detail: it is the
+        // setting that names such a page.
+        let bgFactor = !allText ? backgroundDownsample
+            : image?.backgroundDownsample ?? max(backgroundDownsample, textPageBackgroundDownsample)
+        let fgFactor = !allText ? foregroundDownsample
+            : image?.foregroundDownsample ?? max(foregroundDownsample, textPageForegroundDownsample)
 
         // The stencil is the same either way: it comes from the luminance render,
         // so a colour page's text is cut out exactly as a grey one's is. `fine`, cut
@@ -5518,7 +5513,11 @@ enum Flattener {
                                   halo: 2, reach: safeInt(line),
                                   minimumPixels: max(safeInt(line * line / 32), 16))
             let cells = markCellMask(found, width: w, height: h, by: markFactor)
-            if cells.mask.contains(true) { markCells = cells }
+            // photo-pdf-size. A photographed page's background at the slider's 1/2 or 1/3
+            // is already as fine as the marks would be, so it keeps them itself; a mark
+            // layer there would paint them coarser over it. Every other page's background
+            // is at 1/4 or coarser.
+            if markFactor < bgFactor, cells.mask.contains(true) { markCells = cells }
             if !inColour { filledGrey = filled }
         }
         var markTones: [UInt8] = []
@@ -5535,7 +5534,7 @@ enum Flattener {
                 return mrcLayers(for: page, boxes: boxes, into: directory, stem: stem,
                                  backgroundDownsample: backgroundDownsample,
                                  foregroundDownsample: foregroundDownsample,
-                                 inColour: false, fromImage: fromImage, stencil: fine)
+                                 inColour: false, fromImage: image, stencil: fine)
             }
             // C31. The foreground is sampled from the dark core of the strokes, not
             // from every stencil pixel. See `foregroundHoles`.

@@ -48,6 +48,18 @@ struct SettingsView: View {
     private var photoDetail: Prefs.PhotoDetail {
         Prefs.PhotoDetail(rawValue: photoDetailRaw) ?? .balanced
     }
+    @AppStorage(Prefs.imageDetail) private var imageDetailRaw = Prefs.ImageDetail.initial.rawValue
+    private var imageDetail: Prefs.ImageDetail {
+        Prefs.ImageDetail(rawValue: imageDetailRaw) ?? .initial
+    }
+    /// The slider's position, 0 (most detail) to 4 (smallest files), over `ImageDetail`'s
+    /// steps in order, so a stored value that is no step reads as the default's place.
+    private var imageDetailStep: Binding<Double> {
+        let steps = Prefs.ImageDetail.allCases
+        return Binding(
+            get: { Double(steps.firstIndex(of: imageDetail) ?? 0) },
+            set: { imageDetailRaw = steps[min(max(Int($0.rounded()), 0), steps.count - 1)].rawValue })
+    }
     @AppStorage(Prefs.rebuildMode) private var rebuildModeRaw =
         Flattener.Mode.auto.rawValue
 
@@ -456,6 +468,33 @@ struct SettingsView: View {
                                   + Prefs.PhotoDetail.allCases.map {
                                       "\($0.label): \($0.blurb)"
                                   }.joined(separator: "\n\n"))
+                        }
+
+                        // photo-pdf-size. A page that came from a photo or another image
+                        // file and holds only text: its words are a sharp stencil at every
+                        // step, and this sets how much of the paper behind them is kept.
+                        Row("Photographed pages", labelWidth) {
+                            VStack(alignment: .leading, spacing: 2) {
+                                HStack {
+                                    Text("More detail").font(.caption)
+                                    Slider(value: imageDetailStep,
+                                           in: 0...Double(Prefs.ImageDetail.allCases.count - 1),
+                                           step: 1)
+                                        .accessibilityLabel("Photographed pages")
+                                        .accessibilityValue("\(imageDetail.label), "
+                                                            + "about \(imageDetail.exampleKB) KB a page")
+                                    Text("Smaller files").font(.caption)
+                                }
+                                Text("\(imageDetail.blurb) A phone photo of a typed letter "
+                                     + "comes to about \(imageDetail.exampleKB) KB.")
+                                    .font(.caption).foregroundStyle(.secondary)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+                            .help("For a photo of a page, or any image file you add, when the "
+                                  + "page holds only text. The words are kept sharp at every "
+                                  + "step; this sets how much of the paper behind them is kept, "
+                                  + "and with it signatures, pencil and faint marks. The photo "
+                                  + "itself came to 831 KB before it was compressed.")
                         }
                     }
                 }

@@ -1433,6 +1433,33 @@ do {
     Prefs.Preset.photographs.apply()
     check("Photographs keeps picture detail at maximum",
           d.string(forKey: Prefs.photoDetail) == Prefs.PhotoDetail.maximum.rawValue)
+    check("…and a photographed page at half its paper, the slider's most detail",
+          d.integer(forKey: Prefs.imageDetail) == Prefs.ImageDetail.half.rawValue)
+
+    // photo-pdf-size. The slider for pages from image files: five steps from more detail
+    // to smaller files, the owner's 1/6 (Baker's 87 KB) by default, and what is stored
+    // is what a batch's snapshot reads, a value that is no step reading as the default.
+    resetPrefs(); Prefs.register()
+    check("photo-pdf-size — the image-page slider's steps run 1/2, 1/3, 1/4, 1/6, 1/8",
+          Prefs.ImageDetail.allCases.map(\.rawValue) == [2, 3, 4, 6, 8]
+            && Prefs.ImageDetail.allCases.map(\.exampleKB) == [244, 143, 113, 87, 79],
+          "\(Prefs.ImageDetail.allCases.map(\.rawValue))")
+    check("…and its default is 1/6, the owner's pick",
+          Prefs.Snapshot.current(d).imageDetail == .sixth
+            && d.integer(forKey: Prefs.imageDetail) == 6,
+          "\(Prefs.Snapshot.current(d).imageDetail)")
+    d.set(Prefs.ImageDetail.third.rawValue, forKey: Prefs.imageDetail)
+    check("…and a batch reads the step the slider stored",
+          Prefs.Snapshot.current(d).imageDetail == .third)
+    d.set(5, forKey: Prefs.imageDetail)
+    check("…and a stored value that is no step reads as the default",
+          Prefs.Snapshot.current(d).imageDetail == .initial)
+    d.set(Prefs.ImageDetail.eighth.rawValue, forKey: Prefs.imageDetail)
+    for key in Prefs.allKeys { d.removeObject(forKey: key) }
+    Prefs.register()
+    check("…and Reset to Defaults returns it to 1/6",
+          Prefs.Snapshot.current(d).imageDetail == .sixth)
+    resetPrefs(); Prefs.register()
 
     // C28 question 2b · the blurb must not promise something the corpus refutes.
     //
@@ -4426,22 +4453,32 @@ do {
         check("…and reports itself as stored at an eighth, which is the report C28 shipped",
               boxed.shrunkAsAllText == true,
               "flag \(boxed.shrunkAsAllText), \(boxed.backgroundWidth) wide")
-        // photo-pdf-size. The same page from an image file keeps its tone layers at a
-        // quarter and an eighth: at 8/16 a photographed table's faint digits broke and a
-        // sheet of pencil became a smudge, since only the background held them.
-        if let doc = PDFDocument(url: c28Missed), let page = doc.page(at: 0),
-           let photo = Flattener.mrcLayers(
-               for: page, boxes: c28Boxes(15), into: c26Dir, stem: "c28photo",
-               backgroundDownsample: Prefs.PhotoDetail.balanced.downsample,
-               inColour: true, fromImage: true) {
-            let quarter = c28Full / Flattener.imagePageBackgroundDownsample
-            check("photo-pdf-size — …and from an image file its background is a quarter, not an eighth",
-                  photo.shrunkAsAllText && abs(photo.backgroundWidth - quarter) <= 1
-                    && photo.foregroundWidth > c28Full / Flattener.textPageForegroundDownsample + 1,
-                  "flag \(photo.shrunkAsAllText), background \(photo.backgroundWidth) wide of "
-                    + "\(c28Full), quarter \(quarter); foreground \(photo.foregroundWidth)")
+        // photo-pdf-size. The same page from an image file keeps its tone layers at the
+        // Settings slider's step, each of the five, and Photo detail does not override it:
+        // Smallest files (3) under the slider's 1/2 is a half, which `max` made a third.
+        // At 8/16 a photographed table's faint digits broke, since only the background
+        // held them, so the step is the user's to choose.
+        if let doc = PDFDocument(url: c28Missed), let page = doc.page(at: 0) {
+            for detail in Prefs.ImageDetail.allCases {
+                guard let photo = Flattener.mrcLayers(
+                    for: page, boxes: c28Boxes(15), into: c26Dir, stem: "c28photo\(detail.rawValue)",
+                    backgroundDownsample: Prefs.PhotoDetail.smallest.downsample,
+                    inColour: true, fromImage: detail) else {
+                    check("photo-pdf-size's image-file layering at 1/\(detail.rawValue)", false,
+                          "mrcLayers returned nil")
+                    continue
+                }
+                let expected = c28Full / detail.backgroundDownsample
+                let foreground = c28Full / detail.foregroundDownsample
+                check("photo-pdf-size — …and from an image file at the slider's 1/\(detail.rawValue) its "
+                        + "background is 1/\(detail.rawValue) and its foreground 1/\(detail.foregroundDownsample)",
+                      photo.shrunkAsAllText && abs(photo.backgroundWidth - expected) <= 1
+                        && abs(photo.foregroundWidth - foreground) <= 1,
+                      "flag \(photo.shrunkAsAllText), background \(photo.backgroundWidth) of \(c28Full), "
+                        + "want \(expected); foreground \(photo.foregroundWidth), want \(foreground)")
+            }
         } else {
-            check("photo-pdf-size's image-file layering", false, "mrcLayers returned nil")
+            check("photo-pdf-size's image-file layering", false, "no page")
         }
         // C28, 2026-09-02. The ACCEPTING answer, and it is the other end of the pair
         // above: without it a build that hard-wired `shapeTermAnswer` to a refusing
@@ -11985,6 +12022,7 @@ do {
         "besideOriginal",   // where the output goes
         "useJBIG2",         // compression
         "photoDetail",      // the MRC background factor
+        "imageDetail",      // the MRC factors of a page from an image file
         "joinHyphenated",   // a text-layer transform, after recognition
         "preserveAnnotations",  // object surgery after every page is written
         "modelArrangement", // a second reader after Vision's; its handover is checked
@@ -16963,9 +17001,9 @@ do {
         report: { o, m in outcome = o; message = m })
     check("the photo publishes", outcome == .succeeded, message)
     // Unsigned, the page is read as all text, and from an image file its tone layers are
-    // kept at a quarter, which is what holds a photo's faint figures and pencil: a
-    // background 300 wide of the photo's 1200, its foreground 150. With the flag not passed
-    // through, an eighth and a sixteenth, 150 and 75.
+    // kept at the Photographed pages slider's step: at the default 1/6 a background 200
+    // wide of the photo's 1200, its foreground 100. With the step not passed through, an
+    // eighth and a sixteenth, 150 and 75.
     let unsigned = dir.appendingPathComponent("unsigned.jpg")
     makePhoto(unsigned, signed: false)
     let unsignedOut = dir.appendingPathComponent("unsigned.ocr.pdf")
@@ -16978,9 +17016,26 @@ do {
     let widths = ((try? Data(contentsOf: unsignedOut)).map { String(decoding: $0, as: UTF8.self) } ?? "")
         .components(separatedBy: "/Width ").dropFirst()
         .map { Int($0.prefix { $0.isNumber }) ?? 0 }
-    check("…and an all-text photo's page is stored at a quarter, not an eighth",
-          shrunkNote.contains("stored at a quarter") && widths.contains(300) && !widths.contains(75),
+    check("…and an all-text photo's page is stored at the slider's 1/6, not an eighth",
+          shrunkNote.contains("stored at a sixth") && widths.contains(200) && widths.contains(100)
+            && !widths.contains(75),
           "widths \(widths); \(shrunkNote.prefix(120))")
+    // And the batch's own step reaches the page: at 1/2, a background 600 wide.
+    var halfSettings = Prefs.Snapshot.current(d)
+    halfSettings.imageDetail = .half
+    let halfOut = dir.appendingPathComponent("unsigned-half.ocr.pdf")
+    var halfNote = ""
+    OCRModel.makeSearchablePDF(
+        file: unsigned, output: halfOut, rebuild: true, rebuildMode: .auto, password: nil,
+        settings: halfSettings, control: RunControl(), progress: { _, _ in },
+        shrunkTextPageNote: { halfNote = $0 },
+        report: { _, _ in })
+    let halfWidths = ((try? Data(contentsOf: halfOut)).map { String(decoding: $0, as: UTF8.self) } ?? "")
+        .components(separatedBy: "/Width ").dropFirst()
+        .map { Int($0.prefix { $0.isNumber }) ?? 0 }
+    check("…and at the slider's 1/2 it is stored at a half, as the run report says",
+          halfNote.contains("stored at a half") && halfWidths.contains(600) && halfWidths.contains(300),
+          "widths \(halfWidths); \(halfNote.prefix(120))")
     let box = PDFDocument(url: output)?.page(at: 0)?.bounds(for: .mediaBox) ?? .zero
     check("…on a Letter-high page, not a 17x22 inch one",
           abs(box.height - 792) < 1, "\(Int(box.width))x\(Int(box.height)) pt")

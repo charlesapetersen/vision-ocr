@@ -1964,7 +1964,7 @@ say so in the commit.
       Session 4: `mrcStencil`'s lift pinned by a check; round 1 spent, so moved behind the untried
       items. Round 2 is at max: judge C56's case for closing (Xin Qu's 2x 1.06 is PDFKit's stencil draw).
       (notes: ops/autonomous/notes/c56-heavy-type.md)
-- [ ] **photo-pdf-size** — make a phone photo of a typed page publish as a small PDF without losing legibility.
+- [x] **photo-pdf-size** — make a phone photo of a typed page publish as a small PDF without losing legibility.
       (uses: build)
       THE PAGE (owner, 2026-10-14): `00187 — Baker.JPG`, a 1936x2592 phone photo of a typed 1950s letter with a
       signature, uneven light and a cream background. It and the owner's outputs are in
@@ -2002,13 +2002,14 @@ say so in the commit.
       - [x] **pps-owner-pick** — the owner picks the step. Tick it with the date and the owner's words.
             (blocked-on: pps-ladder) Done 2026-10-14, owner: "Let's create a slider in settings so users can
             choose. Set the default to the approach that produced the 87KB file." That is step 1/6.
-      - [ ] **pps-ship** — a slider in Settings for image inputs, with the five ladder steps (1/2, 1/3, 1/4,
+      - [x] **pps-ship** — a slider in Settings for image inputs, with the five ladder steps (1/2, 1/3, 1/4,
             1/6, 1/8, ordered from more detail to smaller files) and the default at 1/6, Baker's 87 KB step.
             Plain words at the ends and under the slider, beside the figure from Baker for the step chosen. It
             sets the factors `mrcLayers` applies to a page that came from an image file; the existing Photo
             detail picker for scanned PDFs is unchanged. Carry it through `RunReport` and the presets like the
             other settings. A check goes red without it, and DONE WHEN above is checked at the default.
-            (blocked-on: pps-owner-pick)
+            (blocked-on: pps-owner-pick) Done 2026-10-14: "Photographed pages" slider, default 1/6; Baker 87,482 B
+            (Falcon-OCR 86,650), 591.6x792 pt, 463/465 words; ux-regression 0 worse; a verifier passed all eight.
 - [ ] **settings-plain** — make Settings understandable to someone with no technical background, starting with
       the Accurate mode box, and measure a reader's speed on its own once it is downloaded. (uses: build)
       THE ASK (owner, 2026-10-14): refine the settings panel for a non-technical user, in particular the new

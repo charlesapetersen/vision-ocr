@@ -1842,8 +1842,8 @@ final class OCRModel: ObservableObject {
         /// and `usedJBIG2` used to be a local that never left this function.
         tookJBIG2Route: @escaping () -> Void = { },
         /// Called at most once per document, when pages were published with the ink
-        /// outside the recognised words stored at an eighth, a quarter from an image
-        /// file (C28). Its own channel for the same reason `fellBack` is: this one is
+        /// outside the recognised words stored at an eighth, or from an image file at
+        /// the Photographed pages slider's step (C28, photo-pdf-size). Its own channel for the same reason `fellBack` is: this one is
         /// *logged* and that one is *counted*, and sharing either would make the report
         /// describe something other than what happened (R41).
         shrunkTextPageNote: @escaping (String) -> Void = { _ in },
@@ -2546,7 +2546,7 @@ final class OCRModel: ObservableObject {
                             stem: String(format: "m%05d", index + 1),
                             backgroundDownsample: settings.photoDetail.downsample,
                             inColour: encoded[index].isColour,
-                            fromImage: fromImage)
+                            fromImage: fromImage ? settings.imageDetail : nil)
                         else { continue }
                         let stencil = pngDir.appendingPathComponent(
                             String(format: "m%05d.jbig2", index + 1))
@@ -2723,7 +2723,7 @@ final class OCRModel: ObservableObject {
                     // outlives the window. Held, not sent: the success exit sends it.
                     if !shrunkTextPages.isEmpty {
                         shrunkTextPageMessage = Self.shrunkTextPageSummary(
-                            shrunkTextPages, storedAt: fromImage ? "a quarter" : "an eighth")
+                            shrunkTextPages, storedAt: fromImage ? settings.imageDetail.fraction : "an eighth")
                     }
                 }
                 let textLayer = work.appendingPathComponent("text.pdf")

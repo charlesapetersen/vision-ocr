@@ -15,8 +15,11 @@ an older entry mentions "Window ▸ Vision Reader Window", the menu item is now
 ## Unreleased
 
 - A dropped photo or other image of a page is now compressed like a scanned page. A phone photo of a typed
-  letter came out at 830 KB as one full-size picture and now comes out at about 113 KB with the same text,
-  its background kept fine enough that faint typed figures and pencil on a photo stay legible.
+  letter came out at 830 KB as one full-size picture and now comes out at about 87 KB with the same text.
+  A new Photographed pages slider in Settings, from More detail to Smaller files, sets how much of the paper
+  behind the words such a page keeps: about 244 KB for that letter at the most detail, 79 KB at the least.
+  The default keeps typed text and ink sharp; faint pencil can fade, and one step or two toward More
+  detail keeps it.
   A camera's photo also gets a Letter-sized page instead of a 27x36 inch one, and image files no longer
   report that their page numbers and title could not be carried across (photo-pdf-size).
 - A drag down one column of a scanned magazine or journal page stays in that column where it used to jump

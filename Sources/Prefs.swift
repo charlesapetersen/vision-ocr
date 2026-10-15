@@ -106,6 +106,71 @@ enum Prefs {
         }
     }
 
+    /// photo-pdf-size. How much of the paper a page that came from an image file keeps
+    /// when it holds nothing but text: the factor its background is shrunk by, the
+    /// foreground taking twice it. The type is a full-resolution stencil at every step;
+    /// what changes is the paper, the signature and any stroke the stencil left out.
+    ///
+    /// The owner's pick, 2026-10-14, is `.sixth`, Baker's 87 KB step
+    /// (`PHOTO-SIZE-DECISION-2026-10-14.md`). At `.eighth` a photographed table's faint
+    /// typewriter digits broke ("1979-80" drew as "1?79-6?") and a sheet of pencil
+    /// figures became a smudge, because uneven light leaves such strokes out of the
+    /// stencil and only the background holds them; at `.quarter` both read. At `.sixth`,
+    /// measured 2026-10-14 in 2.5x PDFKit renders, the table's figures read but soften
+    /// ("CSs" toward "C5s") and the pencil sheet is all but gone, which is what the
+    /// `.sixth` blurb says. The run report names every page stored this way.
+    enum ImageDetail: Int, CaseIterable, Identifiable {
+        case half = 2, third = 3, quarter = 4, sixth = 6, eighth = 8
+
+        var id: Int { rawValue }
+
+        /// "1/6": the paper's resolution against the photo's, as the slider shows it.
+        var label: String { "1/\(rawValue)" }
+
+        var backgroundDownsample: Int { rawValue }
+        var foregroundDownsample: Int { rawValue * 2 }
+
+        /// "the rest of the page was stored at …", in the run report.
+        var fraction: String {
+            switch self {
+            case .half: return "a half"
+            case .third: return "a third"
+            case .quarter: return "a quarter"
+            case .sixth: return "a sixth"
+            case .eighth: return "an eighth"
+            }
+        }
+
+        /// Baker (`00187 — Baker.JPG`, a phone photo of a typed letter) at this step,
+        /// measured 2026-10-14 (`PHOTO-SIZE-DECISION-2026-10-14.md`; 1/2 and 1/3 again once
+        /// they stopped taking a mark layer). The photo published as 831 KB before any of this.
+        var exampleKB: Int {
+            switch self {
+            case .half: return 244
+            case .third: return 143
+            case .quarter: return 113
+            case .sixth: return 87
+            case .eighth: return 79
+            }
+        }
+
+        var blurb: String {
+            switch self {
+            case .half, .third:
+                return "Paper, signatures and pencil keep their texture. Files are larger."
+            case .quarter:
+                return "Faint pencil and pale figures stay readable."
+            case .sixth:
+                return "Typed text and ink stay sharp; faint pencil can fade away."
+            case .eighth:
+                return "Smallest files. Typed text and ink stay sharp; faint pencil and "
+                     + "pale figures can be lost."
+            }
+        }
+
+        static let initial = ImageDetail.sixth
+    }
+
     /// A named bundle of the settings that depend on what the material *is*.
     ///
     /// The point is not convenience — it is that the right settings differ by
@@ -222,6 +287,7 @@ enum Prefs {
             Prefs.fast: "Fast",
             Prefs.rebuildMode: "Rebuild as",
             Prefs.photoDetail: "Photo detail",
+            Prefs.imageDetail: "Photographed pages",
             Prefs.confidence: "Uncertain text",
             Prefs.languageCorrection: "Language correction",
         ]
@@ -245,6 +311,7 @@ enum Prefs {
                 // with, so half resolution is close to the original (FEATURES.md
                 // records 2x as visually near-identical on a printed halftone).
                 d.set(PhotoDetail.balanced.rawValue, forKey: Prefs.photoDetail)
+                d.set(ImageDetail.initial.rawValue, forKey: Prefs.imageDetail)
                 // Keep everything. The confidence slider's own doc comment makes
                 // the case: on a scan a rough guess at a smudged word is still
                 // something you can search for.
@@ -253,6 +320,7 @@ enum Prefs {
             case .typescript:
                 d.set(Flattener.Mode.auto.rawValue, forKey: Prefs.rebuildMode)
                 d.set(PhotoDetail.balanced.rawValue, forKey: Prefs.photoDetail)
+                d.set(ImageDetail.initial.rawValue, forKey: Prefs.imageDetail)
                 d.set(0.0, forKey: Prefs.confidence)
                 // Off: correction is tuned for prose, and a typescript is full
                 // of names, abbreviations and struck-through text where it has
@@ -263,11 +331,14 @@ enum Prefs {
                 d.set(Flattener.Mode.auto.rawValue, forKey: Prefs.rebuildMode)
                 // The one preset that spends bytes on pictures.
                 d.set(PhotoDetail.maximum.rawValue, forKey: Prefs.photoDetail)
+                // And a photographed page keeps half its paper, for the same reason.
+                d.set(ImageDetail.half.rawValue, forKey: Prefs.imageDetail)
                 d.set(0.0, forKey: Prefs.confidence)
                 d.set(true, forKey: Prefs.languageCorrection)
             case .bookScan:
                 d.set(Flattener.Mode.auto.rawValue, forKey: Prefs.rebuildMode)
                 d.set(PhotoDetail.balanced.rawValue, forKey: Prefs.photoDetail)
+                d.set(ImageDetail.initial.rawValue, forKey: Prefs.imageDetail)
                 d.set(0.0, forKey: Prefs.confidence)
                 d.set(true, forKey: Prefs.languageCorrection)
             }
@@ -277,7 +348,7 @@ enum Prefs {
         /// user's own choices alone, which is the property that matters.
         static let keysWritten: Set<String> = [
             Prefs.rebuildImages, Prefs.useJBIG2, Prefs.joinHyphenated, Prefs.fast,
-            Prefs.rebuildMode, Prefs.photoDetail, Prefs.confidence,
+            Prefs.rebuildMode, Prefs.photoDetail, Prefs.imageDetail, Prefs.confidence,
             Prefs.languageCorrection,
         ]
     }
@@ -332,6 +403,8 @@ enum Prefs {
     static let rebuildMode       = "rebuildMode"
     static let useJBIG2          = "useJBIG2"
     static let photoDetail       = "photoDetail"
+    /// photo-pdf-size. `ImageDetail`'s raw value: the paper a photographed page keeps.
+    static let imageDetail       = "imageDetail"
 
     /// Rejoin a word a line break split in two, so it can be searched for.
     static let joinHyphenated    = "joinHyphenated"
@@ -678,6 +751,7 @@ enum Prefs {
         var besideOriginal: Bool
         var useJBIG2: Bool
         var photoDetail: PhotoDetail
+        var imageDetail: ImageDetail = .initial
         var joinHyphenated: Bool
         var preserveAnnotations: Bool
 
@@ -708,6 +782,8 @@ enum Prefs {
                 useJBIG2: d.bool(forKey: Prefs.useJBIG2),
                 photoDetail: PhotoDetail(rawValue: d.string(forKey: Prefs.photoDetail) ?? "")
                     ?? .balanced,
+                imageDetail: ImageDetail(rawValue: d.integer(forKey: Prefs.imageDetail))
+                    ?? .initial,
                 joinHyphenated: d.bool(forKey: Prefs.joinHyphenated),
                 preserveAnnotations: d.bool(forKey: Prefs.preserveAnnotations),
                 fast: d.bool(forKey: Prefs.fast),
@@ -760,7 +836,7 @@ enum Prefs {
         mode, outputFolder, besideOriginal, openWhenDone, textFormat,
         fast, languages, languageCorrection, confidence, pdfDPIAuto, pdfDPI,
         password, customWords, minTextHeightOn, minTextHeight,
-        warnDigitalText, rebuildImages, rebuildMode, useJBIG2, photoDetail,
+        warnDigitalText, rebuildImages, rebuildMode, useJBIG2, photoDetail, imageDetail,
         joinHyphenated, preserveAnnotations, writeRunReport, concurrency,
         checkForUpdates, skippedVersion, lastUpdateCheck, modelArrangement, modelReader,
         newspaperModelArrangement, newspaperModelReader, modelMemoryGB,
@@ -891,6 +967,9 @@ enum Prefs {
             // third of the bytes. Maximum is one click away for anyone who wants
             // the pixels, and the text is full resolution at every level.
             photoDetail: PhotoDetail.balanced.rawValue,
+
+            // The owner's pick, 2026-10-14: Baker's 87 KB step (`ImageDetail`).
+            imageDetail: ImageDetail.initial.rawValue,
 
             // On by default. The failure mode of joining is a slightly noisier
             // extracted text — the tail of the word appears twice — and the

@@ -67,3 +67,29 @@ finer, not at 8/16. Shipped: `mrcLayers(fromImage:)` caps an image input's all-t
 `imagePageBackgroundDownsample`/`imagePageForegroundDownsample` = 4/8 (Baker 79 -> 113 KB). It is a floor for
 content, not the owner's pick; 1/2 or 1/3 remain open. Rejected: camera images only (an EXIF-stripped photo
 has the same light), and fixing the stencil's threshold for photos (larger change; the background suffices).
+
+## 2026-10-14 — pps-ship (Opus 5.5, medium)
+
+`Prefs.ImageDetail` (1/2, 1/3, 1/4, 1/6, 1/8; foreground twice the background), the owner's 1/6 by default,
+is a "Photographed pages" slider under Photo detail with "More detail" / "Smaller files" at its ends and a
+line under it giving Baker's figure for the step. It replaces the fixed 4/8 cap of 34c230c and is taken as
+it stands on an image file's all-text page (Photo detail no longer raises it); PDFs are unchanged. Snapshot,
+`allKeys`, the run report (row and summary fraction) and the presets carry it (Photographs writes 1/2, the
+others 1/6). Published through the gate harness with image inputs, default settings:
+| input | 1/6 bytes | words | page |
+|---|---|---|---|
+| Baker, Vision | 87,482 | 463 | 591.6x792 pt |
+| Baker, Falcon-OCR | 86,650 | 465 | 591.6x792 pt |
+| clipping / 1922 letter (not all-text) | 408,190 / 221,144 | 750 / 315 | unchanged |
+| handwritten (ink) | 53,044 | 99 | |
+| table | 54,189 (1/4: 70,630) | 204 | |
+| pencil card | 61,214 (1/4: 81,387) | 69 | |
+Seen in 2.5x PDFKit renders: at 1/6 the table's figures read but soften ("CSs" toward "C5s"), and the pencil
+sheet on the card is all but gone, where at 1/4 it is faint but traceable. The slider's 1/6 wording says
+faint pencil can fade; the run report names each page stored that way. Owner told under NEEDS OWNER.
+Review fixes: at 1/2 and 1/3 the background is as fine as `textPageMarkDownsample`, so no mark layer is
+added there (it painted marks coarser over a finer background); Baker 1/2 244,910 -> 243,581 B, 1/3
+148,616 -> 143,285 B, 463 words, and the slider's figures say 244 and 143. 1/4 and coarser unchanged.
+Suite 2011/2011; ux-regression 0 worse, 0 better over 53 pages and 40 documents (run before the mark
+change, which no PDF reaches). Red without the fix: Photo detail's `max` restored, the 1/2 check fails
+(background 408 wide, want 612).
