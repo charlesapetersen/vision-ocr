@@ -12033,6 +12033,8 @@ do {
         "newspaperModelReader",
         "photoModelArrangement", // and for photographed pages (page-kinds-three)
         "photoModelReader",
+        "handModelArrangement", // and for handwritten pages (page-kind-handwriting)
+        "handModelReader",
         "password",       // opens the document; never reaches the request
         "pdfDPIAuto",       // what to rasterise at when not rebuilding
         "pdfDPI",
@@ -12131,6 +12133,8 @@ do {
         "newspaperModelReader": { $0.newspaperModelReader = "vision" },
         "photoModelArrangement": { $0.photoModelArrangement = .regions },
         "photoModelReader": { $0.photoModelReader = "paddleocr-vl" },
+        "handModelArrangement": { $0.handModelArrangement = .align },
+        "handModelReader": { $0.handModelReader = "falcon-ocr" },
         "modelMemoryGB": { $0.modelMemoryGB = 7.5 },
     ]
 
@@ -12169,6 +12173,8 @@ do {
                   && back.newspaperModelReader == changed.newspaperModelReader
                   && back.photoModelArrangement == changed.photoModelArrangement
                   && back.photoModelReader == changed.photoModelReader
+                  && back.handModelArrangement == changed.handModelArrangement
+                  && back.handModelReader == changed.handModelReader
                   && back.modelMemoryGB == changed.modelMemoryGB,
               describeRequest(Recogniser.makeRequest(back)) + " conf=\(back.confidence)"
                   + " model=\(back.modelArrangement.rawValue) \(back.modelReader) \(back.modelMemoryGB) GB")
@@ -12686,6 +12692,87 @@ do {
     check("the helper refuses a photographs' arrangement that is none, and reads one that is",
           Recogniser.helperSettings(from: bogusPhoto) == nil
               && Recogniser.helperSettings(from: Recogniser.helperArguments(photoOnly))?.photoModelReader == "paddleocr-vl")
+
+    // page-kind-handwriting. Handwriting wins over a photograph, a newspaper over handwriting,
+    // and a newspaper's ink is never judged.
+    var judged = 0
+    let hand: () -> Bool = { judged += 1; return true }
+    let notHand: () -> Bool = { judged += 1; return false }
+    let kinds = (Recogniser.pageKind(of: [], pasteUp: false, photograph: true, handwritten: hand),
+                 Recogniser.pageKind(of: [], pasteUp: false, photograph: false, handwritten: hand),
+                 Recogniser.pageKind(of: [], pasteUp: false, photograph: true, handwritten: notHand),
+                 Recogniser.pageKind(of: [], pasteUp: false, photograph: false, handwritten: notHand))
+    check("a handwritten page is handwriting, photographed or not; otherwise a photograph stays one",
+          kinds == (.handwriting, .handwriting, .photograph, .other) && judged == 4, "\(kinds) \(judged)")
+    judged = 0
+    check("…and a paste-up with handwriting on it is a newspaper, its ink not judged",
+          Recogniser.pageKind(of: [], pasteUp: true, photograph: true, handwritten: hand) == .newspaper && judged == 0)
+    var hands = Prefs.Snapshot.current()
+    hands.modelArrangement = .align
+    hands.modelReader = printReader
+    hands.handModelArrangement = .align
+    hands.handModelReader = reader("hand.sh", "The model reader's handz reach the text layer")
+    let onHand = hands.model(for: .handwriting)
+    check("with a handwriting pair, a handwritten page takes it, and the rest the main pair",
+          onHand.modelReader.hasSuffix("hand.sh") && hands.model(for: .other).modelReader == printReader
+              && hands.model(for: .photograph).modelReader == printReader && hands.handwritingApart)
+    let typed = text(first, hands)
+    check("…through recognisePage(at:), a typed page is judged not handwritten and takes the main reader",
+          typed.contains("printz") && !typed.contains("handz"), typed)
+    var handOnly = Prefs.Snapshot.current()
+    handOnly.handModelArrangement = .align
+    handOnly.handModelReader = "falcon-ocr"
+    var sameHand = Prefs.Snapshot.current()
+    sameHand.modelArrangement = .align; sameHand.modelReader = "falcon-ocr"
+    sameHand.handModelArrangement = .align; sameHand.handModelReader = "falcon-ocr"
+    var photoDiffers = sameHand
+    photoDiffers.photoModelArrangement = .regions; photoDiffers.photoModelReader = "paddleocr-vl"
+    var handOff = Prefs.Snapshot.current()
+    handOff.handModelArrangement = .off
+    check("a reader for handwriting alone is on and sets handwriting apart; one alike the rest does not, "
+          + "unless photographs read otherwise",
+          handOnly.modelOn && handOnly.handwritingApart && !Prefs.Snapshot.current().handwritingApart
+              && !sameHand.handwritingApart && photoDiffers.handwritingApart && !handOff.handwritingApart
+              && !handOff.modelOn)
+    // The ink `flatten` leaves beside a page is what the hand is judged on: the typed fixture's
+    // lines, over an ink render whose marks in those lines are a joined hand's, take the
+    // handwriting reader; without the render, the same page is type.
+    let read = (try? Recogniser.recognisePage(at: first, settings: Prefs.Snapshot.current(),
+                                              onModelFallback: { _, _ in })) ?? nil
+    let inkStem = pngs.appendingPathComponent("inked")
+    for name in (try? FileManager.default.contentsOfDirectory(atPath: pngs.path)) ?? [] where name.hasPrefix(stem + ".") {
+        try? FileManager.default.copyItem(at: pngs.appendingPathComponent(name),
+                                          to: pngs.appendingPathComponent("inked" + name.dropFirst(stem.count)))
+    }
+    let inked = inkStem.appendingPathExtension("png")
+    let firstImage = Recogniser.loadImage(at: first)
+    if let read, let firstImage {
+        let w = firstImage.width, h = firstImage.height
+        var px = [UInt8](repeating: 255, count: w * h)
+        let wander = [0.0, 0.2, -0.12, 0.16, -0.16, 0.08, -0.2, 0.12]
+        for o in read {
+            let x0 = Int(o.boundingBox.x * Double(w)), bw = Int(o.boundingBox.width * Double(w))
+            let y0 = Int(o.boundingBox.y * Double(h)), bh = Int(o.boundingBox.height * Double(h))
+            let marks = 5, step = bw / marks
+            for m in 0..<marks {
+                let foot = y0 + Int(Double(bh) * (0.8 + wander[m % wander.count] / 2))
+                for x in (x0 + m * step)..<(x0 + m * step + step * 3 / 4) {
+                    for y in (y0 + bh / 5)..<min(foot, h) where x < w { px[y * w + x] = 20 }
+                }
+            }
+        }
+        _ = Flattener.writeGreyJPEG(px, width: w, height: h,
+                                    to: pngs.appendingPathComponent("inked" + Recogniser.inkSuffix))
+    }
+    let byInk = (text(inked, hands), text(first, hands))
+    check("…a page whose ink render is a hand's takes the handwriting reader, and the same page without it does not",
+          byInk.0.contains("handz") && !byInk.0.contains("printz") && byInk.1.contains("printz"),
+          "\(byInk) lines \(read?.count ?? -1)")
+    var bogusHand = Recogniser.helperArguments(handOnly)
+    if let i = bogusHand.firstIndex(of: "--hand-model-arrangement") { bogusHand[i + 1] = "bogus" }
+    check("the helper refuses a handwriting arrangement that is none, and reads one that is",
+          Recogniser.helperSettings(from: bogusHand) == nil
+              && Recogniser.helperSettings(from: Recogniser.helperArguments(handOnly))?.handModelReader == "falcon-ocr")
     resetPrefs()
 }
 }  // end of section
@@ -12738,6 +12825,18 @@ do {
           Prefs.Snapshot.current(d).model(for: .photograph).modelArrangement == .off
               && !AR.offered(.photograph, memoryGB: 12).contains(.visionRegions)
               && AR.offered(.photograph, memoryGB: 12) == [.vision, .paddle, .falcon])
+    d.set(AR.falcon.rawValue, forKey: Prefs.accurateHandReader)
+    s = Prefs.Snapshot.current(d)
+    let onHandwriting = s.model(for: .handwriting)
+    check("…Falcon-OCR on handwriting runs as align, and handwriting is looked for",
+          onHandwriting.modelArrangement == .align && onHandwriting.modelReader == "falcon-ocr" && s.handwritingApart
+              && AR.offered(.handwriting, memoryGB: 12) == [.vision, .paddle, .falcon],
+          "\(onHandwriting.modelArrangement) \(onHandwriting.modelReader)")
+    AR.setEnabled(.falcon, false, d)
+    check("…and turning Falcon-OCR off puts handwriting back to Vision",
+          d.string(forKey: Prefs.accurateHandReader) == AR.vision.rawValue
+              && Prefs.Snapshot.current(d).model(for: .handwriting).modelArrangement == .off)
+    AR.setEnabled(.falcon, true, d)
     d.set(AR.visionRegions.rawValue, forKey: Prefs.accurateReader)
     d.set(AR.visionRegions.rawValue, forKey: Prefs.accurateNewspaperReader)
     s = Prefs.Snapshot.current(d)
@@ -12756,7 +12855,7 @@ do {
     // Every route the settings can produce is one the engine was approved to run.
     var outside: [String] = []
     for reader in AR.allCases where reader != .vision {
-        for kind in [Recogniser.PageKind.newspaper, .other, .photograph] where reader.figures(kind) != nil {
+        for kind in Recogniser.PageKind.allCases where reader.figures(kind) != nil {
             let route = reader.route(kind)
             if ModelRuntime.offered(route.reader)?[kind]?.contains(route.arrangement) != true {
                 outside.append("\(reader.rawValue) on \(kind.rawValue)")
@@ -12770,7 +12869,9 @@ do {
               && AR.vision.cells(.newspaper) == ["about 296", "about 23 seconds", "no extra", "none"]
               && AR.visionRegions.cells(.newspaper)?.last == "65 MB" && AR.visionRegions.cells(.other) == nil
               && AR.falcon.cells(.photograph) == ["about 27", "about 37 seconds, 17.6× Vision", "3.9 GB", "1.1 GB"]
-              && AR.visionRegions.cells(.photograph) == nil,
+              && AR.visionRegions.cells(.photograph) == nil
+              && AR.falcon.cells(.handwriting) == ["about 409", "about 39 seconds, 16.8× Vision", "3.9 GB", "1.1 GB"]
+              && AR.vision.cells(.handwriting)?.first == "about 561" && AR.visionRegions.cells(.handwriting) == nil,
           "\(AR.falcon.cells(.other) ?? []) \(AR.vision.cells(.newspaper) ?? [])")
     let bare = ["VISIONOCR_MODEL_HOME": tmp.appendingPathComponent("no-models").path]
     check("the panel can say what a chosen reader still needs downloaded",
@@ -12783,6 +12884,10 @@ do {
     check("the settings panel shows the accurate mode",
           panel.contains("accurateSection\n") && panel.contains("@AppStorage(Prefs.accurateMode)"),
           panel.isEmpty ? "could not read SettingsView.swift" : "not shown")
+    check("Choose pages offers handwritten pages as a fourth kind and states which kind wins",
+          panel.contains("kind(\"Handwritten pages\", .handwriting, $accurateHandReader)")
+              && panel.contains("one of four kinds") && panel.contains("counts as handwriting")
+              && panel.contains("counts as a newspaper"))
 }
 }  // end of section
 
@@ -14125,6 +14230,24 @@ do {
     check("…every page of an image a camera tagged", tagged == [true, true], "\(tagged)")
     let unasked = marks(find: false, camera: true)
     check("…and none when photographs have no reader of their own", unasked == [false, false], "\(unasked)")
+    // page-kind-handwriting. With handwriting read apart, each page gets the plain render the hand
+    // is judged on, at the page's own size (the second turned); without, none.
+    func inks(_ find: Bool) -> [CGSize?] {
+        let pngs = dir.appendingPathComponent("ink-\(find)")
+        try? FileManager.default.removeItem(at: pngs)
+        try? FileManager.default.createDirectory(at: pngs, withIntermediateDirectories: true)
+        let pages = (try? Flattener.flatten(source, to: dir.appendingPathComponent("ink-\(find).pdf"),
+                                            mode: .blackAndWhite, pngDirectory: pngs, findHandwriting: find)) ?? []
+        return pages.compactMap(Recogniser.imageURL(of:)).map { url in
+            Recogniser.loadImage(at: url.deletingPathExtension().appendingPathExtension("ink.jpg"))
+                .flatMap { ink in Recogniser.loadImage(at: url).map { page in
+                    CGSize(width: Double(ink.width) / Double(page.width), height: Double(ink.height) / Double(page.height)) } }
+        }
+    }
+    let inked = inks(true), plain = inks(false)
+    check("flatten leaves an ink render beside each page, on its grid, when handwriting has its own reader",
+          inked.count == 2 && inked.allSatisfy { $0.map { abs($0.width - $0.height) < 0.01 } == true }
+              && plain.count == 2 && plain.allSatisfy { $0 == nil }, "\(inked) \(plain)")
 }
 }  // end of section
 
@@ -14201,8 +14324,11 @@ do {
                                  quarterTurns: turns))
         check("…while type turned as far is still type", !yes, why)
     }
-    (yes, why) = called(page(marks: 12, width: 14, letters: 12, feet: [0, 0, 3, 0, 0, -3]))
+    (yes, why) = called(page(marks: 12, width: 14, letters: 12, feet: [0, 0, 5, 0, 0, -5]))
     check("a hand that keeps to its line but leaps off it a letter in three is handwritten", yes, why)
+    (yes, why) = called(page(marks: 12, width: 14, letters: 12, feet: [0, 0, 3, 0, 0, -3]))
+    check("…but type whose feet step 0.075 of the line and stray no further is not, as a printed photo's",
+          !yes, why)
     (yes, why) = called(page(marks: 8, width: 40, letters: 20, feet: [-7, -5, -3, -1, 1, 3, 5, 7]))
     check("…but smudged type photographed aslant, its feet stepping by the slope alone, is not", !yes, why)
     (yes, why) = called(page(marks: 12, width: 14, letters: 12, feet: wander, pieces: 3))

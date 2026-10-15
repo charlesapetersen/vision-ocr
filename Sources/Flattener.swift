@@ -1276,6 +1276,7 @@ enum Flattener {
         keepSourceJBIG2: Bool = false,
         findPhotographs: Bool = false,
         cameraExposed: Bool = false,
+        findHandwriting: Bool = false,
         isCancelled: () -> Bool = { false },
         progress: (Int, Int) -> Void = { _, _ in },
         onPage: ((RebuiltPage) throws -> Void)? = nil
@@ -1645,7 +1646,8 @@ enum Flattener {
                 // A paste-up's strips, for the recogniser to read one at a time (C39).
                 // Beside the bitmap rather than in `RebuiltPage`, so the helper process,
                 // which is handed only the bitmap's path, finds them too.
-                if let regions = mosaicRegions(of: page, box: box) {
+                let regions = mosaicRegions(of: page, box: box)
+                if let regions {
                     guard let data = try? JSONEncoder().encode(regions),
                           (try? data.write(to: pngDirectory.appendingPathComponent(
                               stem + Recogniser.regionsSuffix))) != nil else {
@@ -1660,6 +1662,22 @@ enum Flattener {
                         atPath: pngDirectory.appendingPathComponent(stem + Recogniser.photoSuffix).path,
                         contents: Data()) else {
                         throw Failure.pageFailed(page: index + 1, of: count)
+                    }
+                }
+                // page-kind-handwriting. A plain grey render of the source, on the rebuilt
+                // page's sheet, for the recogniser to judge a hand on: the page's own bitmap is
+                // thresholded or re-lit. Not for a paste-up, whose ink is never judged. Best
+                // effort; without it the page is judged on its bitmap.
+                if findHandwriting, regions == nil {
+                    let inkScale = CGFloat(rebuildDPI(of: page)) / 72
+                    let inkWidth = Int((box.width * inkScale).rounded())
+                    let inkHeight = Int((box.height * inkScale).rounded())
+                    if inkWidth >= 1, inkHeight >= 1,
+                       Double(inkWidth) * Double(inkHeight) <= Double(maximumPageMegapixels) * 1_000_000,
+                       let ink = renderGrey(page, box: box, scale: inkScale, width: inkWidth,
+                                            height: inkHeight, from: .mediaBox) {
+                        _ = writeGreyJPEG(ink, width: inkWidth, height: inkHeight,
+                                          to: pngDirectory.appendingPathComponent(stem + Recogniser.inkSuffix))
                     }
                 }
                 if useBilevel {

@@ -14,6 +14,12 @@ an older entry mentions "Window ▸ Vision Reader Window", the menu item is now
 
 ## Unreleased
 
+- Choose pages has a fourth kind, Handwritten pages. The app tells a page written mostly by hand from a typed
+  or printed one by itself, from the shape of the ink in its lines, and reads it with the reader chosen for
+  handwriting; a typed page with notes in its margins is not one. A photo of a handwritten page counts as
+  handwriting, and a newspaper counts as a newspaper. The figures beside it were measured on 19 photographed
+  letters and notes, a small sample: Falcon-OCR misses about 409 words in 1,000 there, Vision 561
+  (page-kind-handwriting).
 - Extra readers now read sideways and upside-down pages upright before merging their words into the
   searchable text. The page image and the text's position stay in their original orientation (pk-upright).
 - Choose pages has a third kind, Photographed pages, beside Newspapers and Other documents (which now says

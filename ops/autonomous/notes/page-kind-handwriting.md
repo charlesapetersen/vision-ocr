@@ -42,3 +42,30 @@ models missing 7-9% of words (Qwen3.5 9B 7.7%, Gemma 4 31B 7.8%, Qwen3.6 27B 6.6
 this repo's measure Vision misses 56% too, and the best shipped reader, Falcon-OCR, 41%: far behind them.
 Should a handwriting page's reader be one of those models (not approved, so not added), or a whole-page
 arrangement that does not depend on Vision's lines?
+
+## 2026-10-15 — session 2, hw-settings (Opus 5.5, medium)
+
+Wired: `PageKind.handwriting`, its pair through Prefs, the helper's arguments, the run report and the dialog
+(fourth kind; Falcon-OCR align, PaddleOCR-VL regions; figures from HW-MEASURE, labelled a small sample that
+counts missed words only). Rule: a newspaper wins over handwriting, handwriting over a photograph; a paste-up's
+ink is never judged. Rejected: the photograph's reader for a photographed letter (27-34 per 1,000 on print,
+409-561 on a hand). Detection runs only when handwriting would be read otherwise (`handwritingApart`).
+Re-measured on the app's own route (`REBUILD=1 Tools/score-page-hand`, `HW-SETTINGS-2026-10-15.tsv`):
+- On the rebuilt bitmaps the app reads (a photo's page is a re-lit JPEG), the detector lost p015 and hw08
+  (truth 17/19, held-out 13/15) and called p080 (printed) and xm02 (a clipping) handwritten. With the
+  production reading's lines over a plain render of the source, p015 and hw08 came back; p080 stayed, at a
+  plain step of 0.060. So `flatten` now leaves that render (`.ink.jpg`, on the rebuilt sheet, only with
+  handwriting read apart, not for paste-ups) and the plain-step clause moved 0.06 -> 0.1 (the least hand
+  needing it steps 0.315; every hand under 0.1 passes the second clause).
+- Rejected: judging the re-lit bitmap (the misses above); lowering `joined` to 0.5 for hw08 (calls pk33).
+Figures note: PaddleOCR-VL's 3.3 s a page on handwriting is HW-MEASURE's wall less the harness's start-up,
+reasoned, against 8.5 s on photographs; it read every page (its words differ from Vision's).
+Accurate mode: an unset handwriting choice is Vision, as photographs' is, and the dialog says so; rejected
+inheriting the other documents' reader, which the dialog's picker cannot show.
+Result, the app's route on the final code (`HW-SETTINGS-2026-10-15.tsv`, 332 pages): truth 18 of 19 handwritten
+routed to the handwriting reader (p048), held-out 14 of 15 (hw04), no typed, printed or other page of any set.
+ux-regression 0 worse, 0 better (53 pages, 40 documents; accurate rows set the handwriting reader too). Built
+app holds the dialog's four kinds. Review (subagent): the ink render was on the crop box while the page is the
+whole sheet (fixed: flatten's own box and render, and an ink image off the page's shape is not used); paste-ups
+no longer get one. Independent DONE WHEN check: all PASS; it found the 29 photo-sample extras unmeasured on the
+app's route, now measured (none called). Suite 2,112/2,112.

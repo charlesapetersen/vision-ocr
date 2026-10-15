@@ -2087,6 +2087,7 @@ final class OCRModel: ObservableObject {
                     keepSourceJBIG2: wantJBIG2 && JBIG2.isAvailable,
                     findPhotographs: settings.photographsApart,
                     cameraExposed: cameraExposed,
+                    findHandwriting: settings.handwritingApart,
                     isCancelled: { control.isCancelled },
                     progress: { d, t in progress("Rebuilding page \(d) of \(t)", rebuildShare(d, t)) },
                     // Compress and discard each page as it is produced. Holding

@@ -718,6 +718,13 @@ enum Recogniser {
     /// mark, and a photographed page is read as the rest.
     static let photoSuffix = ".photo"
 
+    /// What `Flattener.flatten` names the plain grey render of a page's source, on the rebuilt
+    /// page's sheet, it leaves for `isHandwritten` when handwriting has a reader of its own
+    /// (page-kind-handwriting): `p00001.png` has it in `p00001.ink.jpg`. The detector was tuned
+    /// on such a render; the re-lit bitmap the app reads judged 2 more of 41 hands as type
+    /// (`HW-SETTINGS-2026-10-15.tsv`).
+    static let inkSuffix = ".ink.jpg"
+
     static func photographed(besides image: URL) -> Bool {
         FileManager.default.fileExists(
             atPath: image.deletingPathExtension().appendingPathExtension("photo").path)
@@ -969,17 +976,32 @@ enum Recogniser {
         }
         // C50. The grey render the copy was thresholded from, on the copy's own grid.
         let greyURL = image.deletingPathExtension().appendingPathExtension("grey.jpg")
+        var greyImage: CGImage?
         if !isCancelled(), let grey = loadImage(at: greyURL),
            grey.width == first.width, grey.height == first.height,
            let greyLines = try? read(grey), !isCancelled() {
             merged = greyReading(of: merged, from: greyLines,
                                  aspect: Double(first.height) / Double(first.width))
+            greyImage = grey
         }
         let fitted = fittedToGutters(merged, of: fitOn, isCancelled: isCancelled)
         guard settings.modelOn, !isCancelled() else { return fitted }
         // Each page goes to the reader set for its kind (C57, ie-readers); a paste-up is the
-        // page `flatten` wrote regions for, a photograph the one it marked (page-kinds-three).
-        let kind = pageKind(of: fitted, pasteUp: regions != nil, photograph: photographed(besides: image))
+        // page `flatten` wrote regions for, a photograph the one it marked (page-kinds-three), and
+        // handwriting the one whose ink is a hand's (page-kind-handwriting), judged on the render
+        // `flatten` left for it (else the grey render, else the page), and only when that changes
+        // the reader.
+        let handApart = settings.handwritingApart
+        let inkURL = image.deletingPathExtension().appendingPathExtension("ink.jpg")
+        func inked() -> CGImage {
+            // Only on the page's own shape: the lines' boxes are fractions of it.
+            guard let ink = loadImage(at: inkURL), ink.height > 0, fitOn.height > 0,
+                  abs(Double(ink.width) / Double(ink.height) - Double(fitOn.width) / Double(fitOn.height))
+                      < 0.01 * Double(fitOn.width) / Double(fitOn.height) else { return greyImage ?? fitOn }
+            return ink
+        }
+        let kind = pageKind(of: fitted, pasteUp: regions != nil, photograph: photographed(besides: image),
+                            handwritten: { handApart && isHandwritten(handSignals(of: fitted, image: inked())) })
         let settings = settings.model(for: kind)
         guard settings.modelArrangement != .off else { return fitted }
         if let modelStopped {
@@ -4680,6 +4702,9 @@ enum Recogniser {
             // Empty: photographed pages are read as the rest (page-kinds-three).
             "--photo-model-arrangement", settings.photoModelArrangement?.rawValue ?? "",
             "--photo-model-reader", settings.photoModelReader,
+            // Empty: handwritten pages are read as the rest (page-kind-handwriting).
+            "--hand-model-arrangement", settings.handModelArrangement?.rawValue ?? "",
+            "--hand-model-reader", settings.handModelReader,
             "--model-memory-gb", "\(settings.modelMemoryGB)",
         ]
     }
@@ -4729,6 +4754,9 @@ enum Recogniser {
               let photoArrangement = values["--photo-model-arrangement"],
               photoArrangement.isEmpty || Prefs.ModelArrangement(rawValue: photoArrangement) != nil,
               let photoReader = values["--photo-model-reader"],
+              let handArrangement = values["--hand-model-arrangement"],
+              handArrangement.isEmpty || Prefs.ModelArrangement(rawValue: handArrangement) != nil,
+              let handReader = values["--hand-model-reader"],
               let memoryGB = number("--model-memory-gb")
         else { return nil }
 
@@ -4747,7 +4775,9 @@ enum Recogniser {
             newspaperModelArrangement: Prefs.ModelArrangement(rawValue: newspaperArrangement),
             newspaperModelReader: newspaperReader,
             photoModelArrangement: Prefs.ModelArrangement(rawValue: photoArrangement),
-            photoModelReader: photoReader, modelMemoryGB: memoryGB)
+            photoModelReader: photoReader,
+            handModelArrangement: Prefs.ModelArrangement(rawValue: handArrangement),
+            handModelReader: handReader, modelMemoryGB: memoryGB)
     }
 
     /// One page's worth of the helper's output, and the app's input.
@@ -5036,7 +5066,7 @@ enum Recogniser {
 extension Recogniser {
     /// What a page is, for choosing how a model reads it. Judged page by page, since a
     /// scrapbook or a book with clippings holds both.
-    enum PageKind: String { case newspaper, other, photograph }
+    enum PageKind: String, CaseIterable { case newspaper, other, photograph, handwriting }
 
     /// The shape of Vision's reading of a page, the signals `pageKind` judges by. Both
     /// are taken from the page alone, so they hold for a photograph with no physical size.
@@ -5088,10 +5118,19 @@ extension Recogniser {
     /// newspaper is a newspaper: its columns are the harder problem, and the newspaper readers
     /// were measured on them. Rejected: the photograph's reader for it, measured on letters,
     /// clippings and tables and never on a whole newspaper page.
+    ///
+    /// A handwritten page is handwriting whether photographed or scanned (page-kind-handwriting):
+    /// a hand is what defeats the readers, and the handwriting figures were taken on photographs.
+    /// A newspaper page stays a newspaper, for its columns, and a margin note never makes one
+    /// handwriting (`isHandwritten` judges the page's median line). Rejected: the photograph's
+    /// reader for a photographed letter, which on a hand misses 409-561 words in 1,000, against
+    /// 27-34 on print.
     static func pageKind(of observations: [SearchableWriter.Observation], pasteUp: Bool,
-                         photograph: Bool) -> PageKind {
+                         photograph: Bool, handwritten: () -> Bool = { false }) -> PageKind {
         let kind = pageKind(of: observations, pasteUp: pasteUp)
-        return kind == .newspaper || !photograph ? kind : .photograph
+        if kind == .newspaper { return kind }
+        if handwritten() { return .handwriting }
+        return photograph ? .photograph : kind
     }
 
     /// `pageKind`'s three edges. Print's most is 340 lines; a fifth of the page is five
@@ -5395,7 +5434,8 @@ extension Recogniser {
 
     /// Whether a page is handwritten: two or more lines to judge, marks whole letters or
     /// joined ones (not print broken into dots, under 0.85 letters a mark), and feet that
-    /// wander, plainly (`footJitter` 0.06) or less plainly with a second sign: off a fitted
+    /// wander, plainly (`footJitter` 0.1; at 0.06 the app's reading of a printed page, p080,
+    /// stepping 0.060, was a hand, and the least hand needing it steps 0.315) or less plainly with a second sign: off a fitted
     /// baseline as a hand's printed capitals are, or joined over most lines.
     ///
     /// Measured (`Tools/score-page-hand`, `HW-DETECT-2026-10-15.tsv`) on Archive Suite's truth
@@ -5405,7 +5445,7 @@ extension Recogniser {
     /// line (a joined line of three marks wanders less than its letters suggest).
     static func isHandwritten(_ s: HandSignals) -> Bool {
         guard s.lines >= 2, s.lettersPerMark >= 0.85 else { return false }
-        return s.footJitter >= 0.06
+        return s.footJitter >= 0.1
             || (s.footJitter >= 0.035 && (s.footResidual >= 0.03 || s.joined >= 0.6))
     }
 }
@@ -5416,6 +5456,7 @@ extension Recogniser.PageKind {
         switch self {
         case .newspaper: return "newspaper pages"
         case .photograph: return "photographed pages"
+        case .handwriting: return "handwritten pages"
         case .other: return "other documents"
         }
     }
@@ -5423,10 +5464,10 @@ extension Recogniser.PageKind {
 
 extension Prefs.Snapshot {
     /// Whether a model reads any page: the main pair's arrangement, the newspapers' or the
-    /// photographs'.
+    /// photographs' or the handwriting's.
     var modelOn: Bool {
         modelArrangement != .off || (newspaperModelArrangement ?? .off) != .off
-            || (photoModelArrangement ?? .off) != .off
+            || (photoModelArrangement ?? .off) != .off || (handModelArrangement ?? .off) != .off
     }
 
     /// Whether a photographed page would be read otherwise than the rest, so that finding
@@ -5436,14 +5477,28 @@ extension Prefs.Snapshot {
         return arrangement != modelArrangement || (arrangement != .off && photoModelReader != modelReader)
     }
 
+    /// Whether a handwritten page would be read otherwise than it is as a photograph or as
+    /// the rest, so that judging its ink (`isHandwritten`) is worth the time.
+    var handwritingApart: Bool {
+        guard handModelArrangement != nil else { return false }
+        let hand = model(for: .handwriting)
+        return [Recogniser.PageKind.other, .photograph].contains { kind in
+            let otherwise = model(for: kind)
+            return otherwise.modelArrangement != hand.modelArrangement
+                || (hand.modelArrangement != .off && otherwise.modelReader != hand.modelReader)
+        }
+    }
+
     /// These settings as a page of `kind` is read: a newspaper page takes the newspaper pair
     /// when one is set (C57, ie-readers), a photographed page the photographs' pair when one is
-    /// set (page-kinds-three), and every other page the main pair.
+    /// set (page-kinds-three), a handwritten page the handwriting's (page-kind-handwriting), and
+    /// every other page the main pair.
     func model(for kind: Recogniser.PageKind) -> Prefs.Snapshot {
         let arrangement: Prefs.ModelArrangement?, reader: String
         switch kind {
         case .newspaper: (arrangement, reader) = (newspaperModelArrangement, newspaperModelReader)
         case .photograph: (arrangement, reader) = (photoModelArrangement, photoModelReader)
+        case .handwriting: (arrangement, reader) = (handModelArrangement, handModelReader)
         case .other: return self
         }
         guard let arrangement else { return self }
@@ -5471,9 +5526,11 @@ enum ModelRuntime {
 
     static let readers: [String: Reader] = [
         "falcon-ocr": Reader(repo: "tiiuae/Falcon-OCR", prompt: "plain",
-                             arrangements: [.other: [.align], .photograph: [.align], .newspaper: [.regions]]),
+                             arrangements: [.other: [.align], .photograph: [.align], .handwriting: [.align],
+                                            .newspaper: [.regions]]),
         "paddleocr-vl": Reader(repo: "mlx-community/PaddleOCR-VL-1.6-4bit", prompt: "OCR:",
-                               arrangements: [.other: [.regions], .photograph: [.regions], .newspaper: [.regions]]),
+                               arrangements: [.other: [.regions], .photograph: [.regions], .handwriting: [.regions],
+                                              .newspaper: [.regions]]),
     ]
 
     /// `modelReader`'s name for Vision reading `LayoutModel`'s regions itself: the regions

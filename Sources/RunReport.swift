@@ -262,6 +262,8 @@ enum RunReport {
                                 "; newspapers: " + pair($0, s.newspaperModelReader) } ?? "")
                             + (s.photoModelArrangement.map {
                                 "; photographs: " + pair($0, s.photoModelReader) } ?? "")
+                            + (s.handModelArrangement.map {
+                                "; handwriting: " + pair($0, s.handModelReader) } ?? "")
                             + String(format: "; stopped over %.1f GB", s.modelMemoryGB)
                             + (c.rebuildImages ? "" : " — not used: pages are not rebuilt")))
         }
@@ -321,6 +323,8 @@ enum RunReport {
         "newspaperModelReader": "Model reader",
         "photoModelArrangement": "Model reader",
         "photoModelReader": "Model reader",
+        "handModelArrangement": "Model reader",
+        "handModelReader": "Model reader",
         "modelMemoryGB": "Model reader",
     ]
 

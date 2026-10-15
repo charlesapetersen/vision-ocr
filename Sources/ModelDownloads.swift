@@ -370,7 +370,7 @@ extension Prefs.AccurateReader {
     /// models dialog downloads a reader whole, so a page-kind choice never needs another download.
     var allNeeds: [ModelDownloads.Item] {
         var out: [ModelDownloads.Item] = []
-        for kind in [Recogniser.PageKind.other, .newspaper, .photograph] where figures(kind) != nil {
+        for kind in [Recogniser.PageKind.other, .newspaper, .photograph, .handwriting] where figures(kind) != nil {
             for item in needs(kind) where !out.contains(item) { out.append(item) }
         }
         return out

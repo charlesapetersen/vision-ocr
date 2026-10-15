@@ -2083,7 +2083,7 @@ say so in the commit.
             (notes: ops/autonomous/notes/pk-upright.md)
       - [x] **pk-settings** — the three kinds in the dialog and the routing, with the overlap rule.
             (blocked-on: pk-photo-detect, pk-photo-measure, sp-accurate)
-- [ ] **page-kind-handwriting** — a fourth kind of page in Choose by Kind of Page, handwritten pages, recognised
+- [x] **page-kind-handwriting** — a fourth kind of page in Choose by Kind of Page, handwritten pages, recognised
       by themselves and read by their own reader. (uses: build,model:12) (blocked-on: pk-upright)
       THE ASK (owner, 2026-10-15), from the proposal in `ops/autonomous/notes/page-kinds-three.md`. On 84 handwritten
       words in the photographed sample, Falcon-OCR missed 583 per 1,000 as stored and 500 with the turned pages set
@@ -2124,7 +2124,7 @@ say so in the commit.
       - [x] **hw-detect** — the handwriting detector, checked as above. (blocked-on: hw-pages)
       - [x] **hw-measure** — the three readers measured on the handwritten pages, and the table's figures.
             (blocked-on: hw-pages, pk-upright)
-      - [ ] **hw-settings** — the fourth kind in the dialog and the routing, with the overlap rule.
+      - [x] **hw-settings** — the fourth kind in the dialog and the routing, with the overlap rule.
             (blocked-on: hw-detect, hw-measure)
 - [ ] **hw-qwen** — measure four downloadable readers for handwritten pages (Qwen3.5-9B, LightOnOCR-3-4B,
       Churro 3B, Kraken PP-OCRv6 on Vision's lines), add the best one that passes the bar, and if its words cannot

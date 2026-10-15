@@ -443,6 +443,9 @@ enum Prefs {
     /// photographed page is read as every other page is.
     static let photoModelArrangement = "photoModelArrangement"
     static let photoModelReader = "photoModelReader"
+    /// The same for handwritten pages (`Recogniser.isHandwritten`, page-kind-handwriting).
+    static let handModelArrangement = "handModelArrangement"
+    static let handModelReader = "handModelReader"
     /// The most memory a model reader may hold, in GB, before `ModelGuard` stops it and the
     /// page keeps Vision's reading (C57, ie-guard): the memory slider `ocr-integrate-settings`
     /// gives a control. Measured as the reader's whole process group's physical footprint,
@@ -464,12 +467,13 @@ enum Prefs {
 
     /// The accurate mode (C57, `ocr-integrate-settings`). Off by default, and off, no model
     /// is run or downloaded. On, each kind of page is read by the reader chosen for it in
-    /// `accurateReader`, `accurateNewspaperReader` and `accuratePhotoReader` (`AccurateReader`
+    /// `accurateReader`, `accurateNewspaperReader`, `accuratePhotoReader` and `accurateHandReader` (`AccurateReader`
     /// raw values; unset is Vision), and the lab's `modelArrangement` keys are not read.
     static let accurateMode = "accurateMode"
     static let accurateReader = "accurateReader"
     static let accurateNewspaperReader = "accurateNewspaperReader"
     static let accuratePhotoReader = "accuratePhotoReader"
+    static let accurateHandReader = "accurateHandReader"
     /// The model readers the user has downloaded and enabled in the models dialog
     /// (`ocr-model-dialogs`), as comma-separated `AccurateReader` raw values. Only these, once
     /// downloaded, are offered for a kind of page (`AccurateReader.ready`).
@@ -535,6 +539,15 @@ enum Prefs {
                                                               downloadMB: Self.paddleDownloadMB + Self.layoutDownloadMB)
             case (.falcon, .photograph):       return Figures(wrongPer1000: 27, secondsPerPage: 36.9, memoryGB: 3.9,
                                                               downloadMB: Self.falconDownloadMB)
+            // Handwritten pages (page-kind-handwriting): `HW-MEASURE-2026-10-15.tsv`, 19 photographed
+            // pages of one archive's hands, a small sample; words missed only. Seconds are the
+            // harness's wall less its own start-up (about 18 s, reasoned); memory is the scans'.
+            case (.vision, .handwriting):      return Figures(wrongPer1000: 561, secondsPerPage: 2.3, memoryGB: 0, downloadMB: 0)
+            case (.visionRegions, .handwriting): return nil
+            case (.paddle, .handwriting):      return Figures(wrongPer1000: 454, secondsPerPage: 3.3, memoryGB: 2.4,
+                                                              downloadMB: Self.paddleDownloadMB + Self.layoutDownloadMB)
+            case (.falcon, .handwriting):      return Figures(wrongPer1000: 409, secondsPerPage: 38.6, memoryGB: 3.9,
+                                                              downloadMB: Self.falconDownloadMB)
             }
         }
 
@@ -564,8 +577,8 @@ enum Prefs {
             case (.paddle, .other):            return 10.1
             case (.falcon, .newspaper):        return 96.2
             case (.falcon, .other):            return 10.3
-            // No timing run has photographed pages; their speed stays ours.
-            case (_, .photograph):             return nil
+            // No timing run has photographed or handwritten pages; their speed stays ours.
+            case (_, .photograph), (_, .handwriting): return nil
             }
         }
 
@@ -590,7 +603,7 @@ enum Prefs {
             let seconds = String(format: "%.0f", speed.seconds)
             let times = (self == .vision ? "" : String(format: ", %.1f× Vision", speed.seconds / base.seconds))
                 // Beside readers this Mac timed, one it did not says so; so does every reader on a
-                // kind no timing run reads (photographs), once there has been a run.
+                // kind no timing run reads (photographs, handwriting), once there has been a run.
                 + (!speed.measured && timing.map { t in
                        referenceSeconds(kind) == nil || t.seconds.keys.contains { $0.hasSuffix(".\(kind.rawValue)") }
                    } == true ? " (test Mac)" : "")
@@ -628,7 +641,7 @@ enum Prefs {
 
         /// The most memory it needs on any kind of page it is offered on, in GB.
         var memoryNeedGB: Double {
-            [Recogniser.PageKind.newspaper, .other, .photograph].compactMap { figures($0)?.memoryGB }.max() ?? 0
+            Recogniser.PageKind.allCases.compactMap { figures($0)?.memoryGB }.max() ?? 0
         }
 
         /// The readers enabled in the models dialog, read from `d`.
@@ -647,7 +660,8 @@ enum Prefs {
             if on { set.insert(reader) } else { set.remove(reader) }
             d.set(allCases.filter(set.contains).map(\.rawValue).joined(separator: ","), forKey: Prefs.accurateEnabled)
             guard !on else { return }
-            for key in [Prefs.accurateReader, Prefs.accurateNewspaperReader, Prefs.accuratePhotoReader]
+            for key in [Prefs.accurateReader, Prefs.accurateNewspaperReader, Prefs.accuratePhotoReader,
+                        Prefs.accurateHandReader]
             where d.string(forKey: key) == reader.rawValue {
                 d.set(AccurateReader.vision.rawValue, forKey: key)
             }
@@ -788,6 +802,9 @@ enum Prefs {
         /// Nil: photographed pages are read as the rest (`Prefs.photoModelArrangement`).
         var photoModelArrangement: ModelArrangement? = nil
         var photoModelReader: String = ""
+        /// Nil: handwritten pages are read as the rest (`Prefs.handModelArrangement`).
+        var handModelArrangement: ModelArrangement? = nil
+        var handModelReader: String = ""
         var modelMemoryGB: Double = Prefs.defaultModelMemoryGB()
 
         /// Reads the live settings. Call on the main actor, once per batch.
@@ -824,6 +841,9 @@ enum Prefs {
                 photoModelArrangement: (d.string(forKey: Prefs.photoModelArrangement))
                     .flatMap { $0.isEmpty ? nil : ModelArrangement(rawValue: $0) ?? .off },
                 photoModelReader: d.string(forKey: Prefs.photoModelReader) ?? "",
+                handModelArrangement: (d.string(forKey: Prefs.handModelArrangement))
+                    .flatMap { $0.isEmpty ? nil : ModelArrangement(rawValue: $0) ?? .off },
+                handModelReader: d.string(forKey: Prefs.handModelReader) ?? "",
                 // Unset reads 0, which would stop every reader at its first sample.
                 modelMemoryGB: d.double(forKey: Prefs.modelMemoryGB) > 0
                     ? d.double(forKey: Prefs.modelMemoryGB) : Prefs.defaultModelMemoryGB())
@@ -833,8 +853,8 @@ enum Prefs {
 
         /// The accurate mode's choices in place of the lab's model keys: each kind's reader as
         /// `AccurateReader.chosen` resolves it, a reader not enabled being Vision, newspapers
-        /// and photographs always set apart so that they never take the print reader's
-        /// arrangement.
+        /// photographs and handwriting always set apart so that they never take the print
+        /// reader's arrangement.
         mutating func applyAccurateMode(_ d: UserDefaults) {
             let enabled = AccurateReader.enabled(d)
             let other = AccurateReader.chosen(d.string(forKey: Prefs.accurateReader), .other, memoryGB: modelMemoryGB,
@@ -849,6 +869,10 @@ enum Prefs {
                                               memoryGB: modelMemoryGB, enabled: enabled).route(.photograph)
             photoModelArrangement = photo.arrangement
             photoModelReader = photo.reader
+            let hand = AccurateReader.chosen(d.string(forKey: Prefs.accurateHandReader), .handwriting,
+                                             memoryGB: modelMemoryGB, enabled: enabled).route(.handwriting)
+            handModelArrangement = hand.arrangement
+            handModelReader = hand.reader
         }
     }
 
@@ -866,8 +890,8 @@ enum Prefs {
         joinHyphenated, preserveAnnotations, writeRunReport, concurrency,
         checkForUpdates, skippedVersion, lastUpdateCheck, modelArrangement, modelReader,
         newspaperModelArrangement, newspaperModelReader, photoModelArrangement, photoModelReader,
-        modelMemoryGB, accurateMode, accurateReader, accurateNewspaperReader, accuratePhotoReader,
-        accurateEnabled, accurateTiming,
+        handModelArrangement, handModelReader, modelMemoryGB, accurateMode, accurateReader,
+        accurateNewspaperReader, accuratePhotoReader, accurateHandReader, accurateEnabled, accurateTiming,
     ]
 
     /// Set once the pre-rename settings have been brought across. Deliberately
@@ -1012,6 +1036,7 @@ enum Prefs {
             accurateReader: AccurateReader.vision.rawValue,
             accurateNewspaperReader: AccurateReader.vision.rawValue,
             accuratePhotoReader: AccurateReader.vision.rawValue,
+            accurateHandReader: AccurateReader.vision.rawValue,
             accurateEnabled: "",
 
             // On by default. The cost is a few kilobytes of text per batch in
