@@ -2037,7 +2037,7 @@ say so in the commit.
             "Measure on this Mac" row is, let Stop cancel it, and keep the button for re-running. A check goes red
             without it. (blocked-on: sp-accurate)
       - [x] **sp-rest** — the other Settings boxes' labels and help text in plain words. (blocked-on: sp-accurate)
-- [ ] **page-kinds-three** — three kinds of page in Choose by Kind of Page: scanned newspapers, scanned
+- [x] **page-kinds-three** — three kinds of page in Choose by Kind of Page: scanned newspapers, scanned
       documents that are not newspapers, and photographed documents, with photographs recognised by
       themselves. (uses: build,model:12)
       THE ASK (owner, 2026-10-14). Today `Recogniser.PageKind` is `newspaper` or `other`
@@ -2078,7 +2078,9 @@ say so in the commit.
             orientation) turned upright, so its words are merged; today `alignedReading` and the region merge
             take model words for upright lines only and the model's reading of 9 of the 31 photos is discarded.
             Turned by hand, Falcon-OCR's handwriting misses fall 47 -> 28 of 56 (`PK-PHOTO-MEASURE-2026-10-14.tsv`).
-      - [ ] **pk-settings** — the three kinds in the dialog and the routing, with the overlap rule.
+            DONE WHEN those 9 pages, through the app, keep the model's words where it read them, upright pages are
+            unchanged, and the suite passes. (uses: build,model:12) (context: page-kinds-three, 2026-10-14)
+      - [x] **pk-settings** — the three kinds in the dialog and the routing, with the overlap rule.
             (blocked-on: pk-photo-detect, pk-photo-measure, sp-accurate)
 - [ ] **model-throughput** — measure whether keeping a model loaded between pages, or running two model readers
       at once, makes a batch read with Falcon-OCR or PaddleOCR-VL finish sooner. (uses: build,model:12)

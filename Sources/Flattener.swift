@@ -1274,6 +1274,8 @@ enum Flattener {
         pngDirectory: URL? = nil,
         passThrough: Set<Int> = [],
         keepSourceJBIG2: Bool = false,
+        findPhotographs: Bool = false,
+        cameraExposed: Bool = false,
         isCancelled: () -> Bool = { false },
         progress: (Int, Int) -> Void = { _, _ in },
         onPage: ((RebuiltPage) throws -> Void)? = nil
@@ -1650,6 +1652,16 @@ enum Flattener {
                         throw Failure.pageFailed(page: index + 1, of: count)
                     }
                 }
+                // page-kinds-three. A camera's photo, for the recogniser to give the
+                // photographs' reader; judged here, on the source's colour, because the
+                // bitmap it reads has none. Asked only when photographs have a reader.
+                if findPhotographs, photographed(page, box: box, cameraExposed: cameraExposed) {
+                    guard FileManager.default.createFile(
+                        atPath: pngDirectory.appendingPathComponent(stem + Recogniser.photoSuffix).path,
+                        contents: Data()) else {
+                        throw Failure.pageFailed(page: index + 1, of: count)
+                    }
+                }
                 if useBilevel {
                     let png = pngDirectory.appendingPathComponent(stem + ".png")
                     guard writePNG(image, to: png) else {
@@ -1968,6 +1980,24 @@ enum Flattener {
             return true
         }
         return ok ? buffer : nil
+    }
+
+    /// Whether a page is a camera's photo (`Recogniser.isPhotograph`): always, when the
+    /// image it was wrapped from names a camera; otherwise by its colour pixels, rendered
+    /// at `Recogniser.photoSignalSide` on its long side.
+    static func photographed(_ page: PDFPage, box: CGRect, cameraExposed: Bool) -> Bool {
+        if cameraExposed { return true }
+        let scale = CGFloat(Recogniser.photoSignalSide) / max(box.width, box.height, 1)
+        let width = max(1, Int((box.width * scale).rounded()))
+        let height = max(1, Int((box.height * scale).rounded()))
+        guard let rgba = renderRGB(page, box: box, scale: scale, width: width, height: height),
+              let provider = CGDataProvider(data: Data(rgba) as CFData),
+              let image = CGImage(width: width, height: height, bitsPerComponent: 8, bitsPerPixel: 32,
+                                  bytesPerRow: width * 4, space: CGColorSpaceCreateDeviceRGB(),
+                                  bitmapInfo: CGBitmapInfo(rawValue: CGImageAlphaInfo.premultipliedLast.rawValue),
+                                  provider: provider, decode: nil, shouldInterpolate: false,
+                                  intent: .defaultIntent) else { return false }
+        return Recogniser.isPhotograph(Recogniser.photoSignals(of: image))
     }
 
     /// C47. Whether two pages draw the same pixels: a source page and its copy with

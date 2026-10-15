@@ -712,6 +712,17 @@ enum Recogniser {
     /// `p00001.png` has it in `p00001.coarse.png`.
     static let coarseSuffix = ".coarse.png"
 
+    /// What `Flattener.flatten` names the mark it leaves beside a page it found to be a camera's
+    /// photo (`isPhotograph`), when photographed pages have a reader of their own
+    /// (page-kinds-three): `p00001.png` is marked by `p00001.photo`. Off the rebuild there is no
+    /// mark, and a photographed page is read as the rest.
+    static let photoSuffix = ".photo"
+
+    static func photographed(besides image: URL) -> Bool {
+        FileManager.default.fileExists(
+            atPath: image.deletingPathExtension().appendingPathExtension("photo").path)
+    }
+
     /// What `Flattener.flatten` names the grey render a 1-bit page was thresholded
     /// from, on the grid it is read at (C50): `p00001.png` has it in `p00001.grey.jpg`.
     static let greySuffix = ".grey.jpg"
@@ -967,8 +978,8 @@ enum Recogniser {
         let fitted = fittedToGutters(merged, of: fitOn, isCancelled: isCancelled)
         guard settings.modelOn, !isCancelled() else { return fitted }
         // Each page goes to the reader set for its kind (C57, ie-readers); a paste-up is the
-        // page `flatten` wrote regions for.
-        let kind = pageKind(of: fitted, pasteUp: regions != nil)
+        // page `flatten` wrote regions for, a photograph the one it marked (page-kinds-three).
+        let kind = pageKind(of: fitted, pasteUp: regions != nil, photograph: photographed(besides: image))
         let settings = settings.model(for: kind)
         guard settings.modelArrangement != .off else { return fitted }
         if let modelStopped {
@@ -4591,6 +4602,9 @@ enum Recogniser {
             // Empty: newspaper pages are read as the rest.
             "--newspaper-model-arrangement", settings.newspaperModelArrangement?.rawValue ?? "",
             "--newspaper-model-reader", settings.newspaperModelReader,
+            // Empty: photographed pages are read as the rest (page-kinds-three).
+            "--photo-model-arrangement", settings.photoModelArrangement?.rawValue ?? "",
+            "--photo-model-reader", settings.photoModelReader,
             "--model-memory-gb", "\(settings.modelMemoryGB)",
         ]
     }
@@ -4637,6 +4651,9 @@ enum Recogniser {
               let newspaperArrangement = values["--newspaper-model-arrangement"],
               newspaperArrangement.isEmpty || Prefs.ModelArrangement(rawValue: newspaperArrangement) != nil,
               let newspaperReader = values["--newspaper-model-reader"],
+              let photoArrangement = values["--photo-model-arrangement"],
+              photoArrangement.isEmpty || Prefs.ModelArrangement(rawValue: photoArrangement) != nil,
+              let photoReader = values["--photo-model-reader"],
               let memoryGB = number("--model-memory-gb")
         else { return nil }
 
@@ -4653,7 +4670,9 @@ enum Recogniser {
             customWords: words, minTextHeightOn: minOn, minTextHeight: minHeight,
             modelArrangement: arrangement, modelReader: reader,
             newspaperModelArrangement: Prefs.ModelArrangement(rawValue: newspaperArrangement),
-            newspaperModelReader: newspaperReader, modelMemoryGB: memoryGB)
+            newspaperModelReader: newspaperReader,
+            photoModelArrangement: Prefs.ModelArrangement(rawValue: photoArrangement),
+            photoModelReader: photoReader, modelMemoryGB: memoryGB)
     }
 
     /// One page's worth of the helper's output, and the app's input.
@@ -4942,7 +4961,7 @@ enum Recogniser {
 extension Recogniser {
     /// What a page is, for choosing how a model reads it. Judged page by page, since a
     /// scrapbook or a book with clippings holds both.
-    enum PageKind: String { case newspaper, other }
+    enum PageKind: String { case newspaper, other, photograph }
 
     /// The shape of Vision's reading of a page, the signals `pageKind` judges by. Both
     /// are taken from the page alone, so they hold for a photograph with no physical size.
@@ -4988,6 +5007,16 @@ extension Recogniser {
 
     static func pageKind(of observations: [SearchableWriter.Observation], pasteUp: Bool) -> PageKind {
         pageKind(shape: pageShape(of: observations), pasteUp: pasteUp)
+    }
+
+    /// The kind a page is read as, a photograph included (page-kinds-three). A photographed
+    /// newspaper is a newspaper: its columns are the harder problem, and the newspaper readers
+    /// were measured on them. Rejected: the photograph's reader for it, measured on letters,
+    /// clippings and tables and never on a whole newspaper page.
+    static func pageKind(of observations: [SearchableWriter.Observation], pasteUp: Bool,
+                         photograph: Bool) -> PageKind {
+        let kind = pageKind(of: observations, pasteUp: pasteUp)
+        return kind == .newspaper || !photograph ? kind : .photograph
     }
 
     /// `pageKind`'s three edges. Print's most is 340 lines; a fifth of the page is five
@@ -5163,20 +5192,44 @@ extension Recogniser {
 
 extension Recogniser.PageKind {
     /// The kind in a message: "newspaper pages".
-    var pages: String { self == .newspaper ? "newspaper pages" : "pages other than newspapers" }
+    var pages: String {
+        switch self {
+        case .newspaper: return "newspaper pages"
+        case .photograph: return "photographed pages"
+        case .other: return "other documents"
+        }
+    }
 }
 
 extension Prefs.Snapshot {
-    /// Whether a model reads any page: the main pair's arrangement or the newspapers'.
-    var modelOn: Bool { modelArrangement != .off || (newspaperModelArrangement ?? .off) != .off }
+    /// Whether a model reads any page: the main pair's arrangement, the newspapers' or the
+    /// photographs'.
+    var modelOn: Bool {
+        modelArrangement != .off || (newspaperModelArrangement ?? .off) != .off
+            || (photoModelArrangement ?? .off) != .off
+    }
+
+    /// Whether a photographed page would be read otherwise than the rest, so that finding
+    /// photographs (`Flattener.photographed`) is worth its render.
+    var photographsApart: Bool {
+        guard let arrangement = photoModelArrangement else { return false }
+        return arrangement != modelArrangement || (arrangement != .off && photoModelReader != modelReader)
+    }
 
     /// These settings as a page of `kind` is read: a newspaper page takes the newspaper pair
-    /// when one is set (C57, ie-readers), and every other page the main pair.
+    /// when one is set (C57, ie-readers), a photographed page the photographs' pair when one is
+    /// set (page-kinds-three), and every other page the main pair.
     func model(for kind: Recogniser.PageKind) -> Prefs.Snapshot {
-        guard kind == .newspaper, let arrangement = newspaperModelArrangement else { return self }
+        let arrangement: Prefs.ModelArrangement?, reader: String
+        switch kind {
+        case .newspaper: (arrangement, reader) = (newspaperModelArrangement, newspaperModelReader)
+        case .photograph: (arrangement, reader) = (photoModelArrangement, photoModelReader)
+        case .other: return self
+        }
+        guard let arrangement else { return self }
         var routed = self
         routed.modelArrangement = arrangement
-        routed.modelReader = newspaperModelReader
+        routed.modelReader = reader
         return routed
     }
 }
@@ -5198,9 +5251,9 @@ enum ModelRuntime {
 
     static let readers: [String: Reader] = [
         "falcon-ocr": Reader(repo: "tiiuae/Falcon-OCR", prompt: "plain",
-                             arrangements: [.other: [.align], .newspaper: [.regions]]),
+                             arrangements: [.other: [.align], .photograph: [.align], .newspaper: [.regions]]),
         "paddleocr-vl": Reader(repo: "mlx-community/PaddleOCR-VL-1.6-4bit", prompt: "OCR:",
-                               arrangements: [.other: [.regions], .newspaper: [.regions]]),
+                               arrangements: [.other: [.regions], .photograph: [.regions], .newspaper: [.regions]]),
     ]
 
     /// `modelReader`'s name for Vision reading `LayoutModel`'s regions itself: the regions

@@ -1,10 +1,10 @@
 // score-page-photo <list.tsv>: pk-photo-detect's measure. Each row of the list is
 // `id <TAB> file <TAB> page <TAB> label`, a PDF page or an image (page 1). Prints one row per
 // page: whether the image file's tags name a camera (`Flattener.cameraExposed`), the
-// signals `Recogniser.photoSignals` takes from the page's pixels, `Recogniser.isPhotograph`'s
-// call on the pixels alone and on the page as a whole, and the label. A PDF page is rendered
-// through PDFKit at 200 dpi capped at 3,000 px; an image is decoded whole. Reads only; writes
-// nothing but stdout. Exit 1 when a page is called against its label, 2 when the list is
+// signals `Recogniser.photoSignals` takes from the page (rendered through PDFKit at 200 dpi,
+// capped at 3,000 px, for the columns only), and the call `Flattener.photographed` makes as the
+// app makes it, an image wrapped as `makeSearchablePDF` wraps it: on the pixels alone and on
+// the page as a whole. Writes nothing but stdout and a scratch directory it removes. Exit 1 when a page is called against its label, 2 when the list is
 // unreadable or empty. Built with `Sources/` (see the README's recipe).
 import Foundation
 import ImageIO
@@ -31,6 +31,9 @@ func render(_ page: PDFPage) -> CGImage? {
     return ctx.makeImage()
 }
 
+let scratch = FileManager.default.temporaryDirectory
+    .appendingPathComponent("score-page-photo-\(ProcessInfo.processInfo.processIdentifier)")
+try? FileManager.default.createDirectory(at: scratch, withIntermediateDirectories: true)
 print("id\tlabel\tcamera\tpaper_level\tcast_spread\tborder_dark\tfalloff\tnoise\tpixels_call\tcall")
 var wrong = 0, measured = 0
 for line in list.split(whereSeparator: \.isNewline) where !line.hasPrefix("#") {
@@ -42,20 +45,25 @@ for line in list.split(whereSeparator: \.isNewline) where !line.hasPrefix("#") {
     }
     measured += 1
     autoreleasepool {
-        let url = URL(fileURLWithPath: f[1])
-        var image: CGImage?, camera = false
-        if url.pathExtension.lowercased() == "pdf" {
-            // The document is held while its page draws; PDFKit refuses a page whose document is gone.
-            let doc = PDFDocument(url: url)
-            image = doc?.page(at: n - 1).flatMap(render)
-        } else if let src = CGImageSourceCreateWithURL(url as CFURL, nil) {
-            camera = Flattener.cameraExposed(CGImageSourceCopyPropertiesAtIndex(src, 0, nil) as? [CFString: Any])
-            image = CGImageSourceCreateImageAtIndex(src, 0, nil)
+        // As the app judges a page: an image is wrapped as `makeSearchablePDF` wraps it, its tags
+        // read from the file, and the page judged by `Flattener.photographed`.
+        var url = URL(fileURLWithPath: f[1]), camera = false
+        if url.pathExtension.lowercased() != "pdf" {
+            camera = Flattener.cameraExposed(CGImageSourceCreateWithURL(url as CFURL, nil)
+                .flatMap { CGImageSourceCopyPropertiesAtIndex($0, 0, nil) as? [CFString: Any] })
+            guard let wrapped = Flattener.wrapImage(url, into: scratch) else {
+                print("\(f[0])\t\(f[3])\tERROR"); wrong += 1; return
+            }
+            url = wrapped
         }
-        guard let image else { print("\(f[0])\t\(f[3])\tERROR"); wrong += 1; return }
+        let doc = PDFDocument(url: url)
+        guard let page = doc?.page(at: n - 1), let image = render(page) else {
+            print("\(f[0])\t\(f[3])\tERROR"); wrong += 1; return
+        }
+        let box = Flattener.fullBox(of: page)
         let s = Recogniser.photoSignals(of: image)
-        let pixels = Recogniser.isPhotograph(s)
-        let call = camera || pixels
+        let pixels = Flattener.photographed(page, box: box, cameraExposed: false)
+        let call = Flattener.photographed(page, box: box, cameraExposed: camera)
         if call != (f[3] == "photo") { wrong += 1 }
         print([f[0], f[3], camera ? "yes" : "-", String(format: "%.0f", s.paperLevel),
                String(format: "%.1f", s.castSpread), String(format: "%.3f", s.borderDark),
@@ -65,5 +73,6 @@ for line in list.split(whereSeparator: \.isNewline) where !line.hasPrefix("#") {
     }
 }
 FileHandle.standardError.write("\(wrong) of \(measured) page(s) called against their label\n".data(using: .utf8)!)
+try? FileManager.default.removeItem(at: scratch)
 if measured == 0 { exit(2) }
 exit(wrong == 0 ? 0 : 1)

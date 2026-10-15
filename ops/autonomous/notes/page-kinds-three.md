@@ -58,3 +58,25 @@ HANDWRITING, a proposal for the owner, not built: Falcon-OCR is the best of the 
 loses about half of it, on 84 words; and the app has no way to tell a handwritten page yet. A fourth kind,
 "handwritten pages", read by Falcon-OCR would be worth it only with a detector and more truth; recommended
 to wait until pk-upright lands and measure again on more of the 286 Handwritten photos.
+
+## 2026-10-15 — pk-settings (Opus 5.5, medium)
+
+`PageKind.photograph`; `pageKind(of:pasteUp:photograph:)`, a newspaper winning (rejected: the photographs'
+reader, never measured on a whole newspaper page). `flatten` marks a photographed page (`p00001.photo`)
+when `photographsApart` (a photo pair set and different from the main pair), judging the source's colour
+at 1,600 px (`Flattener.photographed`); an image input's camera tags mark every page. Off the rebuild there
+is no mark and a photo is read as the rest. Prefs, the helper's arguments, `ModelRuntime.readers`, the run
+report and the dialog carry the third pair; "Books & other pages" is now "Other documents", said to cover
+scans, born-digital PDFs and screenshots; `PageKind.other.pages` is "other documents".
+Checked by running: the gate harness over 31 photos and 4 scans with Falcon-OCR on photographs and Vision
+elsewhere: every photo's text byte-identical to the all-Falcon run, every scan's to Vision's; report line
+"photographs: align, falcon-ocr". Dialog rendered off-screen (three kinds, figures, summary line).
+Review (subagent): `ux-regression.sh`'s accurate rows now set `-accuratePhotoReader` too; photographed
+speeds are marked "(test Mac)" once a timing exists (no timing run reads photos); the scanner-app sentence
+says "usually"; three tests added. Not changed: the Photographed pages size slider (image files) and the
+photograph kind (the detector's call, PDFs included) share a name; recorded, not renamed.
+Three readers at once (the DONE WHEN check's request), 4 files, against single-reader runs of the same:
+a NewsBench newspaper page's text equals PaddleOCR-VL's only; Baker (EXIF) and pk33 (a photo PDF, no EXIF)
+equal Falcon-OCR's only; the SV600 scan equals Vision's (and PaddleOCR-VL's, which changed nothing there),
+not Falcon-OCR's. Report: "off; newspapers: regions, paddleocr-vl; photographs: align, falcon-ocr".
+Evidence in `$STATE/photo-sample/pk-settings/`. Suite 2055/2055.

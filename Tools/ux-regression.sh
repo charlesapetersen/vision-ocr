@@ -276,7 +276,8 @@ g=$?   # 1 is the gate's own hard checks failing, which is a result; anything el
 for r in $readers; do
     # the gate takes the mode from its argument domain, as the app's settings would hold it
     VISIONOCR_HELPER="$W/visionocr-recognise" "$W/gate" "$W/in-$r" "$W/pub-$r" -accurateMode YES \
-        -accurateReader "$r" -accurateNewspaperReader "$r" -accurateEnabledReaders "$r" > "$W/gate-$r.log" 2>&1
+        -accurateReader "$r" -accurateNewspaperReader "$r" -accuratePhotoReader "$r" \
+        -accurateEnabledReaders "$r" > "$W/gate-$r.log" 2>&1
     a=$?
     [ $a -le 1 ] || { echo "ux-regression: the $r gate exited $a, see $W/gate-$r.log"; exit 2; }
     # a mode that did not take would publish Vision's reading under the accurate label

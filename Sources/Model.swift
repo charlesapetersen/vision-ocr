@@ -1911,6 +1911,10 @@ final class OCRModel: ObservableObject {
         var file = inputFile
         // An image input's all-text pages keep their tone layers finer (`mrcLayers`).
         let fromImage = PDFDocument(url: file) == nil
+        // page-kinds-three. A camera's tags make every page of the image a photograph.
+        let cameraExposed = fromImage && Flattener.cameraExposed(
+            CGImageSourceCreateWithURL(inputFile as CFURL, nil)
+                .flatMap { CGImageSourceCopyPropertiesAtIndex($0, 0, nil) as? [CFString: Any] })
         if fromImage {
             let input = work.appendingPathComponent("input")
             guard (try? FileManager.default.createDirectory(
@@ -2081,6 +2085,8 @@ final class OCRModel: ObservableObject {
                     pngDirectory: pngDir, passThrough: passThrough,
                     // C37. Only the compressed build can keep a source's stream.
                     keepSourceJBIG2: wantJBIG2 && JBIG2.isAvailable,
+                    findPhotographs: settings.photographsApart,
+                    cameraExposed: cameraExposed,
                     isCancelled: { control.isCancelled },
                     progress: { d, t in progress("Rebuilding page \(d) of \(t)", rebuildShare(d, t)) },
                     // Compress and discard each page as it is produced. Holding

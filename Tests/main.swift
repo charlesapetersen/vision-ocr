@@ -12030,6 +12030,8 @@ do {
         "modelMemoryGB",    //   the model reader's memory guard (C57, ie-guard)
         "newspaperModelArrangement", // the same two for newspaper pages (C57, ie-readers)
         "newspaperModelReader",
+        "photoModelArrangement", // and for photographed pages (page-kinds-three)
+        "photoModelReader",
         "password",       // opens the document; never reaches the request
         "pdfDPIAuto",       // what to rasterise at when not rebuilding
         "pdfDPI",
@@ -12126,6 +12128,8 @@ do {
         "modelReader": { $0.modelReader = "/usr/local/bin/reader --fast" },
         "newspaperModelArrangement": { $0.newspaperModelArrangement = .off },
         "newspaperModelReader": { $0.newspaperModelReader = "vision" },
+        "photoModelArrangement": { $0.photoModelArrangement = .regions },
+        "photoModelReader": { $0.photoModelReader = "paddleocr-vl" },
         "modelMemoryGB": { $0.modelMemoryGB = 7.5 },
     ]
 
@@ -12162,6 +12166,8 @@ do {
                   && back.modelReader == changed.modelReader
                   && back.newspaperModelArrangement == changed.newspaperModelArrangement
                   && back.newspaperModelReader == changed.newspaperModelReader
+                  && back.photoModelArrangement == changed.photoModelArrangement
+                  && back.photoModelReader == changed.photoModelReader
                   && back.modelMemoryGB == changed.modelMemoryGB,
               describeRequest(Recogniser.makeRequest(back)) + " conf=\(back.confidence)"
                   + " model=\(back.modelArrangement.rawValue) \(back.modelReader) \(back.modelMemoryGB) GB")
@@ -12542,6 +12548,57 @@ do {
     newsReaderOnly.modelArrangement = .off
     _ = text(first, newsReaderOnly, stopped: "over the cap")
     check("…and a print page with no reader of its own hears nothing", heard.isEmpty, heard.joined())
+
+    // page-kinds-three. A page `flatten` marked as a photograph takes the photographs' pair; a
+    // photographed paste-up is a newspaper.
+    let photoReader = reader("photo.sh", "The model reader's fotoz reach the text layer")
+    let snapped = pngs.appendingPathComponent("snapped.png")
+    for name in (try? FileManager.default.contentsOfDirectory(atPath: pngs.path)) ?? [] where name.hasPrefix(stem + ".") {
+        try? FileManager.default.copyItem(at: pngs.appendingPathComponent(name),
+                                          to: pngs.appendingPathComponent("snapped" + name.dropFirst(stem.count)))
+    }
+    FileManager.default.createFile(atPath: pngs.appendingPathComponent("snapped" + Recogniser.photoSuffix).path,
+                                   contents: Data())
+    FileManager.default.createFile(atPath: pngs.appendingPathComponent("pasted" + Recogniser.photoSuffix).path,
+                                   contents: Data())
+    var photos = Prefs.Snapshot.current()
+    photos.modelArrangement = .align
+    photos.modelReader = printReader
+    let unsetPhotos = text(snapped, photos)
+    check("with no photographs' pair, a photographed page takes the main reader",
+          unsetPhotos.contains("printz") && Recogniser.photographed(besides: snapped)
+              && !Recogniser.photographed(besides: first), unsetPhotos)
+    photos.photoModelArrangement = .align
+    photos.photoModelReader = photoReader
+    photos.newspaperModelArrangement = .align
+    photos.newspaperModelReader = newsReader
+    let three = (text(first, photos), text(snapped, photos), text(pasted, photos))
+    check("with one, the photographed page takes it, the print page the main reader, and a photographed "
+          + "paste-up the newspapers'",
+          three.0.contains("printz") && three.1.contains("fotoz") && !three.1.contains("printz")
+              && three.2.contains("newz") && !three.2.contains("fotoz"), "\(three)")
+    photos.photoModelArrangement = .off
+    let visionPhotos = text(snapped, photos)
+    check("…and with photographs off, the photographed page keeps Vision's reading",
+          visionPhotos.contains("words") && !visionPhotos.contains("printz") && !visionPhotos.contains("fotoz"),
+          visionPhotos)
+    var photoOnly = Prefs.Snapshot.current()
+    photoOnly.photoModelArrangement = .regions
+    photoOnly.photoModelReader = "paddleocr-vl"
+    check("a reader for photographs alone is on, and sets photographs apart",
+          photoOnly.modelOn && photoOnly.photographsApart && !Prefs.Snapshot.current().photographsApart)
+    var same = Prefs.Snapshot.current()
+    same.photoModelArrangement = .off
+    var alike = Prefs.Snapshot.current()
+    alike.modelArrangement = .regions; alike.modelReader = "paddleocr-vl"
+    alike.photoModelArrangement = .regions; alike.photoModelReader = "paddleocr-vl"
+    check("…while photographs read as the rest are not looked for, off or by the same reader",
+          same.modelArrangement == .off && !same.photographsApart && !alike.photographsApart)
+    var bogusPhoto = Recogniser.helperArguments(photoOnly)
+    if let i = bogusPhoto.firstIndex(of: "--photo-model-arrangement") { bogusPhoto[i + 1] = "bogus" }
+    check("the helper refuses a photographs' arrangement that is none, and reads one that is",
+          Recogniser.helperSettings(from: bogusPhoto) == nil
+              && Recogniser.helperSettings(from: Recogniser.helperArguments(photoOnly))?.photoModelReader == "paddleocr-vl")
     resetPrefs()
 }
 }  // end of section
@@ -12564,14 +12621,36 @@ do {
     check("…on with nothing chosen, every page is Vision's and newspapers do not take the print pair",
           !s.modelOn && s.modelReader.isEmpty && s.newspaperModelArrangement == .off,
           "\(s.modelArrangement) \(s.modelReader) \(String(describing: s.newspaperModelArrangement))")
+    check("…nor do photographs, and with all three Vision none are looked for",
+          s.photoModelArrangement == .off && !s.photographsApart,
+          "\(String(describing: s.photoModelArrangement))")
     d.set(AR.falcon.rawValue, forKey: Prefs.accurateReader)
     d.set(AR.paddle.rawValue, forKey: Prefs.accurateNewspaperReader)
     s = Prefs.Snapshot.current(d)
     let onPrint = s.model(for: .other), news = s.model(for: .newspaper)
+    check("…with photographs left at Vision, photographs are looked for and read by Vision",
+          s.photographsApart && s.model(for: .photograph).modelArrangement == .off)
     check("…Falcon-OCR on print runs as align, PaddleOCR-VL on newspapers as regions",
           onPrint.modelArrangement == .align && onPrint.modelReader == "falcon-ocr"
               && news.modelArrangement == .regions && news.modelReader == "paddleocr-vl",
           "\(onPrint.modelArrangement) \(onPrint.modelReader) \(news.modelArrangement) \(news.modelReader)")
+    d.set(AR.paddle.rawValue, forKey: Prefs.accuratePhotoReader)
+    s = Prefs.Snapshot.current(d)
+    let onPhoto = s.model(for: .photograph)
+    check("…and PaddleOCR-VL on photographs as regions, beside them",
+          onPhoto.modelArrangement == .regions && onPhoto.modelReader == "paddleocr-vl"
+              && s.model(for: .other).modelReader == "falcon-ocr",
+          "\(onPhoto.modelArrangement) \(onPhoto.modelReader)")
+    AR.setEnabled(.paddle, false, d)
+    check("…and turning PaddleOCR-VL off puts photographs back to Vision",
+          d.string(forKey: Prefs.accuratePhotoReader) == AR.vision.rawValue
+              && Prefs.Snapshot.current(d).model(for: .photograph).modelArrangement == .off)
+    AR.setEnabled(.paddle, true, d)
+    d.set(AR.visionRegions.rawValue, forKey: Prefs.accuratePhotoReader)
+    check("…Vision on regions is not offered on photographs, which run as Vision alone",
+          Prefs.Snapshot.current(d).model(for: .photograph).modelArrangement == .off
+              && !AR.offered(.photograph, memoryGB: 12).contains(.visionRegions)
+              && AR.offered(.photograph, memoryGB: 12) == [.vision, .paddle, .falcon])
     d.set(AR.visionRegions.rawValue, forKey: Prefs.accurateReader)
     d.set(AR.visionRegions.rawValue, forKey: Prefs.accurateNewspaperReader)
     s = Prefs.Snapshot.current(d)
@@ -12590,7 +12669,7 @@ do {
     // Every route the settings can produce is one the engine was approved to run.
     var outside: [String] = []
     for reader in AR.allCases where reader != .vision {
-        for kind in [Recogniser.PageKind.newspaper, .other] where reader.figures(kind) != nil {
+        for kind in [Recogniser.PageKind.newspaper, .other, .photograph] where reader.figures(kind) != nil {
             let route = reader.route(kind)
             if ModelRuntime.offered(route.reader)?[kind]?.contains(route.arrangement) != true {
                 outside.append("\(reader.rawValue) on \(kind.rawValue)")
@@ -12602,7 +12681,9 @@ do {
     check("the table reads the comparison's figures in a user's words",
           AR.falcon.cells(.other) == ["about 6", "about 14 seconds, 4.1× Vision", "3.9 GB", "1.1 GB"]
               && AR.vision.cells(.newspaper) == ["about 296", "about 23 seconds", "no extra", "none"]
-              && AR.visionRegions.cells(.newspaper)?.last == "65 MB" && AR.visionRegions.cells(.other) == nil,
+              && AR.visionRegions.cells(.newspaper)?.last == "65 MB" && AR.visionRegions.cells(.other) == nil
+              && AR.falcon.cells(.photograph) == ["about 27", "about 37 seconds, 17.6× Vision", "3.9 GB", "1.1 GB"]
+              && AR.visionRegions.cells(.photograph) == nil,
           "\(AR.falcon.cells(.other) ?? []) \(AR.vision.cells(.newspaper) ?? [])")
     let bare = ["VISIONOCR_MODEL_HOME": tmp.appendingPathComponent("no-models").path]
     check("the panel can say what a chosen reader still needs downloaded",
@@ -12689,6 +12770,11 @@ do {
               && AR.paddle.cells(.newspaper, timing: timing)?[1] == "about 60 seconds, 2.6× Vision"
               && AR.falcon.cells(.other) == ["about 6", "about 14 seconds, 4.1× Vision", "3.9 GB", "1.1 GB"],
           "\(AR.falcon.cells(.other, timing: timing) ?? [])")
+    check("photographed pages, which no timing run reads, keep our speed and say so once a run is stored",
+          AR.falcon.cells(.photograph, timing: timing)?[1] == "about 37 seconds, 17.6× Vision (test Mac)"
+              && AR.vision.cells(.photograph, timing: timing)?[1] == "about 2 seconds (test Mac)"
+              && AR.falcon.cells(.photograph)?[1] == "about 37 seconds, 17.6× Vision",
+          "\(AR.falcon.cells(.photograph, timing: timing) ?? [])")
     check("the timing is stored as data and read back, and unreadable data is no timing",
           Prefs.AccurateTiming(timing.data) == timing && Prefs.AccurateTiming(Data()) == nil
               && Prefs.AccurateTiming(nil) == nil && Prefs.allKeys.contains(Prefs.accurateTiming), "")
@@ -12719,7 +12805,7 @@ do {
     do { _ = try TimingRun.run([leg(.falcon, .other)], memoryGB: 5, control: RunControl()) { _ in } }
     catch { failed = error.localizedDescription }
     check("a model that fails ends the run with nothing measured: Vision's fallback is not its speed",
-          failed.hasPrefix("Falcon-OCR on pages other than newspapers did not finish"), failed)
+          failed.hasPrefix("Falcon-OCR on other documents did not finish"), failed)
     standIn("printf '%s\\n' \"Stand-in words for the timing run\" > \"$5\"\n")
     var heard: [String] = []
     let ran = try? TimingRun.run([leg(.vision, .other), leg(.falcon, .other)], memoryGB: 5, control: RunControl(),
@@ -12727,8 +12813,8 @@ do {
     check("a run times each leg through the pipeline and returns seconds a page with its date",
           ran?.measured == Date(timeIntervalSince1970: 86_400) && ran?.seconds.count == 2
               && (ran?.seconds["vision.other"] ?? 0) > 0 && (ran?.seconds["falcon-ocr.other"] ?? 0) > 0
-              && heard == ["Timing Vision (built in) on pages other than newspapers (1 of 2)…",
-                           "Timing Falcon-OCR on pages other than newspapers (2 of 2)…"],
+              && heard == ["Timing Vision (built in) on other documents (1 of 2)…",
+                           "Timing Falcon-OCR on other documents (2 of 2)…"],
           "\(ran?.seconds ?? [:]) \(heard)")
 
     // The panel's runner: refuses beside a batch, and stores what a finished run measured.
@@ -13897,9 +13983,61 @@ do {
           Flattener.cameraExposed(camera) && Flattener.cameraTagged(camera))
     check("…and one naming only a scanner is not, though it still names itself",
           !Flattener.cameraExposed(scanner) && Flattener.cameraTagged(scanner) && !Flattener.cameraExposed(nil))
+    // As `makeSearchablePDF` reads an image input's tags: from the file.
+    let cameraJPEG = tmp.appendingPathComponent("camera-tagged.jpg")
+    if let out = CGImageDestinationCreateWithURL(cameraJPEG as CFURL, "public.jpeg" as CFString, 1, nil) {
+        CGImageDestinationAddImage(out, scan, camera as CFDictionary)
+        CGImageDestinationFinalize(out)
+    }
+    let read = CGImageSourceCreateWithURL(cameraJPEG as CFURL, nil)
+        .flatMap { CGImageSourceCopyPropertiesAtIndex($0, 0, nil) as? [CFString: Any] }
+    check("…and a JPEG a camera wrote is read as one from its file", Flattener.cameraExposed(read),
+          "\(read?[kCGImagePropertyExifDictionary] ?? "no EXIF")")
     check("a camera's tags make the page a photograph whatever its pixels say",
           Recogniser.isPhotograph(cameraExposed: true, image: scan)
               && !Recogniser.isPhotograph(cameraExposed: false, image: scan))
+
+    check("a photographed page is read as a photograph, and a photographed newspaper as a newspaper",
+          Recogniser.pageKind(of: [], pasteUp: false, photograph: true) == .photograph
+              && Recogniser.pageKind(of: [], pasteUp: false, photograph: false) == .other
+              && Recogniser.pageKind(of: [], pasteUp: true, photograph: true) == .newspaper)
+
+    // `flatten` marks a photographed page beside its bitmap, judging the source's colour: two
+    // pages of different sizes, the scan turned a quarter.
+    let dir = tmp.appendingPathComponent("photo-marks")
+    try? FileManager.default.removeItem(at: dir)
+    try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+    let source = dir.appendingPathComponent("two.pdf")
+    var first = CGRect(x: 0, y: 0, width: 600, height: 800)
+    if let pdf = CGContext(source as CFURL, mediaBox: &first, nil) {
+        for (image, size) in [(photo, CGSize(width: 600, height: 800)), (scan, CGSize(width: 540, height: 720))] {
+            var box = CGRect(origin: .zero, size: size)
+            let boxData = withUnsafeBytes(of: &box) { Data($0) } as CFData
+            pdf.beginPDFPage([kCGPDFContextMediaBox as String: boxData] as CFDictionary)
+            pdf.draw(image, in: box)
+            pdf.endPDFPage()
+        }
+        pdf.closePDF()
+    }
+    if let doc = PDFDocument(url: source), let second = doc.page(at: 1) {
+        second.rotation = 90
+        doc.write(to: source)
+    }
+    func marks(find: Bool, camera: Bool) -> [Bool] {
+        let pngs = dir.appendingPathComponent("pages-\(find)-\(camera)")
+        try? FileManager.default.removeItem(at: pngs)
+        try? FileManager.default.createDirectory(at: pngs, withIntermediateDirectories: true)
+        let pages = (try? Flattener.flatten(source, to: dir.appendingPathComponent("rebuilt-\(find)-\(camera).pdf"),
+                                            mode: .blackAndWhite, pngDirectory: pngs,
+                                            findPhotographs: find, cameraExposed: camera)) ?? []
+        return pages.compactMap(Recogniser.imageURL(of:)).map(Recogniser.photographed(besides:))
+    }
+    let found = marks(find: true, camera: false)
+    check("flatten marks the photographed page of two and not the scan", found == [true, false], "\(found)")
+    let tagged = marks(find: true, camera: true)
+    check("…every page of an image a camera tagged", tagged == [true, true], "\(tagged)")
+    let unasked = marks(find: false, camera: true)
+    check("…and none when photographs have no reader of their own", unasked == [false, false], "\(unasked)")
 }
 }  // end of section
 

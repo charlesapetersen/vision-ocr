@@ -14,6 +14,11 @@ an older entry mentions "Window ▸ Vision Reader Window", the menu item is now
 
 ## Unreleased
 
+- Choose pages has a third kind, Photographed pages, beside Newspapers and Other documents (which now says
+  it covers scanned books and letters, born-digital PDFs and screenshots). The app tells a camera's photo
+  of a page from a scan by itself, page by page, from the camera's tags or, without them, from how the
+  page was lit, and reads it with the reader chosen for photographs; a photo of a newspaper counts as a
+  newspaper. The figures beside it were measured on 31 photos, a small sample (page-kinds-three).
 - Settings speaks plainly. The Accurate mode box now says it is best left off for everyday scans, what an
   extra reader is for (difficult print, newspapers most), how much slower it is, and how much download, disk
   and memory each takes; its dialogs are now "Download extra readers" and "Choose how to read your pages". The

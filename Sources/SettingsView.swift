@@ -796,6 +796,7 @@ private struct PageKindWarnings: View {
     @AppStorage(Prefs.accurateReader) private var accurateReader = Prefs.AccurateReader.vision.rawValue
     @AppStorage(Prefs.accurateNewspaperReader) private var accurateNewspaperReader =
         Prefs.AccurateReader.vision.rawValue
+    @AppStorage(Prefs.accuratePhotoReader) private var accuratePhotoReader = Prefs.AccurateReader.vision.rawValue
     @AppStorage(Prefs.accurateEnabled) private var enabledRaw = ""
     @AppStorage(Prefs.modelMemoryGB) private var modelMemoryGB = Prefs.defaultModelMemoryGB()
     @ObservedObject private var downloads = DownloadRunner.shared
@@ -813,7 +814,8 @@ private struct PageKindWarnings: View {
     private var lines: [String] {
         let enabled = Prefs.AccurateReader.enabled(raw: enabledRaw)
         return [(Recogniser.PageKind.newspaper, "newspapers", accurateNewspaperReader),
-                (.other, "other pages", accurateReader)].compactMap { kind, title, raw in
+                (.photograph, "photographed pages", accuratePhotoReader),
+                (.other, "other documents", accurateReader)].compactMap { kind, title, raw in
             Prefs.AccurateReader.warning(raw, kind, title, memoryGB: modelMemoryGB, enabled: enabled)
         }
     }
@@ -929,6 +931,7 @@ struct AccuratePageKindsDialog: View {
     @AppStorage(Prefs.accurateReader) private var accurateReader = Prefs.AccurateReader.vision.rawValue
     @AppStorage(Prefs.accurateNewspaperReader) private var accurateNewspaperReader =
         Prefs.AccurateReader.vision.rawValue
+    @AppStorage(Prefs.accuratePhotoReader) private var accuratePhotoReader = Prefs.AccurateReader.vision.rawValue
     @AppStorage(Prefs.accurateEnabled) private var enabledRaw = ""
     @AppStorage(Prefs.modelMemoryGB) private var modelMemoryGB = Prefs.defaultModelMemoryGB()
     @AppStorage(Prefs.accurateTiming) private var accurateTimingData = Data()
@@ -938,14 +941,19 @@ struct AccuratePageKindsDialog: View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Choose how to read your pages").font(.headline)
             Text("Keep Vision for a fast start. An extra reader can reduce wrong or missing words, but "
-                 + "takes longer. The app recognises newspaper pages automatically and uses your choice for "
-                 + "that kind. “Books & other pages” covers everything else, including articles and letters.")
+                 + "takes longer. The app sorts every page into one of three kinds by itself and uses your "
+                 + "choice for that kind. Photographed pages are pages taken with a camera or phone; a page a "
+                 + "scanner app has flattened and evenly lit usually counts as a scan. A photo of a newspaper "
+                 + "counts as a newspaper. "
+                 + "“Other documents” covers everything else: scanned books, articles and letters, and pages "
+                 + "made on a computer, such as born-digital PDFs and screenshots.")
                 .font(.caption).foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
                     kind("Newspapers", .newspaper, $accurateNewspaperReader)
-                    kind("Books & other pages", .other, $accurateReader)
+                    kind("Photographed pages", .photograph, $accuratePhotoReader)
+                    kind("Other documents", .other, $accurateReader)
                     PageKindWarnings(labelWidth: 0)
                     Text("A reader is a method of reading text. Vision is built in; Vision, section by section "
                          + "reads a newspaper's separate blocks. PaddleOCR-VL and Falcon-OCR are optional extra "
@@ -954,7 +962,8 @@ struct AccuratePageKindsDialog: View {
                         .font(.caption).foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                     Text("Errors means words wrong or missing out of every 1,000; lower is better. "
-                         + "We counted these on 67 sample pages. Your documents may differ. Times include "
+                         + "We counted these on 67 sample pages, and photographed pages on 31 photos, a small "
+                         + "sample of typed and printed pages. Your documents may differ. Times include "
                          + "the whole reading process; “4.1× Vision” means about four times as long as Vision. "
                          + "Memory is temporary working space, in GB (gigabytes); “no extra” means none beyond "
                          + "the app's normal use; a reader needs a little more on some kinds of page than on others. "
@@ -1135,6 +1144,7 @@ struct AccurateSettingsSection: View {
     @AppStorage(Prefs.accurateReader) private var accurateReader = Prefs.AccurateReader.vision.rawValue
     @AppStorage(Prefs.accurateNewspaperReader) private var accurateNewspaperReader =
         Prefs.AccurateReader.vision.rawValue
+    @AppStorage(Prefs.accuratePhotoReader) private var accuratePhotoReader = Prefs.AccurateReader.vision.rawValue
     @AppStorage(Prefs.modelMemoryGB) private var modelMemoryGB = Prefs.defaultModelMemoryGB()
     @AppStorage(Prefs.accurateTiming) private var accurateTimingData = Data()
     @ObservedObject private var timingRun = TimingRunner.shared
@@ -1193,6 +1203,8 @@ struct AccurateSettingsSection: View {
                         accurateReader = Prefs.AccurateReader.chosen(accurateReader, .other, memoryGB: gb).rawValue
                         accurateNewspaperReader = Prefs.AccurateReader.chosen(accurateNewspaperReader, .newspaper,
                                                                               memoryGB: gb).rawValue
+                        accuratePhotoReader = Prefs.AccurateReader.chosen(accuratePhotoReader, .photograph,
+                                                                          memoryGB: gb).rawValue
                     }
                     Text("Memory is temporary working space, separate from disk storage. GB means gigabytes. "
                          + "The default is \(Int(Prefs.defaultModelMemoryGB())) GB on this Mac. If a reader exceeds "
@@ -1230,8 +1242,10 @@ struct AccurateSettingsSection: View {
         let enabled = Prefs.AccurateReader.enabled(raw: accurateEnabled)
         let news = Prefs.AccurateReader.chosen(accurateNewspaperReader, .newspaper, memoryGB: modelMemoryGB,
                                                enabled: enabled)
+        let photo = Prefs.AccurateReader.chosen(accuratePhotoReader, .photograph, memoryGB: modelMemoryGB,
+                                                enabled: enabled)
         let other = Prefs.AccurateReader.chosen(accurateReader, .other, memoryGB: modelMemoryGB, enabled: enabled)
-        return "Newspapers: \(news.name). Books & other pages: \(other.name)."
+        return "Newspapers: \(news.name). Photographed pages: \(photo.name). Other documents: \(other.name)."
     }
 
     /// "Measure on this Mac": times the readers that are ready here and replaces the speed
