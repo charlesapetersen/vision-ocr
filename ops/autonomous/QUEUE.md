@@ -2061,7 +2061,8 @@ say so in the commit.
       DONE WHEN, in the built app: the dialog offers the three kinds; each routes to its chosen reader; detection
       meets the line above; `ux-regression.sh` is no worse with the mode off and on; the suite passes.
       ESTIMATE: 3 sessions. BOUND: rule 10. (context: owner request 2026-10-14)
-      - [ ] **pk-photo-pages** — draw the photographed sample from the owner's archive photos (owner, 2026-10-14):
+      (notes: ops/autonomous/notes/page-kinds-three.md)
+      - [x] **pk-photo-pages** — draw the photographed sample from the owner's archive photos (owner, 2026-10-14):
             `~/Desktop/Google Drive/Archival Photos JPEGS` (plain local disk, about 100,000 files: JPEG, 854 HEIC,
             1,116 PDFs). Read it only; copy the sample into `$STATE/photo-sample/`. Finder tags name the form of
             the page (`mdfind -onlyin <dir> "kMDItemUserTags == 'Clippings'"`): Clippings 1,140, Handwritten

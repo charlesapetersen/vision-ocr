@@ -1,0 +1,45 @@
+# pk-photo-pages (page-kinds-three), 2026-10-14: the photographed sample, drawn from the owner's archive photos
+# (~/Desktop/Google Drive/Archival Photos JPEGS, 100,064 files; seeded draw, one per folder where the form allowed) plus Baker.
+# Copies in $STATE/photo-sample/ (third-party, not committed); EXIF-stripped copies of every image in stripped/.
+# form: the Finder tag (Clippings, Statistics, Handwritten, Notes), typed = no form tag. kind: photo or scan, by looking; the scans are negatives for the detector.
+# truth: a few lines a page (one band, truth_box = x,y,w,h in the stored image's pixels, or the PDF page at 300 dpi; rotation to read it),
+# read by eye from full-resolution crops by one reader and again blind by a second (procedure.md v2, steps 2-3 on one band); a word
+# where the two differ, or either was unsure, is contested and not scored: 21 of 901. Transcripts in $STATE/photo-sample/truth/ (not committed).
+# looks: where the page is not what its form tag says, by the readers' looking. Scan PDFs carry no truth (the bake-off's scans cover them).
+id	kind	form	exif	pixels	pdf_creator	note	source	truth_box	rotation	truth_lines	truth_words	contested	looks
+pk00-baker.jpg	photo	typed	Apple iPad mini 2	1936x2592		Baker, owner-supplied (C-photo-pdf-size)	owner-supplied/baker-00187/00187 — Baker.JPG	255,944,1450,168	0	4	53	0	
+pk01-typed.jpeg	photo	typed	Apple iPad	2592x1936			Stanford University Archives/0 Tech/Apple Related/Apple papers, M1007/01919 — Apple Inc.jpeg	110,562,640,150	0	4	24	0	printed brochure
+pk02-typed.jpg	photo	typed	Apple iPad	1936x2592			Computer History Museum/Bryan papers/00091 — Bryan.jpg	230,812,1480,200	0	4	52	0	
+pk03-typed.jpg	photo	typed	Apple iPad	2592x1936			Harvard University Archives/Riesman papers — backup drive/00428 IMG — Riesman Papers.jpg	1112,80,310,1160	90	4	32	0	
+pk04-typed.heic	photo	typed	Apple iPhone 11	4032x3024			UIUC/UIUC — 00042.HEIC	1350,120,560,2780	90	4	45	0	
+pk05-typed.jpg	photo	typed	Apple iPad mini 2	1936x2592			HBS/Dean Papers/00909 — Dean.JPG	392,1598,1310,138	0	4	55	0	
+pk06-typed.jpeg	photo	typed	Apple iPad	2592x1936			Cal State Archives/First Sequence/00084 — Cal State Archives 00-04-25-486.jpeg	0,800,1990,855	0	4	13	1	box label form, some handwriting
+pk07-typed.jpg	photo	typed	Apple iPad	2592x1936			Hoover Institute/Norman Drachler papers/00077 IMG — Drachler Papers.jpg	586,925,104,352	90	4	19	0	newspaper clippings
+pk08-clippings.jpg	photo	clippings	Apple iPad	1936x2592			USC/Jerry Brown papers — on backup drive/02008 IMG — Brown.jpg	150,1075,1580,310	0	4	32	0	typed press release
+pk09-clippings.jpg	photo	clippings	none	1936x2592		PNG data under a .jpg name, no EXIF	Stanford University Archives/1 Admissions/J.E. Wallace Sterling, President of Stanford University papers, SC0216/Sterling Presidential papers — IMG 00585.jpg	560,2014,420,114	0	4	18	0	
+pk10-clippings.jpg	photo	clippings	Apple iPad	1936x2592			Stanford University Archives/1 Admissions/Office of Undergraduate Admissions records, SC0407/Initial Accession/Undergraduate Admissions — IMG 00063.jpg	640,312,690,130	0	2	8	0	typed figure page, show-through
+pk11-clippings.jpg	photo	clippings	Apple iPad	1936x2592			Stanford University Archives/1 Admissions/Donald Kennedy papers, SC0315/Kennedy papers — IMG 00414.jpg	320,1335,1460,154	0	4	48	0	typed draft with pen edits
+pk12-clippings.jpg	photo	clippings	Apple iPad	1936x2592			Stanford University Archives/1 Admissions/Tjeerd H. Van Andel papers, SC0349/Van Andel papers — IMG 00124.jpg	645,702,545,145	0	4	25	0	
+pk13-clippings.jpg	photo	clippings	Apple iPad	1936x2592			Stanford University Archives/1 Admissions/Asian American Activities Center records, SC0487/Asian American AC Papers — IMG 00260.jpg	210,828,508,87	0	4	34	0	
+pk14-statistics.jpg	photo	statistics	Apple iPad	1936x2592			Stanford University Archives/1 Admissions/Donald Kennedy papers, SC0315/Kennedy papers — IMG 00494.jpg	200,862,1560,165	0	4	40	0	typed memo
+pk15-statistics.jpg	photo	statistics	Apple iPad	1936x2592			Stanford University Archives/1 Admissions/Office of Undergraduate Admissions records, SC0407/Initial Accession/Undergraduate Admissions — IMG 00961.jpg	65,600,1760,305	0	4	63	3	
+pk16-statistics.jpg	photo	statistics	Apple iPad	1936x2592			Stanford University Archives/1 Admissions/J.E. Wallace Sterling, President of Stanford University papers, SC0216/Sterling Presidential papers — IMG 00073.jpg	233,964,1322,200	0	4	8	0	
+pk17-statistics.jpg	photo	statistics	Apple iPad	1936x2592			USC/Jerry Brown papers — on backup drive/03799 IMG — Brown.jpg	155,1101,1724,171	0	4	46	0	
+pk18-statistics.jpg	photo	statistics	Apple iPad	1936x2592			Stanford University Archives/1 Admissions/Richard W. Lyman, President of Stanford University Papers, SC0215/Lyman Presidency papers — IMG 00528.jpg	150,1236,1650,180	0	4	46	0	
+pk19-handwritten.jpg	photo	handwritten	Apple iPad	2592x1936			Harvard University Archives/Glazer papers — backup drive/00668 IMG — Glazer Papers.jpg	965,206,470,1500	90	4	21	8	
+pk20-handwritten.jpg	photo	handwritten	Apple iPad	1936x2592			USC/Jerry Brown papers — on backup drive/04702 IMG — Brown.jpg	0,0,0,0	0	0	0	0	blank sheet, a fold line
+pk21-notes.jpg	photo	notes	Apple iPad	2592x1936			Harvard University Archives/Glazer papers — backup drive/00977 IMG — Glazer Papers.jpg	1307,1040,745,188	180	4	12	0	typed outline, stored upside down
+pk22-pdf.pdf	scan	pdf	none	6 pages	Opus FreeFlow & Workflow by the DLSG at 	p1 born-digital cover, p2- library scan (Image Access)	HBS/Dennison papers/Dennison_b18_f09.pdf	-	-	-	-	-	
+pk23-pdf.pdf	photo	pdf	none	1 pages	FineReader	table, cropped by FineReader	Hoover Institute/Ed Zschau papers/00938 — Zschau.pdf	112,1165,1685,174	0	4	30	0	
+pk24-pdf.pdf	scan	pdf	none	1 pages	PDFsharp 1.3.1684-w (www.pdfsharp.com)	clipping, flatbed	Stanford University Archives/1 Admissions/Stanford Observer/Stanford Observer — IMG 00098.pdf	-	-	-	-	-	
+pk25-pdf.pdf	scan	pdf	none	129 pages	Pdf-It version 6.2	1-bit journal scan	Complete Journals/Public Interest/Public Interest — Issue 46.pdf	-	-	-	-	-	
+pk26-pdf.pdf	photo	pdf	none	1 pages	ABBYY FineReader PDF For Mac	clipping in binder, cropped	Personal collections/Pruss/Pruss/00084 — Pruss.pdf	1205,973,1090,160	0	4	46	0	
+pk27-handwritten.jpg	photo	handwritten	Apple iPad	2592x1936			Harvard University Archives/Glazer papers — backup drive/01021 IMG — Glazer Papers.jpg	905,91,380,1620	90	4	25	4	
+pk28-handwritten.jpg	photo	handwritten	Apple iPad	2592x1936			Harvard University Archives/Glazer papers — backup drive/01211 IMG — Glazer Papers.jpg	355,256,165,1420	90	2	7	1	two handwritten lines, show-through
+pk29-handwritten.jpg	photo	handwritten	Apple iPad	2592x1936			Harvard University Archives/Glazer papers — backup drive/00771 IMG — Glazer Papers.jpg	980,36,430,1830	90	4	21	2	
+pk30-notes.jpg	photo	notes	Apple iPad	2592x1936			Harvard University Archives/Glazer papers — backup drive/00981 IMG — Glazer Papers.jpg	1237,326,180,1480	90	4	39	0	
+pk31-pdf.pdf	photo	pdf	none	1 pages	FineReader	folder tab, two words	Hoover Institute/Ed Zschau papers/original1.00996 — Zschau.pdf	863,1017,2775,432	0	1	2	1	folder tab, two words
+pk32-pdf.pdf	photo	pdf	none	1 pages	FineReader	box label	Hoover Institute/Ed Zschau papers/00957 — Zschau.pdf	335,596,828,676	0	4	9	1	archive box label
+pk33-pdf.pdf	photo	pdf	none	1 pages	ABBYY FineReader PDF For Mac	handwritten ledger on wood	Stanford University Archives/1 Admissions/Jordan/Jordan/00003 — Jordan SCO058.pdf	491,820,2314,465	0	4	28	0	
+pk34-pdf.pdf	scan	pdf	none	1 pages	PFU ScanSnap Home 2.0.20 #SV600	ScanSnap SV600 overhead, flattened	Stanford University Archives/1 Admissions/Vocational Education Committee/00141 — Stanford Voc Ed.pdf	-	-	-	-	-	
+pk35-pdf.pdf	scan	pdf	none	2 pages	PFU ScanSnap Manager 5.1.30 #S1500	ScanSnap sheet-fed	Stanford University Archives/1 Admissions/Academic Council — from Dan Hartwig/SC0193_1989-214_b09_1963-04-23.pdf	-	-	-	-	-	
