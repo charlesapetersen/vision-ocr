@@ -2138,6 +2138,8 @@ say so in the commit.
       that is the approval page-kind-handwriting's "do not add a reader that was not approved" asks for. One
       exception: Churro 3B's weights are under Qwen's research licence, which bars commercial use, so if Churro
       is the pick, ask the owner in the Daemon Report before qw-build ships it.
+      CONFIRMED (owner, 2026-10-15, walkthrough): LightOnOCR-3-4B is the handwriting reader, and handwritten pages
+      get the text page by default, as qw-place found. qw-build ships both.
       THE FOUR, and why (detail and sources in the PRIOR-ART file):
       - Qwen3.5-9B, `mlx-community/Qwen3.5-9B-4bit`. Missed 7.7% of words hosted on Archive Suite's 16
         handwritten originals (`ArchiveProcessor/segbench-results/ocr-panel-local-groups.csv`, attribute `kind`,
