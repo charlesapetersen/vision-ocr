@@ -1024,6 +1024,81 @@ enum Recogniser {
     private static func modelPass(_ fitted: [SearchableWriter.Observation], on fitOn: CGImage, shown: URL,
                                   settings: Prefs.Snapshot, isCancelled: () -> Bool)
         throws -> [SearchableWriter.Observation] {
+        // pk-upright. Vision reads sideways pixels, but alignment and layout work in an
+        // upright frame. Turn the reader's view and the matching coordinates together;
+        // carry only its text back, so the published image and selection boxes do not move.
+        let turn = modelPageTurn(fitted)
+        if turn != 0 && [.align, .regions].contains(settings.modelArrangement) {
+            if isCancelled() { throw Failure.cancelled }
+            guard let image = loadImage(at: shown),
+                  let upright = modelImage(image, uprightBy: turn) else {
+                throw Failure.modelReader("the page could not be turned upright for its model reader")
+            }
+            let view = FileManager.default.temporaryDirectory
+                .appendingPathComponent("visionocr-upright-\(UUID().uuidString).png")
+            defer { try? FileManager.default.removeItem(at: view) }
+            guard let dest = CGImageDestinationCreateWithURL(view as CFURL, "public.png" as CFString, 1, nil) else {
+                throw Failure.modelReader("the upright page image could not be written")
+            }
+            CGImageDestinationAddImage(dest, upright, nil)
+            guard CGImageDestinationFinalize(dest) else {
+                throw Failure.modelReader("the upright page image could not be written")
+            }
+            let lines = fitted.map { o -> SearchableWriter.Observation in
+                var line = SearchableWriter.uprighted(o, turn)
+                let remaining = (((o.quarterTurns ?? 0) % 4 + 4) % 4 - turn + 4) % 4
+                line.quarterTurns = remaining == 0 ? nil : remaining
+                line.region = o.region
+                return line
+            }
+            let read = try modelReadingPass(lines, on: upright, shown: view, settings: settings,
+                                            isCancelled: isCancelled)
+            guard read.count == fitted.count else {
+                throw Failure.modelReader("the upright reading changed the number of lines")
+            }
+            return zip(fitted, read).map { original, corrected in
+                SearchableWriter.Observation(boundingBox: original.boundingBox, text: corrected.text,
+                                             confidence: original.confidence, quarterTurns: original.quarterTurns,
+                                             region: original.region)
+            }
+        }
+        return try modelReadingPass(fitted, on: fitOn, shown: shown, settings: settings, isCancelled: isCancelled)
+    }
+
+    /// A strict majority of the recognised letters and digits chooses the page's turn.
+    /// A sideways margin label must not turn an upright page; ties and empty pages stay put.
+    static func modelPageTurn(_ lines: [SearchableWriter.Observation]) -> Int {
+        var counts = [Int](repeating: 0, count: 4)
+        for line in lines {
+            counts[((line.quarterTurns ?? 0) % 4 + 4) % 4] += line.text.filter { $0.isLetter || $0.isNumber }.count
+        }
+        let total = counts.reduce(0, +)
+        return (1...3).first { counts[$0] > total / 2 } ?? 0
+    }
+
+    /// Use the writer's existing upright frame in reverse to turn the pixels into it.
+    /// Exact quarter-turn matrices avoid resampling; the temporary PNG has no EXIF turn.
+    private static func modelImage(_ image: CGImage, uprightBy turn: Int) -> CGImage? {
+        let box = CGRect(x: 0, y: 0, width: image.width, height: image.height)
+        let frame = SearchableWriter.turnedFrame(turn, of: box)
+        // A grey page stays one byte a pixel, and neither kind carries an alpha channel the reader never had.
+        let grey = image.colorSpace?.model == .monochrome
+        guard let ctx = CGContext(data: nil, width: Int(frame.region.width), height: Int(frame.region.height),
+                                  bitsPerComponent: 8, bytesPerRow: 0,
+                                  space: grey ? CGColorSpaceCreateDeviceGray() : CGColorSpaceCreateDeviceRGB(),
+                                  bitmapInfo: (grey ? CGImageAlphaInfo.none : .noneSkipLast).rawValue)
+        else { return nil }
+        ctx.setFillColor(gray: 1, alpha: 1)
+        ctx.fill(frame.region)
+        ctx.interpolationQuality = .none
+        ctx.concatenate(frame.transform.inverted())
+        ctx.draw(image, in: box)
+        return ctx.makeImage()
+    }
+
+    private static func modelReadingPass(_ fitted: [SearchableWriter.Observation], on fitOn: CGImage, shown: URL,
+                                         settings: Prefs.Snapshot, isCancelled: () -> Bool)
+        throws -> [SearchableWriter.Observation] {
         if settings.modelArrangement == .fill {
             return try filledReading(of: fitted, on: fitOn, shown: shown, reader: settings.modelReader,
                                      memoryGB: settings.modelMemoryGB, isCancelled: isCancelled)

@@ -12203,6 +12203,92 @@ do {
 }
 }  // end of section
 
+section("models read turned pages upright and keep their published geometry (pk-upright)") {
+do {
+    resetPrefs()
+    let dir = tmp.appendingPathComponent("pk-upright")
+    let majority = SearchableWriter.Observation(boundingBox: .init(x: 0.1, y: 0.1, width: 0.7, height: 0.02),
+                                                text: "Most of the page reads this way", confidence: 0.9)
+    let label = SearchableWriter.Observation(boundingBox: majority.boundingBox, text: "label",
+                                             confidence: 0.9, quarterTurns: 1)
+    check("pk-upright: a sideways margin label does not turn an upright page",
+          Recogniser.modelPageTurn([majority, label]) == 0)
+    for turn in 1...3 {
+        var turned = majority
+        turned.quarterTurns = turn - 4
+        check("pk-upright: the majority's turn \(turn) is normalised",
+              Recogniser.modelPageTurn([turned, label]) == turn)
+    }
+    var tied = majority
+    tied.quarterTurns = 2
+    check("pk-upright: a tie or an empty page is left alone",
+          Recogniser.modelPageTurn([majority, tied]) == 0 && Recogniser.modelPageTurn([]) == 0)
+    try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+    let scan = dir.appendingPathComponent("scan.pdf")
+    makeScannedPDF(at: scan, lines: ["The model reader's words", "reach the text layer"])
+    let source = dir.appendingPathComponent("four-turns.pdf")
+    let document = PDFDocument()
+    for (i, degrees) in [0, 90, 180, 270].enumerated() {
+        if let page = PDFDocument(url: scan)?.page(at: 0) {
+            if i == 2 {
+                let smaller = CGRect(x: 0, y: 0, width: 600, height: 780)
+                page.setBounds(smaller, for: .mediaBox)
+                page.setBounds(smaller, for: .cropBox)
+            }
+            page.rotation = degrees
+            document.insert(page, at: i)
+        }
+    }
+    check("pk-upright: the fixture has differing page sizes and both quarter and half turns",
+          document.pageCount == 4 && document.page(at: 1)?.rotation == 90
+              && document.page(at: 2)?.rotation == 180
+              && document.page(at: 0)?.bounds(for: .mediaBox).size
+                  != document.page(at: 2)?.bounds(for: .mediaBox).size
+              && document.write(to: source))
+    for arrangement in [Prefs.ModelArrangement.align, .regions] {
+        let captured = dir.appendingPathComponent(arrangement.rawValue)
+        try? FileManager.default.createDirectory(at: captured, withIntermediateDirectories: true)
+        let reader = dir.appendingPathComponent("\(arrangement.rawValue).sh")
+        let text = "The model reader's wordz reach the texts layer"
+        let answer = arrangement == .align ? text : "0\t0\t1\t1\tText\t" + text
+        try? ("#!/bin/sh\n/bin/cp \"$1\" '\(captured.path)/'\"$(/usr/bin/basename \"$1\")\"\n"
+              + "printf '%s\\n' \"\(answer)\" > \"$2\"\n")
+            .write(to: reader, atomically: true, encoding: .utf8)
+        try? FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: reader.path)
+        d.set(arrangement.rawValue, forKey: Prefs.modelArrangement)
+        d.set(reader.path, forKey: Prefs.modelReader)
+        let out = dir.appendingPathComponent("\(arrangement.rawValue).pdf")
+        var outcome: Runner.Result.Outcome?, message = "", fallbacks: [String] = []
+        OCRModel.makeSearchablePDF(file: source, output: out, rebuild: true, rebuildMode: .auto,
+                                   password: nil, control: RunControl(), useHelper: arrangement == .regions,
+                                   progress: { _, _ in }, fellBack: { fallbacks.append($0) },
+                                   report: { o, m in outcome = o; message = m })
+        if arrangement == .regions {
+            check("pk-upright: the helper reads the turned fixture without falling back", fallbacks.isEmpty,
+                  fallbacks.joined(separator: " / "))
+        }
+        let published = PDFDocument(url: out)
+        for i in 0..<4 {
+            let page = published?.page(at: i), text = page?.string ?? ""
+            check("pk-upright: \(arrangement.rawValue) keeps the model's words on turn \(i)",
+                  outcome == .succeeded && text.contains("wordz") && text.contains("texts"),
+                  text + " | " + message)
+            let expected = i == 2 ? CGSize(width: 600, height: 780)
+                : i % 2 == 0 ? CGSize(width: 612, height: 792) : CGSize(width: 792, height: 612)
+            check("pk-upright: \(arrangement.rawValue) leaves turn \(i)'s published box and Find intact",
+                  page?.bounds(for: .mediaBox).size == expected
+                      && published?.findString("wordz", withOptions: []).count == 4)
+        }
+        let inputs = (try? FileManager.default.contentsOfDirectory(at: captured, includingPropertiesForKeys: nil)) ?? []
+        let seen = inputs.compactMap { Recogniser.loadImage(at: $0) }
+        let read = seen.compactMap { try? Recogniser.recognise($0, settings: .current()) }
+        check("pk-upright: \(arrangement.rawValue) actually shows the reader four upright images",
+              read.count == 4 && read.allSatisfy { !$0.isEmpty && $0.allSatisfy { ($0.quarterTurns ?? 0) == 0 } })
+    }
+    resetPrefs()
+}
+}  // end of section
+
 section("a model's reading takes Vision's lines' words where the two agree (ocr-hybrid-proto)") {
 
 do {

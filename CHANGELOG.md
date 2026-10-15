@@ -14,6 +14,8 @@ an older entry mentions "Window ▸ Vision Reader Window", the menu item is now
 
 ## Unreleased
 
+- Extra readers now read sideways and upside-down pages upright before merging their words into the
+  searchable text. The page image and the text's position stay in their original orientation (pk-upright).
 - Choose pages has a third kind, Photographed pages, beside Newspapers and Other documents (which now says
   it covers scanned books and letters, born-digital PDFs and screenshots). The app tells a camera's photo
   of a page from a scan by itself, page by page, from the camera's tags or, without them, from how the

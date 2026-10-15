@@ -1,0 +1,75 @@
+# pk-upright, 2026-10-15. Production OCRModel.start outputs read, selected, searched and rendered through PDFKit.
+# Before: 429ad66; nine fresh Falcon outputs reproduce the prior measurement exactly in text and PNG render.
+# Other baseline outputs are PK-PHOTO-MEASURE-2026-10-14's PDFs. Both readers after: this fix, all 31 source photos.
+# Eight pages remain turned in production; pk04's HEIC is already upright after wrapping and is an unchanged control.
+# Truth-band scoring follows PK-PHOTO-MEASURE: multiset word misses, contested words excluded; 774 print + 84 handwriting.
+# text_same is the exact PDFKit string; render_same is the exact 1100 px PDFKit PNG; box_same is the published media size.
+# find_lines counts each PDFKit selection line whose string Find returns. new_tokens/model_tokens are diagnostic word bags:
+# model_tokens are new tokens found whole in the saved model reading; hyphen splits/partial compounds explain the exceptions.
+# model_calls/upright_view_calls count traced reader invocations and ones passed the new upright PNG. Zero calls on Paddle pk19:
+# the layout detector found no region. Paddle pk28's unrelated reading fails the existing anchor guard, keeping Vision.
+# No timing comparison: these runs serialize files and PDFKit work. Private PDFs, traces and scripts:
+# $STATE/photo-sample/pk-upright-20261015/ (copyrighted inputs/outputs are not committed).
+page	reader	orientation	class	truth_words	before_miss	after_miss	text_same	render_same	box_same	before_lines	after_lines	find_lines	new_tokens	model_tokens	model_calls	upright_view_calls
+pk00-baker	falcon-ocr	upright	print	49	0	0	True	True	True	56	56	56	0	0	1	0
+pk01-typed	falcon-ocr	upright	print	24	0	0	True	True	True	62	62	62	0	0	1	0
+pk02-typed	falcon-ocr	upright	print	52	0	0	True	True	True	36	36	36	0	0	1	0
+pk03-typed	falcon-ocr	turned	print	32	0	0	False	True	True	37	37	37	1	1	1	1
+pk04-typed	falcon-ocr	upright	print	44	0	0	True	True	True	24	24	24	0	0	1	0
+pk05-typed	falcon-ocr	upright	print	55	0	0	True	True	True	75	75	75	0	0	1	0
+pk06-typed	falcon-ocr	upright	print	12	1	1	True	True	True	18	18	18	0	0	1	0
+pk07-typed	falcon-ocr	turned	print	17	1	1	False	True	True	164	164	164	18	18	1	1
+pk08-clippings	falcon-ocr	upright	print	32	0	0	True	True	True	22	22	22	0	0	1	0
+pk09-clippings	falcon-ocr	upright	print	16	1	1	True	True	True	97	97	97	0	0	1	0
+pk10-clippings	falcon-ocr	upright	print	8	0	0	True	True	True	34	34	34	0	0	1	0
+pk11-clippings	falcon-ocr	upright	print	48	0	0	True	True	True	40	40	40	0	0	1	0
+pk12-clippings	falcon-ocr	upright	print	23	0	0	True	True	True	108	108	108	0	0	1	0
+pk13-clippings	falcon-ocr	upright	print	33	0	0	True	True	True	200	200	200	0	0	1	0
+pk14-statistics	falcon-ocr	upright	print	40	0	0	True	True	True	49	49	49	0	0	1	0
+pk15-statistics	falcon-ocr	upright	print	60	0	0	True	True	True	188	188	188	0	0	1	0
+pk16-statistics	falcon-ocr	upright	print	8	1	1	True	True	True	46	46	46	0	0	1	0
+pk17-statistics	falcon-ocr	upright	print	45	0	0	True	True	True	24	24	24	0	0	1	0
+pk18-statistics	falcon-ocr	upright	print	46	0	0	True	True	True	33	33	33	0	0	1	0
+pk19-handwritten	falcon-ocr	turned	handwriting	13	11	7	False	True	True	20	20	20	26	26	1	1
+pk20-handwritten	falcon-ocr	upright	print	0	0	0	True	True	True	0	0	0	0	0	1	0
+pk21-notes	falcon-ocr	turned	print	12	2	1	False	True	True	36	36	36	9	9	1	1
+pk23-pdf	falcon-ocr	upright	print	26	14	14	True	True	True	125	125	125	0	0	1	0
+pk26-pdf	falcon-ocr	upright	print	45	0	0	True	True	True	205	205	205	0	0	1	0
+pk27-handwritten	falcon-ocr	turned	handwriting	20	17	12	False	True	True	4	4	4	7	7	1	1
+pk28-handwritten	falcon-ocr	turned	handwriting	5	5	4	False	True	True	1	1	1	1	1	1	1
+pk29-handwritten	falcon-ocr	turned	handwriting	18	14	5	False	True	True	19	20	20	26	25	1	1
+pk30-notes	falcon-ocr	turned	print	39	1	2	False	True	True	38	38	38	10	10	1	1
+pk31-pdf	falcon-ocr	upright	handwriting	1	0	0	True	True	True	1	1	1	0	0	1	0
+pk32-pdf	falcon-ocr	upright	print	8	0	0	True	True	True	6	6	6	0	0	1	0
+pk33-pdf	falcon-ocr	upright	handwriting	27	2	2	True	True	True	24	24	24	0	0	1	0
+pk00-baker	paddleocr-vl	upright	print	49	0	0	True	True	True	56	56	56	0	0	1	0
+pk01-typed	paddleocr-vl	upright	print	24	0	0	True	True	True	62	62	62	0	0	1	0
+pk02-typed	paddleocr-vl	upright	print	52	0	0	True	True	True	36	36	36	0	0	1	0
+pk03-typed	paddleocr-vl	turned	print	32	0	0	False	True	True	37	37	37	1	1	1	1
+pk04-typed	paddleocr-vl	upright	print	44	1	1	True	True	True	24	24	24	0	0	1	0
+pk05-typed	paddleocr-vl	upright	print	55	0	0	True	True	True	75	75	75	0	0	1	0
+pk06-typed	paddleocr-vl	upright	print	12	1	1	True	True	True	18	18	18	0	0	1	0
+pk07-typed	paddleocr-vl	turned	print	17	1	1	False	True	True	164	164	164	17	15	1	1
+pk08-clippings	paddleocr-vl	upright	print	32	0	0	True	True	True	22	22	22	0	0	1	0
+pk09-clippings	paddleocr-vl	upright	print	16	1	1	True	True	True	97	97	97	0	0	1	0
+pk10-clippings	paddleocr-vl	upright	print	8	0	0	True	True	True	34	34	34	0	0	1	0
+pk11-clippings	paddleocr-vl	upright	print	48	0	0	True	True	True	40	40	40	0	0	1	0
+pk12-clippings	paddleocr-vl	upright	print	23	0	0	True	True	True	108	108	108	0	0	1	0
+pk13-clippings	paddleocr-vl	upright	print	33	0	0	True	True	True	200	200	200	0	0	1	0
+pk14-statistics	paddleocr-vl	upright	print	40	0	0	True	True	True	49	49	49	0	0	1	0
+pk15-statistics	paddleocr-vl	upright	print	60	0	0	True	True	True	188	188	188	0	0	1	0
+pk16-statistics	paddleocr-vl	upright	print	8	1	1	True	True	True	46	46	46	0	0	1	0
+pk17-statistics	paddleocr-vl	upright	print	45	0	0	True	True	True	24	24	24	0	0	1	0
+pk18-statistics	paddleocr-vl	upright	print	46	0	0	True	True	True	33	33	33	0	0	1	0
+pk19-handwritten	paddleocr-vl	turned	handwriting	13	11	11	True	True	True	20	20	20	0	0	0	0
+pk20-handwritten	paddleocr-vl	upright	print	0	0	0	True	True	True	0	0	0	0	0	0	0
+pk21-notes	paddleocr-vl	turned	print	12	2	1	False	True	True	36	36	36	12	12	1	1
+pk23-pdf	paddleocr-vl	upright	print	26	16	16	True	True	True	125	125	125	0	0	1	0
+pk26-pdf	paddleocr-vl	upright	print	45	0	0	True	True	True	205	205	205	0	0	1	0
+pk27-handwritten	paddleocr-vl	turned	handwriting	20	17	15	False	True	True	4	4	4	8	8	1	1
+pk28-handwritten	paddleocr-vl	turned	handwriting	5	5	5	True	True	True	1	1	1	0	0	1	1
+pk29-handwritten	paddleocr-vl	turned	handwriting	18	14	8	False	True	True	19	19	19	26	25	1	1
+pk30-notes	paddleocr-vl	turned	print	39	1	2	False	True	True	38	38	38	6	6	1	1
+pk31-pdf	paddleocr-vl	upright	handwriting	1	0	0	True	True	True	1	1	1	0	0	0	0
+pk32-pdf	paddleocr-vl	upright	print	8	0	0	True	True	True	6	6	6	0	0	1	0
+pk33-pdf	paddleocr-vl	upright	handwriting	27	16	16	True	True	True	24	24	24	0	0	1	0

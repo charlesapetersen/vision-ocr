@@ -2074,12 +2074,13 @@ say so in the commit.
       - [x] **pk-photo-detect** — the photograph detector, checked as above. (blocked-on: pk-photo-pages)
       - [x] **pk-photo-measure** — the three readers measured on the photographs, and the table's figures for
             the new kind. (blocked-on: pk-photo-pages)
-      - [ ] **pk-upright** — a model reads a page Vision found turned (a photo stored sideways, no EXIF
+      - [x] **pk-upright** — a model reads a page Vision found turned (a photo stored sideways, no EXIF
             orientation) turned upright, so its words are merged; today `alignedReading` and the region merge
             take model words for upright lines only and the model's reading of 9 of the 31 photos is discarded.
             Turned by hand, Falcon-OCR's handwriting misses fall 47 -> 28 of 56 (`PK-PHOTO-MEASURE-2026-10-14.tsv`).
             DONE WHEN those 9 pages, through the app, keep the model's words where it read them, upright pages are
             unchanged, and the suite passes. (uses: build,model:12) (context: page-kinds-three, 2026-10-14)
+            (notes: ops/autonomous/notes/pk-upright.md)
       - [x] **pk-settings** — the three kinds in the dialog and the routing, with the overlap rule.
             (blocked-on: pk-photo-detect, pk-photo-measure, sp-accurate)
 - [ ] **page-kind-handwriting** — a fourth kind of page in Choose by Kind of Page, handwritten pages, recognised

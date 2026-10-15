@@ -270,7 +270,9 @@ done < "$SET"
 [ "$NOACC" = 1 ] && echo "ux-regression: the accurate-mode rows are left out (VISIONOCR_UX_NO_ACCURATE=1)"
 
 echo "ux-regression: publishing $(/usr/bin/wc -l < "$W/jobs.txt" | tr -d ' ') documents into $W/pub"
-VISIONOCR_HELPER="$W/visionocr-recognise" "$W/gate" "$W/in" "$W/pub" > "$W/gate.log" 2>&1
+# A prior measurement can leave this CLI's defaults with Accurate mode on.
+# Both legs must name their mode; register(defaults:) does not clear saved values.
+VISIONOCR_HELPER="$W/visionocr-recognise" "$W/gate" "$W/in" "$W/pub" -accurateMode NO > "$W/gate.log" 2>&1
 g=$?   # 1 is the gate's own hard checks failing, which is a result; anything else is a failed run
 [ $g -le 1 ] || { echo "ux-regression: the gate exited $g, see $W/gate.log"; exit 2; }
 for r in $readers; do
