@@ -1,0 +1,123 @@
+# hw-pages (page-kind-handwriting), 2026-10-15: the handwriting sample. Two sets, copies in $STATE/hw-sample/ (third-party, not committed).
+# truth: Archive Suite's OCR truth set (~/Library/Caches/ArchiveSuiteRehearsal/ocr-truth/, read only), all 100 page images; kind as its pages.tsv labels it,
+# truth_words a whitespace count of its whole-page transcription (normalised as Archive Suite's ocr-panel-local.md says; p-ids with 0 have none).
+# None of its pages is in PK-PHOTO-SAMPLE-2026-10-14.tsv (checked by file name).
+# held-out: 15 of the 286 photos tagged Handwritten in ~/Desktop/Google Drive/Archival Photos JPEGS (_kMDItemUserTags xattr; 284 Glazer papers, 2 Brown),
+# seeded draw (20261015) leaving out the photo sample's 4 and the truth set's 3 Glazer pages; no truth (detection needs only the tag).
+# looks: all 15 are handwriting by eye (contact sheet); hw04 and hw10 are mostly figures, hw13 a few words over a typed sheet's show-through.
+id	set	kind	camera	long_side	truth_words	source
+p001	truth	typewritten	Apple iPad	2592	295	American Jewish Committee Archives/Bertram Gold papers/00040 — AJ Committee, Gold.pdf
+p002	truth	typewritten	Apple iPad	2592	138	Babbage/CDC/00296 — CDC.pdf
+p003	truth	printed	Apple iPad	2592	589	Bancroft Library/Seabury papers/00007 IMG — Seabury Papers.pdf
+p004	truth	typewritten	Apple iPhone 6	3264	285	Cambridge/Young, Michael/01300 — Young, Michael.pdf
+p005	truth	typewritten	Apple iPad	2592	576	Center for Jewish History/American Jewish Congress Records/00007 — AJ Congress.pdf
+p006	truth	typewritten	Apple iPad	2592	45	Chicago, University of, Archives/Coleman papers/00898 IMG — Coleman Papers.pdf
+p007	truth	handwritten	Google Pixel 9	4080	75	Columbia University/Columbia Office of the President/00244 — Columbia Office of the President.pdf
+p008	truth	typewritten	-	1416	605	Complete Journals/Microelectronics News/0 OCRed/1980 — Microelectronic News — 00190.pdf
+p009	truth	mixed	Apple iPad mini	4032	169	Computer History Museum/DEC Records/00096 — DEC Records.pdf
+p010	truth	printed	-	3176	601	General Clippings/Admissions Related/SF Chronicle/SF Chronicle clippings — IMG 00022.pdf
+p011	truth	printed	Apple iPad mini 2	2592	88	HBS/Baker/00038 — Baker.pdf
+p012	truth	typewritten	Apple iPad mini 2	2592	402	Harvard Law School/Griswold/00047 — Griswold.pdf
+p013	truth	typewritten	Apple iPad	2592	416	Harvard University Archives/Glazer papers/01801 IMG — Glazer Papers.pdf
+p014	truth	typewritten	-	1296	192	Hoover Institute/Zschau/01092 — Zschau.pdf
+p015	truth	handwritten	Apple iPhone 6	3264	234	Huntington Library/Hawkins.pdf/00285 — Hawkins.pdf
+p016	truth	typewritten	-	3572	172	Library of Congress/Arendt/Riesman/00063 IMG — Arendt Papers, Riesman File.pdf
+p017	truth	typewritten	Apple iPhone 6	3264	237	London School of Economics/Crosland/00018 — Crosland.pdf
+p018	truth	printed	Google Pixel 9	4080	340	NARA/RG 165 — War Department/00084 — RG 165.pdf
+p019	truth	typewritten	-	7045	127	NYPL/Fromm papers/Fromm, Box 2, Folder 4.pdf/Fromm, Box 2, Folder 4 - 0024.pdf
+p020	truth	typewritten	Google Pixel 6	4080	268	Northwestern/0635 — Scott.pdf
+p021	truth	printed	Apple iPad	2592	375	Othmer/Oral Histories/0 My photos/00013 — Othmer Oral Histories.pdf
+p022	truth	handwritten	Apple iPad mini	4032	290	Personal collections/Pruss/00002 — Pruss.pdf
+p023	truth	typewritten	-	2509	204	San Jose State/NOW San Jose.pdf/00024 — NOW San Jose.pdf
+p024	truth	typewritten	Apple iPad	2592	147	Stanford University Archives/Frederick Emmons Terman papers, SC0160/Terman papers — IMG 00409.pdf
+p025	truth	typewritten	-	999	69	Stanford University Archives — Tech/Varian Related/Varian/00420 — Varian.pdf
+p026	truth	typewritten	Apple iPad	2592	429	Swarthmore Archives/Courtney Smith Papers/00083 — Swarthmore.pdf
+p027	truth	typewritten	-	2056	224	UC Santa Cruz/Bateson/00138 — Bateson.pdf
+p028	truth	typewritten	-	8089	205	UIUC/00092 — UIUC.pdf
+p029	truth	printed	Google Pixel 4a	4032	307	UNLV/Hughes Papers/00019 — Hughes Papers.pdf
+p030	truth	typewritten	Apple iPad	2592	275	USC/Brown/05420 IMG — Brown.pdf
+p031	truth	mixed	Apple iPad	2592	54	University of Rhode Island/00044 — Benjamin Fine.pdf
+p032	truth	typewritten	Apple iPad	2592	330	Wisconsin Historical Society/Kristol Papers/00581 IMG — Kristol Papers.pdf
+p033	truth	typewritten	Google Pixel 9	4080	407	Stanford University Archives/Guido Marx papers/00661 — Guido Marx.pdf
+p034	truth	printed	Google Pixel 6	4080	28	Stanford University Archives — Tech/Last/00025 — Last.pdf
+p035	truth	typewritten	Google Pixel 9	4080	317	Stanford University Archives/Guido Marx papers/00529 — Guido Marx.pdf
+p036	truth	typewritten	Apple iPad	2592	384	Stanford University Archives/J.E. Wallace Sterling, President of Stanford University papers, SC0216/Sterling Presidential papers — IMG 00219.pdf
+p037	truth	printed	Apple iPad mini 2	2592	511	Harvard University Archives/Archive Stacks, HUC call numbers/00247 — Harvard Archives Stacks.pdf
+p038	truth	printed	Apple iPad mini 2	2592	0	Harvard University Archives/Archive Stacks, HUC call numbers/00241 — Harvard Archives Stacks.pdf
+p039	truth	typewritten	Google Pixel 9	4080	317	Stanford University Archives/Guido Marx papers/00635 — Guido Marx.pdf
+p040	truth	handwritten	Google Pixel 9	4080	188	Stanford University Archives/Elliott SC0032/00015 — Elliott.pdf
+p041	truth	typewritten	Google Pixel 9	4080	388	Stanford University Archives/Guido Marx papers/00682 — Guido Marx.pdf
+p042	truth	printed	-	2408	804	Northwestern University/Dill Scott materials/Northwestern_published_as_The_Northwestern.___October_16_1891.pdf
+p043	truth	printed	-	2309	836	Northwestern University/Dill Scott materials/Northwestern_published_as_The_Northwestern.___November_15_1894.pdf
+p044	truth	printed	-	2456	690	Northwestern University/Dill Scott materials/Northwestern_published_as_The_Northwestern.___April_28_1893.pdf
+p045	truth	handwritten	Apple iPad	2592	113	Harvard University Archives/Bell papers/03064 IMG — Bell Papers.pdf
+p046	truth	handwritten	Apple iPad	2592	86	Wisconsin Historical Society/Kristol Papers/01620 IMG — Kristol Papers.pdf
+p047	truth	handwritten	Apple iPad	2592	110	Harvard University Archives/Glazer papers/01302 IMG — Glazer Papers.pdf
+p048	truth	handwritten	Apple iPad	2592	69	Harvard University Archives/Riesman papers/03503 IMG — Riesman Papers.pdf
+p049	truth	handwritten	Apple iPad	2592	87	Harvard University Archives/Glazer papers/00704 IMG — Glazer Papers.pdf
+p050	truth	handwritten	Apple iPad	2592	201	Chicago, University of, Archives/Shils papers/00362 IMG — Shils Papers.pdf
+p051	truth	handwritten	Apple iPad	2592	92	Chicago, University of, Archives/Shils papers/00010 IMG — Shils Papers.pdf
+p052	truth	handwritten	Apple iPad	2592	154	Wisconsin Historical Society/Kristol Papers/02170 IMG — Kristol Papers.pdf
+p053	truth	handwritten	Apple iPad	2592	152	Wisconsin Historical Society/Kristol Papers/02165 IMG — Kristol Papers.pdf
+p054	truth	handwritten	Apple iPad	2592	156	Harvard University Archives/Glazer papers/00487 IMG — Glazer Papers.pdf
+p055	truth	handwritten	Apple iPad	2592	92	Chicago, University of, Archives/Shils papers/00011 IMG — Shils Papers.pdf
+p056	truth	handwritten	Apple iPad	2592	135	Chicago, University of, Archives/Shils papers/00057 IMG — Shils Papers.pdf
+p057	truth	typewritten	Apple iPad	2592	77	Stanford University Archives/J.E. Wallace Sterling, President of Stanford University papers, SC0216/Sterling Presidential papers — IMG 00267.pdf
+p058	truth	printed	-	1174	315	Stanford University Archives — Tech/Noyce 1491/00980 — Noyce 1491.pdf
+p059	truth	typewritten	Apple iPad mini 2	2592	101	HBS/Bower/00016 — Bower.pdf
+p060	truth	typewritten	Google Pixel 9	4080	221	Stanford University Archives — Tech/Cusick/00120 — Cusick.pdf
+p061	truth	printed	-	2441	392	Stanford University Archives — Tech/Noyce 1491/00974 — Noyce 1491.pdf
+p062	truth	printed	-	2665	544	Stanford University Archives — Tech/Intel Publications/00293 — Intel Publications.pdf
+p063	truth	printed	-	1297	589	Stanford University Archives — Tech/Noyce 1491/01286 — Noyce 1491.pdf
+p064	truth	typewritten	Apple iPad	2592	164	Babbage/CDC/00097 — CDC.pdf
+p065	truth	printed	Apple iPad	2592	66	Stanford University Archives — Tech/Anderson/00185 — Anderson.pdf
+p066	truth	typewritten	Apple iPad mini	4032	71	Computer History Museum/Liddie/00039 — Liddie.pdf
+p067	truth	printed	-	2688	81	Complete Journals/Public Interest/Public Interest — Issue 133.pdf
+p068	truth	typewritten	Apple iPad	2592	338	Hoover Institute/Diane Ravitch papers/00085 IMG — Ravitch Papers.pdf
+p069	truth	typewritten	Apple iPad	2592	128	Hoover Institute/Chester Finn papers/00022 IMG — Finn Papers.pdf
+p070	truth	typewritten	Apple iPad mini	4032	331	Computer History Museum/DEC Records/00077 — DEC Records.pdf
+p071	truth	typewritten	Apple iPad mini	4032	529	Computer History Museum/DEC Records/00029 — DEC Records.pdf
+p072	truth	printed	Apple iPad	2592	1071	Hoover Institute/Diane Ravitch papers/00147 IMG — Ravitch Papers.pdf
+p073	truth	printed	-	2634	82	Complete Journals/Public Interest/Public Interest — Issue 120.pdf
+p074	truth	printed	Google Pixel 6	4080	448	Northwestern/0172 — Scott.pdf
+p075	truth	printed	-	1720	252	General Clippings/Admissions Related/SF Chronicle/SF Chronicle clippings — IMG 00028.pdf
+p076	truth	typewritten	-	7135	477	NYPL/Fromm papers/Fromm, Box 3, Folder 16.pdf/Fromm, Box 3, Folder 16 - 0011.pdf
+p077	truth	typewritten	-	1297	325	Huntington Library/LA Times papers — Chandler related/00303 — LA Times.pdf
+p078	truth	printed	Apple iPad	2592	926	Chicago, University of, Archives/Coleman papers/00370 IMG — Coleman Papers.pdf
+p079	truth	typewritten	Apple iPad	2592	274	Hoover Institute/Benjamin Rogge papers/00223 IMG — Rogge Papers.pdf
+p080	truth	printed	Apple iPad	2592	663	Hoover Institute/Benjamin Rogge papers/00184 IMG — Rogge Papers.pdf
+p081	truth	printed	-	2538	449	General Clippings/Admissions Related/SF Chronicle/SF Chronicle clippings — IMG 00033.pdf
+p082	truth	printed	Apple iPad	2592	54	Hoover Institute/Benjamin Rogge papers/00185 IMG — Rogge Papers.pdf
+p083	truth	printed	-	1352	634	USC/Brown/02362 IMG — Brown.pdf
+p084	truth	printed	-	1232	567	Huntington Library/LA Times — Brown.pdf/00022 — LA Times, Brown related.pdf
+p085	truth	printed	-	2051	331	General Clippings/Admissions Related/SF Chronicle/SF Chronicle clippings — IMG 00020.pdf
+p086	truth	handwritten	Apple iPhone 6	3264	324	Cambridge/Young, Sasha/0 LLM Read/00373 — Young, Sasha.pdf
+p087	truth	typewritten	-	3561	661	Cambridge/Young papers.pdf/00163 — Young papers.pdf
+p088	truth	typewritten	-	1454	452	Complete Journals/Microelectronics News/0 OCRed/1979 — Microelectronic News — 00083.pdf
+p089	truth	typewritten	Apple iPad	2592	297	Hoover Institute/Roger Freeman papers/Freeman Papers — IMG 00623.pdf
+p090	truth	typewritten	-	3513	542	Cambridge/Young papers.pdf/00530 — Young papers.pdf
+p091	truth	typewritten	-	1434	664	Complete Journals/Microelectronics News/0 OCRed/1979 — Microelectronic News — 00236.pdf
+p092	truth	typewritten	-	3265	352	Cambridge/Young papers.pdf/00109 — Young papers.pdf
+p093	truth	typewritten	-	1418	419	Complete Journals/Microelectronics News/0 OCRed/1978 — Microelectronic News — 00250.pdf
+p094	truth	handwritten	Apple iPhone 6	3264	90	Cambridge/Young, Sasha/0 LLM Read/00470 — Young, Sasha.pdf
+p095	truth	typewritten	-	3264	394	Cambridge/Young papers.pdf/00590 — Young papers.pdf
+p096	truth	handwritten	Apple iPhone 6	3264	299	Cambridge/Young, Sasha/0 LLM Read/00223 — Young, Sasha.pdf
+p097	truth	typewritten	Apple iPad mini	4032	320	Computer History Museum/DEC Records/00235 — DEC Records.pdf
+p098	truth	typewritten	-	1255	159	USC/Brown/01871 IMG — Brown.pdf
+p099	truth	typewritten	Apple iPad	2592	258	NYPL/American Jewish Comittee, Oral histories/00083 — AJ Committee, Oral Histories.pdf
+p100	truth	typewritten	Apple iPad	2592	166	USC/Brown/04256 IMG — Brown.pdf
+hw01	held-out	handwritten	-	-	0	Harvard University Archives/Glazer papers — backup drive/00236 IMG — Glazer Papers.jpg
+hw02	held-out	handwritten	-	-	0	Harvard University Archives/Glazer papers — backup drive/00490 IMG — Glazer Papers.jpg
+hw03	held-out	handwritten	-	-	0	Harvard University Archives/Glazer papers — backup drive/00495 IMG — Glazer Papers.jpg
+hw04	held-out	handwritten	-	-	0	Harvard University Archives/Glazer papers — backup drive/00504 IMG — Glazer Papers.jpg
+hw05	held-out	handwritten	-	-	0	Harvard University Archives/Glazer papers — backup drive/00957 IMG — Glazer Papers.jpg
+hw06	held-out	handwritten	-	-	0	Harvard University Archives/Glazer papers — backup drive/00959 IMG — Glazer Papers.jpg
+hw07	held-out	handwritten	-	-	0	Harvard University Archives/Glazer papers — backup drive/00975 IMG — Glazer Papers.jpg
+hw08	held-out	handwritten	-	-	0	Harvard University Archives/Glazer papers — backup drive/00992 IMG — Glazer Papers.jpg
+hw09	held-out	handwritten	-	-	0	Harvard University Archives/Glazer papers — backup drive/01245 IMG — Glazer Papers.jpg
+hw10	held-out	handwritten	-	-	0	Harvard University Archives/Glazer papers — backup drive/01246 IMG — Glazer Papers.jpg
+hw11	held-out	handwritten	-	-	0	Harvard University Archives/Glazer papers — backup drive/01303 IMG — Glazer Papers.jpg
+hw12	held-out	handwritten	-	-	0	Harvard University Archives/Glazer papers — backup drive/01312 IMG — Glazer Papers.jpg
+hw13	held-out	handwritten	-	-	0	Harvard University Archives/Glazer papers — backup drive/01394 IMG — Glazer Papers.jpg
+hw14	held-out	handwritten	-	-	0	Harvard University Archives/Glazer papers — backup drive/01402 IMG — Glazer Papers.jpg
+hw15	held-out	handwritten	-	-	0	Harvard University Archives/Glazer papers — backup drive/01416 IMG — Glazer Papers.jpg

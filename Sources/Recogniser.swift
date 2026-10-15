@@ -5265,6 +5265,151 @@ extension Recogniser {
     }
 }
 
+// MARK: - Handwritten pages told from the rest (page-kind-handwriting)
+
+extension Recogniser {
+    /// What the ink inside Vision's lines says about the hand that made it, the signals
+    /// `isHandwritten` judges by. Vision marks no line as handwriting, and what it does return
+    /// tells a hand from type poorly (`isHandwritten`); the ink tells them apart. Each line of
+    /// four or more letters or digits is cut from the page at its box, thresholded at its own
+    /// Otsu level, and its marks taken: 8-connected ink a quarter of the line's thickness or more
+    /// across, so a letter and not a dot, a comma or a speck.
+    struct HandSignals: Equatable {
+        /// Lines with four or more marks, the ones `footJitter` is taken over.
+        var lines = 0
+        /// The median line's letters and digits over its marks: about one for type, whose
+        /// letters stand apart, and two or three for a joined hand.
+        var lettersPerMark = 0.0
+        /// The median line's median step from one mark's foot to the next's, each foot taken off
+        /// the line fitted through them, over the line's thickness: type stands on one baseline,
+        /// a hand wanders.
+        var footJitter = 0.0
+        /// The median line's `baseline` residual, its marks' feet off the straight line fitted
+        /// through them, over its thickness: a hand's capitals, printed apart as type's letters
+        /// are, still stray from the line where type does not.
+        var footResidual = 0.0
+        /// The share of lines both joined (1.5 or more letters a mark) and off the line
+        /// (`footJitter` 0.03 or more): a joined hand, where a smudged typeface is only joined.
+        var joined = 0.0
+        /// Each line the ink was measured on.
+        var measured: [HandLine] = []
+    }
+
+    /// One line's ink: its letters and digits, its marks, its median step from foot to foot
+    /// off its `baseline`, over its thickness (-1 under three marks), and its feet's median
+    /// distance from that line over its thickness (-1 under five).
+    struct HandLine: Equatable {
+        /// Which of the observations it is.
+        var index: Int
+        var letters: Int
+        var marks: Int
+        var footJitter: Double = -1
+        var footResidual: Double = -1
+    }
+
+    static func handSignals(of observations: [SearchableWriter.Observation], image: CGImage) -> HandSignals {
+        var s = HandSignals()
+        let w = Double(image.width), h = Double(image.height)
+        // A page of print holds up to 340 lines and a newspaper's up to 800; medians need far
+        // fewer, so a dense page is sampled evenly rather than cut line by line in full.
+        let candidates = observations.indices.filter {
+            observations[$0].text.filter { $0.isLetter || $0.isNumber }.count >= 4
+        }
+        let stride = max(1, (candidates.count + handLinesMeasured - 1) / handLinesMeasured)
+        for index in Swift.stride(from: 0, to: candidates.count, by: stride).map({ candidates[$0] }) {
+            let o = observations[index]
+            let letters = o.text.filter { $0.isLetter || $0.isNumber }.count
+            let b = o.boundingBox
+            guard [b.x, b.y, b.width, b.height].allSatisfy(\.isFinite) else { continue }
+            let turns = (((o.quarterTurns ?? 0) % 4) + 4) % 4
+            let x0 = max(0, Int(b.x * w)), y0 = max(0, Int(b.y * h))
+            let x1 = min(image.width, Int(((b.x + b.width) * w).rounded(.up)))
+            let y1 = min(image.height, Int(((b.y + b.height) * h).rounded(.up)))
+            let pw = x1 - x0, ph = y1 - y0
+            let thickness = Double(turns % 2 != 0 ? pw : ph)
+            guard thickness >= 8, pw > 0, ph > 0,
+                  let grey = greyPixels(of: image, x0: x0, y0: y0, x1: x1, y1: y1) else { continue }
+            let cut = Flattener.otsuThreshold(of: grey)
+            guard let marks = Flattener.shapeComponents(grey.map { $0 < cut }, width: pw, height: ph,
+                                                        x0: 0, y0: 0, x1: pw, y1: ph) else { continue }
+            let kept = marks.filter { Double(max($0.width, $0.height)) >= thickness / 4 }
+            guard !kept.isEmpty else { continue }
+            var line = HandLine(index: index, letters: letters, marks: kept.count)
+            // Where each mark stands on the line, in reading order, and where its foot is.
+            let footed: [(at: Int, foot: Int)] = kept.map {
+                switch turns {
+                case 1: return ($0.minY, $0.maxX)
+                case 2: return ($0.minX, $0.minY)
+                case 3: return ($0.minY, $0.minX)
+                default: return ($0.minX, $0.maxY)
+                }
+            }.sorted { $0.at < $1.at }
+            if footed.count >= 3 {
+                // Each foot off the line fitted through them, so a line photographed aslant
+                // steps by its slope and not by its hand.
+                let fit = baseline(footed.map { (Double($0.at), Double($0.foot)) }, trim: thickness * 0.12)
+                let steps = zip(fit.offsets, fit.offsets.dropFirst()).map { abs($0 - $1) }.sorted()
+                line.footJitter = steps[(steps.count - 1) / 2] / thickness
+                if footed.count >= 5 { line.footResidual = fit.residual / thickness }
+            }
+            s.measured.append(line)
+        }
+        func median(_ v: [Double]) -> Double { v.isEmpty ? 0 : v.sorted()[v.count / 2] }
+        let perMark = s.measured.map { Double($0.letters) / Double($0.marks) }
+        let stepped = s.measured.filter { $0.marks >= 4 }.map(\.footJitter)
+        s.lines = stepped.count
+        s.lettersPerMark = median(perMark)
+        s.footJitter = median(stepped)
+        s.footResidual = median(s.measured.map(\.footResidual).filter { $0 >= 0 })
+        if !s.measured.isEmpty {
+            s.joined = Double(zip(s.measured, perMark).filter { $0.1 >= 1.5 && $0.0.footJitter >= 0.03 }.count)
+                / Double(s.measured.count)
+        }
+        return s
+    }
+
+    /// The straight line fitted through `points`, refitted once without those more than `trim`
+    /// from the first fit (a descender, a comma): every point's signed offset from it, in
+    /// order, and the median distance from it of the points it was refitted on.
+    static func baseline(_ points: [(x: Double, y: Double)], trim: Double)
+        -> (offsets: [Double], residual: Double) {
+        func fit(_ p: [(x: Double, y: Double)]) -> (a: Double, b: Double) {
+            let n = Double(p.count)
+            let mx = p.map(\.x).reduce(0, +) / n, my = p.map(\.y).reduce(0, +) / n
+            let sxx = p.map { ($0.x - mx) * ($0.x - mx) }.reduce(0, +)
+            let sxy = p.map { ($0.x - mx) * ($0.y - my) }.reduce(0, +)
+            let b = sxx > 0 ? sxy / sxx : 0
+            return (my - b * mx, b)
+        }
+        guard points.count >= 2 else { return (points.map { _ in 0 }, 0) }
+        let first = fit(points)
+        let near = points.filter { abs($0.y - first.a - first.b * $0.x) <= trim }
+        let line = near.count >= 3 ? fit(near) : first
+        let residuals = (near.count >= 3 ? near : points)
+            .map { abs($0.y - line.a - line.b * $0.x) }.sorted()
+        return (points.map { $0.y - line.a - line.b * $0.x }, residuals[residuals.count / 2])
+    }
+
+    /// The most lines `handSignals` cuts from one page.
+    static let handLinesMeasured = 150
+
+    /// Whether a page is handwritten: two or more lines to judge, marks whole letters or
+    /// joined ones (not print broken into dots, under 0.85 letters a mark), and feet that
+    /// wander, plainly (`footJitter` 0.06) or less plainly with a second sign: off a fitted
+    /// baseline as a hand's printed capitals are, or joined over most lines.
+    ///
+    /// Measured (`Tools/score-page-hand`, `HW-DETECT-2026-10-15.tsv`) on Archive Suite's truth
+    /// set, 15 held-out photos tagged Handwritten, the photographed sample and the page-kind
+    /// sample. Rejected: Vision's confidence (13 of 19 handwritten pages had no word under 0.5),
+    /// its dictionary words (a hand 0.56-0.85 of words, type down to 0.62), and voting line by
+    /// line (a joined line of three marks wanders less than its letters suggest).
+    static func isHandwritten(_ s: HandSignals) -> Bool {
+        guard s.lines >= 2, s.lettersPerMark >= 0.85 else { return false }
+        return s.footJitter >= 0.06
+            || (s.footJitter >= 0.035 && (s.footResidual >= 0.03 || s.joined >= 0.6))
+    }
+}
+
 extension Recogniser.PageKind {
     /// The kind in a message: "newspaper pages".
     var pages: String {

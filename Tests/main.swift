@@ -235,6 +235,7 @@ let lightSections: Set<String> = [
     "indeterminate progress",
     "ink coverage cannot exceed one",
     "ocr-newspaper-detect: a newspaper page is told from print by Vision's lines alone",
+    "page-kind-handwriting: a handwritten page is told from type by the ink in its lines",
     "open-when-finished picks a folder in every configuration",
     "outline destinations of every form",
     "outline destinations survive the page rewrite",
@@ -14124,6 +14125,96 @@ do {
     check("…every page of an image a camera tagged", tagged == [true, true], "\(tagged)")
     let unasked = marks(find: false, camera: true)
     check("…and none when photographs have no reader of their own", unasked == [false, false], "\(unasked)")
+}
+}  // end of section
+
+section("page-kind-handwriting: a handwritten page is told from type by the ink in its lines") {
+
+do {
+    // Four lines of `marks` dark bars on white, each line's box 40 px thick and each bar's foot
+    // `feet[i % feet.count]` px off the line's baseline, read as `letters` letters a line. A bar
+    // `pieces` > 1 is drawn as that many bars side by side, each with its own foot, as print
+    // broken into dots is.
+    // `quarterTurns` lays each line turned as `SearchableWriter.Observation` counts it.
+    func page(marks: Int, width: Int, letters: Int, feet: [Int], pieces: Int = 1, lines: Int = 4,
+              quarterTurns: Int = 0) -> (CGImage, [SearchableWriter.Observation]) {
+        let w = 1000, h = 1000, thickness = 40, gap = 12
+        var d = [UInt8](repeating: 255, count: w * h)
+        var observations: [SearchableWriter.Observation] = []
+        for l in 0..<lines {
+            let top = 100 + l * 80, start = 100
+            let length = marks * (width + gap)
+            for m in 0..<marks {
+                let a0 = start + m * (width + gap)
+                let piece = width / pieces
+                for p in 0..<pieces {
+                    let foot = top + 32 + feet[(m * pieces + p) % feet.count]
+                    let p0 = a0 + p * piece, p1 = p0 + piece - (pieces > 1 ? 3 : 0)
+                    for along in p0..<p1 { for across in (top + 10)..<foot {
+                        // Turned a quarter, the line runs up the page and its feet face right;
+                        // three quarters, down it with its feet left; a half, upside down.
+                        let (x, y): (Int, Int)
+                        switch quarterTurns {
+                        case 1: (x, y) = (across, h - 1 - along)
+                        case 2: (x, y) = (w - 1 - along, 2 * top + 39 - across)
+                        case 3: (x, y) = (2 * top + 39 - across, along)
+                        default: (x, y) = (along, across)
+                        }
+                        d[y * w + x] = 20
+                    }}
+                }
+            }
+            let (bx, by, bw, bh): (Int, Int, Int, Int)
+            switch quarterTurns {
+            case 1: (bx, by, bw, bh) = (top, h - start - length, thickness, length)
+            case 2: (bx, by, bw, bh) = (w - start - length, top, length, thickness)
+            case 3: (bx, by, bw, bh) = (top, start, thickness, length)
+            default: (bx, by, bw, bh) = (start, top, length, thickness)
+            }
+            let box = SearchableWriter.BoundingBox(x: Double(bx) / Double(w), y: Double(by) / Double(h),
+                                                   width: Double(bw) / Double(w), height: Double(bh) / Double(h))
+            observations.append(.init(boundingBox: box, text: String(repeating: "a", count: letters),
+                                      confidence: 1, quarterTurns: quarterTurns == 0 ? nil : quarterTurns))
+        }
+        let ctx = CGContext(data: &d, width: w, height: h, bitsPerComponent: 8, bytesPerRow: w,
+                            space: CGColorSpaceCreateDeviceGray(), bitmapInfo: CGImageAlphaInfo.none.rawValue)!
+        return (ctx.makeImage()!, observations)
+    }
+    func called(_ p: (CGImage, [SearchableWriter.Observation])) -> (Bool, String) {
+        let s = Recogniser.handSignals(of: p.1, image: p.0)
+        return (Recogniser.isHandwritten(s), "lines \(s.lines) perMark \(s.lettersPerMark) jitter "
+                + "\(s.footJitter) residual \(s.footResidual) joined \(s.joined)")
+    }
+    let wander = [0, 5, -3, 4, -4, 2, -5, 3]    // steps of 5-9 px, 0.12-0.22 of the line
+    let printed = [0, 2, 0, -2]                // steps of 2 px, 0.05; feet 2 px off the line
+    let rocking = [0, 2]                       // steps of 2 px, but feet 1 px off a line between
+    var (yes, why) = called(page(marks: 12, width: 14, letters: 12, feet: [0]))
+    check("a typed page, a letter a mark on one baseline, is not handwritten", !yes, why)
+    (yes, why) = called(page(marks: 12, width: 14, letters: 12, feet: [0, 0, 0, 0, 0, 8]))
+    check("…nor with its descenders below the line", !yes, why)
+    (yes, why) = called(page(marks: 5, width: 60, letters: 15, feet: wander))
+    check("a joined hand, three letters a mark and its feet wandering, is handwritten", yes, why)
+    for turns in 1...3 {
+        (yes, why) = called(page(marks: 5, width: 60, letters: 15, feet: wander, quarterTurns: turns))
+        check("…and so is the same page turned \(turns) quarter(s), its feet found on the side they face", yes, why)
+        (yes, why) = called(page(marks: 12, width: 14, letters: 12, feet: [0, 0, 0, 0, 0, 8],
+                                 quarterTurns: turns))
+        check("…while type turned as far is still type", !yes, why)
+    }
+    (yes, why) = called(page(marks: 12, width: 14, letters: 12, feet: [0, 0, 3, 0, 0, -3]))
+    check("a hand that keeps to its line but leaps off it a letter in three is handwritten", yes, why)
+    (yes, why) = called(page(marks: 8, width: 40, letters: 20, feet: [-7, -5, -3, -1, 1, 3, 5, 7]))
+    check("…but smudged type photographed aslant, its feet stepping by the slope alone, is not", !yes, why)
+    (yes, why) = called(page(marks: 12, width: 14, letters: 12, feet: wander, pieces: 3))
+    check("…but print broken into dots, its feet as ragged, is not", !yes, why)
+    (yes, why) = called(page(marks: 5, width: 60, letters: 15, feet: wander, lines: 1))
+    check("…nor one line alone", !yes, why)
+    (yes, why) = called(page(marks: 12, width: 14, letters: 12, feet: printed))
+    check("printed capitals, a letter a mark, are handwritten when their feet stray off a straight line", yes, why)
+    (yes, why) = called(page(marks: 12, width: 14, letters: 12, feet: rocking))
+    check("…but not when they step as much and keep to it, as a photo's type can", !yes, why)
+    (yes, why) = called(page(marks: 6, width: 40, letters: 15, feet: rocking))
+    check("…and the same steps on joined letters are a hand's", yes, why)
 }
 }  // end of section
 

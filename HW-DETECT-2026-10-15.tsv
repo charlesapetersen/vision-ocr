@@ -1,0 +1,343 @@
+# hw-detect (page-kind-handwriting), 2026-10-15: Recogniser.isHandwritten measured by Tools/score-page-hand on the no-rebuild route's reading
+# (Recogniser.render, recognisePage, fittedToGutters on a plain render, as score-page-kind; an image wrapped as makeSearchablePDF wraps it).
+# Sets: truth = Archive Suite's OCR truth set (HW-PAGES-2026-10-15.tsv; label its kind), held-out = 15 Handwritten-tagged photos (HW-PAGES),
+# photo = the photographed sample (PK-PHOTO-SAMPLE-2026-10-14.tsv: its form tag, the four handwriting photos labelled handwritten; an id ending x is
+# the EXIF-stripped copy; pdf pages as PK-PHOTO-DETECT-2026-10-14.tsv), page-kind = PAGE-KIND-2026-10-12.tsv's 152 pages (label its route or item type).
+# Signals (Recogniser.HandSignals): lines with four marks or more, letters a mark, foot step off the fitted line, residual off it, joined share.
+# Called handwritten: truth 18 of 19 handwritten (p048, a letter photographed beside a typed sheet whose lines are half the page's, missed) and 1 of 2 mixed
+# (p009, a typed page with handwritten notes, is not); held-out 14 of 15 (hw04, one line of letters among handwritten figures, missed); photo 8 of 8
+# handwriting rows (pk20 and its stripped copy, a blank sheet, are not); no typed, printed, notes, clipping, statistics or PDF page of any set (79 + 55 + 152 pages).
+# Not measured: the rebuilt bitmaps the app reads on the rebuild route (often 1-bit).
+id	set	label	call	lines	letters_per_mark	foot_jitter	foot_residual	joined	source	page
+p001	truth	typewritten	-	41	1.00	0.010	0.0105	0.00	$STATE/hw-sample/truth-set/pages/p001.jpg	1
+p002	truth	typewritten	-	22	1.00	0.011	0.0135	0.05	$STATE/hw-sample/truth-set/pages/p002.jpg	1
+p003	truth	printed	-	141	0.89	0.008	0.0098	0.01	$STATE/hw-sample/truth-set/pages/p003.jpg	1
+p004	truth	typewritten	-	25	1.23	0.011	0.0159	0.00	$STATE/hw-sample/truth-set/pages/p004.jpg	1
+p005	truth	typewritten	-	58	0.95	0.018	0.0137	0.00	$STATE/hw-sample/truth-set/pages/p005.jpg	1
+p006	truth	typewritten	-	9	0.84	0.018	0.0150	0.00	$STATE/hw-sample/truth-set/pages/p006.jpg	1
+p007	truth	handwritten	handwritten	12	2.43	0.157	0.0668	0.47	$STATE/hw-sample/truth-set/pages/p007.jpg	1
+p008	truth	typewritten	-	60	1.55	0.008	0.0156	0.27	$STATE/hw-sample/truth-set/pages/p008.jpg	1
+p009	truth	mixed	-	47	1.10	0.025	0.0196	0.20	$STATE/hw-sample/truth-set/pages/p009.jpg	1
+p010	truth	printed	-	90	0.75	0.025	0.0133	0.00	$STATE/hw-sample/truth-set/pages/p010.jpg	1
+p011	truth	printed	-	14	1.00	0.017	0.0127	0.07	$STATE/hw-sample/truth-set/pages/p011.jpg	1
+p012	truth	typewritten	-	55	0.95	0.019	0.0145	0.00	$STATE/hw-sample/truth-set/pages/p012.jpg	1
+p013	truth	typewritten	-	45	1.17	0.023	0.0242	0.19	$STATE/hw-sample/truth-set/pages/p013.jpg	1
+p014	truth	typewritten	-	24	0.98	0.003	0.0135	0.00	$STATE/hw-sample/truth-set/pages/p014.jpg	1
+p015	truth	handwritten	handwritten	47	1.00	0.044	0.0321	0.02	$STATE/hw-sample/truth-set/pages/p015.jpg	1
+p016	truth	typewritten	-	26	0.97	0.017	0.0113	0.00	$STATE/hw-sample/truth-set/pages/p016.jpg	1
+p017	truth	typewritten	-	33	1.39	0.012	0.0138	0.06	$STATE/hw-sample/truth-set/pages/p017.jpg	1
+p018	truth	printed	-	68	1.33	0.038	0.0146	0.20	$STATE/hw-sample/truth-set/pages/p018.jpg	1
+p019	truth	typewritten	-	26	1.00	0.011	0.0108	0.04	$STATE/hw-sample/truth-set/pages/p019.jpg	1
+p020	truth	typewritten	-	27	1.63	0.021	0.0167	0.30	$STATE/hw-sample/truth-set/pages/p020.jpg	1
+p021	truth	printed	-	27	1.01	0.005	0.0179	0.04	$STATE/hw-sample/truth-set/pages/p021.jpg	1
+p022	truth	handwritten	handwritten	36	2.00	0.282	0.0198	0.73	$STATE/hw-sample/truth-set/pages/p022.jpg	1
+p023	truth	typewritten	-	29	0.95	0.024	0.0180	0.00	$STATE/hw-sample/truth-set/pages/p023.jpg	1
+p024	truth	typewritten	-	42	1.33	0.030	0.0264	0.10	$STATE/hw-sample/truth-set/pages/p024.jpg	1
+p025	truth	typewritten	-	14	1.42	0.010	0.0167	0.14	$STATE/hw-sample/truth-set/pages/p025.jpg	1
+p026	truth	typewritten	-	52	0.96	0.019	0.0246	0.00	$STATE/hw-sample/truth-set/pages/p026.jpg	1
+p027	truth	typewritten	-	29	1.00	0.006	0.0159	0.00	$STATE/hw-sample/truth-set/pages/p027.jpg	1
+p028	truth	typewritten	-	22	1.06	0.012	0.0190	0.00	$STATE/hw-sample/truth-set/pages/p028.jpg	1
+p029	truth	printed	-	41	1.03	0.008	0.0093	0.00	$STATE/hw-sample/truth-set/pages/p029.jpg	1
+p030	truth	typewritten	-	31	0.88	0.013	0.0112	0.03	$STATE/hw-sample/truth-set/pages/p030.jpg	1
+p031	truth	mixed	handwritten	12	2.00	0.236	0.0518	0.60	$STATE/hw-sample/truth-set/pages/p031.jpg	1
+p032	truth	typewritten	-	32	1.05	0.010	0.0152	0.03	$STATE/hw-sample/truth-set/pages/p032.jpg	1
+p033	truth	typewritten	-	31	1.09	0.010	0.0131	0.00	$STATE/hw-sample/truth-set/pages/p033.jpg	1
+p034	truth	printed	-	6	1.00	0.033	0.0176	0.00	$STATE/hw-sample/truth-set/pages/p034.jpg	1
+p035	truth	typewritten	-	33	1.02	0.012	0.0126	0.03	$STATE/hw-sample/truth-set/pages/p035.jpg	1
+p036	truth	typewritten	-	28	3.42	0.019	0.0257	0.32	$STATE/hw-sample/truth-set/pages/p036.jpg	1
+p037	truth	printed	-	48	0.76	0.023	0.0209	0.00	$STATE/hw-sample/truth-set/pages/p037.jpg	1
+p038	truth	printed	-	43	0.66	0.043	0.0232	0.10	$STATE/hw-sample/truth-set/pages/p038.jpg	1
+p039	truth	typewritten	-	26	1.38	0.010	0.0125	0.00	$STATE/hw-sample/truth-set/pages/p039.jpg	1
+p040	truth	handwritten	handwritten	26	1.68	0.401	0.0518	0.61	$STATE/hw-sample/truth-set/pages/p040.jpg	1
+p041	truth	typewritten	-	33	1.54	0.010	0.0146	0.03	$STATE/hw-sample/truth-set/pages/p041.jpg	1
+p042	truth	printed	-	108	0.85	0.017	0.0126	0.00	$STATE/hw-sample/truth-set/pages/p042.jpg	1
+p043	truth	printed	-	101	0.78	0.004	0.0126	0.00	$STATE/hw-sample/truth-set/pages/p043.jpg	1
+p044	truth	printed	-	108	0.88	0.026	0.0117	0.00	$STATE/hw-sample/truth-set/pages/p044.jpg	1
+p045	truth	handwritten	handwritten	16	2.00	0.070	0.0397	0.88	$STATE/hw-sample/truth-set/pages/p045.jpg	1
+p046	truth	handwritten	handwritten	11	2.31	0.227	0.0213	0.60	$STATE/hw-sample/truth-set/pages/p046.jpg	1
+p047	truth	handwritten	handwritten	21	1.33	0.168	0.0304	0.32	$STATE/hw-sample/truth-set/pages/p047.jpg	1
+p048	truth	handwritten	-	43	1.25	0.021	0.0184	0.15	$STATE/hw-sample/truth-set/pages/p048.jpg	1
+p049	truth	handwritten	handwritten	9	2.64	0.119	0.0379	0.58	$STATE/hw-sample/truth-set/pages/p049.jpg	1
+p050	truth	handwritten	handwritten	22	2.25	0.158	0.0356	0.60	$STATE/hw-sample/truth-set/pages/p050.jpg	1
+p051	truth	handwritten	handwritten	15	2.19	0.064	0.0353	0.75	$STATE/hw-sample/truth-set/pages/p051.jpg	1
+p052	truth	handwritten	handwritten	25	1.80	0.062	0.0241	0.72	$STATE/hw-sample/truth-set/pages/p052.jpg	1
+p053	truth	handwritten	handwritten	24	1.12	0.398	0.0237	0.04	$STATE/hw-sample/truth-set/pages/p053.jpg	1
+p054	truth	handwritten	handwritten	23	1.92	0.295	0.0361	0.70	$STATE/hw-sample/truth-set/pages/p054.jpg	1
+p055	truth	handwritten	handwritten	18	2.14	0.142	0.0294	0.65	$STATE/hw-sample/truth-set/pages/p055.jpg	1
+p056	truth	handwritten	handwritten	25	2.40	0.124	0.0235	0.72	$STATE/hw-sample/truth-set/pages/p056.jpg	1
+p057	truth	typewritten	-	6	2.00	0.025	0.0072	0.04	$STATE/hw-sample/truth-set/pages/p057.jpg	1
+p058	truth	printed	-	52	1.32	0.001	0.0127	0.07	$STATE/hw-sample/truth-set/pages/p058.jpg	1
+p059	truth	typewritten	-	9	1.88	0.010	0.0268	0.11	$STATE/hw-sample/truth-set/pages/p059.jpg	1
+p060	truth	typewritten	-	30	1.38	0.012	0.0108	0.07	$STATE/hw-sample/truth-set/pages/p060.jpg	1
+p061	truth	printed	-	30	1.01	0.001	0.0090	0.06	$STATE/hw-sample/truth-set/pages/p061.jpg	1
+p062	truth	printed	-	87	1.00	0.004	0.0097	0.00	$STATE/hw-sample/truth-set/pages/p062.jpg	1
+p063	truth	printed	-	49	1.05	0.001	0.0149	0.00	$STATE/hw-sample/truth-set/pages/p063.jpg	1
+p064	truth	typewritten	-	35	0.90	0.017	0.0147	0.00	$STATE/hw-sample/truth-set/pages/p064.jpg	1
+p065	truth	printed	-	17	1.00	0.006	0.0083	0.00	$STATE/hw-sample/truth-set/pages/p065.jpg	1
+p066	truth	typewritten	-	23	0.97	0.017	0.0222	0.00	$STATE/hw-sample/truth-set/pages/p066.jpg	1
+p067	truth	printed	-	18	1.00	0.012	0.0055	0.00	$STATE/hw-sample/truth-set/pages/p067.jpg	1
+p068	truth	typewritten	-	43	0.90	0.013	0.0134	0.00	$STATE/hw-sample/truth-set/pages/p068.jpg	1
+p069	truth	typewritten	-	18	0.94	0.014	0.0105	0.11	$STATE/hw-sample/truth-set/pages/p069.jpg	1
+p070	truth	typewritten	-	38	1.00	0.021	0.0189	0.03	$STATE/hw-sample/truth-set/pages/p070.jpg	1
+p071	truth	typewritten	-	50	1.00	0.006	0.0195	0.00	$STATE/hw-sample/truth-set/pages/p071.jpg	1
+p072	truth	printed	-	94	0.94	0.013	0.0094	0.00	$STATE/hw-sample/truth-set/pages/p072.jpg	1
+p073	truth	printed	-	22	1.00	0.002	0.0053	0.00	$STATE/hw-sample/truth-set/pages/p073.jpg	1
+p074	truth	printed	-	42	1.03	0.009	0.0145	0.00	$STATE/hw-sample/truth-set/pages/p074.jpg	1
+p075	truth	printed	-	46	1.00	0.020	0.0136	0.00	$STATE/hw-sample/truth-set/pages/p075.jpg	1
+p076	truth	typewritten	-	70	0.96	0.018	0.0146	0.00	$STATE/hw-sample/truth-set/pages/p076.jpg	1
+p077	truth	typewritten	-	30	0.98	0.003	0.0167	0.03	$STATE/hw-sample/truth-set/pages/p077.jpg	1
+p078	truth	printed	-	115	0.98	0.010	0.0083	0.10	$STATE/hw-sample/truth-set/pages/p078.jpg	1
+p079	truth	typewritten	-	35	0.96	0.010	0.0191	0.00	$STATE/hw-sample/truth-set/pages/p079.jpg	1
+p080	truth	printed	-	72	1.17	0.042	0.0183	0.20	$STATE/hw-sample/truth-set/pages/p080.jpg	1
+p081	truth	printed	-	83	0.89	0.041	0.0254	0.00	$STATE/hw-sample/truth-set/pages/p081.jpg	1
+p082	truth	printed	-	28	1.67	0.020	0.0148	0.24	$STATE/hw-sample/truth-set/pages/p082.jpg	1
+p083	truth	printed	-	110	1.17	0.003	0.0129	0.01	$STATE/hw-sample/truth-set/pages/p083.jpg	1
+p084	truth	printed	-	101	0.90	0.004	0.0135	0.02	$STATE/hw-sample/truth-set/pages/p084.jpg	1
+p085	truth	printed	-	71	0.87	0.015	0.0114	0.03	$STATE/hw-sample/truth-set/pages/p085.jpg	1
+p086	truth	handwritten	handwritten	31	3.00	0.051	0.0257	0.82	$STATE/hw-sample/truth-set/pages/p086.jpg	1
+p087	truth	typewritten	-	106	0.90	0.019	0.0114	0.00	$STATE/hw-sample/truth-set/pages/p087.jpg	1
+p088	truth	typewritten	-	45	1.21	0.006	0.0128	0.04	$STATE/hw-sample/truth-set/pages/p088.jpg	1
+p089	truth	typewritten	-	33	1.00	0.016	0.0117	0.00	$STATE/hw-sample/truth-set/pages/p089.jpg	1
+p090	truth	typewritten	-	70	1.78	0.021	0.0190	0.18	$STATE/hw-sample/truth-set/pages/p090.jpg	1
+p091	truth	typewritten	-	54	1.29	0.002	0.0122	0.04	$STATE/hw-sample/truth-set/pages/p091.jpg	1
+p092	truth	typewritten	-	33	2.43	0.019	0.0196	0.09	$STATE/hw-sample/truth-set/pages/p092.jpg	1
+p093	truth	typewritten	-	40	1.48	0.037	0.0210	0.35	$STATE/hw-sample/truth-set/pages/p093.jpg	1
+p094	truth	handwritten	handwritten	5	2.00	0.156	0.0104	0.80	$STATE/hw-sample/truth-set/pages/p094.jpg	1
+p095	truth	typewritten	-	37	1.00	0.001	0.0083	0.00	$STATE/hw-sample/truth-set/pages/p095.jpg	1
+p096	truth	handwritten	handwritten	22	2.50	0.157	0.0368	0.43	$STATE/hw-sample/truth-set/pages/p096.jpg	1
+p097	truth	typewritten	-	42	1.00	0.039	0.0134	0.14	$STATE/hw-sample/truth-set/pages/p097.jpg	1
+p098	truth	typewritten	-	24	0.88	0.019	0.0253	0.00	$STATE/hw-sample/truth-set/pages/p098.jpg	1
+p099	truth	typewritten	-	25	2.04	0.019	0.0363	0.20	$STATE/hw-sample/truth-set/pages/p099.jpg	1
+p100	truth	typewritten	-	39	1.08	0.020	0.0143	0.03	$STATE/hw-sample/truth-set/pages/p100.jpg	1
+hw01	held-out	handwritten	handwritten	5	3.00	0.062	0.0525	0.42	$STATE/hw-sample/held-out/hw01.jpg	1
+hw02	held-out	handwritten	handwritten	20	2.09	0.186	0.0589	0.57	$STATE/hw-sample/held-out/hw02.jpg	1
+hw03	held-out	handwritten	handwritten	3	2.33	0.336	0.0530	0.80	$STATE/hw-sample/held-out/hw03.jpg	1
+hw04	held-out	handwritten	-	1	3.67	0.013	0.0049	0.43	$STATE/hw-sample/held-out/hw04.jpg	1
+hw05	held-out	handwritten	handwritten	10	1.67	0.215	0.2043	0.53	$STATE/hw-sample/held-out/hw05.jpg	1
+hw06	held-out	handwritten	handwritten	5	3.00	0.159	0.0382	0.47	$STATE/hw-sample/held-out/hw06.jpg	1
+hw07	held-out	handwritten	handwritten	2	4.00	0.118	0.0702	0.75	$STATE/hw-sample/held-out/hw07.jpg	1
+hw08	held-out	handwritten	handwritten	9	1.33	0.077	0.0574	0.27	$STATE/hw-sample/held-out/hw08.jpg	1
+hw09	held-out	handwritten	handwritten	19	2.00	0.213	0.2040	0.46	$STATE/hw-sample/held-out/hw09.jpg	1
+hw10	held-out	handwritten	handwritten	2	2.50	0.130	0.0000	0.40	$STATE/hw-sample/held-out/hw10.jpg	1
+hw11	held-out	handwritten	handwritten	5	1.07	0.189	0.0614	0.40	$STATE/hw-sample/held-out/hw11.jpg	1
+hw12	held-out	handwritten	handwritten	11	1.15	0.109	0.0420	0.25	$STATE/hw-sample/held-out/hw12.jpg	1
+hw13	held-out	handwritten	handwritten	18	1.67	0.211	0.1314	0.65	$STATE/hw-sample/held-out/hw13.jpg	1
+hw14	held-out	handwritten	handwritten	28	1.00	0.146	0.0351	0.03	$STATE/hw-sample/held-out/hw14.jpg	1
+hw15	held-out	handwritten	handwritten	8	1.00	0.140	0.0229	0.25	$STATE/hw-sample/held-out/hw15.jpg	1
+pk00-baker	photo	typed	-	54	1.32	0.021	0.0164	0.04	$STATE/photo-sample/pk00-baker.jpg	1
+pk01-typed	photo	typed	-	54	1.00	0.007	0.0118	0.07	$STATE/photo-sample/pk01-typed.jpeg	1
+pk02-typed	photo	typed	-	38	0.97	0.010	0.0169	0.00	$STATE/photo-sample/pk02-typed.jpg	1
+pk03-typed	photo	typed	-	33	1.03	0.011	0.0114	0.06	$STATE/photo-sample/pk03-typed.jpg	1
+pk04-typed	photo	typed	-	19	2.86	0.009	0.0201	0.12	$STATE/photo-sample/pk04-typed.heic	1
+pk05-typed	photo	typed	-	77	0.93	0.039	0.0137	0.15	$STATE/photo-sample/pk05-typed.jpg	1
+pk06-typed	photo	typed	-	15	1.00	0.018	0.0140	0.00	$STATE/photo-sample/pk06-typed.jpeg	1
+pk07-typed	photo	typed	-	95	0.91	0.017	0.0111	0.00	$STATE/photo-sample/pk07-typed.jpg	1
+pk08-clippings	photo	clippings	-	21	1.00	0.014	0.0098	0.00	$STATE/photo-sample/pk08-clippings.jpg	1
+pk09-clippings	photo	clippings	-	148	0.86	0.018	0.0141	0.05	$STATE/photo-sample/pk09-clippings.jpg	1
+pk10-clippings	photo	clippings	-	33	1.00	0.015	0.0088	0.00	$STATE/photo-sample/pk10-clippings.jpg	1
+pk11-clippings	photo	clippings	-	43	0.94	0.023	0.0161	0.12	$STATE/photo-sample/pk11-clippings.jpg	1
+pk12-clippings	photo	clippings	-	114	1.03	0.006	0.0096	0.00	$STATE/photo-sample/pk12-clippings.jpg	1
+pk13-clippings	photo	clippings	-	81	1.05	0.034	0.0111	0.16	$STATE/photo-sample/pk13-clippings.jpg	1
+pk14-statistics	photo	statistics	-	52	0.82	0.019	0.0088	0.00	$STATE/photo-sample/pk14-statistics.jpg	1
+pk15-statistics	photo	statistics	-	54	1.00	0.015	0.0096	0.02	$STATE/photo-sample/pk15-statistics.jpg	1
+pk16-statistics	photo	statistics	-	35	1.00	0.010	0.0078	0.00	$STATE/photo-sample/pk16-statistics.jpg	1
+pk17-statistics	photo	statistics	-	26	0.93	0.006	0.0105	0.00	$STATE/photo-sample/pk17-statistics.jpg	1
+pk18-statistics	photo	statistics	-	34	0.97	0.008	0.0106	0.00	$STATE/photo-sample/pk18-statistics.jpg	1
+pk19-handwritten	photo	handwritten	handwritten	20	2.62	0.116	0.0432	0.81	$STATE/photo-sample/pk19-handwritten.jpg	1
+pk20-handwritten	photo	handwritten	-	0	0.00	0.000	0.0000	0.00	$STATE/photo-sample/pk20-handwritten.jpg	1
+pk21-notes	photo	notes	-	34	1.00	0.022	0.0089	0.17	$STATE/photo-sample/pk21-notes.jpg	1
+pk22-pdf	photo	pdf	-	29	1.00	0.000	0.0000	0.00	$STATE/photo-sample/pk22-pdf.pdf	1
+pk23-pdf	photo	pdf	-	56	0.76	0.121	0.0352	0.00	$STATE/photo-sample/pk23-pdf.pdf	1
+pk24-pdf	photo	pdf	-	131	1.23	0.008	0.0134	0.07	$STATE/photo-sample/pk24-pdf.pdf	1
+pk25-pdf	photo	pdf	-	25	0.97	0.011	0.0062	0.00	$STATE/photo-sample/pk25-pdf.pdf	1
+pk26-pdf	photo	pdf	-	91	1.09	0.013	0.0117	0.02	$STATE/photo-sample/pk26-pdf.pdf	1
+pk27-handwritten	photo	handwritten	handwritten	8	2.56	0.263	0.0319	0.62	$STATE/photo-sample/pk27-handwritten.jpg	1
+pk28-handwritten	photo	handwritten	handwritten	2	2.92	0.236	0.1887	1.00	$STATE/photo-sample/pk28-handwritten.jpg	1
+pk29-handwritten	photo	handwritten	handwritten	16	1.36	0.087	0.0300	0.25	$STATE/photo-sample/pk29-handwritten.jpg	1
+pk30-notes	photo	notes	-	42	0.94	0.017	0.0125	0.05	$STATE/photo-sample/pk30-notes.jpg	1
+pk31-pdf	photo	pdf	-	1	1.00	0.121	0.0522	0.00	$STATE/photo-sample/pk31-pdf.pdf	1
+pk32-pdf	photo	pdf	-	6	1.00	0.027	0.0142	0.00	$STATE/photo-sample/pk32-pdf.pdf	1
+pk33-pdf	photo	pdf	-	24	1.60	0.056	0.0192	0.48	$STATE/photo-sample/pk33-pdf.pdf	1
+pk34-pdf	photo	pdf	-	46	0.87	0.013	0.0111	0.00	$STATE/photo-sample/pk34-pdf.pdf	1
+pk35-pdf	photo	pdf	-	47	0.96	0.011	0.0102	0.00	$STATE/photo-sample/pk35-pdf.pdf	1
+s01	page-kind	other	-	6	1.50	0.013	0.0135	0.33	$STATE/owner-supplied/1954 - Why.pdf	2
+s02	page-kind	other	-	54	1.06	0.003	0.0090	0.00	$STATE/owner-supplied/1954 - Why.pdf	6
+s03	page-kind	other	-	56	1.04	0.001	0.0093	0.00	$STATE/owner-supplied/1954 - Why.pdf	8
+s04	page-kind	other	-	58	1.00	0.002	0.0107	0.00	$STATE/owner-supplied/1954 - Why.pdf	9
+s05	page-kind	other	-	0	0.00	0.000	0.0000	0.00	$STATE/owner-supplied/1954 - Why.pdf	10
+s06	page-kind	other	-	80	1.09	0.016	0.0082	0.00	$STATE/owner-supplied/1951 - Briefer Book Notes.pdf	1
+s07	page-kind	other	-	68	1.10	0.017	0.0074	0.01	$STATE/owner-supplied/1951 - Briefer Book Notes.pdf	3
+s08	page-kind	other	-	17	0.99	0.000	0.0000	0.00	$STATE/owner-supplied/Hughes - The Knitting of Racial Groups in Industry (Desktop copy 2026-09-26).pdf	1
+s09	page-kind	other	-	50	1.03	0.012	0.0074	0.00	$STATE/owner-supplied/Hughes - The Knitting of Racial Groups in Industry (Desktop copy 2026-09-26).pdf	6
+s10	page-kind	other	-	88	1.08	0.015	0.0080	0.00	$STATE/owner-supplied/Bird - 1963 - More Room at the Top Company Experiences in Employing Negroes in Professional and Management Jobs.pdf	3
+s11	page-kind	other	-	88	1.04	0.005	0.0075	0.00	$STATE/owner-supplied/Bird - 1963 - More Room at the Top Company Experiences in Employing Negroes in Professional and Management Jobs.pdf	5
+s12	page-kind	other	-	53	0.95	0.020	0.0131	0.00	$STATE/owner-supplied/Leland - 1952 - We Believe in Employment on Merit, but.pdf	2
+s13	page-kind	other	-	45	1.02	0.013	0.0073	0.00	$STATE/owner-supplied/Leland - 1952 - We Believe in Employment on Merit, but.pdf	5
+s14	page-kind	other	-	44	1.00	0.018	0.0083	0.00	$STATE/owner-supplied/Leland - 1952 - We Believe in Employment on Merit, but.pdf	6
+s15	page-kind	other	-	38	1.00	0.010	0.0054	0.03	$STATE/owner-supplied/Delton - 2007 - Before the EEOC How Management Integrated the Workplace.pdf	2
+s16	page-kind	other	-	41	1.03	0.001	0.0062	0.00	testdocs/thesis/Zarifa_2008_Emerging Forms of Stratification in Higher Education_.pdf	92
+s17	page-kind	newspaper	-	92	1.63	0.003	0.0145	0.13	testdocs/newspaperArticle/Berendzen_1981_The Soaring Lesson of America in Space_Newsday (1940-1990), Nassau ed.; Long Island, N.Y..pdf	1
+s18	page-kind	other	-	33	1.02	0.000	0.0005	0.00	testdocs/document/2013 - Silicon Valley Program Transcript.pdf	10
+s19	page-kind	other	-	61	1.13	0.000	0.0000	0.00	testdocs/journalArticle/Surani et al. - AI for Scaling Legal Reform Mapping and Redacting Racial Covenants in Santa Clara County.pdf	10
+s20	page-kind	other	-	73	1.00	0.002	0.0059	0.00	testdocs/bookSection/Berger_2013_Toward a Third Industrial Divide_.pdf	18
+s21	page-kind	other	-	95	1.10	0.002	0.0075	0.00	testdocs/magazineArticle/Glazer_2002_Higher Ed_New Republic.pdf	1
+s22	page-kind	newspaper	-	136	1.09	0.003	0.0110	0.05	testdocs/newspaperArticle/___ 2.pdf	1
+s23	page-kind	other	-	84	1.03	0.002	0.0053	0.00	testdocs/bookSection/Hyman_2012_Rethinking the Postwar Corporation_Oxford University Press.pdf	8
+s24	page-kind	other	-	91	1.38	0.018	0.0092	0.04	testdocs/journalArticle/Riesman_1949_Men, Women, and Marriage_Nation.pdf	2
+s25	page-kind	other	-	146	1.00	0.001	0.0098	0.01	testdocs/magazineArticle/Marth_1982_Why Unions Lose At Many Companies_Nation's Business (pre-1986); Washington.pdf	2
+s26	page-kind	other	-	142	1.43	0.019	0.0122	0.05	testdocs/document/_1953_99 Cong_ 2.pdf	16
+s27	page-kind	other	-	33	1.14	0.001	0.0088	0.00	testdocs/thesis/Ries_Marshall_1955_web.pdf	54
+s28	page-kind	other	-	74	1.00	0.002	0.0063	0.00	testdocs/magazineArticle/Kristol_1960_High, Low, and Modern_Encounter.pdf	1
+s29	page-kind	other	-	50	1.00	0.014	0.0062	0.00	testdocs/report/AI 2027.pdf	54
+s30	page-kind	newspaper	-	137	1.00	0.008	0.0149	0.03	testdocs/newspaperArticle/_1941_Fiedler's hiring at UM announced_Helena Independent.pdf	1
+s31	page-kind	other	-	44	1.01	0.005	0.0070	0.02	testdocs/bookSection/Allen_2011_The Origins of Political Philosophy_Oxford University Press.pdf	8
+s32	page-kind	other	-	39	1.00	0.001	0.0086	0.00	$STATE/owner-supplied/1954 - Why.pdf	3
+s33	page-kind	other	-	61	1.07	0.004	0.0099	0.00	$STATE/owner-supplied/1954 - Why.pdf	4
+s34	page-kind	other	-	58	1.04	0.003	0.0105	0.02	$STATE/owner-supplied/1954 - Why.pdf	7
+s35	page-kind	other	-	62	1.10	0.019	0.0082	0.00	$STATE/owner-supplied/1951 - Briefer Book Notes.pdf	2
+s36	page-kind	other	-	63	1.13	0.018	0.0089	0.00	$STATE/owner-supplied/1951 - Briefer Book Notes.pdf	5
+s37	page-kind	other	-	77	1.08	0.018	0.0089	0.00	$STATE/owner-supplied/1951 - Briefer Book Notes.pdf	6
+s38	page-kind	other	-	98	1.00	0.011	0.0075	0.00	$STATE/owner-supplied/Hughes - The Knitting of Racial Groups in Industry (Desktop copy 2026-09-26).pdf	2
+s39	page-kind	other	-	105	0.97	0.012	0.0078	0.00	$STATE/owner-supplied/Hughes - The Knitting of Racial Groups in Industry (Desktop copy 2026-09-26).pdf	8
+s40	page-kind	newspaper	-	40	1.19	0.004	0.0108	0.03	testdocs/newspaperArticle/Glazer_2003_Neoconservatives, Then and Now_New York Times.pdf	1
+s41	page-kind	newspaper	-	100	2.59	0.005	0.0213	0.31	testdocs/newspaperArticle/Gitlin_2000_How Our Crowd Got Lonely_New York Times.pdf	1
+s42	page-kind	newspaper	-	81	0.90	0.001	0.0080	0.00	testdocs/newspaperArticle/Zipkin_2000_Management.pdf	1
+s43	page-kind	newspaper	-	150	0.80	0.031	0.0196	0.01	testdocs/newspaperArticle/_1926_Cox resigns, following most severe public criticism that ever has been_Anaconda Standard.pdf	1
+s44	page-kind	newspaper	-	138	1.00	0.026	0.0171	0.00	testdocs/newspaperArticle/Williams_1958_DEMOCRACY OR MERITOCRACY_The Manchester Guardian (1901-1959); Manchester (UK).pdf	1
+s45	page-kind	newspaper	-	142	1.00	0.013	0.0091	0.00	testdocs/newspaperArticle/___.pdf	1
+s46	page-kind	newspaper	-	135	0.93	0.009	0.0138	0.01	testdocs/newspaperArticle/_1931_Again, press most excited about Frontier's history section_Helena Daily Independent.pdf	1
+s47	page-kind	newspaper	-	145	1.05	0.024	0.0147	0.00	testdocs/newspaperArticle/___ 4.pdf	1
+s48	page-kind	other	-	22	1.00	0.000	0.0034	0.00	testdocs/book/Morgan_1975_American Slavery, American Freedom_Norton.pdf	1
+s49	page-kind	other	-	59	0.96	0.017	0.0085	0.02	testdocs/thesis/NAYLOR_Arthur E.pdf	67
+s50	page-kind	other	-	13	1.00	0.018	0.0095	0.08	testdocs/report/AI 2027.pdf	1
+s51	page-kind	other	-	34	1.05	0.018	0.0085	0.00	testdocs/thesis/Schwaller - 2026 - Silicon Valley Landscapes Architecture and the Soft Power of Big Tech.pdf	75
+s52	page-kind	other	-	46	1.35	0.000	0.0000	0.04	testdocs/journalArticle/Burke - The Expansion of American Higher Education.pdf	1
+s53	page-kind	other	-	31	1.02	0.002	0.0059	0.00	$STATE/owner-supplied/Sewell - 1999 - Contracting racial equality Affirmative action policy and practice in the United States, 1945-1970.pdf	244
+s54	page-kind	other	-	19	0.99	0.000	0.0000	0.00	testdocs/journalArticle/Wilson_1975_Review of The Welfare State and Equality_Journal of Economic Literature.pdf	1
+s55	page-kind	other	-	28	1.02	0.000	0.0052	0.00	testdocs/thesis/Drumright - 2005 - A river for war, a watershed to change The Tennessee Valley Authority during World War II.pdf	60
+s56	page-kind	other	-	41	1.22	0.002	0.0108	0.00	testdocs/bookSection/Krippner__The political economy of financial exuberance_Emerald Group Publishing Limited.pdf	30
+s57	page-kind	other	-	31	1.04	0.017	0.0082	0.00	testdocs/journalArticle/Batzell - Free Labor, Capitalism and the Antislavery Origins of Chinese Labor Exclusion in 1870s California.pdf	14
+s58	page-kind	other	-	22	1.00	0.000	0.0025	0.05	testdocs/book/Westad_2005_The Global Cold War_Cambridge University Press.pdf	1
+s59	page-kind	other	-	105	1.00	0.013	0.0080	0.00	$STATE/owner-supplied/Hughes - The Knitting of Racial Groups in Industry (Desktop copy 2026-09-26).pdf	3
+s60	page-kind	other	-	17	0.99	0.000	0.0000	0.00	$STATE/owner-supplied/Hughes - The Knitting of Racial Groups in Industry.pdf	1
+s61	page-kind	other	-	50	0.93	0.014	0.0097	0.00	testdocs/document/_1979_Ideology of American Neo-Conservatism_.pdf	4
+s62	page-kind	other	-	46	1.02	0.010	0.0352	0.04	testdocs/book/Riesman - 1954 - Individualism reconsidered, and other essays.pdf	16
+s63	page-kind	other	-	20	1.05	0.017	0.0084	0.00	testdocs/journalArticle/Batzell - Free Labor, Capitalism and the Antislavery Origins of Chinese Labor Exclusion in 1870s California.pdf	1
+s64	page-kind	other	-	19	1.04	0.000	0.0000	0.00	$STATE/owner-supplied/1954 - Why.pdf	1
+s65	page-kind	other	-	103	1.00	0.004	0.0068	0.00	$STATE/owner-supplied/1957 - Employment on Merit The Continuing Challenge to Business (Joseph J. Morrow).pdf	2
+s66	page-kind	other	-	20	1.00	0.000	0.0036	0.00	testdocs/book/Cohen_1990_Making a New Deal_Cambridge University Press.pdf	1
+s67	page-kind	other	-	16	1.03	0.017	0.0079	0.00	testdocs/thesis/Koh - 2008 - Essays on stock options expensing and stock option.pdf	1
+xn01	page-kind	newspaper	-	102	1.00	0.037	0.0209	0.00	testdocs/newspaperArticle/1976_Results of Trading in Stock Options.pdf	1
+xn02	page-kind	newspaper	-	90	1.50	0.008	0.0120	0.23	testdocs/newspaperArticle/JOURNAL_1969_Giving the Boss a Raise_Wall Street Journal (1923 - Current file); New York, N.Y..pdf	1
+xn03	page-kind	newspaper	-	133	1.00	0.001	0.0076	0.00	testdocs/newspaperArticle/Zipkin_2000_Management.pdf	2
+xn04	page-kind	newspaper	-	143	0.89	0.011	0.0141	0.00	testdocs/newspaperArticle/_1926_Clapp defends Cox_Billings Gazette.pdf	1
+xn05	page-kind	newspaper	-	128	0.83	0.026	0.0186	0.02	testdocs/newspaperArticle/_1926_English dept summer school_Havre Daily News Promoter.pdf	1
+xn06	page-kind	newspaper	-	140	0.82	0.005	0.0145	0.01	testdocs/newspaperArticle/_1928_Creative writing a featured course at Summer School_Helena Daily Independent.pdf	1
+xn07	page-kind	newspaper	-	120	0.96	0.015	0.0172	0.02	testdocs/newspaperArticle/_1939_Kalispell resident offering private creative writing courses, out of her home_Kalispell Daily Inter Lake.pdf	1
+xn08	page-kind	newspaper	-	131	1.00	0.026	0.0163	0.01	testdocs/newspaperArticle/_1950_Comic_Independent Record.pdf	1
+xn09	page-kind	newspaper	-	145	1.00	0.004	0.0100	0.00	testdocs/newspaperArticle/_1973_Other 67 -- No Title_Newsday (1940-1988), Nassau ed.; Long Island, N.Y..pdf	1
+xn10	page-kind	newspaper	-	98	1.04	0.023	0.0144	0.00	testdocs/newspaperArticle/_1973_Other 67 -- No Title_Newsday (1940-1988), Nassau ed.; Long Island, N.Y..pdf	2
+xn11	page-kind	newspaper	-	100	1.04	0.006	0.0127	0.00	testdocs/newspaperArticle/_1973_Other 67 -- No Title_Newsday (1940-1988), Nassau ed.; Long Island, N.Y..pdf	3
+xn12	page-kind	newspaper	-	149	1.20	0.011	0.0119	0.03	testdocs/newspaperArticle/_1973_Other 67 -- No Title_Newsday (1940-1988), Nassau ed.; Long Island, N.Y..pdf	4
+xn13	page-kind	newspaper	-	131	1.17	0.016	0.0107	0.06	testdocs/newspaperArticle/___ 3.pdf	1
+xn14	page-kind	newspaper	-	124	1.00	0.014	0.0123	0.01	testdocs/newspaperArticle/___ 5.pdf	1
+xn15	page-kind	newspaper	-	133	1.20	0.009	0.0133	0.02	testdocs/document/October_2,_1960_(Page_24_of_25.pdf	1
+xn16	page-kind	newspaper	-	131	0.93	0.017	0.0118	0.00	$STATE/owner-supplied/Raskin - 1956 - New Jobs Opening to Negro in North.pdf	1
+nb01	page-kind	newspaper	-	135	0.81	0.008	0.0107	0.01	$OCRLAB/newsbench/images/mss3413200223-28.jpg	1
+nb02	page-kind	newspaper	-	121	0.77	0.006	0.0112	0.02	$OCRLAB/newsbench/images/mss3413201283-24.jpg	1
+nb03	page-kind	newspaper	-	127	1.00	0.018	0.0109	0.00	$OCRLAB/newsbench/images/mss3413201309-4.jpg	1
+nb04	page-kind	newspaper	-	129	0.67	0.023	0.0148	0.00	$OCRLAB/newsbench/images/mss3413201315-4.jpg	1
+nb05	page-kind	newspaper	-	142	0.69	0.027	0.0167	0.04	$OCRLAB/newsbench/images/mss3413201322-4.jpg	1
+nb06	page-kind	newspaper	-	132	0.85	0.021	0.0120	0.01	$OCRLAB/newsbench/images/mss3413201323-27.jpg	1
+nb07	page-kind	newspaper	-	126	0.89	0.015	0.0126	0.06	$OCRLAB/newsbench/images/mss3413201417-17.jpg	1
+nb08	page-kind	newspaper	-	132	0.86	0.017	0.0101	0.03	$OCRLAB/newsbench/images/mss3413201417-20.jpg	1
+nb09	page-kind	newspaper	-	143	0.82	0.018	0.0116	0.02	$OCRLAB/newsbench/images/mss3413201417-25.jpg	1
+nb10	page-kind	newspaper	-	137	0.90	0.013	0.0106	0.04	$OCRLAB/newsbench/images/mss3413201417-29.jpg	1
+nb11	page-kind	newspaper	-	133	0.90	0.022	0.0140	0.00	$OCRLAB/newsbench/images/mss3413201573-36.jpg	1
+nb12	page-kind	newspaper	-	145	0.93	0.012	0.0098	0.02	$OCRLAB/newsbench/images/mss3413201628-41.jpg	1
+nb13	page-kind	newspaper	-	148	0.83	0.017	0.0124	0.01	$OCRLAB/newsbench/images/mss3413201776-3.jpg	1
+nb14	page-kind	newspaper	-	140	1.00	0.008	0.0077	0.01	$OCRLAB/newsbench/images/mss3413201819-6.jpg	1
+nb15	page-kind	newspaper	-	145	0.83	0.029	0.0152	0.01	$OCRLAB/newsbench/images/mss3413201856-23.jpg	1
+nb16	page-kind	newspaper	-	142	0.84	0.038	0.0186	0.01	$OCRLAB/newsbench/images/mss3413201856-40.jpg	1
+nb17	page-kind	newspaper	-	136	0.79	0.011	0.0099	0.01	$OCRLAB/newsbench/images/mss3413201879-7.jpg	1
+nb18	page-kind	newspaper	-	148	0.85	0.011	0.0111	0.01	$OCRLAB/newsbench/images/mss425490669-55.jpg	1
+nb19	page-kind	newspaper	-	125	1.00	0.049	0.0244	0.07	$OCRLAB/newsbench/images/mss83434402-9.jpg	1
+xm01	page-kind	other	-	12	1.00	0.000	0.0000	0.00	testdocs/magazineArticle/1947_Corporation Tax Study Due By House Body.pdf	1
+xm02	page-kind	newspaper	-	121	1.00	0.006	0.0168	0.01	testdocs/magazineArticle/1947_Corporation Tax Study Due By House Body.pdf	2
+xm03	page-kind	other	-	88	1.00	0.001	0.0106	0.01	testdocs/magazineArticle/Astin__The Challenge of Open Admissions by Alexander W_UNZ.org.pdf	1
+xm04	page-kind	other	-	99	0.97	0.002	0.0106	0.00	testdocs/magazineArticle/Astin__The Challenge of Open Admissions by Alexander W_UNZ.org.pdf	2
+xm05	page-kind	other	-	98	1.07	0.002	0.0092	0.00	testdocs/magazineArticle/Black_0000_The Scandal of Educational Testing.pdf	1
+xm06	page-kind	other	-	133	1.13	0.001	0.0125	0.00	testdocs/magazineArticle/Black_0000_The Scandal of Educational Testing.pdf	2
+xm07	page-kind	other	-	45	1.00	0.001	0.0068	0.00	testdocs/magazineArticle/Bullitt_1959_The Future American Class System_Horizon.pdf	1
+xm08	page-kind	other	-	7	1.13	0.003	0.0146	0.00	testdocs/magazineArticle/Bullitt_1959_The Future American Class System_Horizon.pdf	2
+xm09	page-kind	other	-	62	1.06	0.000	0.0000	0.02	testdocs/magazineArticle/Davis_2005_Optimism of the Will_Nation.pdf	1
+xm10	page-kind	other	-	88	1.00	0.020	0.0098	0.01	testdocs/magazineArticle/Davis_2005_Optimism of the Will_Nation.pdf	2
+xm11	page-kind	other	-	15	1.00	0.000	0.0042	0.00	testdocs/magazineArticle/Ehrenreich_2000_Maid to order_Harper's Magazine.pdf	1
+xm12	page-kind	other	-	39	1.00	0.000	0.0039	0.00	testdocs/magazineArticle/Ehrenreich_2000_Maid to order_Harper's Magazine.pdf	2
+xm13	page-kind	other	-	95	1.10	0.002	0.0075	0.00	testdocs/magazineArticle/Glazer_2002_Higher Ed_New Republic.pdf	1
+xm14	page-kind	other	-	3	1.01	0.000	0.0000	0.00	testdocs/magazineArticle/Glazer_2002_Higher Ed_New Republic.pdf	2
+xm15	page-kind	other	-	100	0.94	0.001	0.0060	0.00	testdocs/magazineArticle/Glazer_2003_Kith and Kin_Commentary; New York.pdf	1
+xm16	page-kind	other	-	87	0.80	0.001	0.0052	0.00	testdocs/magazineArticle/Glazer_2003_Kith and Kin_Commentary; New York.pdf	2
+xm17	page-kind	other	-	52	1.10	0.002	0.0073	0.02	testdocs/magazineArticle/HarpersMagazine-1938-05-0019577.pdf	1
+xm18	page-kind	other	-	107	1.18	0.001	0.0079	0.00	testdocs/magazineArticle/HarpersMagazine-1938-05-0019577.pdf	2
+xm19	page-kind	other	-	93	1.08	0.000	0.0013	0.00	testdocs/magazineArticle/Kelly_2014_Orders of Magnitude_TLS.pdf	1
+xm20	page-kind	other	-	105	1.08	0.000	0.0007	0.00	testdocs/magazineArticle/Kelly_2014_Orders of Magnitude_TLS.pdf	2
+xm21	page-kind	other	-	74	1.00	0.002	0.0063	0.00	testdocs/magazineArticle/Kristol_1960_High, Low, and Modern_Encounter.pdf	1
+xm22	page-kind	other	-	102	1.03	0.003	0.0072	0.00	testdocs/magazineArticle/Kristol_1960_High, Low, and Modern_Encounter.pdf	2
+xm23	page-kind	other	-	100	1.03	0.003	0.0084	0.00	testdocs/magazineArticle/Lasky et al. - 1949 - Letters from readers.pdf	1
+xm24	page-kind	other	-	124	1.05	0.002	0.0080	0.00	testdocs/magazineArticle/Lasky et al. - 1949 - Letters from readers.pdf	2
+xm25	page-kind	other	-	118	1.00	0.003	0.0078	0.00	testdocs/magazineArticle/Lemann, Nicholas_1977_Success In America_Washington Monthly.pdf	1
+xm26	page-kind	other	-	136	1.00	0.003	0.0088	0.00	testdocs/magazineArticle/Lemann, Nicholas_1977_Success In America_Washington Monthly.pdf	2
+xm27	page-kind	other	-	77	1.00	0.002	0.0080	0.00	testdocs/magazineArticle/Lipset_Luethy_1955_European traditions and American sociology_Commentary (pre-1986); New York.pdf	1
+xm28	page-kind	other	-	113	1.03	0.004	0.0067	0.00	testdocs/magazineArticle/Lipset_Luethy_1955_European traditions and American sociology_Commentary (pre-1986); New York.pdf	2
+xm29	page-kind	other	-	87	1.03	0.007	0.0084	0.00	testdocs/magazineArticle/Luethy_1955_Social mobility again--And elites_Commentary (pre-1986); New York.pdf	1
+xm30	page-kind	other	-	113	1.08	0.001	0.0069	0.00	testdocs/magazineArticle/Luethy_1955_Social mobility again--And elites_Commentary (pre-1986); New York.pdf	2
+xm31	page-kind	other	-	79	1.00	0.002	0.0094	0.00	testdocs/magazineArticle/Marth_1982_Why Unions Lose At Many Companies_Nation's Business (pre-1986); Washington.pdf	1
+xm32	page-kind	other	-	146	1.00	0.001	0.0098	0.01	testdocs/magazineArticle/Marth_1982_Why Unions Lose At Many Companies_Nation's Business (pre-1986); Washington.pdf	2
+xm33	page-kind	other	-	150	1.00	0.024	0.0113	0.00	testdocs/magazineArticle/Merriam_1913_Clutter of Things_The Independent.pdf	1
+xm34	page-kind	other	-	82	0.97	0.025	0.0124	0.00	testdocs/magazineArticle/Merriam_1913_Clutter of Things_The Independent.pdf	2
+xm35	page-kind	other	-	34	0.90	0.009	0.0059	0.00	testdocs/magazineArticle/Part Two.pdf	1
+xm36	page-kind	other	-	21	1.03	0.002	0.0073	0.00	testdocs/magazineArticle/Part Two.pdf	2
+xm37	page-kind	other	-	88	1.00	0.001	0.0061	0.00	testdocs/magazineArticle/Peters_1989_Tilting at Windmilss_Washington Monthly.pdf	1
+xm38	page-kind	other	-	78	1.00	0.002	0.0075	0.00	testdocs/magazineArticle/Peters_1989_Tilting at Windmilss_Washington Monthly.pdf	2
+xm39	page-kind	other	-	43	1.00	0.011	0.0055	0.00	testdocs/magazineArticle/Sherman_1986_elite institutions_The Public Interest; New York.pdf	1
+xm40	page-kind	other	-	52	1.00	0.013	0.0056	0.02	testdocs/magazineArticle/Sherman_1986_elite institutions_The Public Interest; New York.pdf	2
+xm41	page-kind	other	-	42	1.00	0.000	0.0056	0.00	testdocs/magazineArticle/Stone_1965_England’s Revolution_The New York Review of Books.pdf	1
+xm42	page-kind	other	-	51	1.00	0.000	0.0040	0.00	testdocs/magazineArticle/Stone_1965_England’s Revolution_The New York Review of Books.pdf	2
+xm43	page-kind	other	-	9	1.00	0.010	0.0074	0.00	testdocs/magazineArticle/_1958_Executive Pay_Nation's Business (pre-1986); Washington.pdf	1
+xm44	page-kind	other	-	94	1.02	0.000	0.0095	0.00	testdocs/magazineArticle/_1958_Executive Pay_Nation's Business (pre-1986); Washington.pdf	2
+xm45	page-kind	other	-	113	1.00	0.002	0.0138	0.00	testdocs/magazineArticle/_1967_Yearly Increase of 15% Expected by Ampex_Boxoffice (Archive 1920-2000); New York.pdf	1
+xm46	page-kind	other	-	62	1.00	0.020	0.0096	0.02	testdocs/magazineArticle/_1977_What We're About_Washington Monthly.pdf	1
+xm47	page-kind	other	-	63	1.00	0.003	0.0084	0.00	testdocs/magazineArticle/_1977_What We're About_Washington Monthly.pdf	2
+xm48	page-kind	other	-	105	1.37	0.023	0.0125	0.06	testdocs/document/_1953_99 Cong_.pdf	1
+xm49	page-kind	other	-	104	1.46	0.020	0.0114	0.04	testdocs/document/_1953_99 Cong_.pdf	2
+xm50	page-kind	other	-	144	1.00	0.003	0.0056	0.01	testdocs/journalArticle/Donahue - 2001 - Time to Get Serious About Talent Management.pdf	1
+pk00x	photo	baker	-	54	1.32	0.021	0.0164	0.04	$STATE/photo-sample/stripped/pk00-baker.jpg	1
+pk01x	photo	typed	-	54	1.00	0.007	0.0118	0.07	$STATE/photo-sample/stripped/pk01-typed.jpeg	1
+pk02x	photo	typed	-	38	0.97	0.010	0.0169	0.00	$STATE/photo-sample/stripped/pk02-typed.jpg	1
+pk03x	photo	typed	-	33	1.03	0.011	0.0114	0.06	$STATE/photo-sample/stripped/pk03-typed.jpg	1
+pk04x	photo	typed	-	19	2.86	0.009	0.0201	0.12	$STATE/photo-sample/stripped/pk04-typed.heic	1
+pk05x	photo	typed	-	77	0.93	0.039	0.0137	0.15	$STATE/photo-sample/stripped/pk05-typed.jpg	1
+pk06x	photo	typed	-	15	1.00	0.018	0.0140	0.00	$STATE/photo-sample/stripped/pk06-typed.jpeg	1
+pk07x	photo	typed	-	95	0.91	0.017	0.0111	0.00	$STATE/photo-sample/stripped/pk07-typed.jpg	1
+pk08x	photo	clippings	-	21	1.00	0.014	0.0098	0.00	$STATE/photo-sample/stripped/pk08-clippings.jpg	1
+pk09x	photo	clippings	-	148	0.86	0.018	0.0141	0.05	$STATE/photo-sample/stripped/pk09-clippings.jpg	1
+pk10x	photo	clippings	-	33	1.00	0.015	0.0088	0.00	$STATE/photo-sample/stripped/pk10-clippings.jpg	1
+pk11x	photo	clippings	-	43	0.94	0.023	0.0161	0.12	$STATE/photo-sample/stripped/pk11-clippings.jpg	1
+pk12x	photo	clippings	-	114	1.03	0.006	0.0096	0.00	$STATE/photo-sample/stripped/pk12-clippings.jpg	1
+pk13x	photo	clippings	-	81	1.05	0.034	0.0111	0.16	$STATE/photo-sample/stripped/pk13-clippings.jpg	1
+pk14x	photo	statistics	-	52	0.82	0.019	0.0088	0.00	$STATE/photo-sample/stripped/pk14-statistics.jpg	1
+pk15x	photo	statistics	-	54	1.00	0.015	0.0096	0.02	$STATE/photo-sample/stripped/pk15-statistics.jpg	1
+pk16x	photo	statistics	-	35	1.00	0.010	0.0078	0.00	$STATE/photo-sample/stripped/pk16-statistics.jpg	1
+pk17x	photo	statistics	-	26	0.93	0.006	0.0105	0.00	$STATE/photo-sample/stripped/pk17-statistics.jpg	1
+pk18x	photo	statistics	-	34	0.97	0.008	0.0106	0.00	$STATE/photo-sample/stripped/pk18-statistics.jpg	1
+pk19x	photo	handwritten	handwritten	20	2.62	0.116	0.0432	0.81	$STATE/photo-sample/stripped/pk19-handwritten.jpg	1
+pk20x	photo	handwritten	-	0	0.00	0.000	0.0000	0.00	$STATE/photo-sample/stripped/pk20-handwritten.jpg	1
+pk21x	photo	notes	-	34	1.00	0.022	0.0089	0.17	$STATE/photo-sample/stripped/pk21-notes.jpg	1
+pk27x	photo	handwritten	handwritten	8	2.56	0.263	0.0319	0.62	$STATE/photo-sample/stripped/pk27-handwritten.jpg	1
+pk28x	photo	handwritten	handwritten	2	2.92	0.236	0.1887	1.00	$STATE/photo-sample/stripped/pk28-handwritten.jpg	1
+pk29x	photo	handwritten	handwritten	16	1.36	0.087	0.0300	0.25	$STATE/photo-sample/stripped/pk29-handwritten.jpg	1
+pk30x	photo	notes	-	42	0.94	0.017	0.0125	0.05	$STATE/photo-sample/stripped/pk30-notes.jpg	1
+pk22p2	photo	pdf	-	21	0.95	0.024	0.0140	0.00	$STATE/photo-sample/pk22-pdf.pdf	2
+pk25p5	photo	pdf	-	41	1.00	0.002	0.0073	0.00	$STATE/photo-sample/pk25-pdf.pdf	5
+pk35p2	photo	pdf	-	29	1.02	0.010	0.0103	0.00	$STATE/photo-sample/pk35-pdf.pdf	2

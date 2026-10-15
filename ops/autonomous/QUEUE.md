@@ -2120,9 +2120,9 @@ say so in the commit.
       `ux-regression.sh` is no worse with the mode off and on; the suite passes.
       ESTIMATE: 3 sessions. BOUND: rule 10. (context: owner request 2026-10-15)
       (notes: ops/autonomous/notes/page-kind-handwriting.md)
-      - [ ] **hw-pages** — copy the truth set's pages and draw the held-out photos, listed in a dated TSV.
-      - [ ] **hw-detect** — the handwriting detector, checked as above. (blocked-on: hw-pages)
-      - [ ] **hw-measure** — the three readers measured on the handwritten pages, and the table's figures.
+      - [x] **hw-pages** — copy the truth set's pages and draw the held-out photos, listed in a dated TSV.
+      - [x] **hw-detect** — the handwriting detector, checked as above. (blocked-on: hw-pages)
+      - [x] **hw-measure** — the three readers measured on the handwritten pages, and the table's figures.
             (blocked-on: hw-pages, pk-upright)
       - [ ] **hw-settings** — the fourth kind in the dialog and the routing, with the overlap rule.
             (blocked-on: hw-detect, hw-measure)

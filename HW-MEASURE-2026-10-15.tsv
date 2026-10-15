@@ -1,0 +1,81 @@
+# hw-measure (page-kind-handwriting), 2026-10-15: three readers on the truth set's 19 handwritten and 2 mixed pages (HW-PAGES-2026-10-15.tsv),
+# each page through the production pipeline once per reader (Tools/score-gate.swift's harness taking images, built from e9311b5's Sources plus this commit's detector, which nothing calls yet;
+# accurate mode; vision = no model reader, falcon-ocr and paddleocr-vl set for every kind of page, so a photographed page takes its photograph pair:
+# falcon-ocr align, paddleocr-vl regions). Text through PDFKit page.string; scored against the whole-page transcription with
+# ops/ocrlab/score-bakeoff.py's norm/tokens/matched, as a bag (a truth word missed when no reading word matches it, order ignored);
+# truth words containing [illegible] left out (81 markers), so 2,825 handwritten and 202 mixed words are scored. added = reading words matching no truth word.
+# Small sample, one archive's hands. Not comparable with Archive Suite's panel figures (its own normalisation and measure).
+# Seconds a page, wall through the harness (about 18 s of each is the harness's own start-up, reasoned from Vision's 20.3): vision 20.3, paddleocr-vl 21.3, falcon-ocr 56.6.
+# Totals, missed per 1,000: handwritten vision 561, paddleocr-vl 454, falcon-ocr 409; mixed 257, 228, 223.
+reader	page	kind	truth_words	missed	missed_per_1000	added	read
+vision	p007	handwritten	73	45	616	34	yes
+vision	p009	mixed	152	36	237	38	yes
+vision	p015	handwritten	217	35	161	28	yes
+vision	p022	handwritten	290	117	403	36	yes
+vision	p031	mixed	50	16	320	11	yes
+vision	p040	handwritten	185	91	492	45	yes
+vision	p045	handwritten	113	25	221	24	yes
+vision	p046	handwritten	86	42	488	33	yes
+vision	p047	handwritten	106	84	792	57	yes
+vision	p048	handwritten	67	26	388	66	yes
+vision	p049	handwritten	83	70	843	41	yes
+vision	p050	handwritten	199	170	854	67	yes
+vision	p051	handwritten	91	43	473	46	yes
+vision	p052	handwritten	154	50	325	51	yes
+vision	p053	handwritten	151	73	483	68	yes
+vision	p054	handwritten	145	120	828	67	yes
+vision	p055	handwritten	90	37	411	49	yes
+vision	p056	handwritten	132	71	538	66	yes
+vision	p086	handwritten	310	193	623	185	yes
+vision	p094	handwritten	80	76	950	20	yes
+vision	p096	handwritten	253	218	862	206	yes
+paddleocr-vl	p007	handwritten	73	27	370	20	yes
+paddleocr-vl	p009	mixed	152	34	224	36	yes
+paddleocr-vl	p015	handwritten	217	19	88	14	yes
+paddleocr-vl	p022	handwritten	290	88	303	13	yes
+paddleocr-vl	p031	mixed	50	12	240	7	yes
+paddleocr-vl	p040	handwritten	185	85	459	40	yes
+paddleocr-vl	p045	handwritten	113	7	62	10	yes
+paddleocr-vl	p046	handwritten	86	29	337	20	yes
+paddleocr-vl	p047	handwritten	106	56	528	29	yes
+paddleocr-vl	p048	handwritten	67	16	239	55	yes
+paddleocr-vl	p049	handwritten	83	55	663	26	yes
+paddleocr-vl	p050	handwritten	199	170	854	67	yes
+paddleocr-vl	p051	handwritten	91	23	253	27	yes
+paddleocr-vl	p052	handwritten	154	50	325	51	yes
+paddleocr-vl	p053	handwritten	151	40	265	35	yes
+paddleocr-vl	p054	handwritten	145	120	828	67	yes
+paddleocr-vl	p055	handwritten	90	20	222	34	yes
+paddleocr-vl	p056	handwritten	132	46	348	41	yes
+paddleocr-vl	p086	handwritten	310	138	445	131	yes
+paddleocr-vl	p094	handwritten	80	76	950	20	yes
+paddleocr-vl	p096	handwritten	253	218	862	206	yes
+falcon-ocr	p007	handwritten	73	23	315	16	yes
+falcon-ocr	p009	mixed	152	32	211	34	yes
+falcon-ocr	p015	handwritten	217	14	65	10	yes
+falcon-ocr	p022	handwritten	290	85	293	11	yes
+falcon-ocr	p031	mixed	50	13	260	8	yes
+falcon-ocr	p040	handwritten	185	62	335	20	yes
+falcon-ocr	p045	handwritten	113	5	44	8	yes
+falcon-ocr	p046	handwritten	86	18	209	10	yes
+falcon-ocr	p047	handwritten	106	50	472	25	yes
+falcon-ocr	p048	handwritten	67	23	343	63	yes
+falcon-ocr	p049	handwritten	83	48	578	21	yes
+falcon-ocr	p050	handwritten	199	170	854	67	yes
+falcon-ocr	p051	handwritten	91	15	165	19	yes
+falcon-ocr	p052	handwritten	154	16	104	19	yes
+falcon-ocr	p053	handwritten	151	29	192	24	yes
+falcon-ocr	p054	handwritten	145	120	828	67	yes
+falcon-ocr	p055	handwritten	90	16	178	31	yes
+falcon-ocr	p056	handwritten	132	46	348	43	yes
+falcon-ocr	p086	handwritten	310	122	394	113	yes
+falcon-ocr	p094	handwritten	80	76	950	20	yes
+falcon-ocr	p096	handwritten	253	218	862	206	yes
+
+reader	kind	pages	unread	truth_words	missed	missed_per_1000
+vision	handwritten	19	0	2825	1586	561
+vision	mixed	2	0	202	52	257
+paddleocr-vl	handwritten	19	0	2825	1283	454
+paddleocr-vl	mixed	2	0	202	46	228
+falcon-ocr	handwritten	19	0	2825	1156	409
+falcon-ocr	mixed	2	0	202	45	223
