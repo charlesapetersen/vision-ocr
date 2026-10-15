@@ -53,3 +53,17 @@ ABBYY's 23 KB at 290). Files and crops: `$STATE/photo-size-ladder/` (third-party
 Recommended 1/4 in `PHOTO-SIZE-DECISION-2026-10-14.md`; the question is under RUN.md's NEEDS OWNER.
 For pps-ship: the factors are applied in `mrcLayers` (`bgFactor`/`fgFactor`), on pages `pageIsAllText()`
 accepts; an image-input step needs a way to tell `mrcLayers` the page came from an image file.
+
+## 2026-10-14 — the content floor for photos (Opus 5.5, medium; pps-owner-pick still open)
+
+Tried 1406877 on five owner archive photos (iPad, 72 dpi, Make/Model; `$STATE/photo-sample-pps/`), before
+(07736de) -> after (default settings): clipping 1,573,114 -> 408,190 B; table 889,646 -> 48,136; handwritten
+855,787 -> 46,220 and 986,943 -> 53,741; 1922 letter 856,162 -> 221,144. Words and findString unchanged on all.
+But at 8/16 two lose content, seen in 2x PDFKit crops: the table's faint digits break ("1979-80" -> "1?79-6?",
+"BS" -> "8S", the rule under the header gone) and a pencil sheet on the handwritten card is a smudge. The
+stencil drops those strokes (uneven light), and a 29 ppi background cannot carry them. Ladder on those two:
+2/4 171,146 / 195,086 B; 3/6 94,896 / 109,064; 4/8 70,630 / 81,387; 8/16 48,136 / 53,741. Legible at 4/8 and
+finer, not at 8/16. Shipped: `mrcLayers(fromImage:)` caps an image input's all-text factors at
+`imagePageBackgroundDownsample`/`imagePageForegroundDownsample` = 4/8 (Baker 79 -> 113 KB). It is a floor for
+content, not the owner's pick; 1/2 or 1/3 remain open. Rejected: camera images only (an EXIF-stripped photo
+has the same light), and fixing the stencil's threshold for photos (larger change; the background suffices).

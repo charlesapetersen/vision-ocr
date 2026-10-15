@@ -3386,6 +3386,14 @@ enum Flattener {
     static let textPageMarkDownsample = 3
     static let textPageForegroundDownsample = 16
 
+    /// photo-pdf-size. The all-text factors for a page that came from an image file, a
+    /// photo most often. At 8/16 a photographed table's faint typewriter digits broke
+    /// ("1979-80" drew as "1?79-6?") and a sheet of pencil figures became a smudge,
+    /// because uneven light leaves such strokes out of the stencil and only the
+    /// background holds them. At 4/8 both read; Baker 113 KB where 8/16 gave 79 KB.
+    static let imagePageBackgroundDownsample = 4
+    static let imagePageForegroundDownsample = 8
+
     /// The fraction of the page's ink that falls outside `region`.
     ///
     /// The outer sixteenth is ignored on every side. A scan carries the dark edge
@@ -4490,7 +4498,7 @@ enum Flattener {
         /// draws as noise, and nothing reports it.
         var isColour = false
         /// C28. True when `pageIsAllText()` accepted this page, so the all-text rule
-        /// raised both tone-layer factors to 8 and 16.
+        /// raised both tone-layer factors to 8 and 16 (4 and 8 from an image file).
         ///
         /// **This is the lossy case, and it is carried out of here so that something
         /// can say so.** The stencil holds only what Vision boxed (`textRegionMask`),
@@ -5275,6 +5283,7 @@ enum Flattener {
                           backgroundDownsample: Int = mrcBackgroundDownsample,
                           foregroundDownsample: Int = mrcForegroundDownsample,
                           inColour: Bool = false,
+                          fromImage: Bool = false,
                           stencil cut: (png: Data, width: Int, height: Int)? = nil) -> MRCLayers? {
         // No words means a plate with no text on it. An empty stencil would put
         // the whole page into a downsampled background — publishing a picture at
@@ -5298,7 +5307,8 @@ enum Flattener {
         if inColour, wide * high > Double(maximumColourMRCPageMegapixels) * 1_000_000 {
             return mrcLayers(for: page, boxes: boxes, into: directory, stem: stem,
                              backgroundDownsample: backgroundDownsample,
-                             foregroundDownsample: foregroundDownsample, inColour: false)
+                             foregroundDownsample: foregroundDownsample, inColour: false,
+                             fromImage: fromImage)
         }
         // C39. The finer stencil is cut first, before anything below is allocated, so
         // its Sauvola peak is the only one alive: `analyticMRCBytesPerPixel` at no more
@@ -5454,9 +5464,13 @@ enum Flattener {
             keepWordsAndInterior(&mask, region: region, width: w, height: h)
         }
         let bgFactor = allText
-            ? max(backgroundDownsample, textPageBackgroundDownsample) : backgroundDownsample
+            ? max(backgroundDownsample, fromImage ? imagePageBackgroundDownsample
+                                                  : textPageBackgroundDownsample)
+            : backgroundDownsample
         let fgFactor = allText
-            ? max(foregroundDownsample, textPageForegroundDownsample) : foregroundDownsample
+            ? max(foregroundDownsample, fromImage ? imagePageForegroundDownsample
+                                                  : textPageForegroundDownsample)
+            : foregroundDownsample
 
         // The stencil is the same either way: it comes from the luminance render,
         // so a colour page's text is cut out exactly as a grey one's is. `fine`, cut
@@ -5521,7 +5535,7 @@ enum Flattener {
                 return mrcLayers(for: page, boxes: boxes, into: directory, stem: stem,
                                  backgroundDownsample: backgroundDownsample,
                                  foregroundDownsample: foregroundDownsample,
-                                 inColour: false, stencil: fine)
+                                 inColour: false, fromImage: fromImage, stencil: fine)
             }
             // C31. The foreground is sampled from the dark core of the strokes, not
             // from every stencil pixel. See `foregroundHoles`.

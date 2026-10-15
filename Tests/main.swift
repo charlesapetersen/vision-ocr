@@ -4426,6 +4426,23 @@ do {
         check("…and reports itself as stored at an eighth, which is the report C28 shipped",
               boxed.shrunkAsAllText == true,
               "flag \(boxed.shrunkAsAllText), \(boxed.backgroundWidth) wide")
+        // photo-pdf-size. The same page from an image file keeps its tone layers at a
+        // quarter and an eighth: at 8/16 a photographed table's faint digits broke and a
+        // sheet of pencil became a smudge, since only the background held them.
+        if let doc = PDFDocument(url: c28Missed), let page = doc.page(at: 0),
+           let photo = Flattener.mrcLayers(
+               for: page, boxes: c28Boxes(15), into: c26Dir, stem: "c28photo",
+               backgroundDownsample: Prefs.PhotoDetail.balanced.downsample,
+               inColour: true, fromImage: true) {
+            let quarter = c28Full / Flattener.imagePageBackgroundDownsample
+            check("photo-pdf-size — …and from an image file its background is a quarter, not an eighth",
+                  photo.shrunkAsAllText && abs(photo.backgroundWidth - quarter) <= 1
+                    && photo.foregroundWidth > c28Full / Flattener.textPageForegroundDownsample + 1,
+                  "flag \(photo.shrunkAsAllText), background \(photo.backgroundWidth) wide of "
+                    + "\(c28Full), quarter \(quarter); foreground \(photo.foregroundWidth)")
+        } else {
+            check("photo-pdf-size's image-file layering", false, "mrcLayers returned nil")
+        }
         // C28, 2026-09-02. The ACCEPTING answer, and it is the other end of the pair
         // above: without it a build that hard-wired `shapeTermAnswer` to a refusing
         // value would still satisfy the missed-word check, because that page IS refused.
@@ -16883,7 +16900,8 @@ do {
 
     // Typed lines on cream paper lit unevenly, as a phone sees a letter on a desk.
     let w = 1200, h = 1600
-    let photo = dir.appendingPathComponent("letter.jpg")
+    // Unsigned, a page the all-text rule accepts.
+    func makePhoto(_ photo: URL, signed: Bool) {
     if let rep = NSBitmapImageRep(
         bitmapDataPlanes: nil, pixelsWide: w, pixelsHigh: h,
         bitsPerSample: 8, samplesPerPixel: 4, hasAlpha: true, isPlanar: false,
@@ -16891,7 +16909,7 @@ do {
        let ctx = NSGraphicsContext(bitmapImageRep: rep) {
         NSGraphicsContext.saveGraphicsState(); NSGraphicsContext.current = ctx
         NSGradient(starting: NSColor(red: 0.93, green: 0.88, blue: 0.74, alpha: 1),
-                   ending: NSColor(red: 0.46, green: 0.42, blue: 0.33, alpha: 1))?
+                   ending: NSColor(red: 0.465, green: 0.44, blue: 0.37, alpha: 1))?
             .draw(in: NSRect(x: 0, y: 0, width: w, height: h), angle: -60)
         let attrs: [NSAttributedString.Key: Any] = [
             .font: NSFont(name: "Courier", size: 30) ?? NSFont.systemFont(ofSize: 30),
@@ -16901,6 +16919,7 @@ do {
                 .draw(at: NSPoint(x: 90, y: CGFloat(h - 160 - i * 52)), withAttributes: attrs)
         }
         // A signature in blue ink, and a camera's grain over everything.
+        if signed {
         let pen = NSBezierPath()
         pen.move(to: NSPoint(x: 600, y: 180))
         for k in 1...12 {
@@ -16911,6 +16930,7 @@ do {
         pen.lineWidth = 5
         NSColor(red: 0.15, green: 0.2, blue: 0.6, alpha: 1).setStroke()
         pen.stroke()
+        }
         NSGraphicsContext.current?.flushGraphics(); NSGraphicsContext.restoreGraphicsState()
         if let px = rep.bitmapData {
             var seed: UInt32 = 12345
@@ -16931,6 +16951,9 @@ do {
             _ = CGImageDestinationFinalize(dest)
         }
     }
+    }
+    let photo = dir.appendingPathComponent("letter.jpg")
+    makePhoto(photo, signed: true)
     let output = dir.appendingPathComponent("letter.ocr.pdf")
     var outcome: Runner.Result.Outcome?
     var message = ""
@@ -16939,6 +16962,25 @@ do {
         control: RunControl(), progress: { _, _ in },
         report: { o, m in outcome = o; message = m })
     check("the photo publishes", outcome == .succeeded, message)
+    // Unsigned, the page is read as all text, and from an image file its tone layers are
+    // kept at a quarter, which is what holds a photo's faint figures and pencil: a
+    // background 300 wide of the photo's 1200, its foreground 150. With the flag not passed
+    // through, an eighth and a sixteenth, 150 and 75.
+    let unsigned = dir.appendingPathComponent("unsigned.jpg")
+    makePhoto(unsigned, signed: false)
+    let unsignedOut = dir.appendingPathComponent("unsigned.ocr.pdf")
+    var shrunkNote = ""
+    OCRModel.makeSearchablePDF(
+        file: unsigned, output: unsignedOut, rebuild: true, rebuildMode: .auto, password: nil,
+        control: RunControl(), progress: { _, _ in },
+        shrunkTextPageNote: { shrunkNote = $0 },
+        report: { _, _ in })
+    let widths = ((try? Data(contentsOf: unsignedOut)).map { String(decoding: $0, as: UTF8.self) } ?? "")
+        .components(separatedBy: "/Width ").dropFirst()
+        .map { Int($0.prefix { $0.isNumber }) ?? 0 }
+    check("…and an all-text photo's page is stored at a quarter, not an eighth",
+          shrunkNote.contains("stored at a quarter") && widths.contains(300) && !widths.contains(75),
+          "widths \(widths); \(shrunkNote.prefix(120))")
     let box = PDFDocument(url: output)?.page(at: 0)?.bounds(for: .mediaBox) ?? .zero
     check("…on a Letter-high page, not a 17x22 inch one",
           abs(box.height - 792) < 1, "\(Int(box.width))x\(Int(box.height)) pt")

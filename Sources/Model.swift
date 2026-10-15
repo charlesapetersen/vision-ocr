@@ -1842,10 +1842,10 @@ final class OCRModel: ObservableObject {
         /// and `usedJBIG2` used to be a local that never left this function.
         tookJBIG2Route: @escaping () -> Void = { },
         /// Called at most once per document, when pages were published with the ink
-        /// outside the recognised words stored at an eighth (C28). Its own channel for
-        /// the same reason `fellBack` is: this one is *logged* and that one is
-        /// *counted*, and sharing either would make the report describe something
-        /// other than what happened (R41).
+        /// outside the recognised words stored at an eighth, a quarter from an image
+        /// file (C28). Its own channel for the same reason `fellBack` is: this one is
+        /// *logged* and that one is *counted*, and sharing either would make the report
+        /// describe something other than what happened (R41).
         shrunkTextPageNote: @escaping (String) -> Void = { _ in },
         /// Called at most once per document, when pages that were already born
         /// digital were rasterised and re-recognised anyway (C29). Its own channel
@@ -1909,7 +1909,9 @@ final class OCRModel: ObservableObject {
         // rebuild truncated its own source as it wrote it, and every image input
         // reported that its page numbers and title could not be carried across.
         var file = inputFile
-        if PDFDocument(url: file) == nil {
+        // An image input's all-text pages keep their tone layers finer (`mrcLayers`).
+        let fromImage = PDFDocument(url: file) == nil
+        if fromImage {
             let input = work.appendingPathComponent("input")
             guard (try? FileManager.default.createDirectory(
                       at: input, withIntermediateDirectories: true)) != nil,
@@ -2543,7 +2545,8 @@ final class OCRModel: ObservableObject {
                             for: page, boxes: boxes, into: pngDir,
                             stem: String(format: "m%05d", index + 1),
                             backgroundDownsample: settings.photoDetail.downsample,
-                            inColour: encoded[index].isColour)
+                            inColour: encoded[index].isColour,
+                            fromImage: fromImage)
                         else { continue }
                         let stencil = pngDir.appendingPathComponent(
                             String(format: "m%05d.jbig2", index + 1))
@@ -2719,7 +2722,8 @@ final class OCRModel: ObservableObject {
                     // built here goes to the run report, which is the only record that
                     // outlives the window. Held, not sent: the success exit sends it.
                     if !shrunkTextPages.isEmpty {
-                        shrunkTextPageMessage = Self.shrunkTextPageSummary(shrunkTextPages)
+                        shrunkTextPageMessage = Self.shrunkTextPageSummary(
+                            shrunkTextPages, storedAt: fromImage ? "a quarter" : "an eighth")
                     }
                 }
                 let textLayer = work.appendingPathComponent("text.pdf")
@@ -3168,7 +3172,8 @@ final class OCRModel: ObservableObject {
     /// it", and this is the report. (57 is 73 − 16, not a count of pages that lose
     /// nothing at all: at least six of those 57 lose something visible that is not
     /// content, a pen line smeared and five footnote rules blurred.)
-    nonisolated static func shrunkTextPageSummary(_ pages: [(page: Int, inkOutside: Double?)])
+    nonisolated static func shrunkTextPageSummary(_ pages: [(page: Int, inkOutside: Double?)],
+                                                  storedAt fraction: String = "an eighth")
         -> String {
         let detail = pages.prefix(3)
             .map { entry -> String in
@@ -3187,7 +3192,7 @@ final class OCRModel: ObservableObject {
         // the 73 measured pages the verdict is simply wrong, which is the entire reason
         // this line exists. Caught by the adversarial review of this diff.
         return "\(pages.count) page(s) were read as holding nothing but recognised text, "
-            + "so the rest of the page was stored at an eighth — anything the recogniser "
+            + "so the rest of the page was stored at \(fraction) — anything the recogniser "
             + "missed on them is degraded: \(detail)"
             + (pages.count > 3 ? " …" : "")
     }

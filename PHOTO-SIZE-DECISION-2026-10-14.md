@@ -49,3 +49,12 @@ saves another 34 KB and gives a visibly paler signature. Going up to 1/2 doubles
 that only shows at 2x.
 
 The step would apply to image inputs only (pps-ship). Scanned PDFs keep today's rule.
+
+## Update, 2026-10-14 evening: 1/6 and 1/8 lose content on other photos, so 1/4 now ships as the floor
+
+Tried on five of the owner's archive photos (a clipping, a table, two handwritten pages, a 1922 letter). At 1/8,
+what shipped with pps-route, a table's faint typewriter digits broke ("1979-80" drew as "1?79-6?", "BS" as
+"8S") and a sheet of pencil figures became a grey smudge: uneven light leaves those strokes out of the stencil,
+and only the background holds them. At 1/4 both read (table 70.6 KB, pencil page 81.4 KB). So image inputs
+now take 1/4 as the most their all-text background is shrunk. The owner can still pick 1/2 or 1/3; 1/6 and 1/8
+are off the table. Crops: `$STATE/photo-sample-pps/ladder/`.
