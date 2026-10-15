@@ -2071,7 +2071,7 @@ say so in the commit.
             folders: typed, Clippings, Statistics, Handwritten, and some of the PDFs (photos without EXIF), plus
             Baker. Make truth for a few lines of each the way `TRUTH-CALIBRATE-2026-09-29.tsv` was made, and
             list the sample in a dated TSV.
-      - [ ] **pk-photo-detect** — the photograph detector, checked as above. (blocked-on: pk-photo-pages)
+      - [x] **pk-photo-detect** — the photograph detector, checked as above. (blocked-on: pk-photo-pages)
       - [ ] **pk-photo-measure** — the three readers measured on the photographs, and the table's figures for
             the new kind. (blocked-on: pk-photo-pages)
       - [ ] **pk-settings** — the three kinds in the dialog and the routing, with the overlap rule.

@@ -4998,6 +4998,169 @@ extension Recogniser {
     static let newspaperColumnWidth = 0.2
 }
 
+// MARK: - Photographed pages told from scans (page-kinds-three)
+
+extension Recogniser {
+    /// How a page image was lit, the signals `isPhotograph` judges by. All of them are taken
+    /// from the pixels, so they hold for a photo whose camera tags were stripped and for one
+    /// a PDF maker cropped and re-encoded.
+    struct PhotoSignals: Equatable {
+        /// The paper's brightness, 0-255: a scanner calibrates paper to white, a camera's
+        /// exposure leaves it grey.
+        var paperLevel = 255.0
+        /// How much the paper's colour cast (red less blue) changes across the page: room
+        /// light is warm in one place and cool in another, a scanner's lamp the same everywhere.
+        var castSpread = 0.0
+        /// How much darker the outer 3% of the frame is than the paper: the table, a binder or
+        /// a shadow round a photographed sheet, where a scan's paper reaches its edge.
+        var borderDark = 0.0
+        /// The range of a smooth surface fitted to the paper's brightness, as a share of the
+        /// brightest: light falling off across a photographed page.
+        var falloff = 0.0
+        /// Sensor noise on blank paper: the median difference of a pixel from its row
+        /// neighbours' mean, in levels. A scanner's paper is flat.
+        var noise = 0.0
+    }
+
+    /// The long side, in pixels, the signals are measured at, so a 12-megapixel photo and a
+    /// 150 dpi render give comparable figures.
+    static let photoSignalSide = 1600
+
+    static func photoSignals(of source: CGImage) -> PhotoSignals {
+        let scale = Double(photoSignalSide) / Double(max(source.width, source.height, 1))
+        let w = max(1, Int((Double(source.width) * scale).rounded()))
+        let h = max(1, Int((Double(source.height) * scale).rounded()))
+        guard let ctx = CGContext(data: nil, width: w, height: h, bitsPerComponent: 8, bytesPerRow: w * 4,
+                                  space: CGColorSpaceCreateDeviceRGB(),
+                                  bitmapInfo: CGImageAlphaInfo.noneSkipLast.rawValue) else {
+            return PhotoSignals()
+        }
+        ctx.setFillColor(CGColor(red: 1, green: 1, blue: 1, alpha: 1))
+        ctx.fill(CGRect(x: 0, y: 0, width: w, height: h))
+        ctx.interpolationQuality = .high
+        ctx.draw(source, in: CGRect(x: 0, y: 0, width: w, height: h))
+        guard let base = ctx.data else { return PhotoSignals() }
+        let row = ctx.bytesPerRow
+        let d = base.bindMemory(to: UInt8.self, capacity: row * h)
+        func lum(_ x: Int, _ y: Int) -> Double {
+            let o = y * row + x * 4
+            return 0.299 * Double(d[o]) + 0.587 * Double(d[o + 1]) + 0.114 * Double(d[o + 2])
+        }
+        func percentile(_ v: [Double], _ q: Double) -> Double {
+            guard !v.isEmpty else { return 0 }
+            let s = v.sorted(); return s[min(s.count - 1, Int(Double(s.count - 1) * q))]
+        }
+
+        // The paper's level in each cell of a 12x12 grid (the 90th percentile of luminance),
+        // over the cells inside the central 70% of the frame, where the paper is. A cell is
+        // paper when most of it sits near its own level (little ink, no halftone) and that
+        // level is near the page's paper, so a solid block of picture or a dark plate is not
+        // read as paper in shadow.
+        let n = 12
+        var cells: [(gx: Int, gy: Int, level: Double, even: Bool)] = []
+        for gy in 0..<n { for gx in 0..<n {
+            let cx = (Double(gx) + 0.5) / Double(n), cy = (Double(gy) + 0.5) / Double(n)
+            guard abs(cx - 0.5) < 0.35, abs(cy - 0.5) < 0.35 else { continue }
+            var cell: [Double] = []
+            for y in stride(from: gy * h / n, to: (gy + 1) * h / n, by: 2) {
+                for x in stride(from: gx * w / n, to: (gx + 1) * w / n, by: 2) { cell.append(lum(x, y)) }
+            }
+            guard !cell.isEmpty else { continue }
+            let level = percentile(cell, 0.9)
+            let even = Double(cell.filter { $0 >= level - 25 }.count) >= 0.6 * Double(cell.count)
+            cells.append((gx, gy, level, even))
+        }}
+        let top = percentile(cells.map(\.level), 0.95)
+        var paper: [(x: Double, y: Double, level: Double)] = []
+        var warmth: [Double] = [], noise: [Double] = []
+        for c in cells where c.even && c.level >= paperShadow * top {
+            let (gx, gy, level) = (c.gx, c.gy, c.level)
+            let xs = stride(from: gx * w / n, to: (gx + 1) * w / n, by: 2)
+            let ys = stride(from: gy * h / n, to: (gy + 1) * h / n, by: 2)
+            paper.append(((Double(gx) + 0.5) / Double(n), (Double(gy) + 0.5) / Double(n), level))
+            var cast = 0.0, castCount = 0.0
+            for y in ys { for x in xs where lum(x, y) >= level - 8 {
+                let o = y * row + x * 4
+                cast += Double(d[o]) - Double(d[o + 2]); castCount += 1
+            }}
+            if castCount > 0 { warmth.append(cast / castCount) }
+            var dev: [Double] = []
+            for y in stride(from: gy * h / n, to: (gy + 1) * h / n, by: 3) {
+                for x in stride(from: gx * w / n + 1, to: (gx + 1) * w / n - 1, by: 3) {
+                    let c = lum(x, y)
+                    if c >= level - 12 { dev.append(abs(c - (lum(x - 1, y) + lum(x + 1, y)) / 2)) }
+                }
+            }
+            if dev.count >= 20 { noise.append(percentile(dev, 0.5)) }
+        }
+        var signals = PhotoSignals()
+        signals.paperLevel = top
+        signals.castSpread = percentile(warmth, 0.9) - percentile(warmth, 0.1)
+        signals.noise = percentile(noise, 0.5)
+
+        var ring = 0.0, ringCount = 0.0
+        let m = max(1, min(w, h) * 3 / 100)
+        for y in stride(from: 0, to: h, by: 2) { for x in stride(from: 0, to: w, by: 2)
+            where x < m || y < m || x >= w - m || y >= h - m {
+            ring += lum(x, y); ringCount += 1
+        }}
+        if top > 0, ringCount > 0 { signals.borderDark = 1 - ring / ringCount / top }
+
+        // The fall-off: a quadratic surface fitted by least squares to the paper cells' levels.
+        if paper.count >= 12 {
+            func basis(_ x: Double, _ y: Double) -> [Double] { [1, x, y, x * x, y * y, x * y] }
+            var a = [[Double]](repeating: [Double](repeating: 0, count: 7), count: 6)
+            for p in paper {
+                let b = basis(p.x, p.y)
+                for i in 0..<6 { for j in 0..<6 { a[i][j] += b[i] * b[j] }; a[i][6] += b[i] * p.level }
+            }
+            for i in 0..<6 { a[i][i] += 1e-6 }
+            for c in 0..<6 {
+                let pivot = (c..<6).max { abs(a[$0][c]) < abs(a[$1][c]) }!
+                a.swapAt(c, pivot)
+                for r in 0..<6 where r != c {
+                    let k = a[r][c] / a[c][c]
+                    for j in c..<7 { a[r][j] -= k * a[c][j] }
+                }
+            }
+            let coefficients = (0..<6).map { a[$0][6] / a[$0][$0] }
+            let fit = paper.map { zip(basis($0.x, $0.y), coefficients).map(*).reduce(0, +) }
+            if let high = fit.max(), let low = fit.min(), high > 0 {
+                signals.falloff = min(1, (high - max(0, low)) / high)
+            }
+        }
+        return signals
+    }
+
+    /// How far below the page's paper level a cell may sit and still count as paper in
+    /// shadow: the photos' deepest fall-off is about a third.
+    static let paperShadow = 0.6
+
+    /// Whether a page is a camera's photo rather than a scan or a born-digital page.
+    ///
+    /// Measured on 32 photographed pages with their camera tags stripped or never present and
+    /// 159 others (`PK-PHOTO-DETECT-2026-10-14.tsv`; the thresholds were set on them): a photo has
+    /// grey paper, a colour cast that changes across it, something darker than paper at the
+    /// frame's edge, and light falling off; and, since a colour scan of a booklet with its
+    /// spine shadowed has all four faintly, one of them strongly or a sensor's noise. A
+    /// phone-scanner app or an overhead scanner flattens all of this away, so its pages read
+    /// as the scans they are. Rejected: Vision's document segmentation, which found no paper
+    /// edge on 10 of the 32 photos and found one on 29 of the 159 others; a camera's pixel sizes,
+    /// which a PDF maker's crop removes and a screenshot can share.
+    static func isPhotograph(_ s: PhotoSignals) -> Bool {
+        guard s.paperLevel <= 235, s.castSpread >= 4, s.borderDark >= 0.05, s.falloff >= 0.06 else {
+            return false
+        }
+        return s.noise >= 1 || s.borderDark >= 0.1 || s.castSpread >= 10
+    }
+
+    /// The page as a whole: an image file a camera tagged (`Flattener.cameraExposed`) is a
+    /// photo whatever its pixels say; anything else is judged by them.
+    static func isPhotograph(cameraExposed: Bool, image: CGImage) -> Bool {
+        cameraExposed || isPhotograph(photoSignals(of: image))
+    }
+}
+
 extension Recogniser.PageKind {
     /// The kind in a message: "newspaper pages".
     var pages: String { self == .newspaper ? "newspaper pages" : "pages other than newspapers" }

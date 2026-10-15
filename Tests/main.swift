@@ -13821,6 +13821,88 @@ do {
 }
 }  // end of section
 
+section("page-kinds-three: a photographed page is told from a scan by how it was lit") {
+
+do {
+    // A page of text lines, drawn pixel by pixel: paper at `paper` brightness falling off by
+    // `falloff` towards one corner, its cast going from warm to cool by `cast` about a `tint`,
+    // a band of `border` (a share of the short side) at the `table`'s brightness round it,
+    // optionally a solid dark block in the middle, and noise of up to `noise` levels from a
+    // fixed sequence. The lines stay off the outer tenth, so only the band darkens the edge.
+    func page(paper: Double, falloff: Double = 0, cast: Double = 0, tint: Double = 0,
+              border: Double = 0, table: Double = 70, block: Bool = false, noise: Double = 0) -> CGImage {
+        let w = 1200, h = 1600
+        var d = [UInt8](repeating: 0, count: w * h * 4)
+        var seed: UInt64 = 20261014
+        let edge = Int(border * Double(w))
+        for y in 0..<h { for x in 0..<w {
+            seed = seed &* 6364136223846793005 &+ 1442695040888963407
+            let jitter = noise * (Double(seed >> 33) / Double(1 << 31) - 0.5) * 2
+            let fx = Double(x) / Double(w), fy = Double(y) / Double(h)
+            var level = paper * (1 - falloff * (fx * fx + fy * fy) / 2)
+            var warm = tint + cast * (0.5 - fx)
+            if x < edge || y < edge || x >= w - edge || y >= h - edge { level = table; warm = 0 }
+            else if block && abs(fx - 0.5) < 0.2 && abs(fy - 0.5) < 0.2 { level = 25; warm = 0 }
+            else if y > h / 10 && y < h * 9 / 10 && y % 40 < 8 && x > w / 6 && x < w * 5 / 6
+                        && (x / 30) % 5 != 0 { level = 30; warm = 0 }
+            let o = (y * w + x) * 4
+            func clamp(_ v: Double) -> UInt8 { UInt8(max(0, min(255, v.rounded()))) }
+            d[o] = clamp(level + warm / 2 + jitter)
+            d[o + 1] = clamp(level + jitter)
+            d[o + 2] = clamp(level - warm / 2 + jitter)
+            d[o + 3] = 255
+        }}
+        let ctx = CGContext(data: &d, width: w, height: h, bitsPerComponent: 8, bytesPerRow: w * 4,
+                            space: CGColorSpaceCreateDeviceRGB(),
+                            bitmapInfo: CGImageAlphaInfo.noneSkipLast.rawValue)!
+        return ctx.makeImage()!
+    }
+    func called(_ image: CGImage) -> (Bool, String) {
+        let s = Recogniser.photoSignals(of: image)
+        return (Recogniser.isPhotograph(s), "\(s)")
+    }
+    let photo = page(paper: 190, falloff: 0.25, cast: 16, border: 0.06, noise: 4)
+    var (yes, why) = called(photo)
+    check("a phone's photo of a typed page, grey and unevenly lit on a table, is a photograph", yes, why)
+    let scan = page(paper: 255)
+    (yes, why) = called(scan)
+    check("…and a scan of the same page, white to its edges, is not", !yes, why)
+    (yes, why) = called(page(paper: 250, falloff: 0.25, cast: 16, border: 0.06, noise: 4))
+    check("…nor the photo with its paper calibrated white, as a scanner's is", !yes, why)
+    (yes, why) = called(page(paper: 190, cast: 16, border: 0.06, noise: 4))
+    check("…nor lit evenly, as an overhead scanner or a phone-scanner app leaves it", !yes, why)
+    (yes, why) = called(page(paper: 190, falloff: 0.25, border: 0.06, noise: 4))
+    check("…nor with one colour of light across it", !yes, why)
+    (yes, why) = called(page(paper: 190, falloff: 0.1, cast: 16, border: 0.06, noise: 4))
+    let lowFall = yes
+    (yes, why) = called(page(paper: 190, falloff: 0.1, cast: 16, noise: 4))
+    check("…and lit a little unevenly, it is a photo on a table and not with its paper reaching the edge",
+          lowFall && !yes, why)
+    (yes, why) = called(page(paper: 190, falloff: 0.15, cast: 16, border: 0.06, table: 178, noise: 4))
+    let faint = yes
+    (yes, why) = called(page(paper: 190, falloff: 0.15, cast: 16, border: 0.06, table: 178))
+    check("on a pale table, with none of the cues strong, a sensor's noise decides it", faint && !yes, why)
+    (yes, why) = called(page(paper: 214, falloff: 0.12, cast: 10, border: 0.06, table: 196, noise: 1))
+    check("a colour scan of a booklet, yellowed, its spine shadowed and its lid a shade darker, is not a photo",
+          !yes, why)
+    (yes, why) = called(page(paper: 222, tint: 15, border: 0.07, table: 30, block: true))
+    check("…nor an evenly lit colour scan in a dark surround with a solid block in it, the block not read as shadow",
+          !yes, why)
+
+    let camera: [CFString: Any] = [kCGImagePropertyTIFFDictionary: [kCGImagePropertyTIFFMake: "Apple",
+                                                                    kCGImagePropertyTIFFModel: "iPad"],
+                                   kCGImagePropertyExifDictionary: [kCGImagePropertyExifFNumber: 2.4]]
+    let scanner: [CFString: Any] = [kCGImagePropertyTIFFDictionary: [kCGImagePropertyTIFFMake: "EPSON"]]
+    check("an image whose tags name a camera and an exposure is a camera's",
+          Flattener.cameraExposed(camera) && Flattener.cameraTagged(camera))
+    check("…and one naming only a scanner is not, though it still names itself",
+          !Flattener.cameraExposed(scanner) && Flattener.cameraTagged(scanner) && !Flattener.cameraExposed(nil))
+    check("a camera's tags make the page a photograph whatever its pixels say",
+          Recogniser.isPhotograph(cameraExposed: true, image: scan)
+              && !Recogniser.isPhotograph(cameraExposed: false, image: scan))
+}
+}  // end of section
+
 section("a helper is only worth it when there is something to overlap with") {
 
 do {

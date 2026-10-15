@@ -1128,13 +1128,27 @@ enum Flattener {
     /// the size it had.
     static func cameraResolution(width: Int, height: Int,
                                  properties: [CFString: Any]?) -> Double? {
-        let tiff = properties?[kCGImagePropertyTIFFDictionary] as? [CFString: Any]
-        let named = [kCGImagePropertyTIFFMake, kCGImagePropertyTIFFModel].contains {
-            !((tiff?[$0] as? String) ?? "").trimmingCharacters(in: .whitespaces).isEmpty
-        }
-        guard named, width > 0, height > 0 else { return nil }
+        guard cameraTagged(properties), width > 0, height > 0 else { return nil }
         let short = Double(min(width, height)), long = Double(max(width, height))
         return max(72, short / 8.5, long / 11)
+    }
+
+    /// Whether an image's TIFF dictionary names a Make or Model: a camera's, or a scanner
+    /// that names itself.
+    static func cameraTagged(_ properties: [CFString: Any]?) -> Bool {
+        let tiff = properties?[kCGImagePropertyTIFFDictionary] as? [CFString: Any]
+        return [kCGImagePropertyTIFFMake, kCGImagePropertyTIFFModel].contains {
+            !((tiff?[$0] as? String) ?? "").trimmingCharacters(in: .whitespaces).isEmpty
+        }
+    }
+
+    /// Whether an image is a camera's photo by its tags: a Make or Model, and an exposure
+    /// (an f-number, an exposure time or a lens), which a camera records and a scanner
+    /// that names itself does not.
+    static func cameraExposed(_ properties: [CFString: Any]?) -> Bool {
+        let exif = properties?[kCGImagePropertyExifDictionary] as? [CFString: Any]
+        return cameraTagged(properties) && [kCGImagePropertyExifFNumber, kCGImagePropertyExifExposureTime,
+                                            kCGImagePropertyExifLensModel].contains { exif?[$0] != nil }
     }
 
     /// Opens a PDF, unlocking it if a password is supplied. Returns nil when the
