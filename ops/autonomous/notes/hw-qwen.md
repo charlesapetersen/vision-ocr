@@ -36,4 +36,15 @@ pages get the text page, as THE TEXT PAGE says. One option for later, not tried:
 returns a box per block, which the `replace` arrangement could take; the item asks for align or the text page.
 
 Next: qw-build. The reader for the handwriting kind (download size 5.16 GB, its memory need), the text page
-on by default for handwritten pages only, ux-regression with the mode off and on.
+on by default for handwritten pages only, ux-regression with the mode off and on. Found while scoping it:
+- The app's runtime (mlx-vlm 0.7.4, as the lab's) imports `mlx_vlm.models.qwen3_5`, which LightOnOCR-3 loads
+  as; a full read through `Runtime/bin/python3` and read-model.py is not yet tried. No new runtime expected.
+- The build is `prithivMLmods/LightOnOCR-3-4B-MLX`, files under `8bit/` (revision e93084acf44a380776866b23b122f48fe47cab7f
+  in the lab's cache). `ModelDownloads` pins each file by path, size and SHA-256 at a revision, so `8bit/…` paths
+  fit its plan; read-model.py then has to load the snapshot's `8bit/` directory, not the repo id. Settings the
+  card gives: empty prompt, longest side 2048 px, 4096 tokens, thinking off (the template's default).
+- Archive Suite's text page, read only: `SPEC/tag-format.md` §"2-page PDF structure"; `PDFGenerator.makeTextPage`
+  (`ArchiveProcessor/macOS/Sources/ArchiveProcessor/OCR/PDFGenerator.swift` ~255-410): Georgia 11 pt body, page
+  height max(792, text height + margins), one page, never overflowing.
+- `makeSearchablePDF` checks the page count it publishes (`Model.swift`, `pageCount: expected`); a text page
+  changes the expected count, and invariant 1 needs a check that each handwritten page's text page is there.
