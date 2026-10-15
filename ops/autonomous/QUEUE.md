@@ -2126,37 +2126,55 @@ say so in the commit.
             (blocked-on: hw-pages, pk-upright)
       - [ ] **hw-settings** — the fourth kind in the dialog and the routing, with the overlap rule.
             (blocked-on: hw-detect, hw-measure)
-- [ ] **hw-qwen** — try Qwen3.5-9B as a third, downloadable reader for handwritten pages, and if Vision cannot
-      place its words, give handwritten pages a separate text page by default. (uses: build,model:12)
+- [ ] **hw-qwen** — measure four downloadable readers for handwritten pages (Qwen3.5-9B, LightOnOCR-3-4B,
+      Churro 3B, Kraken PP-OCRv6 on Vision's lines), add the best one that passes the bar, and if its words cannot
+      be placed, give handwritten pages a separate text page by default. (uses: build,model:12)
       (blocked-on: page-kind-handwriting)
       THE ASK (owner, 2026-10-15): Archive Suite's local panel found small chat models far ahead of Falcon-OCR and
       PaddleOCR-VL on handwriting. "If the Qwen model works, but Vision can't place the text, borrow the way Archive
       Suite produces a separate blank page for OCR-ed text, but only make it the default for handwritten pages."
-      The owner approves adding the reader if it passes the bar below; that is the approval
-      page-kind-handwriting's "do not add a reader that was not approved" asks for.
-      WHY THIS ONE. On the 16 originals Archive Suite labels handwritten (`ArchiveProcessor/segbench-results/
-      ocr-panel-local-groups.csv`, attribute `kind`, read only), words missed: Apple Vision 57%, Qwen3.5-9B 7.7%,
-      Qwen3-VL-8B 12.3%, Qwen3.6-27B 6.6%. Those ran hosted at bf16 on OpenRouter, not as a Mac 4-bit build, and
-      Qwen3.5-9B added 6.8% words of its own. HW-MEASURE-2026-10-15.tsv has Vision 561, PaddleOCR-VL 454 and
-      Falcon-OCR 409 missed per 1,000 on the 19 handwritten pages. Qwen3.6-27B is out: its Q4 build needs about
-      23 GB by the panel's estimate and this Mac has 18. AGAINST IT: the owner dropped qwen3.5-9b-4bit from the
-      newspaper bake-off on 2026-10-07 after 6-8 weak pages (`OCR-BAKEOFF-COUNT-2026-10-07.tsv`, QUEUE.md's
-      bake-off entry), and its weights were deleted. That was old print, not handwriting, but it is evidence
-      that the Mac build may read worse than the hosted one. That run measured mlx-community/Qwen3.5-9B-4bit at
-      8,945 MB peak and 57 s on its ordinary page (`$STATE/ocrlab/qwen9b.try`), under `ModelGuard`'s 12 GB cap;
-      measure the peak on handwriting too, and do not raise the cap to make it fit.
-      MEASURE (sub-box qw-measure). Download Qwen3.5-9B MLX 4-bit (and 8-bit only if 4-bit misses the bar and
-      memory allows) through the lab, read the 19 handwritten and 2 mixed pages of `$STATE/hw-sample/` whole-page,
-      score them exactly as hw-measure did, and put missed and added words per 1,000, seconds per page and peak
-      memory in `HW-QWEN-<date>.tsv` beside the three readers' rows. THE BAR: at most half of Falcon-OCR's
-      missed words (so 204 per 1,000 or fewer) with no more added words than Falcon-OCR adds, on these pages
-      through the app. If it misses the bar, stop: record the figures, say so in the notes, and close the item
-      without building anything.
-      PLACING (sub-box qw-place, if it passes). Its readings carry text but no boxes. Try the app's existing
-      merge (`modelPass`'s align, as Falcon-OCR and PaddleOCR-VL use) and measure, per page, the share of its
-      words that land on a Vision line, and Find on the resulting PDF. If align places nearly all of them,
-      the reader goes in like the other two and there is no text page. If it does not (state the share that
-      counts as "cannot place" before measuring), handwritten pages get a separate text page.
+      Then, after a survey of handwriting models (`PRIOR-ART-2026-10-15-handwriting.md`): widen it to these four,
+      with the line-coverage check first. The owner approves adding the best reader that passes the bar below;
+      that is the approval page-kind-handwriting's "do not add a reader that was not approved" asks for. One
+      exception: Churro 3B's weights are under Qwen's research licence, which bars commercial use, so if Churro
+      is the pick, ask the owner in the Daemon Report before qw-build ships it.
+      THE FOUR, and why (detail and sources in the PRIOR-ART file):
+      - Qwen3.5-9B, `mlx-community/Qwen3.5-9B-4bit`. Missed 7.7% of words hosted on Archive Suite's 16
+        handwritten originals (`ArchiveProcessor/segbench-results/ocr-panel-local-groups.csv`, attribute `kind`,
+        read only), but other benchmarks put it below Qwen3.5-4B on handwriting, and the owner dropped its 4-bit
+        build from the newspaper bake-off on 2026-10-07 after 6-8 weak pages of old print. That run measured
+        8,945 MB peak and 57 s on its ordinary page (`$STATE/ocrlab/qwen9b.try`).
+      - LightOnOCR-3-4B (`lightonai/LightOnOCR-3-4B`, Apache-2.0, 6 Oct 2026). Best published small model on
+        American cursive (NARA holdout CER 0.206, against 0.269 for nara-qwen-3.5-2b). Read it twice: with its
+        default empty prompt, and with `wjbmattingly/nara-lightonocr-3-4b`'s `prompt.txt`. MLX builds exist
+        (`prithivMLmods/LightOnOCR-3-4B-MLX`); whether they run under the lab's mlx-vlm is not yet known, and if
+        none does, say so rather than converting at length.
+      - Churro 3B (`stanford-oval/churro-3B`). First among open models on CHURRO-DS handwritten. The lab
+        converted it to MLX 8-bit on 2026-10-07 (`convert-mlx.py`, `read-mlx.py --churro`; 5.8 GB peak) and
+        then deleted the weights; rebuild it the same way.
+      - Kraken PP-OCRv6 medium (`small-models-for-glam/kraken-ppocrv6-medium`, Apache-2.0, 16M parameters). A
+        line recogniser trained partly on 18th-19th century English hands. It reads Vision's line crops, so its
+        words keep Vision's boxes. Install Kraken in its own venv in the lab, as Surya has.
+      Qwen3.6-27B is out: its 4-bit build needs about 23 GB and this Mac has 18. Mind the lab's 50 GB disk limit:
+      delete each model's weights after its run if the four together would pass it.
+      FIRST, LINE COVERAGE (sub-box hw-coverage). A line reader can only read lines Vision finds. On the 19
+      handwritten and 2 mixed pages of `$STATE/hw-sample/`, count the share of truth words that fall inside some
+      Vision line box, through the app's own recognition. If coverage is poor, Kraken's figures will be capped by
+      it: still run Kraken, report both numbers, and note Kraken's own baseline segmenter in the notes as an
+      option for the owner, without running it.
+      MEASURE (sub-box hw-panel). Read the same 21 pages with each reader (whole page for the three chat models,
+      Vision's line crops for Kraken), score exactly as hw-measure did, and put missed and added words per 1,000,
+      seconds per page, peak memory and download size in `HW-PANEL-<date>.tsv` beside the three existing readers'
+      rows. Use the existing `ModelGuard` caps; do not raise them to make a model fit. THE BAR: at most half of
+      Falcon-OCR's missed words (204 per 1,000 or fewer) with no more added words than Falcon-OCR adds. Of those
+      that pass, the pick is the one with fewest missed words; where two are within 20 per 1,000 of each other,
+      prefer the one that keeps word positions (Kraken), then the smaller and faster. If none passes, stop:
+      record the figures, say so in the notes, and close the item without building anything.
+      PLACING (sub-box qw-place, if the pick is a chat model). Its readings carry text but no boxes. Try the
+      app's existing merge (`modelPass`'s align, as Falcon-OCR and PaddleOCR-VL use) and measure, per page, the
+      share of its words that land on a Vision line, and Find on the resulting PDF. State before measuring what
+      share counts as "cannot place". If align places nearly all of them, the reader goes in like the other two
+      and there is no text page. If not, handwritten pages get a separate text page. Kraken skips this sub-box.
       THE TEXT PAGE. Borrow Archive Suite's layout, read only: `SPEC/tag-format.md` §"2-page PDF structure" and
       its interleaved variant (image page, then a selectable text page, per source page), built by
       `ArchiveProcessor/.../OCR/PDFGenerator.swift` ("Text Page", dynamic page height). In Vision OCR: after
@@ -2165,16 +2183,18 @@ say so in the commit.
       handwritten pages only, a setting beside the page kind, and off for every other kind, whose output must
       stay byte-for-byte what it is today. Say in the notes how a file mixing handwritten and other pages is
       laid out.
-      DONE WHEN, in the built app (sub-box qw-build, after qw-place): the handwriting kind offers Qwen3.5-9B with
-      its download size; a handwritten page read with it carries its text (on the page, or on its text page);
-      the figures above are in the settings table labelled as a small sample; `ux-regression.sh` is no worse
-      with the mode off and on; non-handwritten outputs are unchanged; the suite passes.
-      ESTIMATE: 3 sessions (one if it misses the bar). BOUND: rule 10. (context: owner request 2026-10-15)
+      DONE WHEN, in the built app (sub-box qw-build): the handwriting kind offers the pick with its download size;
+      a handwritten page read with it carries its text (on the page, or on its text page); the panel's figures
+      are in the settings table labelled as a small sample; `ux-regression.sh` is no worse with the mode off and
+      on; non-handwritten outputs are unchanged; the suite passes.
+      ESTIMATE: 4 sessions (two if none passes). BOUND: rule 10. (context: owner request 2026-10-15)
       (notes: ops/autonomous/notes/hw-qwen.md)
-      - [ ] **qw-measure** — the 4-bit build on the handwritten pages, against the bar.
-      - [ ] **qw-place** — whether align can place its words, and the decision on the text page.
-            (blocked-on: qw-measure)
-      - [ ] **qw-build** — the reader in the dialog, and the text page if qw-place calls for it.
+      - [ ] **hw-coverage** — the share of truth words inside Vision's line boxes on the handwritten pages.
+      - [ ] **hw-panel** — the four readers on the handwritten pages, against the bar, and the pick.
+            (blocked-on: hw-coverage)
+      - [ ] **qw-place** — whether align can place the pick's words, and the decision on the text page.
+            (blocked-on: hw-panel)
+      - [ ] **qw-build** — the pick in the dialog, and the text page if qw-place calls for it.
             (blocked-on: qw-place)
 - [ ] **model-throughput** — measure whether keeping a model loaded between pages, or running two model readers
       at once, makes a batch read with Falcon-OCR or PaddleOCR-VL finish sooner. (uses: build,model:12)
