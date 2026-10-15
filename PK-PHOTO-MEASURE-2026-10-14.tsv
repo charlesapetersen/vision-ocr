@@ -1,0 +1,47 @@
+# pk-photo-measure (page-kinds-three), 2026-10-14: Vision, Falcon-OCR and PaddleOCR-VL on the 31 photographed pages of PK-PHOTO-SAMPLE-2026-10-14.tsv,
+# through the app (a copy of Tools/score-gate taking images, the accurate mode set to one reader for both kinds: Falcon-OCR align, PaddleOCR-VL
+# regions, as AccurateReader.route runs them), text through PDFKit. Score as ops/ocrlab/score-bakeoff.py's miss: the truth band's uncontested
+# words, letters and digits, matched as a multiset against the page's reading; wrong and missing together. Handwriting scored apart, as there.
+# Small sample: 774 print words on 24 pages, 84 handwritten on 6; one page each of a faint table (pk23) and an 1880s ledger (pk33) move it.
+# seconds: the run's wall time over 31 pages at the app's concurrency, inside the heavy lock. Memory not measured (an RSS sampler sees ~1.3 GB;
+# the table's figure is the guard's physical footprint).
+#
+# summary	reader	print_miss_per_1000	handwriting_miss_per_1000	seconds_per_page
+# summary	vision	34 (26/774)	750 (63/84)	2.1 (64 s)
+# summary	falcon-ocr	27 (21/774)	583 (49/84)	36.9 (1,144 s)
+# summary	paddleocr-vl	31 (24/774)	750 (63/84)	8.5 (264 s)
+#
+# Turned pages: 9 photos are stored a quarter or half turn from upright with no EXIF orientation. The app merges a model's words only onto
+# upright Vision lines (alignedReading, the region merge), so on these the model's reading is discarded: identical to Vision. Turned upright
+# by hand (upright_* columns, those 9 only), Falcon-OCR's handwriting misses fall 47 -> 28 of 56, PaddleOCR-VL's 47 -> 35, Vision's 47 -> 42.
+page	class	words	vision_miss	falcon_miss	paddle_miss	upright_vision	upright_falcon	upright_paddle
+pk00-baker	print	49	0	0	0	49	49	49
+pk01-typed	print	24	0	0	0	24	24	24
+pk02-typed	print	52	0	0	0	52	52	52
+pk03-typed	print	32	0	0	0	0	0	0
+pk04-typed	print	44	0	0	1	0	0	0
+pk05-typed	print	55	2	0	0	55	55	55
+pk06-typed	print	12	1	1	1	12	12	12
+pk07-typed	print	17	1	1	1	0	0	0
+pk08-clippings	print	32	0	0	0	32	32	32
+pk09-clippings	print	16	1	1	1	16	16	16
+pk10-clippings	print	8	0	0	0	8	8	8
+pk11-clippings	print	48	0	0	0	48	48	48
+pk12-clippings	print	23	0	0	0	23	23	23
+pk13-clippings	print	33	0	0	0	33	33	33
+pk14-statistics	print	40	0	0	0	40	40	40
+pk15-statistics	print	60	0	0	0	60	60	60
+pk16-statistics	print	8	1	1	1	8	8	8
+pk17-statistics	print	45	0	0	0	45	45	45
+pk18-statistics	print	46	0	0	0	46	46	46
+pk19-handwritten	handwriting	13	11	11	11	12	9	12
+pk21-notes	print	12	2	2	2	1	0	0
+pk23-pdf	print	26	17	14	16	26	26	26
+pk26-pdf	print	45	0	0	0	45	45	45
+pk27-handwritten	handwriting	20	17	17	17	16	12	13
+pk28-handwritten	handwriting	5	5	5	5	4	3	4
+pk29-handwritten	handwriting	18	14	14	14	10	4	6
+pk30-notes	print	39	1	1	1	2	2	3
+pk31-pdf	handwriting	1	0	0	0	1	1	1
+pk32-pdf	print	8	0	0	0	8	8	8
+pk33-pdf	handwriting	27	16	2	16	27	27	27

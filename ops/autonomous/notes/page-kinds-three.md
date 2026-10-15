@@ -39,3 +39,22 @@ photographs, all called on pixels alone; 159 others, none. Measured, by running 
   paper level; the block fixture is a photo with the guard at 0). Verifier: criterion PASS with s62
   relabelled, FAIL as first labelled (s62 alone).
 - For pk-settings: a phone-scanner app's JPEG that keeps the phone's EXIF is a photo by its tags alone.
+
+## 2026-10-14 — pk-photo-measure (Opus 5.5, medium)
+
+Harness: a copy of `Tools/score-gate.swift` taking images, with `PK_READER` setting the accurate mode's
+reader for both kinds (`/tmp/pk-gate`); 31 photo pages (the sample's photos, not the scans); text through
+PDFKit `page.string`; scored on the truth bands, contested words left out: a band word is wrong or missing
+when an order-keeping alignment in a window round the band's best match does not find it.
+Vision: 155 of 868 scored words wrong or missing (179 per 1,000); handwriting and the faint table worst.
+Bag score, as score-bakeoff's miss (the order-keeping one above charged a table read in column order for
+order: pk15 34/60 by it, 0/60 as a bag). Print on photos: Vision 34, Falcon-OCR 27, PaddleOCR-VL 31 per
+1,000 (774 words); handwriting 750 / 583 / 750 (84 words). Seconds a page 2.1 / 36.9 / 8.5. Figures for
+pk-settings' table row (`AccurateReader.figures`, the photograph kind), labelled a small sample:
+Vision 34 and 2.1 s, Falcon-OCR 27 and 36.9 s, PaddleOCR-VL 31 and 8.5 s; memory as the scans' rows.
+`PK-PHOTO-MEASURE-2026-10-14.tsv`. Found: the model's words are discarded on turned pages (pk-upright).
+HANDWRITING, a proposal for the owner, not built: Falcon-OCR is the best of the three on handwriting
+(583 per 1,000 missed as stored, 500 on the 4 turned pages set upright, against Vision's 750) but still
+loses about half of it, on 84 words; and the app has no way to tell a handwritten page yet. A fourth kind,
+"handwritten pages", read by Falcon-OCR would be worth it only with a detector and more truth; recommended
+to wait until pk-upright lands and measure again on more of the 286 Handwritten photos.

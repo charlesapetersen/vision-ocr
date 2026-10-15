@@ -2072,8 +2072,12 @@ say so in the commit.
             Baker. Make truth for a few lines of each the way `TRUTH-CALIBRATE-2026-09-29.tsv` was made, and
             list the sample in a dated TSV.
       - [x] **pk-photo-detect** — the photograph detector, checked as above. (blocked-on: pk-photo-pages)
-      - [ ] **pk-photo-measure** — the three readers measured on the photographs, and the table's figures for
+      - [x] **pk-photo-measure** — the three readers measured on the photographs, and the table's figures for
             the new kind. (blocked-on: pk-photo-pages)
+      - [ ] **pk-upright** — a model reads a page Vision found turned (a photo stored sideways, no EXIF
+            orientation) turned upright, so its words are merged; today `alignedReading` and the region merge
+            take model words for upright lines only and the model's reading of 9 of the 31 photos is discarded.
+            Turned by hand, Falcon-OCR's handwriting misses fall 47 -> 28 of 56 (`PK-PHOTO-MEASURE-2026-10-14.tsv`).
       - [ ] **pk-settings** — the three kinds in the dialog and the routing, with the overlap rule.
             (blocked-on: pk-photo-detect, pk-photo-measure, sp-accurate)
 - [ ] **model-throughput** — measure whether keeping a model loaded between pages, or running two model readers
