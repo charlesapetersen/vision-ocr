@@ -187,6 +187,14 @@ Prefer editing with `Edit` over scripted text-slicing on source files. An
 over-broad Python slice once deleted four functions from `Model.swift`; with no
 version control at the time they had to be reconstructed from memory.
 
+## Owner review sessions
+
+Owner, 2026-10-15: before any session the owner runs by hand (a guided session, an acceptance pass, a review
+sheet), judge whether it is the right time, by reading the open work rather than checking that the blockers are
+ticked. It is not time while a known defect would get in the way, or while queued work is about to change what
+the review looks at. If it is not time, name what it waits for, block the item on that, and report it (no
+decision). Authority: `~/Claude/CLAUDE.md`, "Owner review sessions".
+
 ## Not committed
 
 `testdocs/` — 1.2 GB of third-party copyrighted PDFs, 233 files and **232 distinct documents** (`report/w7787.pdf` has a
