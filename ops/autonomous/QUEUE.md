@@ -2142,8 +2142,9 @@ say so in the commit.
       23 GB by the panel's estimate and this Mac has 18. AGAINST IT: the owner dropped qwen3.5-9b-4bit from the
       newspaper bake-off on 2026-10-07 after 6-8 weak pages (`OCR-BAKEOFF-COUNT-2026-10-07.tsv`, QUEUE.md's
       bake-off entry), and its weights were deleted. That was old print, not handwriting, but it is evidence
-      that the Mac build may read worse than the hosted one. The panel's planning figure for its Q4 build is
-      13.2 GB against `ModelGuard`'s 12 GB cap: measure the peak, and do not raise the cap to make it fit.
+      that the Mac build may read worse than the hosted one. That run measured mlx-community/Qwen3.5-9B-4bit at
+      8,945 MB peak and 57 s on its ordinary page (`$STATE/ocrlab/qwen9b.try`), under `ModelGuard`'s 12 GB cap;
+      measure the peak on handwriting too, and do not raise the cap to make it fit.
       MEASURE (sub-box qw-measure). Download Qwen3.5-9B MLX 4-bit (and 8-bit only if 4-bit misses the bar and
       memory allows) through the lab, read the 19 handwritten and 2 mixed pages of `$STATE/hw-sample/` whole-page,
       score them exactly as hw-measure did, and put missed and added words per 1,000, seconds per page and peak
