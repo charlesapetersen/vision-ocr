@@ -14,6 +14,12 @@ an older entry mentions "Window ▸ Vision Reader Window", the menu item is now
 
 ## Unreleased
 
+- Settings speaks plainly. The Accurate mode box now says it is best left off for everyday scans, what an
+  extra reader is for (difficult print, newspapers most), how much slower it is, and how much download, disk
+  and memory each takes; its dialogs are now "Download extra readers" and "Choose how to read your pages". The
+  other boxes lost terms like "invisible text layer", "JBIG2" and "re-runs Vision". When a reader finishes
+  downloading, its speed is checked on this Mac by itself, once, after any files being read have finished;
+  Stop cancels it, and the button still re-runs the check (settings-plain).
 - A dropped photo or other image of a page is now compressed like a scanned page. A phone photo of a typed
   letter came out at 830 KB as one full-size picture and now comes out at about 87 KB with the same text.
   A new Photographed pages slider in Settings, from More detail to Smaller files, sets how much of the paper

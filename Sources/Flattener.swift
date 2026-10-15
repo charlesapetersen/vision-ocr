@@ -438,8 +438,8 @@ enum Flattener {
                 return "Page \(page) would rebuild to \(megapixels) megapixels at "
                     + "its own \(dpi) DPI, past the \(maximumPageMegapixels) MP limit. "
                     + "Nothing was written. To process this file, turn off "
-                    + "\"Rebuild page images first\" in Settings **and** set "
-                    + "\"PDF render DPI\" to a fixed value such as 144 — leaving it "
+                    + "\"Replace old selectable text\" in Settings **and** set "
+                    + "\"Reading detail\" to a fixed value such as 144 — leaving it "
                     + "on Automatic takes the page's own DPI again and fails the "
                     + "same way."
             }

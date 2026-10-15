@@ -48,8 +48,8 @@ enum ModelDownloads {
 
         var name: String {
             switch self {
-            case .runtime: return "the shared runtime"
-            case .layout: return "the layout model"
+            case .runtime: return "the shared reading software"
+            case .layout: return "the helper that finds columns"
             case .falcon: return Prefs.AccurateReader.falcon.name
             case .paddle: return Prefs.AccurateReader.paddle.name
             }
@@ -383,6 +383,15 @@ extension Prefs.AccurateReader {
         allNeeds.filter { !$0.installed(environment) }
     }
 
+    /// Approximate installed sizes, including shared parts (runtime 433 MB, layout 72 MB).
+    /// Archives are smaller than their installed copies; the model files are not compressed.
+    var diskSpace: String {
+        let mb = allNeeds.reduce(0) { sum, item in
+            sum + (item == .runtime ? 433 : item == .layout ? 72 : item.downloadMB)
+        }
+        return mb < 1000 ? "\(mb) MB" : String(format: "%.1f GB", Double(mb) / 1000)
+    }
+
     /// The readers a kind of page may be given in the page-kind dialog: Vision, and each reader
     /// that fits under the memory slider, is enabled and has everything it needs for `kind`.
     static func ready(_ kind: Recogniser.PageKind, memoryGB: Double, enabled: Set<Prefs.AccurateReader>,
@@ -398,7 +407,7 @@ extension Prefs.AccurateReader {
         if self == .vision { return "built in" }
         if let need = figures(kind)?.memoryGB, need > memoryGB { return "needs more memory" }
         if !missing(kind, environment: environment).isEmpty { return "not downloaded" }
-        return enabled.contains(self) ? "ready" : "not enabled"
+        return enabled.contains(self) ? "ready" : "turned off"
     }
 
     /// Why `kind`'s pages are not read by the reader stored for them, `raw`, or nil when they
@@ -415,10 +424,10 @@ extension Prefs.AccurateReader {
                 + "so Vision reads \(title)."
         }
         if !enabled.contains(stored) {
-            return "\(stored.name) is not enabled in Models, so Vision reads \(title)."
+            return "\(stored.name) is turned off in Downloads, so Vision reads \(title)."
         }
         guard !stored.missing(kind, environment: environment).isEmpty else { return nil }
-        return "\(stored.name) is chosen for \(title) but is not downloaded; download it in Models, or choose "
+        return "\(stored.name) is chosen for \(title) but is not downloaded; add it in Downloads, or choose "
             + "another reader. Until then, a file holding these pages stops with a message rather than being read."
     }
 
@@ -426,6 +435,8 @@ extension Prefs.AccurateReader {
     static func confirmation(_ reader: Prefs.AccurateReader, _ items: [ModelDownloads.Item]) -> String {
         "This downloads \(DownloadRunner.size(items)) from the internet: "
             + items.map { "\($0.name) (\(DownloadRunner.size([$0])))" }.joined(separator: ", ")
-            + ". Once it is in place, \(reader.name) can be chosen for a kind of page."
+            + ". It uses about \(reader.diskSpace) of disk space with the shared parts; installation needs extra room. "
+            + "Once ready, we check its speed on sample pages automatically. You can stop the check. "
+            + "Then choose where to use \(reader.name) in Choose pages. Your documents are not uploaded."
     }
 }

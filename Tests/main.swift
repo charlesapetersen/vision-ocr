@@ -985,7 +985,7 @@ do {
     // binary; what the preview must still name is the recognition step itself.
     let named = Runner.previewLines(file: sample, outputFolder: out)
     check("the preview names the recognition step",
-          named.contains { $0.lowercased().contains("recognise") },
+          named.contains { $0.lowercased().contains("read the words") },
           named.joined(separator: " / "))
 
     // Searchable mode is a pipeline, and the compression step shells out to two
@@ -997,11 +997,11 @@ do {
     d.set(true, forKey: Prefs.besideOriginal)
     let pipeline = Runner.previewLines(file: sample, outputFolder: nil)
         .joined(separator: "\n")
-    check("the searchable preview shows the rebuild", pipeline.contains("rebuild pages"), pipeline)
-    check("…the recognition call", pipeline.lowercased().contains("recognise the text"), pipeline)
-    check("…the text layer", pipeline.contains("invisible text layer"), pipeline)
+    check("the searchable preview shows the rebuild", pipeline.contains("fresh page pictures"), pipeline)
+    check("…the recognition call", pipeline.lowercased().contains("read the words"), pipeline)
+    check("…the text layer", pipeline.contains("selectable, searchable words"), pipeline)
     check("…and the compression step, named or explained",
-          pipeline.contains("jbig2") || pipeline.contains("JBIG2 compression is on"),
+          pipeline.contains("jbig2") || pipeline.contains("optional compression tools"),
           pipeline)
     check("the preview still names the output", pipeline.contains("[name].ocr.pdf"), pipeline)
     // The layering step is the one the Photo detail setting controls, and a
@@ -12600,16 +12600,16 @@ do {
     check("every reader the settings offer runs in an arrangement approved for that kind of page",
           outside.isEmpty, outside.joined(separator: ", "))
     check("the table reads the comparison's figures in a user's words",
-          AR.falcon.cells(.other) == ["about 6", "about 14 s a page, 4.1× Vision", "3.9 GB", "1.1 GB"]
-              && AR.vision.cells(.newspaper) == ["about 296", "about 23 s a page", "no extra", "none"]
+          AR.falcon.cells(.other) == ["about 6", "about 14 seconds, 4.1× Vision", "3.9 GB", "1.1 GB"]
+              && AR.vision.cells(.newspaper) == ["about 296", "about 23 seconds", "no extra", "none"]
               && AR.visionRegions.cells(.newspaper)?.last == "65 MB" && AR.visionRegions.cells(.other) == nil,
           "\(AR.falcon.cells(.other) ?? []) \(AR.vision.cells(.newspaper) ?? [])")
     let bare = ["VISIONOCR_MODEL_HOME": tmp.appendingPathComponent("no-models").path]
     check("the panel can say what a chosen reader still needs downloaded",
           AR.vision.missing(.newspaper, environment: bare).isEmpty
-              && AR.visionRegions.missing(.newspaper, environment: bare) == ["the layout model"]
-              && AR.falcon.missing(.other, environment: bare) == ["the shared runtime", "Falcon-OCR"]
-              && AR.paddle.missing(.other, environment: bare) == ["the shared runtime", "PaddleOCR-VL", "the layout model"],
+              && AR.visionRegions.missing(.newspaper, environment: bare) == ["the helper that finds columns"]
+              && AR.falcon.missing(.other, environment: bare) == ["the shared reading software", "Falcon-OCR"]
+              && AR.paddle.missing(.other, environment: bare) == ["the shared reading software", "PaddleOCR-VL", "the helper that finds columns"],
           "\(AR.falcon.missing(.other, environment: bare)) \(AR.paddle.missing(.other, environment: bare))")
     let panel = (try? String(contentsOfFile: "Sources/SettingsView.swift", encoding: .utf8)) ?? ""
     check("the settings panel shows the accurate mode",
@@ -12683,11 +12683,11 @@ do {
               r.figures($0) == nil || (r.referenceSeconds($0) ?? 0) > 0 } }, "")
     check("a reader twice as slow here as on our Mac reads twice our speed figure, against Vision timed with it",
           AR.falcon.speed(.other, timing: timing).map { abs($0.seconds - 27.6) < 0.01 && $0.measured } == true
-              && AR.falcon.cells(.other, timing: timing)?[1] == "about 28 s a page, 8.1× Vision"
+              && AR.falcon.cells(.other, timing: timing)?[1] == "about 28 seconds, 8.1× Vision"
               && AR.paddle.speed(.other, timing: timing).map { $0.seconds == 13.2 && !$0.measured } == true
-              && AR.paddle.cells(.other, timing: timing)?[1] == "about 13 s a page, 3.9× Vision (ours)"
-              && AR.paddle.cells(.newspaper, timing: timing)?[1] == "about 60 s a page, 2.6× Vision"
-              && AR.falcon.cells(.other) == ["about 6", "about 14 s a page, 4.1× Vision", "3.9 GB", "1.1 GB"],
+              && AR.paddle.cells(.other, timing: timing)?[1] == "about 13 seconds, 3.9× Vision (test Mac)"
+              && AR.paddle.cells(.newspaper, timing: timing)?[1] == "about 60 seconds, 2.6× Vision"
+              && AR.falcon.cells(.other) == ["about 6", "about 14 seconds, 4.1× Vision", "3.9 GB", "1.1 GB"],
           "\(AR.falcon.cells(.other, timing: timing) ?? [])")
     check("the timing is stored as data and read back, and unreadable data is no timing",
           Prefs.AccurateTiming(timing.data) == timing && Prefs.AccurateTiming(Data()) == nil
@@ -12699,8 +12699,8 @@ do {
           Prefs.AccurateTiming(elsewhere.data) == nil && Prefs.AccurateTiming(older.data) == nil
               && !timing.machine.isEmpty, timing.machine)
     check("the footnote says whose speed the table shows",
-          TimingRunner.speedNote(nil) == "Speed is ours, on one Mac."
-              && TimingRunner.speedNote(timing).hasPrefix("Speed is estimated for this Mac from a timing run on "), "")
+          TimingRunner.speedNote(nil) == "Times are from our test Mac."
+              && TimingRunner.speedNote(timing).hasPrefix("Times are estimated for this Mac; last speed check: "), "")
 
     // The run itself, through the production pipeline, on the two book pages.
     let script = dir.appendingPathComponent("read-model.py")
@@ -12749,7 +12749,7 @@ do {
         let stored = Prefs.AccurateTiming(d.data(forKey: Prefs.accurateTiming))
         check("…and once they have, it runs and stores this Mac's seconds a page for the table",
               !runner.running && (stored?.seconds["vision.other"] ?? 0) > 0
-                  && runner.status == "Measured Vision on this Mac.",
+                  && runner.status == "Speed checked on this Mac.",
               "\(runner.status ?? "") \(stored?.seconds ?? [:])")
     }
     unsetenv("VISIONOCR_MODEL_HOME")
@@ -12980,8 +12980,8 @@ do {
           "\(AR.paddle.toFetch(environment: bare))")
     let words = AR.confirmation(.falcon, [.runtime, .falcon, .layout])
     check("the confirmation names the total and each part of it",
-          words.hasPrefix("This downloads 1.3 GB") && words.contains("the shared runtime (134 MB)")
-              && words.contains("Falcon-OCR (1.1 GB)") && words.contains("the layout model (65 MB)"), words)
+          words.hasPrefix("This downloads 1.3 GB") && words.contains("the shared reading software (134 MB)")
+              && words.contains("Falcon-OCR (1.1 GB)") && words.contains("the helper that finds columns (65 MB)"), words)
 
     // Enabling, and what the page-kind dialog offers.
     let d = Prefs.store
@@ -13000,7 +13000,7 @@ do {
     check("the page-kind table says why a reader is not offered",
           AR.vision.state(.other, memoryGB: 4, enabled: [], environment: bare) == "built in"
               && AR.visionRegions.state(.newspaper, memoryGB: 8, enabled: [.visionRegions], environment: bare) == "ready"
-              && AR.visionRegions.state(.newspaper, memoryGB: 8, enabled: [], environment: bare) == "not enabled"
+              && AR.visionRegions.state(.newspaper, memoryGB: 8, enabled: [], environment: bare) == "turned off"
               && AR.falcon.state(.other, memoryGB: 8, enabled: [.falcon], environment: bare) == "not downloaded"
               && AR.falcon.state(.other, memoryGB: 3, enabled: [.falcon], environment: bare) == "needs more memory")
     // A choice the models dialog has not enabled (an imported settings file) runs as Vision,
@@ -13015,7 +13015,7 @@ do {
           "\(Prefs.Snapshot.current(d).modelArrangement)")
     check("…and the panel's warnings say which of three things holds a reader back",
           AR.warning("paddleocr-vl", .other, "other pages", memoryGB: 8, enabled: [], environment: bare)
-                == "PaddleOCR-VL is not enabled in Models, so Vision reads other pages."
+                == "PaddleOCR-VL is turned off in Downloads, so Vision reads other pages."
               && AR.warning("falcon-ocr", .other, "other pages", memoryGB: 3, enabled: [.falcon], environment: bare)?
                 .hasPrefix("Falcon-OCR needs 3.9 GB, more than the memory allowed") == true
               && AR.warning("falcon-ocr", .other, "other pages", memoryGB: 8, enabled: [.falcon], environment: bare)?
@@ -13038,7 +13038,7 @@ do {
     let alert = panel.range(of: ".alert(confirming").map { a in
         panel[a.upperBound...].range(of: "} message:").map { panel[a.upperBound..<$0.lowerBound] } } ?? nil
     check("the settings start a download in one place only, the models dialog's confirmation",
-          starts == 1 && alert?.contains("downloads.start(reader.toFetch())") == true
+          starts == 1 && alert?.contains("downloads.start(reader.toFetch(), reader: reader)") == true
               && !panel.contains("ModelDownloads.needed("),
           panel.isEmpty ? "could not read SettingsView.swift" : "\(starts) calls")
     check("…and the page-kind picker offers the ready readers",
@@ -21758,7 +21758,7 @@ do {
 
     // The label has to fit the panel's fixed 116pt label column, which is what
     // "Discard uncertain text" would not do — it would silently truncate.
-    let label = "Uncertain text"
+    let label = "Unsure words"
     let width = (label as NSString).size(withAttributes: [
         .font: NSFont.systemFont(ofSize: NSFont.systemFontSize)]).width
     check("the row label fits the label column without truncating",
@@ -22865,9 +22865,13 @@ do {
     // setting the message explicitly disclaimed is the only one that helps. Both
     // halves are needed, and the old check would have kept the second one out.
     check("the refusal names the rebuild toggle",
-          message.contains("Rebuild page images first"), message)
+          message.contains("Replace old selectable text"), message)
     check("…and the DPI setting, which is the half that actually works",
-          message.contains("PDF render DPI"), message)
+          message.contains("Reading detail"), message)
+    // Both names must be the ones the panel shows, or the remedy points nowhere.
+    let shown = (try? String(contentsOfFile: "Sources/SettingsView.swift", encoding: .utf8)) ?? ""
+    check("…and both names are labels the settings panel shows",
+          shown.contains("\"Replace old selectable text") && shown.contains("\"Reading detail\""), "")
     check("…and says Automatic is not good enough, since that is the default",
           message.contains("Automatic"), message)
     // The property under both messages: a remedy named must be one that works.
@@ -24284,6 +24288,135 @@ if partialRun {
           "exit \(named.rc)")
 }
 }  // end of section
+
+
+section("a downloaded reader gets one automatic speed check after document reading, preserving other estimates (settings-plain)") {
+do {
+    typealias AR = Prefs.AccurateReader
+    resetPrefs()
+    let home = tmp.appendingPathComponent("automatic timing home")
+    try? FileManager.default.createDirectory(at: home.appendingPathComponent("Models/doclayout-yolo.mlmodelc"),
+                                            withIntermediateDirectories: true)
+    setenv("VISIONOCR_MODEL_HOME", home.path, 1)
+    let d = Prefs.store
+    d.set(true, forKey: Prefs.accurateMode)
+    AR.setEnabled(.visionRegions, true, d)
+    let old = Prefs.AccurateTiming(measured: Date(timeIntervalSince1970: 100), seconds: ["falcon-ocr.other": 42])
+    d.set(old.data, forKey: Prefs.accurateTiming)
+    // A stand-in for the expensive reading operation, not for the queue: all download completion,
+    // enabled/ready checks, waiting, de-duplication, cancellation and persistence are production code.
+    final class Calls: @unchecked Sendable {
+        let lock = NSLock()
+        var legs: [[TimingRun.Leg]] = []
+        func append(_ value: [TimingRun.Leg]) { lock.lock(); legs.append(value); lock.unlock() }
+        var values: [[TimingRun.Leg]] { lock.lock(); defer { lock.unlock() }; return legs }
+        /// While set, a run keeps reading until it is cancelled, so Stop can land mid-run.
+        private var holding = false
+        var hold: Bool {
+            get { lock.lock(); defer { lock.unlock() }; return holding }
+            set { lock.lock(); holding = newValue; lock.unlock() }
+        }
+    }
+    let calls = Calls()
+    let runner = MainActor.assumeIsolated {
+        TimingRunner(execute: { legs, _, control, progress in
+            calls.append(legs)
+            progress("Checking the new reader…")
+            while calls.hold, !control.isCancelled { Thread.sleep(forTimeInterval: 0.01) }
+            return Prefs.AccurateTiming(measured: Date(timeIntervalSince1970: 200),
+                                       seconds: Dictionary(uniqueKeysWithValues: legs.map {
+                (Prefs.AccurateTiming.key($0.reader, $0.kind), 15)
+            }))
+        })
+    }
+    let downloads = MainActor.assumeIsolated { DownloadRunner(timing: runner) }
+    RunControl.beginPreflight()
+    MainActor.assumeIsolated {
+        downloads.start([.layout], reader: .visionRegions)
+    }
+    _ = pump(until: { MainActor.assumeIsolated { runner.running } }, seconds: 5)
+    _ = pump(until: { false }, seconds: 0.7)
+    check("the download queues a check without a click, waiting even during document preflight",
+          MainActor.assumeIsolated { runner.running && runner.status?.contains("Waiting") == true }
+              && calls.values.isEmpty && Prefs.AccurateTiming(d.data(forKey: Prefs.accurateTiming)) == old)
+    // The same reader requested again while waiting must not run twice.
+    MainActor.assumeIsolated { downloads.start([.layout], reader: .visionRegions) }
+    _ = pump(until: { MainActor.assumeIsolated { downloads.current == nil } }, seconds: 3)
+    RunControl.endPreflight()
+    _ = pump(until: { MainActor.assumeIsolated { !runner.running } }, seconds: 5)
+    // Vision rides along on the same kind of page, so "× Vision" compares two times from this Mac.
+    check("once idle it times the downloaded reader once, beside Vision on its kind of page, and no other reader",
+          calls.values.count == 1 && calls.values[0].count == 2
+              && calls.values[0].contains(TimingRun.Leg(reader: .visionRegions, kind: .newspaper))
+              && calls.values[0].contains(TimingRun.Leg(reader: .vision, kind: .newspaper)),
+          "\(calls.values)")
+    let stored = Prefs.AccurateTiming(d.data(forKey: Prefs.accurateTiming))
+    check("a reader's automatic result keeps estimates already measured for other readers",
+          stored?.seconds == ["falcon-ocr.other": 42, "vision-regions.newspaper": 15, "vision.newspaper": 15],
+          "\(stored?.seconds ?? [:])")
+    RunControl.beginPreflight()
+    MainActor.assumeIsolated {
+        downloads.start([.layout], reader: .visionRegions)
+    }
+    let queuedToStop = pump(until: { MainActor.assumeIsolated { runner.running } }, seconds: 5)
+    MainActor.assumeIsolated { runner.stop() }
+    _ = pump(until: { MainActor.assumeIsolated { !runner.running } }, seconds: 5)
+    RunControl.endPreflight()
+    _ = pump(until: { false }, seconds: 0.6)
+    check("Stop cancels a waiting automatic check and keeps its last estimate",
+          queuedToStop && calls.values.count == 1 && Prefs.AccurateTiming(d.data(forKey: Prefs.accurateTiming)) == stored
+              && MainActor.assumeIsolated { !runner.running })
+    // Stop during the reading itself: nothing the stopped run produced is stored.
+    calls.hold = true
+    MainActor.assumeIsolated { downloads.start([.layout], reader: .visionRegions) }
+    let reading = pump(until: { calls.values.count == 2 }, seconds: 5)
+    MainActor.assumeIsolated { runner.stop() }
+    _ = pump(until: { MainActor.assumeIsolated { !runner.running } }, seconds: 5)
+    calls.hold = false
+    check("Stop during a check's reading stores nothing from it and keeps the last estimate",
+          reading && Prefs.AccurateTiming(d.data(forKey: Prefs.accurateTiming)) == stored
+              && MainActor.assumeIsolated { !runner.running && runner.status?.contains("stopped") == true },
+          MainActor.assumeIsolated { runner.status ?? "" })
+    // The button times every ready reader and replaces the stored timing, as it did before.
+    MainActor.assumeIsolated { runner.start([TimingRun.Leg(reader: .vision, kind: .other)], memoryGB: 8) }
+    _ = pump(until: { calls.values.count == 3 && MainActor.assumeIsolated { !runner.running } }, seconds: 5)
+    check("the button's run replaces the stored timing rather than merging into it",
+          Prefs.AccurateTiming(d.data(forKey: Prefs.accurateTiming))?.seconds == ["vision.other": 15],
+          "\(Prefs.AccurateTiming(d.data(forKey: Prefs.accurateTiming))?.seconds ?? [:])")
+    d.set(stored?.data, forKey: Prefs.accurateTiming)
+    // Stop with nothing running leaves no "stopped" message behind.
+    MainActor.assumeIsolated { runner.stop() }
+    check("Stop with no check running says nothing was stopped",
+          MainActor.assumeIsolated { runner.status?.contains("stopped") != true }, MainActor.assumeIsolated { runner.status ?? "" })
+    // Disabling a reader while waiting, or switching the mode off, must not start it later.
+    for modeOff in [false, true] {
+        d.set(true, forKey: Prefs.accurateMode)
+        AR.setEnabled(.visionRegions, true, d)
+        RunControl.beginPreflight()
+        MainActor.assumeIsolated { downloads.start([.layout], reader: .visionRegions) }
+        let queued = pump(until: { MainActor.assumeIsolated { runner.running } }, seconds: 5)
+        if modeOff { d.set(false, forKey: Prefs.accurateMode) }
+        else { AR.setEnabled(.visionRegions, false, d) }
+        RunControl.endPreflight()
+        _ = pump(until: { MainActor.assumeIsolated { !runner.running } }, seconds: 5)
+        check(modeOff ? "a waiting check is dropped when accurate mode is turned off"
+                         : "a waiting check is dropped when its reader is disabled",
+              queued && calls.values.count == 3)
+    }
+    // A failed download cannot start a speed check.
+    d.set(true, forKey: Prefs.accurateMode)
+    AR.setEnabled(.paddle, true, d)
+    setenv("VISIONOCR_MODEL_SOURCE", home.appendingPathComponent("no source").path, 1)
+    MainActor.assumeIsolated { downloads.start([.paddle], reader: .paddle) }
+    _ = pump(until: { MainActor.assumeIsolated { downloads.failed != nil } }, seconds: 5)
+    check("a failed download never schedules a check or erases a previous estimate",
+          calls.values.count == 3 && MainActor.assumeIsolated { !runner.running && downloads.failed != nil }
+              && Prefs.AccurateTiming(d.data(forKey: Prefs.accurateTiming)) == stored)
+    unsetenv("VISIONOCR_MODEL_SOURCE")
+    unsetenv("VISIONOCR_MODEL_HOME")
+    resetPrefs()
+}
+} // end of section
 
 // lt-sections-rest. Every check above runs in a named section; this one checks that.
 section("every check runs inside a named section") {

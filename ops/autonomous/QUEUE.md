@@ -2010,7 +2010,7 @@ say so in the commit.
             other settings. A check goes red without it, and DONE WHEN above is checked at the default.
             (blocked-on: pps-owner-pick) Done 2026-10-14: "Photographed pages" slider, default 1/6; Baker 87,482 B
             (Falcon-OCR 86,650), 591.6x792 pt, 463/465 words; ux-regression 0 worse; a verifier passed all eight.
-- [ ] **settings-plain** — make Settings understandable to someone with no technical background, starting with
+- [x] **settings-plain** — make Settings understandable to someone with no technical background, starting with
       the Accurate mode box, and measure a reader's speed on its own once it is downloaded. (uses: build)
       THE ASK (owner, 2026-10-14): refine the settings panel for a non-technical user, in particular the new
       Accurate mode panel; and run the speed measurement automatically when the user downloads a new model.
@@ -2029,13 +2029,14 @@ say so in the commit.
       non-technical user, finds no term it cannot explain from the screen alone (list what it flagged and what
       was done); the automatic timing works as below in the built app; the suite passes; no release.
       ESTIMATE: 2 sessions. BOUND: rule 10. (context: owner request 2026-10-14)
-      - [ ] **sp-accurate** — the Accurate mode box, the Models dialog and the page-kind dialog rewritten in plain
+      (notes: ops/autonomous/notes/settings-plain.md)
+      - [x] **sp-accurate** — the Accurate mode box, the Models dialog and the page-kind dialog rewritten in plain
             words, checked on renders.
-      - [ ] **sp-auto-timing** — when a reader finishes downloading and is enabled, start the timing run for that
+      - [x] **sp-auto-timing** — when a reader finishes downloading and is enabled, start the timing run for that
             reader alone, once, without a click: wait while files are being read, show progress where the
             "Measure on this Mac" row is, let Stop cancel it, and keep the button for re-running. A check goes red
             without it. (blocked-on: sp-accurate)
-      - [ ] **sp-rest** — the other Settings boxes' labels and help text in plain words. (blocked-on: sp-accurate)
+      - [x] **sp-rest** — the other Settings boxes' labels and help text in plain words. (blocked-on: sp-accurate)
 - [ ] **page-kinds-three** — three kinds of page in Choose by Kind of Page: scanned newspapers, scanned
       documents that are not newspapers, and photographed documents, with photographs recognised by
       themselves. (uses: build,model:12)

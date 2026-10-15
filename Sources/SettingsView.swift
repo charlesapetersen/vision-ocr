@@ -74,20 +74,6 @@ struct SettingsView: View {
     /// preset X" flag — see `Prefs.Preset.apply`.
     @State private var presetSummary = ""
 
-    // Accurate mode
-    @AppStorage(Prefs.accurateMode) private var accurateMode = false
-    @AppStorage(Prefs.accurateReader) private var accurateReader = Prefs.AccurateReader.vision.rawValue
-    @AppStorage(Prefs.accurateNewspaperReader) private var accurateNewspaperReader =
-        Prefs.AccurateReader.vision.rawValue
-    @AppStorage(Prefs.modelMemoryGB) private var modelMemoryGB = Prefs.defaultModelMemoryGB()
-    @AppStorage(Prefs.accurateTiming) private var accurateTimingData = Data()
-    @ObservedObject private var timingRun = TimingRunner.shared
-    @ObservedObject private var downloads = DownloadRunner.shared
-    private var timing: Prefs.AccurateTiming? { Prefs.AccurateTiming(accurateTimingData) }
-    @AppStorage(Prefs.accurateEnabled) private var accurateEnabled = ""
-    @State private var showModels = false
-    @State private var showPageKinds = false
-
     // Behaviour
     @AppStorage(Prefs.openWhenDone) private var openWhenDone = true
     @AppStorage(Prefs.writeRunReport) private var writeRunReport = true
@@ -137,14 +123,13 @@ struct SettingsView: View {
 
             ScrollView {
                 VStack(alignment: .leading, spacing: 13) {
-                    recognitionSection
-                    modeSection
+                    recognitionSection.disabled(runInProgress)
+                    modeSection.disabled(runInProgress)
                     accurateSection
-                    behaviourSection
+                    behaviourSection.disabled(runInProgress)
                     commandPreview
                 }
                 .padding(16)
-                .disabled(runInProgress)
             }
 
             Divider()
@@ -175,19 +160,19 @@ struct SettingsView: View {
     // MARK: - Recognition
 
     private var recognitionSection: some View {
-        Box("Recognition") {
+        Box("Reading the text") {
             HStack(spacing: 18) {
-                Toggle("Fast (lower accuracy)", isOn: $fast)
-                    .help("Vision's fast recognizer. Quicker, misses more.")
-                Toggle("Language correction", isOn: $languageCorrection)
-                    .help("Vision's spelling and context correction. On by default.")
+                Toggle("Faster reading (more mistakes)", isOn: $fast)
+                    .help("Reads more quickly but can miss or misread more words. Leave this off for the best text.")
+                Toggle("Use spelling and context to help", isOn: $languageCorrection)
+                    .help("Uses the surrounding words to help read unclear text. On by default; turn it off if it changes unusual names or spellings.")
                 Spacer()
             }
 
             Row("Languages", labelWidth) {
-                TextField("blank = automatic", text: $languages)
-                    .help("BCP-47 codes in priority order, e.g. en-US, ja-JP. "
-                          + "Blank lets Vision decide.")
+                TextField("leave empty to detect automatically", text: $languages)
+                    .help("Use Add to choose languages. The short codes shown here identify them: en-US means US English and ja-JP means Japanese. List your main language first. "
+                          + "Leave empty to let the Mac decide.")
                 // Asked of Vision directly, so it lists what this
                 // macOS actually recognises rather than what someone remembers.
                 Menu("Add") {
@@ -222,7 +207,7 @@ struct SettingsView: View {
                              : "\(unsupportedLanguages.joined(separator: ", ")) are not available"
                                 + (fast ? " to fast recognition on this Mac." : " on this Mac."))
                             + Text(" Every file would fail. ")
-                            + Text(fast ? "Turn off Fast, or pick from the Add menu."
+                            + Text(fast ? "Turn off Faster reading, or pick from the Add menu."
                                         : "Pick from the Add menu.")
                     } icon: {
                         Image(systemName: "exclamationmark.triangle.fill")
@@ -234,7 +219,7 @@ struct SettingsView: View {
                 }
             }
 
-            Row("Uncertain text", labelWidth) {
+            Row("Unsure words", labelWidth) {
                 Slider(value: $confidence, in: 0...1)
                     .accessibilityLabel("What to do with uncertain text")
                     .accessibilityValue(Prefs.confidenceReadout(confidence))
@@ -256,17 +241,17 @@ struct SettingsView: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
 
-            Row("PDF render DPI", labelWidth) {
-                Toggle("Auto", isOn: $pdfDPIAuto).toggleStyle(.checkbox)
-                    .accessibilityLabel("Automatic PDF render DPI")
+            Row("Reading detail", labelWidth) {
+                Toggle("Automatic", isOn: $pdfDPIAuto).toggleStyle(.checkbox)
+                    .accessibilityLabel("Choose reading detail automatically")
                 Stepper(value: $pdfDPI, in: 72...600, step: 24) {
-                    Text("\(pdfDPI)")
+                    Text("\(pdfDPI) dots/inch")
                         .font(.system(.caption, design: .monospaced))
-                        .frame(width: 28, alignment: .trailing)
+                        .frame(width: 82, alignment: .trailing)
                         .foregroundStyle(pdfDPIAuto ? .secondary : .primary)
                 }
                 .disabled(pdfDPIAuto)
-                .accessibilityLabel("PDF render DPI")
+                .accessibilityLabel("Reading detail in dots per inch")
                 .accessibilityValue("\(pdfDPI)")
                 Spacer()
             }
@@ -285,15 +270,15 @@ struct SettingsView: View {
             // was wrong was the panel asserting it unconditionally while
             // `pageTooLarge`'s own error text already said "does not affect this
             // step" — the app holding two opinions about one control.
-            .help("Higher DPI can rescue small print, at the cost of speed.\n\n"
-                  + "Only applies when Vision reads the pages as they are: in Extract "
-                  + "Text, and in Searchable PDF with “Rebuild page images first” "
-                  + "turned off. With the rebuild on, the pages are re-rendered at a "
-                  + "resolution taken from the file itself and this has no effect.")
+            .help("DPI means dots per inch: higher numbers give the reader a more detailed picture and take longer. Automatic is a good starting point.\n\n"
+                  + "Only used in Extract "
+                  + "Text, and in Searchable PDF with “Replace old selectable text” "
+                  + "turned off. With replacement on, the app chooses picture detail from the "
+                  + "file itself, and this control has no effect.")
             if mode == .searchablePDF, rebuildImages {
                 Row("", labelWidth) {
-                    Text("Not in use: the rebuild renders the pages, so this DPI is "
-                         + "ignored for this run.")
+                    Text("Not used while “Replace old selectable text” is on: the app then picks "
+                         + "the detail itself.")
                         .font(.caption2).foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                     Spacer()
@@ -306,23 +291,23 @@ struct SettingsView: View {
                 Slider(value: $minTextHeight, in: 0...0.2)
                     .disabled(!minTextHeightOn)
                     .accessibilityLabel("Minimum text height")
-                    .accessibilityValue(String(format: "%.3f", minTextHeight))
-                Text(String(format: "%.3f", minTextHeight))
+                    .accessibilityValue(String(format: "%.1f percent of page height", minTextHeight * 100))
+                Text(String(format: "%.1f%% of page", minTextHeight * 100))
                     .font(.system(.caption, design: .monospaced))
-                    .frame(width: 38, alignment: .trailing)
+                    .frame(width: 85, alignment: .trailing)
                     .foregroundStyle(minTextHeightOn ? .primary : .secondary)
             }
-            .help("Skips text shorter than this fraction of the page height — "
-                  + "useful for ignoring footers and marginalia.")
+            .help("Skips letters smaller than this percentage of the page height. Leave this off to keep small print; turn it on only "
+                  + "to ignore page footers or small margin notes.")
 
             Row("Custom words", labelWidth) {
                 TextField("surnames, jargon, place names", text: $customWords)
-                    .help("Comma, space or newline separated. Biases recognition "
-                          + "toward vocabulary Vision wouldn't otherwise know.")
+                    .help("Separate words with commas, spaces or new lines. Helps the reader recognise "
+                          + "unusual names and words it might otherwise miss.")
             }
 
             Row("PDF password", labelWidth) {
-                SecureField("only for encrypted PDFs", text: $password)
+                SecureField("if a PDF asks for a password", text: $password)
             }
         }
     }
@@ -336,18 +321,21 @@ struct SettingsView: View {
                 Row("File format", labelWidth) {
                     Picker("", selection: $textFormatRaw) {
                         Text("Plain text (.txt)").tag(Prefs.TextFormat.text.rawValue)
-                        Text("JSON — boxes + confidence").tag(Prefs.TextFormat.json.rawValue)
-                        Text("JSON Lines — one per page").tag(Prefs.TextFormat.jsonl.rawValue)
+                        Text("For other software: JSON (.json)").tag(Prefs.TextFormat.json.rawValue)
+                        Text("For other software: JSON Lines (.jsonl)").tag(Prefs.TextFormat.jsonl.rawValue)
                     }
                     .accessibilityLabel("Output file format")
                     .labelsHidden()
+                    .help("Plain text is for reading and copying. JSON is a structured file for other software, "
+                          + "with each word's position and how sure the reader was. JSON Lines stores one page "
+                          + "per line. Choose plain text unless another program asks for one of these formats.")
                     Spacer()
                 }
             case .searchablePDF:
                 // A starting point, not a mode. Applying one writes ordinary
                 // settings, which stay visible and editable below — there is no
                 // "currently using X" state to drift out of sync with them.
-                Row("Start from", labelWidth) {
+                Row("Quick setup", labelWidth) {
                     ForEach(Prefs.Preset.allCases) { preset in
                         Button(preset.label) {
                             let summary = preset.summary(afterChanging: preset.apply())
@@ -386,32 +374,19 @@ struct SettingsView: View {
                     }
                 }
 
-                Toggle("Rebuild page images first, discarding any old text layer",
+                Toggle("Replace old selectable text (recommended)",
                        isOn: $rebuildImages)
-                    .help("A second text layer on top of an existing one, which "
-                          + "makes copied text come out doubled. Rebuilding the pages as "
-                          + "images first means Vision's OCR is the only text in the result. "
-                          + "The rebuild re-encodes every page it touches, in the format "
-                          + "chosen below. It runs on files that already contain text, and "
-                          + "on all of them when JBIG2 is on below, since JBIG2 needs the "
-                          + "pages as bitmaps.")
+                    .help("Makes a fresh picture of each page that needs it, then adds newly read text. "
+                          + "This replaces any previous selectable text so copied words do not appear twice. "
+                          + "The smaller-PDF option makes a fresh picture of every page. Page appearance below "
+                          + "controls its colour and photo detail. The original file is kept.")
 
                 Toggle("Keep highlights and notes", isOn: $preserveAnnotations)
-                    .help("Rebuilding a page turns it into an image, and a highlight or a "
-                          + "margin note is not part of the page — it hangs off it as a "
-                          + "separate object. So the rebuild drops every one of them. "
-                          + "About one document in eleven in a working library carries a "
-                          + "reader\u{2019}s own marks.\n\n"
-                          + "With this on they are carried onto the finished file and then "
-                          + "checked: every mark counted, and every one\u{2019}s position "
-                          + "compared against the original. If any of that cannot be "
-                          + "verified the file is not written at all, because a highlight "
-                          + "that has quietly moved misrepresents what somebody marked.\n\n"
-                          + "Off by default: it costs three extra passes over the finished "
-                          + "document and does nothing for a document nobody has marked "
-                          + "up. Form fields, and the links that library download wrappers "
-                          + "leave behind, are deliberately not carried — the run log says "
-                          + "what was left.")
+                    .help("Carries your highlights and notes into the new PDF and checks their positions. "
+                          + "If the checks fail, no finished file is saved. Leave this on for marked-up PDFs. "
+                          + "Off by default because checking takes extra time. Without it, making fresh page "
+                          + "pictures drops these marks. Form fields and links are not carried; the report "
+                          + "lists what was left out.")
 
                 Toggle("Find words broken across two lines", isOn: $joinHyphenated)
                     .help("A word split by a line break is read as two pieces — "
@@ -426,16 +401,13 @@ struct SettingsView: View {
                           + "either way.")
 
                 if rebuildMode.canUseJBIG2 {
-                    Toggle("Compress with JBIG2 (about a third the size)", isOn: $useJBIG2)
-                        .help("Lossless JBIG2 instead of the Flate that CoreGraphics writes: "
-                              + "the same bitmap at the same resolution, in roughly a third "
-                              + "the bytes. It can only encode black-and-white pages, so "
-                              + "switching it on rebuilds every page — including ones that "
-                              + "would otherwise have been left exactly as they came in. "
-                              + "Pages it cannot encode, like photographs and colour plates, "
-                              + "are kept as JPEG alongside it.")
+                    Toggle("Make text pages smaller", isOn: $useJBIG2)
+                        .help("Uses a storage method called JBIG2 to keep black-and-white page pictures "
+                              + "unchanged in about a third of the space. This requires fresh pictures of "
+                              + "every page. Photographs and colour pages are stored separately, with the "
+                              + "detail chosen below. Turn on Replace old selectable text to use compression.")
                     if useJBIG2, rebuildImages, !JBIG2.isAvailable {
-                        Text("Not installed — falling back to Flate. Install with: "
+                        Text("The optional compression tools are missing; PDFs will be larger. For help installing them: "
                              + JBIG2.installHint)
                             .font(.caption2).foregroundStyle(.orange)
                             .fixedSize(horizontal: false, vertical: true)
@@ -460,11 +432,9 @@ struct SettingsView: View {
                             .pickerStyle(.segmented)
                             .help("\(photoDetail.label): \(photoDetail.blurb)\n\n"
                                   + "On a page that has both text and a picture, the two are "
-                                  + "stored separately: the text as a full-resolution "
-                                  + "stencil, the picture behind it. **This setting only "
-                                  + "affects the picture — text is stored at full "
-                                  + "resolution whichever you choose, and nothing is ever "
-                                  + "cropped or dropped.**\n\n"
+                                  + "stored separately. This changes the picture's detail, "
+                                  + "while printed text keeps its full detail. No part of "
+                                  + "the page is cropped. Smaller files can lose fine picture detail.\n\n"
                                   + Prefs.PhotoDetail.allCases.map {
                                       "\($0.label): \($0.blurb)"
                                   }.joined(separator: "\n\n"))
@@ -486,7 +456,8 @@ struct SettingsView: View {
                                     Text("Smaller files").font(.caption)
                                 }
                                 Text("\(imageDetail.blurb) A phone photo of a typed letter "
-                                     + "comes to about \(imageDetail.exampleKB) KB.")
+                                     + "comes to about \(imageDetail.exampleKB) KB (kilobytes; "
+                                     + "1,000 KB is 1 MB).")
                                     .font(.caption).foregroundStyle(.secondary)
                                     .fixedSize(horizontal: false, vertical: true)
                             }
@@ -500,23 +471,27 @@ struct SettingsView: View {
                 }
 
                 if rebuildImages {
-                    Row("Rebuild as", labelWidth) {
+                    Row("Page appearance", labelWidth) {
                         Picker("", selection: $rebuildModeRaw) {
-                            ForEach(Flattener.Mode.allCases) { Text($0.label).tag($0.rawValue) }
+                            ForEach(Flattener.Mode.allCases) {
+                                Text($0 == .grayscale ? "Grey tones" : $0.label).tag($0.rawValue)
+                            }
                         }
                         .labelsHidden()
-                        .accessibilityLabel("Rebuild pages as")
+                        .accessibilityLabel("Page appearance")
                         .frame(width: 150)
-                        Text(rebuildMode.blurb)
+                        Text(rebuildMode == .auto ? "Keeps colour and pictures; makes text pages smaller."
+                             : rebuildMode == .blackAndWhite ? "Smallest files; photographs can turn into blotches."
+                             : "Keeps photo shades; turns all colour grey. Larger files.")
                             .font(.caption2).foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
                         Spacer()
                     }
                 }
 
                 if !rebuildImages {
-                    Text("Without the rebuild, an already-OCR'd PDF keeps its old text "
-                         + "layer and gains Vision's on top, so copied text appears twice. "
-                         + "Compression is unavailable too, since it needs rebuilt pages.")
+                    Text("Keeping the old selectable text and adding new text can make copied words "
+                         + "appear twice. Making smaller PDFs is also unavailable without replacement.")
                         .font(.caption2)
                         .foregroundStyle(.orange)
                         .fixedSize(horizontal: false, vertical: true)
@@ -533,139 +508,26 @@ struct SettingsView: View {
                 Toggle("Ask first if a PDF already has selectable text",
                        isOn: $warnDigitalText)
                     .help(mode == .text
-                          ? "A born-digital PDF already holds its real text. OCR reads a "
-                            + "picture of that text instead, and comes out worse — measured "
-                            + "on one such book, 9% of the words were lost. Nothing is "
-                            + "overwritten in this mode; the question is which text ends up "
-                            + "in the output file. Turn it off if you are deliberately "
-                            + "OCRing files whose embedded text is broken."
-                          : "The rebuild discards any existing text layer. For a scan "
-                            + "that layer is a previous OCR pass and losing it is the "
-                            + "point. For a born-digital PDF it is the real text, and "
-                            + "OCR of a picture of it is worse — measured on one such "
-                            + "book, 9% of the words were lost. This asks before "
-                            + "replacing text that was not produced by OCR; turn it off "
-                            + "if you are deliberately re-OCRing files whose embedded "
-                            + "text is broken.")
+                          ? "PDFs made on a computer often already have correct text. Reading a picture "
+                            + "of it can introduce mistakes. Asks before doing that; the original is kept. "
+                            + "Turn this off only if you want to read such files again because their text is broken."
+                          : "Asks before replacing text in PDFs made on a computer, where it is usually "
+                            + "better than text read from a picture. Old text read from a scan is replaced "
+                            + "without asking. Turn this off only if you intend to replace the computer-made text.")
             }
         }
     }
 
     // MARK: - Accurate mode
 
-    /// The readers the owner approved for each kind of page (C57), off by default. A stored
-    /// choice that stops fitting under the memory slider is run as Vision
-    /// (`Prefs.AccurateReader.chosen`), which `PageKindWarnings` says.
     private var accurateSection: some View {
-        Box("Accurate mode") {
-            Toggle("Read with a stronger model (slower, needs a download)", isOn: $accurateMode)
-                .help("Runs a text-recognition model on this Mac alongside Vision for each "
-                      + "kind of page, chosen below. Nothing is downloaded until you confirm "
-                      + "a download in Models, nothing is run while this is off, and your "
-                      + "documents never leave your Mac either way.")
-                // Turning the mode off stops a download under way.
-                .onChange(of: accurateMode) { on in if !on { downloads.stop() } }
-            if accurateMode {
-                Row("Memory", labelWidth) {
-                    Slider(value: $modelMemoryGB, in: Prefs.modelMemoryRange, step: 1)
-                        .frame(width: 180)
-                        .accessibilityLabel("Most memory a model may use")
-                    Text("\(Int(modelMemoryGB)) GB at most")
-                        .font(.system(.caption, design: .monospaced))
-                    Spacer()
-                }
-                .help("A model that needs more than this is stopped and the page keeps "
-                      + "Vision's reading. Readers that need more are not offered.")
-                // A choice the slider no longer allows is put back to Vision, rather than kept
-                // and quietly brought back when the slider is raised again.
-                .onChange(of: modelMemoryGB) { gb in
-                    accurateReader = Prefs.AccurateReader.chosen(accurateReader, .other, memoryGB: gb).rawValue
-                    accurateNewspaperReader = Prefs.AccurateReader.chosen(accurateNewspaperReader, .newspaper,
-                                                                          memoryGB: gb).rawValue
-                }
-                if Prefs.physicalGB() < 16 {
-                    Row("", labelWidth) {
-                        Label("This Mac has \(Int(Prefs.physicalGB().rounded())) GB. A model "
-                              + "reading a page may slow other apps; keep the memory low.",
-                              systemImage: "exclamationmark.triangle")
-                            .font(.caption2).foregroundStyle(.orange)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-                }
-                // Downloading and choosing are two dialogs (`ocr-model-dialogs`): a reader is
-                // fetched only from the models dialog's confirmation, which states its size, and the
-                // page-kind dialog offers only readers already downloaded and enabled.
-                Row("Readers", labelWidth) {
-                    Button("Models…") { showModels = true }
-                        .help("Download and enable the stronger readers. Each download asks first "
-                              + "and states its size.")
-                    Text(modelsSummary).font(.caption2).foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                    Spacer()
-                }
-                DownloadProgressRow(labelWidth: labelWidth)
-                Row("Page kinds", labelWidth) {
-                    Button("Choose by Kind of Page…") { showPageKinds = true }
-                        .help("Choose the reader for newspapers and for other pages, among Vision and "
-                              + "the readers downloaded and enabled.")
-                    Text(kindsSummary).font(.caption2).foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                    Spacer()
-                }
-                PageKindWarnings(labelWidth: labelWidth)
-                timingRow
-            }
-        }
-        .sheet(isPresented: $showModels) { AccurateModelsDialog() }
-        .sheet(isPresented: $showPageKinds) { AccuratePageKindsDialog() }
-    }
-
-    /// Each model reader's state: not downloaded, downloaded, enabled.
-    private var modelsSummary: String {
-        let enabled = Prefs.AccurateReader.enabled(raw: accurateEnabled)
-        return Prefs.AccurateReader.downloadable.map { reader in
-            "\(reader.name) " + (!reader.toFetch().isEmpty ? "not downloaded"
-                                 : enabled.contains(reader) ? "enabled" : "downloaded, not enabled")
-        }.joined(separator: "; ") + "."
-    }
-
-    /// Which reader each kind of page is read with.
-    private var kindsSummary: String {
-        let enabled = Prefs.AccurateReader.enabled(raw: accurateEnabled)
-        let news = Prefs.AccurateReader.chosen(accurateNewspaperReader, .newspaper, memoryGB: modelMemoryGB,
-                                               enabled: enabled)
-        let other = Prefs.AccurateReader.chosen(accurateReader, .other, memoryGB: modelMemoryGB, enabled: enabled)
-        return "Newspapers: \(news.name). Other pages: \(other.name)."
-    }
-
-    /// "Measure on this Mac": times the readers that are ready here and replaces the speed
-    /// column (`TimingRun`). Speed only; the accuracy column stays ours.
-    @ViewBuilder
-    private var timingRow: some View {
-        let legs = TimingRun.legs(memoryGB: modelMemoryGB)
-        Row("Speed", labelWidth) {
-            if timingRun.running {
-                Button("Stop") { timingRun.stop() }
-                ProgressView().controlSize(.small)
-            } else {
-                Button("Measure on this Mac") { timingRun.start(legs, memoryGB: modelMemoryGB) }
-                    .help("Reads a few pages drawn for the purpose with each reader that is "
-                          + "downloaded and fits the memory allowed, and puts this Mac's speed in "
-                          + "the tables. It does not measure accuracy, and it does not start "
-                          + "while files are being read.")
-            }
-            Text(timingRun.running ? timingRun.status ?? ""
-                 : [timingRun.status, TimingRunner.plan(legs)].compactMap { $0 }.joined(separator: " "))
-                .font(.caption2).foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
-            Spacer()
-        }
+        AccurateSettingsSection(runInProgress: runInProgress)
     }
 
     // MARK: - Behaviour
 
     private var behaviourSection: some View {
-        Box("Behaviour") {
+        Box("Saving and app updates") {
             Row("Files at once", labelWidth) {
                 Stepper(value: $concurrency, in: 1...Prefs.maxConcurrency) {
                     Text("\(concurrency)")
@@ -677,15 +539,15 @@ struct SettingsView: View {
                 Text(concurrency == 1
                      ? "one at a time"
                      : concurrency == Prefs.defaultConcurrency
-                        ? "matches this Mac's performance cores"
-                        : "of \(Prefs.defaultConcurrency) performance cores")
+                        ? "recommended for this Mac"
+                        : "\(Prefs.defaultConcurrency) is recommended for this Mac")
                     .font(.caption2).foregroundStyle(.secondary)
                 Spacer()
             }
-            .help("mac-ocr already uses several cores per file, but running files "
-                  + "concurrently is still much faster. Gains flatten around the "
-                  + "number of performance cores (\(Prefs.defaultConcurrency) here); "
-                  + "lower it if OCR is competing with other work.")
+            .help("Each file uses several parts of the Mac's processor. Reading multiple files "
+                  + "at once is often faster, but uses more memory. The recommended maximum is "
+                  + "\(Prefs.defaultConcurrency) on this Mac; "
+                  + "lower it if you want other apps to stay responsive.")
 
             Toggle("Open the output folder when finished", isOn: $openWhenDone)
 
@@ -721,7 +583,7 @@ struct SettingsView: View {
                       + "identifiers, no telemetry — and never installs "
                       + "anything on its own.")
             Row("", labelWidth) {
-                Text("The only network request this app makes. Your documents "
+                Text("Update checks and optional reader downloads use the internet. Your documents "
                      + "never leave your Mac either way.")
                     .font(.caption2).foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -979,43 +841,66 @@ struct AccurateModelsDialog: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Models").font(.headline)
-            Text("Each reader runs on this Mac, and your documents never leave it. Downloading one asks "
-                 + "first and states its size. The shared runtime (\(Prefs.AccurateReader.runtimeDownloadMB) MB) "
-                 + "and the layout model (\(Prefs.AccurateReader.layoutDownloadMB) MB) are downloaded once, "
-                 + "with the first reader that needs them, and counted in that reader's size.")
+            Text("Download extra readers").font(.headline)
+            Text("A reader turns a scanned picture into text you can select and search. Vision is already "
+                 + "built in and is a good starting point. These optional readers may help with difficult print. "
+                 + "They work on your Mac; your documents are never uploaded.")
                 .font(.caption).foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
-            Grid(alignment: .leading, horizontalSpacing: 12, verticalSpacing: 8) {
-                GridRow {
-                    ForEach(["Reader", "Download", "Memory", "Reads well", ""], id: \.self) { Text($0).bold() }
-                }
-                ForEach(Prefs.AccurateReader.downloadable, id: \.self) { reader in
-                    let fetch = reader.toFetch()
-                    GridRow {
-                        Text(reader.name)
-                        Text(fetch.isEmpty ? "downloaded" : DownloadRunner.size(fetch))
-                        Text(String(format: "%.1f GB", reader.memoryNeedGB))
-                            .foregroundStyle(reader.memoryNeedGB > modelMemoryGB ? Color.orange : .primary)
-                            .help(reader.memoryNeedGB > modelMemoryGB
-                                  ? "More than the \(Int(modelMemoryGB)) GB the memory setting allows." : "")
-                        Text(reader.readsWell).fixedSize(horizontal: false, vertical: true)
-                        action(reader, fetch)
+            ScrollView {
+                VStack(alignment: .leading, spacing: 12) {
+                    ForEach(Prefs.AccurateReader.downloadable, id: \.self) { reader in
+                        let fetch = reader.toFetch()
+                        VStack(alignment: .leading, spacing: 6) {
+                            HStack {
+                                Text(reader.name).fontWeight(.semibold)
+                                Spacer()
+                                action(reader, fetch)
+                            }
+                            Text(reader.readsWell).fixedSize(horizontal: false, vertical: true)
+                            Text("\(fetch.isEmpty ? "Downloaded" : "Download: " + DownloadRunner.size(fetch)). "
+                                 + "Disk space: about \(reader.diskSpace). "
+                                 + "Working memory: about \(String(format: "%.1f", reader.memoryNeedGB)) GB.")
+                                .foregroundStyle(.secondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                            if reader.memoryNeedGB > modelMemoryGB {
+                                Text("Needs more than your \(Int(modelMemoryGB)) GB memory limit. Raise the limit "
+                                     + "in Settings before choosing this reader.")
+                                    .foregroundStyle(.orange).fixedSize(horizontal: false, vertical: true)
+                            }
+                        }
+                        .font(.caption)
+                        .padding(10)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(RoundedRectangle(cornerRadius: 8).fill(Color.secondary.opacity(0.07)))
                     }
+                    Text("Download sizes include any shared reading software and the helper that finds columns "
+                         + "on a page. These parts are fetched once, so later downloads can be smaller. "
+                         + "Disk space includes these shared parts; extra space is needed during installation. "
+                         + "MB means megabytes; 1,000 MB is about 1 GB (a gigabyte). Working memory is "
+                         + "temporary space used while reading; other apps need some too.")
+                        .font(.caption).foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
             }
-            .font(.caption)
+            .frame(maxHeight: 430)
+            Text("After downloading, we check that reader's speed automatically on sample pages. You can stop "
+                 + "the check. Then use Choose pages in Settings to decide where to use the reader. "
+                 + "Turning off “Offer in Choose pages” keeps the download, and Vision reads those pages again.")
+                .font(.caption).foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
             DownloadProgressRow(labelWidth: 70)
             DialogDone()
         }
         .padding(16)
         .frame(width: 660)
+        .frame(minHeight: 360, idealHeight: 600, maxHeight: 640)
         .alert(confirming.map { "Download \($0.name)?" } ?? "",
                isPresented: Binding(get: { confirming != nil }, set: { if !$0 { confirming = nil } }),
                presenting: confirming) { reader in
             Button("Download \(DownloadRunner.size(reader.toFetch()))") {
                 Prefs.AccurateReader.setEnabled(reader, true, Prefs.store)
-                downloads.start(reader.toFetch())
+                downloads.start(reader.toFetch(), reader: reader)
             }
             Button("Cancel", role: .cancel) {}
         } message: { reader in
@@ -1028,19 +913,18 @@ struct AccurateModelsDialog: View {
         if !fetch.isEmpty, downloads.covers(fetch) {
             Text("Downloading…").foregroundStyle(.secondary)
         } else if fetch.isEmpty {
-            Toggle("Enabled", isOn: Binding(
+            Toggle("Offer in Choose pages", isOn: Binding(
                 get: { Prefs.AccurateReader.enabled(raw: enabledRaw).contains(reader) },
                 set: { Prefs.AccurateReader.setEnabled(reader, $0, Prefs.store) }))
-                .accessibilityLabel("Enable \(reader.name)")
+                .accessibilityLabel("Allow \(reader.name) in page choices")
         } else {
-            Button("Download and Enable…") { confirming = reader }
+            Button("Download…") { confirming = reader }
                 .accessibilityLabel("Download and enable \(reader.name)")
         }
     }
 }
 
-/// The page-kind dialog: for each kind of page, a choice among Vision and the readers already
-/// downloaded and enabled, beside the table of what each costs. Choosing never downloads.
+/// Choices and measured tradeoffs, with ordinary language kept beside the figures.
 struct AccuratePageKindsDialog: View {
     @AppStorage(Prefs.accurateReader) private var accurateReader = Prefs.AccurateReader.vision.rawValue
     @AppStorage(Prefs.accurateNewspaperReader) private var accurateNewspaperReader =
@@ -1049,24 +933,42 @@ struct AccuratePageKindsDialog: View {
     @AppStorage(Prefs.modelMemoryGB) private var modelMemoryGB = Prefs.defaultModelMemoryGB()
     @AppStorage(Prefs.accurateTiming) private var accurateTimingData = Data()
     @ObservedObject private var downloads = DownloadRunner.shared
-    private let labelWidth: CGFloat = 100
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Readers by Kind of Page").font(.headline)
-            kind("Newspapers", .newspaper, $accurateNewspaperReader)
-            kind("Other pages", .other, $accurateReader)
-            PageKindWarnings(labelWidth: labelWidth)
-            Text("Only Vision and the readers downloaded and enabled in Models are offered here; a reader "
-                 + "not downloaded and enabled is listed in grey. Words wrong or missing are out of every 1,000, measured "
-                 + "on 67 pages of our own sample; your documents may differ. "
-                 + TimingRunner.speedNote(Prefs.AccurateTiming(accurateTimingData)))
-                .font(.caption2).foregroundStyle(.secondary)
+            Text("Choose how to read your pages").font(.headline)
+            Text("Keep Vision for a fast start. An extra reader can reduce wrong or missing words, but "
+                 + "takes longer. The app recognises newspaper pages automatically and uses your choice for "
+                 + "that kind. “Books & other pages” covers everything else, including articles and letters.")
+                .font(.caption).foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
+            ScrollView {
+                VStack(alignment: .leading, spacing: 16) {
+                    kind("Newspapers", .newspaper, $accurateNewspaperReader)
+                    kind("Books & other pages", .other, $accurateReader)
+                    PageKindWarnings(labelWidth: 0)
+                    Text("A reader is a method of reading text. Vision is built in; Vision, section by section "
+                         + "reads a newspaper's separate blocks. PaddleOCR-VL and Falcon-OCR are optional extra "
+                         + "readers. Only downloaded readers with Offer in Choose pages turned on, and enough memory, "
+                         + "can be selected. Add them in Downloads in Settings.")
+                        .font(.caption).foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Text("Errors means words wrong or missing out of every 1,000; lower is better. "
+                         + "We counted these on 67 sample pages. Your documents may differ. Times include "
+                         + "the whole reading process; “4.1× Vision” means about four times as long as Vision. "
+                         + "Memory is temporary working space, in GB (gigabytes); “no extra” means none beyond "
+                         + "the app's normal use; a reader needs a little more on some kinds of page than on others. "
+                         + TimingRunner.speedNote(Prefs.AccurateTiming(accurateTimingData)))
+                        .font(.caption).foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            .frame(maxHeight: 460)
             DialogDone()
         }
         .padding(16)
         .frame(width: 720)
+        .frame(minHeight: 360, idealHeight: 600, maxHeight: 640)
     }
 
     @ViewBuilder
@@ -1075,41 +977,40 @@ struct AccuratePageKindsDialog: View {
         let ready = Prefs.AccurateReader.ready(kind, memoryGB: modelMemoryGB, enabled: enabled)
         let chosen = Prefs.AccurateReader.chosen(choice.wrappedValue, kind, memoryGB: modelMemoryGB, enabled: enabled)
         let timing = Prefs.AccurateTiming(accurateTimingData)
-        Row(title, labelWidth) {
-            // A stored choice that is no longer ready stays shown, marked, so the picker does not
-            // claim a reader that will not run; `PageKindWarnings` says what to do.
-            Picker("", selection: Binding(get: { chosen.rawValue }, set: { choice.wrappedValue = $0 })) {
-                ForEach(ready, id: \.self) { Text($0.name).tag($0.rawValue) }
-                if !ready.contains(chosen) {
-                    Text("\(chosen.name) (not downloaded)").tag(chosen.rawValue)
-                }
-            }
-            .labelsHidden().frame(width: 240)
-            .accessibilityLabel("Reader for \(title.lowercased())")
-            Spacer()
-        }
-        Grid(alignment: .leading, horizontalSpacing: 10, verticalSpacing: 2) {
-            GridRow {
-                ForEach(["Reader", "Wrong or missing", "Speed", "Memory", "Here"], id: \.self) {
-                    Text($0).bold()
-                }
-            }
-            // The last column is the reader's state on this Mac, not its download: the models
-            // dialog states that, counting the shared runtime and layout model this table cannot.
-            ForEach(Prefs.AccurateReader.allCases.filter { $0.figures(kind) != nil }, id: \.self) { reader in
-                GridRow {
-                    Text(reader.name)
-                    ForEach(Array((reader.cells(kind, timing: timing) ?? []).dropLast().enumerated()), id: \.offset) {
-                        Text($0.element)
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Text(title).fontWeight(.semibold)
+                Spacer()
+                Picker("", selection: Binding(get: { chosen.rawValue }, set: { choice.wrappedValue = $0 })) {
+                    ForEach(ready, id: \.self) { Text($0.name).tag($0.rawValue) }
+                    if !ready.contains(chosen) {
+                        Text("\(chosen.name) (not downloaded)").tag(chosen.rawValue)
                     }
-                    Text(reader.state(kind, memoryGB: modelMemoryGB, enabled: enabled))
                 }
-                .foregroundStyle(ready.contains(reader) ? .primary : .tertiary)
-                .fontWeight(reader == chosen ? .semibold : .regular)
+                .labelsHidden().frame(width: 260)
+                .accessibilityLabel("Reader for \(title.lowercased())")
             }
+            Grid(alignment: .leading, horizontalSpacing: 10, verticalSpacing: 6) {
+                GridRow {
+                    ForEach(["Reader", "Errors / 1,000", "Time per page", "Memory", "Available?"], id: \.self) {
+                        Text($0).bold()
+                    }
+                }
+                ForEach(Prefs.AccurateReader.allCases.filter { $0.figures(kind) != nil }, id: \.self) { reader in
+                    GridRow {
+                        Text(reader.name).fixedSize(horizontal: false, vertical: true)
+                        ForEach(Array((reader.cells(kind, timing: timing) ?? []).dropLast().enumerated()), id: \.offset) {
+                            Text($0.element).fixedSize(horizontal: false, vertical: true)
+                        }
+                        Text(reader.state(kind, memoryGB: modelMemoryGB, enabled: enabled))
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    .foregroundStyle(ready.contains(reader) ? .primary : .secondary)
+                    .fontWeight(reader == chosen ? .semibold : .regular)
+                }
+            }
+            .font(.caption)
         }
-        .font(.caption2)
-        .padding(.leading, labelWidth + 8)
     }
 }
 
@@ -1118,6 +1019,10 @@ struct AccuratePageKindsDialog: View {
 @MainActor
 final class DownloadRunner: ObservableObject {
     static let shared = DownloadRunner()
+    private let timing: TimingRunner
+    private var readersToTime: Set<Prefs.AccurateReader> = []
+
+    init(timing: TimingRunner? = nil) { self.timing = timing ?? .shared }
 
     /// What is downloading, and how far it has got, 0...1.
     @Published private(set) var current: ModelDownloads.Item?
@@ -1133,7 +1038,8 @@ final class DownloadRunner: ObservableObject {
     private var generation = 0
     private var swept = false
 
-    func start(_ items: [ModelDownloads.Item]) {
+    func start(_ items: [ModelDownloads.Item], reader: Prefs.AccurateReader? = nil) {
+        if let reader, !items.isEmpty { readersToTime.insert(reader) }
         for item in items where item != current && !queue.contains(item) { queue.append(item) }
         guard task == nil, !queue.isEmpty else { return }
         if !swept {
@@ -1150,6 +1056,7 @@ final class DownloadRunner: ObservableObject {
     func stop() {
         guard task != nil || !queue.isEmpty else { return }
         queue = []
+        readersToTime = []
         task?.cancel()
         task = nil
         generation += 1
@@ -1176,7 +1083,7 @@ final class DownloadRunner: ObservableObject {
                                                  source: .current()) { bytes in
                     let f = min(1, Double(bytes) / total)
                     DispatchQueue.main.async {
-                        let me = DownloadRunner.shared
+                        let me = self
                         if me.generation == mine, f - me.fraction >= 0.005 || f == 1 { me.fraction = f }
                     }
                 }
@@ -1185,6 +1092,8 @@ final class DownloadRunner: ObservableObject {
             } catch {
                 // Stopped: `stop` has said so, and a later run may be under way.
                 guard mine == generation else { return }
+                // Readers already complete keep their check; `afterDownload` skips the one that
+                // is still missing a part.
                 queue = []
                 let why = error.localizedDescription
                 failed = (item, why)
@@ -1195,6 +1104,13 @@ final class DownloadRunner: ObservableObject {
         queue = []
         current = nil
         task = nil
+        let ready = readersToTime
+        readersToTime = []
+        // Only readers requested by this download: installing a shared part must not
+        // re-time an unrelated reader that was already available on this Mac.
+        for reader in Prefs.AccurateReader.downloadable where ready.contains(reader) {
+            timing.afterDownload(reader)
+        }
     }
 
     /// Why the last download of one of `items` failed, as a sentence; nil if none did.
@@ -1210,66 +1126,143 @@ final class DownloadRunner: ObservableObject {
     }
 }
 
-/// The one "Measure on this Mac" run, kept outside the panel so that closing Settings neither
-/// loses it nor lets a second start beside it. Its result goes to `Prefs.accurateTiming`, which
-/// the panel reads; a run that fails or is stopped stores nothing and keeps the last result.
-@MainActor
-final class TimingRunner: ObservableObject {
-    static let shared = TimingRunner()
+/// Accurate mode can be rendered on its own and keeps Stop available during a document batch.
+struct AccurateSettingsSection: View {
+    var runInProgress = false
+    private let labelWidth: CGFloat = 116
+    // Accurate mode
+    @AppStorage(Prefs.accurateMode) private var accurateMode = false
+    @AppStorage(Prefs.accurateReader) private var accurateReader = Prefs.AccurateReader.vision.rawValue
+    @AppStorage(Prefs.accurateNewspaperReader) private var accurateNewspaperReader =
+        Prefs.AccurateReader.vision.rawValue
+    @AppStorage(Prefs.modelMemoryGB) private var modelMemoryGB = Prefs.defaultModelMemoryGB()
+    @AppStorage(Prefs.accurateTiming) private var accurateTimingData = Data()
+    @ObservedObject private var timingRun = TimingRunner.shared
+    @ObservedObject private var downloads = DownloadRunner.shared
+    private var timing: Prefs.AccurateTiming? { Prefs.AccurateTiming(accurateTimingData) }
+    @AppStorage(Prefs.accurateEnabled) private var accurateEnabled = ""
+    @State private var showModels = false
+    @State private var showPageKinds = false
 
-    @Published private(set) var running = false
-    /// What the run is doing, or how the last one ended; nil before any run.
-    @Published private(set) var status: String?
-    private var control: RunControl?
-
-    func start(_ legs: [TimingRun.Leg], memoryGB: Double) {
-        guard !running, !legs.isEmpty else { return }
-        // A batch beside it would be timed too, and its model would share the memory.
-        guard !RunControl.isAnyRunning else {
-            status = "Files are being read; measure when they have finished."
-            return
-        }
-        let control = RunControl()
-        self.control = control
-        running = true
-        status = "Starting…"
-        DispatchQueue.global(qos: .userInitiated).async {
-            let result = Result { try TimingRun.run(legs, memoryGB: memoryGB, control: control) { text in
-                DispatchQueue.main.async { TimingRunner.shared.status = text }
-            } }
-            DispatchQueue.main.async {
-                let me = TimingRunner.shared
-                me.running = false
-                me.control = nil
-                switch result {
-                case .success(let timing):
-                    Prefs.store.set(timing.data, forKey: Prefs.accurateTiming)
-                    let models = legs.filter { $0.reader != .vision }.count
-                    me.status = models == 0 ? "Measured Vision on this Mac."
-                        : "Measured Vision and \(models) model reading\(models == 1 ? "" : "s") on this Mac."
-                case .failure(let error):
-                    me.status = "Nothing was changed: " + error.localizedDescription
+    /// The readers the owner approved for each kind of page (C57), off by default. A stored
+    /// choice that stops fitting under the memory slider is run as Vision
+    /// (`Prefs.AccurateReader.chosen`), which `PageKindWarnings` says.
+    var body: some View {
+        Box("Accurate mode") {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Off unless you turn it on, and best left off for everyday scans. Vision, the reader built into "
+                     + "your Mac, already reads most books and articles well. No download is needed.")
+                    .font(.caption).foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                Toggle("Try extra readers for difficult print", isOn: $accurateMode)
+                    .help("A reader turns the words in a scanned picture into text you can select and search. "
+                          + "Extra readers may correct more words, but take longer. Your documents stay on your Mac.")
+                    .onChange(of: accurateMode) { on in if !on { downloads.stop(); timingRun.stop() } }
+                if accurateMode {
+                    Text("Newspapers can benefit most. Our extra readers took about 1½–3 times as long on "
+                         + "newspapers and 4 times as long on books and articles. Results vary by document.")
+                        .font(.caption).foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Row("1. Add a reader", labelWidth) {
+                        Button("Downloads…") { showModels = true }
+                            .help("Compare extra readers, their space and memory needs, then choose what to download.")
+                        Spacer()
+                    }
+                    Text(modelsSummary).font(.caption).foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    DownloadProgressRow(labelWidth: labelWidth)
+                    Row("2. Use it for", labelWidth) {
+                        Button("Choose pages…") { showPageKinds = true }
+                        Spacer()
+                    }
+                    Text(kindsSummary).font(.caption).foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Text("Downloading makes a reader available; choose it for a kind of page to use it. "
+                         + "Until then, Vision keeps reading everything. Your documents never leave your Mac.")
+                        .font(.caption).foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    PageKindWarnings(labelWidth: labelWidth)
+                    Row("Memory limit", labelWidth) {
+                        Slider(value: $modelMemoryGB, in: Prefs.modelMemoryRange, step: 1)
+                            .accessibilityLabel("Most working memory an extra reader may use")
+                            .accessibilityValue("\(Int(modelMemoryGB)) gigabytes")
+                        Text("\(Int(modelMemoryGB)) GB")
+                            .frame(width: 42, alignment: .trailing)
+                    }
+                    .onChange(of: modelMemoryGB) { gb in
+                        accurateReader = Prefs.AccurateReader.chosen(accurateReader, .other, memoryGB: gb).rawValue
+                        accurateNewspaperReader = Prefs.AccurateReader.chosen(accurateNewspaperReader, .newspaper,
+                                                                              memoryGB: gb).rawValue
+                    }
+                    Text("Memory is temporary working space, separate from disk storage. GB means gigabytes. "
+                         + "The default is \(Int(Prefs.defaultModelMemoryGB())) GB on this Mac. If a reader exceeds "
+                         + "the limit, it stops and Vision's text is kept for that page. A reader that needs more "
+                         + "than the limit cannot be chosen.")
+                        .font(.caption).foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    if Prefs.physicalGB() < 16 {
+                        Label("This Mac has \(Int(Prefs.physicalGB().rounded())) GB in total. Extra readers may "
+                              + "slow other apps; keep the limit low.", systemImage: "exclamationmark.triangle")
+                            .font(.caption).foregroundStyle(.orange)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
                 }
             }
+            .disabled(runInProgress)
+            // Cancellation stays available while settings themselves are locked by a batch.
+            if accurateMode || timingRun.running { timingRow }
+        }
+        .sheet(isPresented: $showModels) { AccurateModelsDialog() }
+        .sheet(isPresented: $showPageKinds) { AccuratePageKindsDialog() }
+    }
+
+    /// Each model reader's state: not downloaded, downloaded, enabled.
+    private var modelsSummary: String {
+        let enabled = Prefs.AccurateReader.enabled(raw: accurateEnabled)
+        return Prefs.AccurateReader.downloadable.map { reader in
+            "\(reader.name) " + (!reader.toFetch().isEmpty ? "not downloaded"
+                                 : enabled.contains(reader) ? "available to choose" : "downloaded, turned off")
+        }.joined(separator: "; ") + "."
+    }
+
+    /// Which reader each kind of page is read with.
+    private var kindsSummary: String {
+        let enabled = Prefs.AccurateReader.enabled(raw: accurateEnabled)
+        let news = Prefs.AccurateReader.chosen(accurateNewspaperReader, .newspaper, memoryGB: modelMemoryGB,
+                                               enabled: enabled)
+        let other = Prefs.AccurateReader.chosen(accurateReader, .other, memoryGB: modelMemoryGB, enabled: enabled)
+        return "Newspapers: \(news.name). Books & other pages: \(other.name)."
+    }
+
+    /// "Measure on this Mac": times the readers that are ready here and replaces the speed
+    /// column (`TimingRun`). Speed only; the accuracy column stays ours.
+    @ViewBuilder
+    private var timingRow: some View {
+        let legs = TimingRun.legs(memoryGB: modelMemoryGB)
+        VStack(alignment: .leading, spacing: 6) {
+        Text("A speed check starts by itself after each download, once the app has finished any files it "
+             + "is reading. Its times for this Mac replace our test Mac's in Choose pages. You can stop it "
+             + "or measure again below; it uses sample pages, not your documents.")
+            .font(.caption).foregroundStyle(.secondary)
+            .fixedSize(horizontal: false, vertical: true)
+        Row("Speed check", labelWidth) {
+            if timingRun.running {
+                Button("Stop") { timingRun.stop() }
+                ProgressView().controlSize(.small)
+            } else {
+                Button("Measure on this Mac") { timingRun.start(legs, memoryGB: modelMemoryGB) }
+                    .disabled(runInProgress)
+                    .help("Checks speed again using sample pages and every downloaded reader that fits "
+                          + "the memory limit. It updates the time estimates in Choose pages, and can be "
+                          + "used once your files have finished. This measures speed, not accuracy.")
+            }
+            Text(timingRun.running ? timingRun.status ?? ""
+                 : [timingRun.status, TimingRunner.plan(legs)].compactMap { $0 }.joined(separator: " "))
+                .font(.caption2).foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+            Spacer()
+        }
         }
     }
 
-    func stop() { control?.cancel() }
-
-    /// What a run would time and about how long it takes here.
-    nonisolated static func plan(_ legs: [TimingRun.Leg]) -> String {
-        let models = legs.filter { $0.reader != .vision }
-        let minutes = max(1, Int((TimingRun.estimate(legs) / 60).rounded(.up)))
-        return models.isEmpty
-            ? "Times Vision only: no model reader is downloaded yet. About \(minutes) min."
-            : "Times Vision and \(models.count) model reading\(models.count == 1 ? "" : "s"), about \(minutes) min on our Mac."
-    }
-
-    /// The table's footnote on speed: whose it is.
-    nonisolated static func speedNote(_ timing: Prefs.AccurateTiming?) -> String {
-        guard let timing, !timing.seconds.isEmpty else { return "Speed is ours, on one Mac." }
-        let date = DateFormatter.localizedString(from: timing.measured, dateStyle: .medium, timeStyle: .none)
-        return "Speed is estimated for this Mac from a timing run on \(date); a speed marked (ours) "
-            + "is from our Mac."
-    }
 }

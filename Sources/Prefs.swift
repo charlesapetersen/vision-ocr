@@ -39,9 +39,9 @@ enum Prefs {
             case .text:
                 // Verified: mac-ocr's ocr subcommand always rasterises and runs
                 // Vision, so an existing text layer is never read back.
-                return "Always re-runs Vision, ignoring any existing text layer."
+                return "Reads the page pictures again, even if the PDF already has selectable text."
             case .searchablePDF:
-                return "Copies each PDF with an invisible, selectable text layer."
+                return "Creates a PDF you can select text in and search. Keeps the original file."
             }
         }
     }
@@ -80,12 +80,9 @@ enum Prefs {
         var blurb: String {
             switch self {
             case .maximum:
-                return "Photographs keep every pixel. Files are about 15% smaller "
-                     + "than before — the saving comes from the text, not the picture."
+                return "Keeps all picture detail. Largest files."
             case .balanced:
-                return "Photographs keep half their resolution, which on a printed "
-                     + "halftone is hard to tell from the original. Files are about "
-                     + "a third the size."
+                return "Keeps half the picture detail, usually enough for printed photographs. Smaller files."
             case .smallest:
                 // ⚠️ This blurb used to end *"though nothing is lost from them"*, and C28
                 // question 2b measured that false on 2026-08-21. Not of a photograph — of the
@@ -195,7 +192,7 @@ enum Prefs {
             switch self {
             case .newspaper: return "Newspaper"
             case .typescript: return "Typescript"
-            case .photographs: return "Photographs"
+            case .photographs: return "Photos"
             case .bookScan: return "Book scan"
             }
         }
@@ -281,15 +278,15 @@ enum Prefs {
         /// The label each written key wears in the panel below, so the line
         /// points at controls the user can actually see and check.
         static let settingLabels: [String: String] = [
-            Prefs.rebuildImages: "Rebuild page images",
-            Prefs.useJBIG2: "Compress with JBIG2",
+            Prefs.rebuildImages: "Replace old selectable text",
+            Prefs.useJBIG2: "Make text pages smaller",
             Prefs.joinHyphenated: "Find words broken across two lines",
-            Prefs.fast: "Fast",
-            Prefs.rebuildMode: "Rebuild as",
+            Prefs.fast: "Faster reading",
+            Prefs.rebuildMode: "Page appearance",
             Prefs.photoDetail: "Photo detail",
             Prefs.imageDetail: "Photographed pages",
-            Prefs.confidence: "Uncertain text",
-            Prefs.languageCorrection: "Language correction",
+            Prefs.confidence: "Unsure words",
+            Prefs.languageCorrection: "Use spelling and context to help",
         ]
 
         private func write(to d: UserDefaults) {
@@ -483,7 +480,7 @@ enum Prefs {
         var name: String {
             switch self {
             case .vision: return "Vision (built in)"
-            case .visionRegions: return "Vision with layout regions"
+            case .visionRegions: return "Vision, section by section"
             case .paddle: return "PaddleOCR-VL"
             case .falcon: return "Falcon-OCR"
             }
@@ -579,11 +576,11 @@ enum Prefs {
             let times = (self == .vision ? "" : String(format: ", %.1f× Vision", speed.seconds / base.seconds))
                 // Beside readers this Mac timed, one it did not says so.
                 + (!speed.measured && timing?.seconds.keys.contains { $0.hasSuffix(".\(kind.rawValue)") } == true
-                   ? " (ours)" : "")
+                   ? " (test Mac)" : "")
             let download = f.downloadMB == 0 ? "none"
                 : f.downloadMB < 500 ? "\(f.downloadMB) MB"
                 : String(format: "%.1f GB", Double(f.downloadMB) / 1000)
-            return ["about \(f.wrongPer1000)", "about \(seconds) s a page\(times)",
+            return ["about \(f.wrongPer1000)", "about \(seconds) seconds\(times)",
                     f.memoryGB == 0 ? "no extra" : String(format: "%.1f GB", f.memoryGB), download]
         }
 
@@ -606,9 +603,9 @@ enum Prefs {
         var readsWell: String {
             switch self {
             case .vision: return "Built in; fast on every kind of page."
-            case .visionRegions: return "Newspapers: Vision reading each block of the layout on its own."
-            case .paddle: return "Print and newspapers, at under half Falcon-OCR's memory."
-            case .falcon: return "The fewest words wrong or missing, on print and on newspapers."
+            case .visionRegions: return "For newspapers: helps Vision read each block of text on its own. The smallest download."
+            case .paddle: return "For books, articles and newspapers: fewer word mistakes in our sample, using less memory than Falcon-OCR."
+            case .falcon: return "For books, articles and newspapers: the fewest word mistakes in our sample, using more memory than PaddleOCR-VL."
             }
         }
 

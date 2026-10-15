@@ -426,6 +426,9 @@ enum Runner {
         func leaf(_ path: String) -> String { (path as NSString).lastPathComponent }
 
         var lines: [String] = []
+        let reading = d.bool(forKey: Prefs.accurateMode)
+            ? "read the words with the readers chosen for each kind of page"
+            : "read the words with Vision, the reader built into this Mac"
         // "Nowhere yet" is not "beside each original". A run cannot start in
         // this state, and the preview now says so rather than showing a
         // plausible command against a destination nobody chose.
@@ -438,19 +441,19 @@ enum Runner {
         case .text:
             let format = Prefs.TextFormat(rawValue: d.string(forKey: Prefs.textFormat) ?? "")
                 ?? .text
-            lines.append("1. recognise the text with Vision")
+            lines.append("1. \(reading)")
             lines.append("2. write it as \(format.fileExtension) → [name].\(format.fileExtension)")
         case .searchablePDF:
             var steps: [String] = []
             let rebuilding = d.bool(forKey: Prefs.rebuildImages)
             let how = Flattener.Mode(rawValue: d.string(forKey: Prefs.rebuildMode) ?? "") ?? .auto
             if rebuilding {
-                steps.append("rebuild pages as \(how.label.lowercased()) images "
-                             + "(drops any existing text layer)")
+                steps.append("make fresh page pictures, replacing old selectable text "
+                             + "(\(how == .grayscale ? "grey tones" : how.label.lowercased()) appearance)")
             }
-            steps.append("recognise the text with Vision"
+            steps.append(reading
                          + (rebuilding ? " from those page images" : ""))
-            steps.append("write the invisible text layer")
+            steps.append("add selectable, searchable words behind the page picture")
 
             // The compression step is two binaries, found the awkward way that
             // mac-ocr used to be. Name them, or say plainly that they are
@@ -467,17 +470,16 @@ enum Runner {
                         rawValue: d.string(forKey: Prefs.photoDetail) ?? "") ?? .balanced
                     steps.append("store text and pictures separately on pages that "
                                  + "have both (\(detail.label.lowercased()) photo detail)")
-                    steps.append("compress each page with \(leaf(encoder)) "
-                                 + "and merge with \(leaf(merger))")
+                    steps.append("make text pages smaller and save the PDF (with the helper tools "
+                                 + "\(leaf(encoder)) and \(leaf(merger)))")
                 } else {
                     let missing = [JBIG2.encoder == nil ? "jbig2" : nil,
                                    JBIG2.merger == nil ? "qpdf" : nil].compactMap { $0 }
-                    note = "JBIG2 compression is on, but \(missing.joined(separator: " and ")) "
-                        + "could not be found — that step is skipped and CoreGraphics' Flate "
-                        + "is used instead."
+                    note = "The optional compression tools (\(missing.joined(separator: " and "))) "
+                        + "could not be found. The PDF is still saved, using more space."
                 }
             }
-            steps[steps.count - 1] += " → [name].ocr.pdf"
+            steps[steps.count - 1] += " → a new file, [name].ocr.pdf; the original is kept"
             lines += steps.enumerated().map { "\($0.offset + 1). \($0.element)" }
             if let note { lines.append(note) }
         }
