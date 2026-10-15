@@ -2082,6 +2082,49 @@ say so in the commit.
             unchanged, and the suite passes. (uses: build,model:12) (context: page-kinds-three, 2026-10-14)
       - [x] **pk-settings** — the three kinds in the dialog and the routing, with the overlap rule.
             (blocked-on: pk-photo-detect, pk-photo-measure, sp-accurate)
+- [ ] **page-kind-handwriting** — a fourth kind of page in Choose by Kind of Page, handwritten pages, recognised
+      by themselves and read by their own reader. (uses: build,model:12) (blocked-on: pk-upright)
+      THE ASK (owner, 2026-10-15), from the proposal in `ops/autonomous/notes/page-kinds-three.md`. On 84 handwritten
+      words in the photographed sample, Falcon-OCR missed 583 per 1,000 as stored and 500 with the turned pages set
+      upright, against Vision's and PaddleOCR-VL's 750. That is the best of the three, and it still loses about half,
+      on a small sample. The app has no way to tell a handwritten page yet.
+      SAMPLE: Archive Suite's OCR truth set (owner, 2026-10-15). It sits in
+      `~/Library/Caches/ArchiveSuiteRehearsal/ocr-truth/`: `pages.tsv` labels 99 photographed archive pages by
+      `kind`, `pages/` holds the images and `truth/<page>.txt` each page's full transcription. 19 pages are
+      `handwritten` (about 2,950 words, from iPad, iPhone 6 and Pixel 9 cameras) and 2 are `mixed`; the other 78
+      (typewritten and printed, from the same cameras) are the negatives detection needs. Read it only and copy what
+      is used into `$STATE/hw-sample/`; never write in Archive Suite's cache. Leave out any page already in
+      `PK-PHOTO-SAMPLE-2026-10-14.tsv`. Its transcriptions are whole pages and normalised as
+      `ArchiveProcessor/segbench-results/ocr-panel-local.md` says (Archive Suite repo), not line bands, so score with
+      this repo's word measure over the whole page and do not set the figures beside Archive Suite's.
+      What that panel found on 16 of the handwritten pages, for context: Apple Vision missed 57% of the words, while
+      several small chat models missed 7-9% (Qwen3.5 9B 7.7%, Gemma 4 31B 7.8%) and Qwen3.6 27B 6.6%
+      (`ocr-panel-local-groups.csv`, attribute `kind`). If Falcon-OCR and PaddleOCR-VL are far behind those, say so in
+      the notes as a question for the owner about the reader. Do not add a reader that was not approved.
+      For a held-out detection check, add about 15 photos tagged Handwritten from the 286 in `~/Desktop/Google
+      Drive/Archival Photos JPEGS`, found through the `_kMDItemUserTags` xattr (Spotlight indexes none of them),
+      read only. Detection needs only the tag, so these need no truth.
+      DETECTING HANDWRITING, per page: Vision's recognised text carries no handwriting flag, so judge from what it
+      returns (low confidence spread over most lines, irregular line baselines and heights) and from the ink; a
+      typed page with handwritten notes in its margin is not a handwritten page. DONE WHEN for detection: at least
+      nine in ten of the truth set's handwritten pages, and nine in ten of the held-out photos, are called
+      handwritten, and no typed or printed page of the truth set, nor any page in `PK-PHOTO-DETECT-2026-10-14.tsv`
+      or `PAGE-KIND-2026-10-12.tsv`, is.
+      FIGURES: measure the three readers on the truth set's handwritten and mixed pages after `pk-upright`, and put the result in
+      the settings table labelled as a small sample. If no reader beats Vision by a clear margin on the larger
+      sample, say so in the notes and stop before the dialog sub-box; that is the owner's call to make again.
+      DONE WHEN, in the built app: the dialog offers four kinds; a handwritten page routes to its chosen reader;
+      the rule for a handwritten page that is also a photograph or a newspaper is stated in the dialog (suggested:
+      handwriting wins over photograph, newspaper wins over handwriting) with the option rejected recorded;
+      `ux-regression.sh` is no worse with the mode off and on; the suite passes.
+      ESTIMATE: 3 sessions. BOUND: rule 10. (context: owner request 2026-10-15)
+      (notes: ops/autonomous/notes/page-kind-handwriting.md)
+      - [ ] **hw-pages** — copy the truth set's pages and draw the held-out photos, listed in a dated TSV.
+      - [ ] **hw-detect** — the handwriting detector, checked as above. (blocked-on: hw-pages)
+      - [ ] **hw-measure** — the three readers measured on the handwritten pages, and the table's figures.
+            (blocked-on: hw-pages, pk-upright)
+      - [ ] **hw-settings** — the fourth kind in the dialog and the routing, with the overlap rule.
+            (blocked-on: hw-detect, hw-measure)
 - [ ] **model-throughput** — measure whether keeping a model loaded between pages, or running two model readers
       at once, makes a batch read with Falcon-OCR or PaddleOCR-VL finish sooner. (uses: build,model:12)
       THE QUESTION (owner, 2026-10-14): with the large models, does reading several files at once still help as
