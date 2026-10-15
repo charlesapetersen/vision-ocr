@@ -2195,7 +2195,23 @@ say so in the commit.
       - [ ] **qw-place** — whether align can place the pick's words, and the decision on the text page.
             (blocked-on: hw-panel)
       - [ ] **qw-build** — the pick in the dialog, and the text page if qw-place calls for it.
-            (blocked-on: qw-place)
+            (blocked-on: qw-place, hw-settings)
+- [ ] **lighton-print** — check LightOnOCR-3-4B on print and newspapers, scored beside Falcon-OCR.
+      (uses: build,model:12) (blocked-on: hw-panel)
+      THE ASK (owner, 2026-10-15): "queue a one-session check of LightOnOCR-3-4B on the bake-off sample, run only
+      after hw-panel shows it works in the lab, scored beside Falcon-OCR." If hw-panel found that no LightOnOCR-3-4B
+      build runs in the lab, close this item with that line and do nothing else.
+      MEASURE. Read `OCR-SAMPLE-2026-10-04.tsv`'s 67 pages with the build hw-panel used, whole page and crops as
+      `bakeoff.sh` reads the others, with its default empty prompt. Score with `ops/ocrlab/score-bakeoff.py`, and
+      add its row to a new dated `OCR-BAKEOFF-<date>.tsv` beside falcon-ocr-bf16's row from
+      `OCR-BAKEOFF-2026-10-07.tsv`. Falcon missed 0.23% of words on old print, 0.52% on newspapers and 0.63% on
+      modern pages, so the room is small. Its predecessor lightonocr-2-1b-4bit peaked at 11,273 MB on newspaper
+      crops and the guard killed some newspapers. Keep the `ModelGuard` caps, and count a page the guard kills as
+      all missing, as the bake-off does.
+      DONE WHEN: the row is in the TSV with time and peak memory, and the notes say in a few lines whether it beats
+      Falcon-OCR on any class by a clear margin and fits in memory. If it does, queue adding it as its own item with
+      an ESTIMATE; do not build it here.
+      ESTIMATE: 1 session. BOUND: rule 10. (context: owner request 2026-10-15)
 - [ ] **model-throughput** — measure whether keeping a model loaded between pages, or running two model readers
       at once, makes a batch read with Falcon-OCR or PaddleOCR-VL finish sooner. (uses: build,model:12)
       THE QUESTION (owner, 2026-10-14): with the large models, does reading several files at once still help as
