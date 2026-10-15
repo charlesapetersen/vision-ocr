@@ -2189,11 +2189,12 @@ say so in the commit.
       on; non-handwritten outputs are unchanged; the suite passes.
       ESTIMATE: 4 sessions (two if none passes). BOUND: rule 10. (context: owner request 2026-10-15)
       (notes: ops/autonomous/notes/hw-qwen.md)
-      - [ ] **hw-coverage** — the share of truth words inside Vision's line boxes on the handwritten pages.
-      - [ ] **hw-panel** — the four readers on the handwritten pages, against the bar, and the pick.
-            (blocked-on: hw-coverage)
-      - [ ] **qw-place** — whether align can place the pick's words, and the decision on the text page.
-            (blocked-on: hw-panel)
+      - [x] **hw-coverage** — the share of truth words inside Vision's line boxes on the handwritten pages.
+            About 82%, by eye (`HW-COVERAGE-2026-10-15.tsv`).
+      - [x] **hw-panel** — the four readers on the handwritten pages, against the bar, and the pick.
+            Pick: LightOnOCR-3-4B, 96 missed per 1,000 (`HW-PANEL-2026-10-15.tsv`).
+      - [x] **qw-place** — whether align can place the pick's words, and the decision on the text page.
+            Align places 65% of its words, so handwritten pages get the text page (`HW-PLACE-2026-10-15.tsv`).
       - [ ] **qw-build** — the pick in the dialog, and the text page if qw-place calls for it.
             (blocked-on: qw-place, hw-settings)
 - [ ] **lighton-print** — check LightOnOCR-3-4B on print and newspapers, scored beside Falcon-OCR.

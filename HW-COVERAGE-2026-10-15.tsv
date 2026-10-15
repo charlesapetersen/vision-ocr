@@ -1,0 +1,29 @@
+# hw-coverage (hw-qwen), 2026-10-15: how much of each handwritten page Vision finds as lines, on the truth set's 19 handwritten and 2 mixed pages (HW-PAGES-2026-10-15.tsv).
+# Each page through the app's own route (Tools/score-gate.swift's harness taking images, plain Vision, its own defaults domain; built from b086458's Sources).
+# The truth has no word positions, so coverage was judged two ways. visual_*: a subagent looked at each page with Vision's lines drawn over it and counted the sheet's text lines,
+# covered (about 80% of their words inside a box), partial, missed, and estimated the share of words inside a box (word_share, to 5%). Visual estimates, not measurements.
+# vision_lines: the text layer's lines (PDFKit selectionsByLine). ink_share: share of dark pixels (under 0.7 of the local mean and 160/255, 2% margin left out) inside some text-layer line box padded by a quarter of its height.
+# Measured, but NOT usable: a dark background or binder rings counts as uncovered ink (p022 0.48 against 70% by eye) and faint pencil hardly counts as ink (p094 0.07 against 25%). Kept for the record.
+# Totals by eye: 503 lines, 392 covered (78%), 64 partial, 47 missed; words inside a box about 82% (weighted by lines). Vision itself misses 561 per 1,000 words, so most of its misses are misreadings of lines it found.
+page	kind	vision_lines	visual_total	visual_covered	visual_partial	visual_missed	word_share	ink_share	note
+p007	handwritten	15	14	11	2	1	90%	0.932	date line missed; "I am practically" outside
+p009	mixed	47	45	38	5	2	90%	0.848	memo print covered; margin notes and figure sketch partial
+p015	handwritten	50	40	40	0	0	100%	0.960	block capitals, all covered
+p022	handwritten	33	40	28	4	8	70%	0.480	cursive; about 1 in 5 lines missed; first footer line missed
+p031	mixed	18	14	14	0	0	95%	0.532	questionnaire answers all covered
+p040	handwritten	26	27	20	4	3	80%	0.754	closing paragraph largely missed
+p045	handwritten	15	15	15	0	0	100%	0.800	clean cursive, all covered
+p046	handwritten	14	16	15	0	1	90%	0.798	"Univ. of Chicago" missed; printed header/footer covered
+p047	handwritten	19	21	13	7	1	75%	0.524	line starts often outside
+p048	handwritten	46	19	14	4	1	80%	0.758	sparse large hand; signature missed
+p049	handwritten	18	18	11	5	2	70%	0.681	notes; blue-ink lines and side sketch missed
+p050	handwritten	22	30	11	7	12	45%	0.501	dense corrections; middle block missed
+p051	handwritten	18	16	16	0	0	100%	0.974	all covered
+p052	handwritten	25	25	25	0	0	100%	0.986	all covered
+p053	handwritten	23	25	23	1	1	95%	0.931	signature missed
+p054	handwritten	20	26	10	8	8	50%	0.629	notes; many indented sub-items missed
+p055	handwritten	27	17	16	1	0	95%	0.924	nearly all covered
+p056	handwritten	34	21	21	0	0	95%	0.911	sparse hand; a few line-start words outside
+p086	handwritten	39	27	26	1	0	95%	0.958	small faint hand; last line partial
+p094	handwritten	12	17	2	9	6	25%	0.070	motion-blurred photo; mostly missed
+p096	handwritten	50	30	23	6	1	85%	0.879	faint pencil-like; scattered gaps

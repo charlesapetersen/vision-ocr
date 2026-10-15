@@ -1,0 +1,50 @@
+# qw-place (hw-qwen), 2026-10-15: can the app's align arrangement (Recogniser.alignedReading, as Falcon-OCR uses) place a chat model's handwriting words? Each of the 21 pages through the app's own route
+# (Tools/score-gate.swift's harness, its own defaults domain, built from b086458's Sources) with every kind's reader a script handing back the hw-panel reading already made, so the PDF is what production would publish.
+# placed: share of the reading's words that are in the finished PDF's page.string (bag match). kept: truth words the PDF has / truth words the reading has. Find, all 21 pages: of 1,405 distinct truth words of 4+ letters, PDFKit findString finds 922 in the align PDFs (page.string holds 898; Find also matches inside words), 585 in Vision's own.
+# Threshold: align cannot place a reader when kept is under 0.90 over the 21 pages. Written AFTER the Qwen run below was known (placed 0.65), though before LightOn's; the item asked for it before measuring. placed is the item's own measure; both are far under 0.90.
+# Result: LightOnOCR-3-4B placed 0.654, kept 0.708; missed per 1,000 on handwriting 96 as read -> 367 through align (Qwen3.5-9B: 91 -> 365). Cannot place: handwritten pages get a text page.
+reader	page	reading_words	placed	truth_in_reading	truth_in_pdf	kept
+lighton3	p007	70	0.63	66	45	0.68
+lighton3	p009	161	0.79	140	116	0.83
+lighton3	p015	187	0.98	182	200	1.10
+lighton3	p022	290	0.72	289	207	0.72
+lighton3	p031	49	0.78	49	38	0.78
+lighton3	p040	180	0.68	174	123	0.71
+lighton3	p045	114	0.98	112	110	0.98
+lighton3	p046	83	0.84	80	68	0.85
+lighton3	p047	100	0.75	97	74	0.76
+lighton3	p048	63	0.62	63	41	0.65
+lighton3	p049	81	0.51	70	39	0.56
+lighton3	p050	161	0.37	141	61	0.43
+lighton3	p051	95	0.88	88	77	0.88
+lighton3	p052	155	0.96	149	143	0.96
+lighton3	p053	154	0.82	142	125	0.88
+lighton3	p054	142	0.49	126	66	0.52
+lighton3	p055	87	0.87	84	75	0.89
+lighton3	p056	132	0.72	124	90	0.73
+lighton3	p086	321	0.69	284	205	0.72
+lighton3	p094	89	0.04	61	4	0.07
+lighton3	p096	315	0.12	223	35	0.16
+lighton3	ALL	3029	0.654	2744	1942	0.708
+qwen9b	p007	78	0.68	67	49	0.73
+qwen9b	p009	158	0.84	140	121	0.86
+qwen9b	p015	188	0.98	187	205	1.10
+qwen9b	p022	291	0.72	288	206	0.72
+qwen9b	p031	49	0.80	49	39	0.80
+qwen9b	p040	185	0.68	185	125	0.68
+qwen9b	p045	114	0.98	111	109	0.98
+qwen9b	p046	79	0.81	77	68	0.88
+qwen9b	p047	97	0.74	93	70	0.75
+qwen9b	p048	63	0.62	61	41	0.67
+qwen9b	p049	84	0.50	70	38	0.54
+qwen9b	p050	209	0.33	164	66	0.40
+qwen9b	p051	94	0.87	88	76	0.86
+qwen9b	p052	154	0.95	146	139	0.95
+qwen9b	p053	155	0.82	142	124	0.87
+qwen9b	p054	142	0.47	128	64	0.50
+qwen9b	p055	90	0.88	86	76	0.88
+qwen9b	p056	131	0.74	122	92	0.75
+qwen9b	p086	322	0.68	287	208	0.72
+qwen9b	p094	85	0.05	56	4	0.07
+qwen9b	p096	319	0.12	210	35	0.17
+qwen9b	ALL	3087	0.648	2757	1955	0.709
