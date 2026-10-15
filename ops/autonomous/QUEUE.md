@@ -1999,9 +1999,15 @@ say so in the commit.
             passage beside the source (include the signature and a line with small type), and recommend one.
             (blocked-on: pps-route) Done 2026-10-14: `PHOTO-SIZE-DECISION-2026-10-14.md`, steps 245/149/113/87/79
             KB (background 1/2 to 1/8; the 37.6 KB stencil puts 60 KB out of reach); recommended 1/4, 113 KB.
-      - [ ] **pps-owner-pick** — the owner picks the step. Tick it with the date and the owner's words.
-            (blocked-on: pps-ladder) [hold] needs: owner — legibility is the owner's judgement
-      - [ ] **pps-ship** — make the picked step the default for image inputs, and check DONE WHEN above.
+      - [x] **pps-owner-pick** — the owner picks the step. Tick it with the date and the owner's words.
+            (blocked-on: pps-ladder) Done 2026-10-14, owner: "Let's create a slider in settings so users can
+            choose. Set the default to the approach that produced the 87KB file." That is step 1/6.
+      - [ ] **pps-ship** — a slider in Settings for image inputs, with the five ladder steps (1/2, 1/3, 1/4,
+            1/6, 1/8, ordered from more detail to smaller files) and the default at 1/6, Baker's 87 KB step.
+            Plain words at the ends and under the slider, beside the figure from Baker for the step chosen. It
+            sets the factors `mrcLayers` applies to a page that came from an image file; the existing Photo
+            detail picker for scanned PDFs is unchanged. Carry it through `RunReport` and the presets like the
+            other settings. A check goes red without it, and DONE WHEN above is checked at the default.
             (blocked-on: pps-owner-pick)
 - [ ] **settings-plain** — make Settings understandable to someone with no technical background, starting with
       the Accurate mode box, and measure a reader's speed on its own once it is downloaded. (uses: build)
