@@ -838,6 +838,10 @@ final class Harness: NSObject, NSApplicationDelegate {
                    })
                   .joined(separator: "\n").appending("\n").utf8)
             .write(to: breakdown, options: .atomic)
+        // The batch's time to its last outcome. The process's own wall time is not it: the batch's
+        // end is seen only on the 20 s timer, so batches that finished at 149 s and 170 s ran for
+        // 162 s and 182 s by the clock (model-two-readers).
+        let lastOutcome = took.compactMap { u, t in began[u].map { $0.timeIntervalSince(started) + t } }.max() ?? 0
         print("""
 
         === RESULT ===
@@ -855,6 +859,7 @@ final class Harness: NSObject, NSApplicationDelegate {
           dimmest page \(Self.fmt(perDocument.map(\.dimmest).min() ?? 1))
           output bytes \(bytes / 1_048_576) MB
           minutes      \(minutes)
+          seconds      \(String(format: "%.1f", lastOutcome))
         === 1.7.0 baseline: 255 ok, 0 failed, 12.6M chars, 15 colour, 23 min ===
         === note: 232 testdocs, NOT the 255-document library set ===
         === note: pages, mean ink, blank/faded pages, worst and dimmest page are \

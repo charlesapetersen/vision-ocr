@@ -1164,7 +1164,7 @@ enum Recogniser {
                                        settings: settings, isCancelled: isCancelled)
         }
         let reading = try modelReading(of: shown, reader: settings.modelReader, memoryGB: settings.modelMemoryGB,
-                                       isCancelled: isCancelled)
+                                       size: readingSize(fitted), isCancelled: isCancelled)
         // Nothing, over a page Vision read lines on, is a reader that failed quietly.
         if modelWords(reading).isEmpty && !fitted.isEmpty {
             throw Failure.modelReader("\(settings.modelReader) read nothing on a page holding "
@@ -1452,8 +1452,17 @@ enum Recogniser {
     /// `slots` 2, any one free slot; with 1, every slot, so that a reader too large to share
     /// the memory never runs beside another, whichever reader that is. Slots are taken in
     /// order and a reading never waits holding a later one, so two waiters cannot deadlock.
-    static func takeReaderSlot(_ slots: Int, in dir: URL = FileManager.default.temporaryDirectory,
+    ///
+    /// Waiters go longest first: each leaves a ticket in `visionocr-model-reader.queue` naming
+    /// its `size` (the characters Vision read on the page) and when it asked, and tries for a
+    /// slot only while no live ticket ranks ahead of it. Taken in no order, a batch's longest
+    /// pages (Falcon-OCR 40-56 s against 10-20 s) often started last and ran alone while the
+    /// other slot stood idle (model-two-readers). A ticket is held under `flock`, so one whose
+    /// process has died is lockable, and is removed by whoever finds it.
+    static func takeReaderSlot(_ slots: Int, size: Int = 0, in dir: URL = FileManager.default.temporaryDirectory,
                                isCancelled: () -> Bool) throws -> [Int32] {
+        let ticket = ReaderTicket(size: size, in: dir)
+        defer { ticket?.withdraw() }
         var locks: [Int32] = []
         for i in 0..<readerSlotCount {
             let l = open(dir.appendingPathComponent("visionocr-model-reader.lock" + (i == 0 ? "" : ".\(i)")).path,
@@ -1472,18 +1481,83 @@ enum Recogniser {
             }
             usleep(100_000)
         }
+        // The rank is asked again at every try: a larger page may ask after this one began waiting.
+        func first() -> Bool { ticket?.isFirst() != false }
         if slots >= 2 {
             while held.isEmpty {
-                if let free = locks.first(where: { flock($0, LOCK_EX | LOCK_NB) == 0 }) { held = [free] } else { try wait() }
+                if first(), let free = locks.first(where: { flock($0, LOCK_EX | LOCK_NB) == 0 }) {
+                    held = [free]
+                } else { try wait() }
             }
         } else {
             for l in locks {
-                while flock(l, LOCK_EX | LOCK_NB) != 0 { try wait() }
+                while (held.isEmpty && !first()) || flock(l, LOCK_EX | LOCK_NB) != 0 { try wait() }
                 held.append(l)
             }
         }
         locks.filter { !held.contains($0) }.forEach { close($0) }
         return held
+    }
+
+    /// One waiting reading's place in `takeReaderSlot`'s queue: a file named
+    /// `<size>.<asked ns>.<pid>.<uuid>`, held under `flock` while its process lives.
+    struct ReaderTicket {
+        let queue: URL, name: String, size: Int, asked: UInt64, fd: Int32
+
+        /// Nil when the ticket cannot be written; the reading then waits unranked, as before.
+        init?(size: Int, in dir: URL) {
+            queue = dir.appendingPathComponent("visionocr-model-reader.queue")
+            try? FileManager.default.createDirectory(at: queue, withIntermediateDirectories: true)
+            self.size = max(0, size)
+            asked = UInt64(max(0, Date().timeIntervalSince1970 * 1e9))
+            name = "\(self.size).\(asked).\(getpid()).\(UUID().uuidString)"
+            // Created and locked in one call: between two, another waiter could find it lockable,
+            // take it for a dead one and remove it.
+            fd = open(queue.appendingPathComponent(name).path, O_CREAT | O_RDWR | O_EXLOCK | O_NONBLOCK, 0o600)
+            guard fd >= 0 else { return nil }
+            // A crashed reading's ticket ranked behind every waiter would otherwise stay.
+            for other in (try? FileManager.default.contentsOfDirectory(atPath: queue.path)) ?? [] where other != name {
+                if ReaderTicket.rank(other) != nil { _ = ReaderTicket.isLive(queue.appendingPathComponent(other).path) }
+            }
+        }
+
+        /// Whether the ticket at `path` is held by a live process; a dead one is removed.
+        static func isLive(_ path: String) -> Bool {
+            let f = open(path, O_RDWR)
+            guard f >= 0 else { return false }
+            defer { close(f) }
+            guard flock(f, LOCK_EX | LOCK_NB) == 0 else { return true }
+            unlink(path)
+            return false
+        }
+
+        /// A ticket's rank, (size, asked, name), from its file name; nil for any other file.
+        static func rank(_ name: String) -> (Int, UInt64, String)? {
+            let parts = name.split(separator: ".", maxSplits: 2)
+            guard parts.count == 3, let size = Int(parts[0]), let asked = UInt64(parts[1]) else { return nil }
+            return (size, asked, name)
+        }
+
+        /// Whether `a` goes before `b`: the larger page, then the earlier ask, then the name.
+        static func before(_ a: (Int, UInt64, String), _ b: (Int, UInt64, String)) -> Bool {
+            a.0 != b.0 ? a.0 > b.0 : a.1 != b.1 ? a.1 < b.1 : a.2 < b.2
+        }
+
+        /// True when no live ticket ranks ahead of this one; a dead one ahead is removed.
+        func isFirst() -> Bool {
+            let mine = (size, asked, name)
+            let names = (try? FileManager.default.contentsOfDirectory(atPath: queue.path)) ?? []
+            for other in names where other != name {
+                guard let r = ReaderTicket.rank(other), ReaderTicket.before(r, mine) else { continue }
+                if ReaderTicket.isLive(queue.appendingPathComponent(other).path) { return false }
+            }
+            return true
+        }
+
+        func withdraw() {
+            unlink(queue.appendingPathComponent(name).path)
+            close(fd)
+        }
     }
 
     /// The text `reader` writes for the page at `image`, run as `<reader> <image>
@@ -1498,32 +1572,40 @@ enum Recogniser {
     /// while the pressure is critical. Pressure and swap are the whole Mac's, so a reading that
     /// shared the memory with another (`readerSlots` 2) and was stopped by either is read again
     /// alone before it counts as failed: one of two Falcon-OCR readings on an 18 GB Mac was
-    /// stopped at critical pressure (model-two-readers). `slots` and `pressure` are for tests.
+    /// stopped at critical pressure (model-two-readers). `size`, the characters Vision read on the
+    /// page (`readingSize`), puts longer pages first among waiting readings (`takeReaderSlot`).
+    /// `slots` and `pressure` are for tests.
     static func modelReading(of image: URL, reader: String, crops: URL? = nil, memoryGB: Double,
-                             slots: Int? = nil, pressure: () -> Int32 = ModelGuard.pressure,
+                             size: Int = 0, slots: Int? = nil, pressure: () -> Int32 = ModelGuard.pressure,
                              isCancelled: () -> Bool = { false }) throws -> String {
         guard !reader.isEmpty else { throw Failure.modelSetup("no reader is set") }
         let shared = slots ?? readerSlots(reader: reader)
         if shared >= 2 {
             do {
-                return try modelReading(of: image, reader: reader, crops: crops, memoryGB: memoryGB, slots: shared,
-                                        alone: false, pressure: pressure, isCancelled: isCancelled)
+                return try modelReading(of: image, reader: reader, crops: crops, memoryGB: memoryGB, size: size,
+                                        slots: shared, alone: false, pressure: pressure, isCancelled: isCancelled)
             } catch is SharedMemoryStop {}
         }
-        return try modelReading(of: image, reader: reader, crops: crops, memoryGB: memoryGB, slots: 1,
+        return try modelReading(of: image, reader: reader, crops: crops, memoryGB: memoryGB, size: size, slots: 1,
                                 alone: true, pressure: pressure, isCancelled: isCancelled)
+    }
+
+    /// How long a page's reading is expected to be, for `takeReaderSlot`'s order: the characters
+    /// Vision read on it. A reader's time follows what it writes.
+    static func readingSize(_ lines: [SearchableWriter.Observation]) -> Int {
+        lines.reduce(0) { $0 + $1.text.count }
     }
 
     /// A reading that shared the memory stopped for the whole Mac's sake, to be read again alone.
     private struct SharedMemoryStop: Error {}
 
-    private static func modelReading(of image: URL, reader: String, crops: URL?, memoryGB: Double, slots: Int,
-                                     alone: Bool, pressure: () -> Int32, isCancelled: () -> Bool) throws -> String {
+    private static func modelReading(of image: URL, reader: String, crops: URL?, memoryGB: Double, size: Int,
+                                     slots: Int, alone: Bool, pressure: () -> Int32, isCancelled: () -> Bool) throws -> String {
         // At most `readerSlots` readings at a time across every process: a batch runs several
         // helpers at once, and each reading loads the model (Falcon-OCR peaks at 3.9 GB), so six
         // at once would ask more of an 18 GB Mac than it has. Released when the descriptors
         // close, which a crash does too.
-        let locks = try takeReaderSlot(slots, isCancelled: isCancelled)
+        let locks = try takeReaderSlot(slots, size: size, isCancelled: isCancelled)
         defer { locks.forEach { close($0) } }
         let out = FileManager.default.temporaryDirectory
             .appendingPathComponent("visionocr-reader-\(UUID().uuidString).txt")
@@ -2048,7 +2130,7 @@ enum Recogniser {
             throw Failure.modelReader("its crops could not be written (\(error.localizedDescription))")
         }
         var readings = try modelReading(of: shown, reader: reader, crops: crops, memoryGB: memoryGB,
-                                        isCancelled: isCancelled)
+                                        size: readingSize(lines), isCancelled: isCancelled)
             .components(separatedBy: "\n")
         if readings.last == "" { readings.removeLast() }
         guard readings.count == targets.count else {
@@ -2444,7 +2526,8 @@ enum Recogniser {
                                 reader: String, memoryGB: Double = Prefs.defaultModelMemoryGB(),
                                 isCancelled: () -> Bool = { false })
         throws -> [SearchableWriter.Observation] {
-        let raw = try modelReading(of: shown, reader: reader, memoryGB: memoryGB, isCancelled: isCancelled)
+        let raw = try modelReading(of: shown, reader: reader, memoryGB: memoryGB, size: readingSize(lines),
+                                   isCancelled: isCancelled)
         guard let blocks = modelBlocks(raw) else {
             throw Failure.modelReader("\(reader) wrote something other than blocks")
         }
@@ -2542,8 +2625,10 @@ enum Recogniser {
                                 isCancelled: () -> Bool = { false })
         throws -> [SearchableWriter.Observation] {
         let raw = ModelRuntime.readers[reader] != nil || reader == ModelRuntime.visionRegions
-            ? try layoutBlocks(of: shown, reader: reader, memoryGB: settings.modelMemoryGB, isCancelled: isCancelled)
-            : try modelReading(of: shown, reader: reader, memoryGB: settings.modelMemoryGB, isCancelled: isCancelled)
+            ? try layoutBlocks(of: shown, reader: reader, memoryGB: settings.modelMemoryGB, size: readingSize(lines),
+                               isCancelled: isCancelled)
+            : try modelReading(of: shown, reader: reader, memoryGB: settings.modelMemoryGB, size: readingSize(lines),
+                               isCancelled: isCancelled)
         guard var blocks = modelBlocks(raw) else {
             throw Failure.modelReader("\(reader) wrote something other than blocks")
         }
@@ -2573,7 +2658,7 @@ enum Recogniser {
     /// five places a fraction, so `modelBlocks` reads the same blocks the lab's did. A
     /// reading with another count of lines than crops fails the file, as there.
     static func layoutBlocks(of shown: URL, reader: String, memoryGB: Double = Prefs.defaultModelMemoryGB(),
-                             isCancelled: () -> Bool = { false }) throws -> String {
+                             size: Int = 0, isCancelled: () -> Bool = { false }) throws -> String {
         guard let image = loadImage(at: shown) else {
             throw Failure.modelReader("the page image \(shown.lastPathComponent) could not be read for its layout")
         }
@@ -2591,7 +2676,7 @@ enum Recogniser {
                                                         $0.element.x, $0.element.y, $0.element.width, $0.element.height) }
             try ("name\tx\ty\tw\th\toverlap\n" + rows.joined(separator: "\n") + "\n")
                 .write(to: list, atomically: true, encoding: .utf8)
-            var read = try modelReading(of: shown, reader: reader, crops: list, memoryGB: memoryGB,
+            var read = try modelReading(of: shown, reader: reader, crops: list, memoryGB: memoryGB, size: size,
                                         isCancelled: isCancelled)
                 .components(separatedBy: "\n")
             if read.last == "" { read.removeLast() }

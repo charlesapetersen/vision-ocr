@@ -18,3 +18,22 @@ base	falcon-ocr	3	182.00	0	10	0	1
 new	falcon-ocr	5	162.01	0	10	0	2
 base	falcon-ocr	4	181.88	0	10	0	1
 new	falcon-ocr	6	161.90	0	10	0	1
+# Session 2 (2026-10-16, 01:00-02:30). The gate's own wall_s above is rounded UP to its 20 s completion timer (score-gate
+# polls model.isRunning every 20 s), which is why every Falcon leg read 162/182/202 s. end_s below is the last
+# published PDF's mtime minus the leg's start, the batch's real end. variant prev = 9c2c8b9 (two slots, taken in no
+# order), new = longest page first (ReaderTicket), base = ff798aa (one reader). nl = new with a per-call timing log.
+variant	reader	rep	wall_s	end_s	gate_exit	published	fallbacks	max_pressure
+base	falcon-ocr	1	182.4	171.8	0	10	0	1
+new	falcon-ocr	1	162.3	149.7	0	10	0	2
+prev	falcon-ocr	1	162.3	149.4	0	10	0	2
+base	falcon-ocr	2	182.1	168.9	0	10	0	1
+new	falcon-ocr	2	161.9	146.5	0	10	0	1
+prev	falcon-ocr	2	161.9	155.0	0	10	0	1
+base	paddleocr-vl	1	121.9	100.6	0	10	0	1
+new	paddleocr-vl	1	81.9	79.9	0	10	0	1
+base	paddleocr-vl	2	121.8	101.4	0	10	0	1
+new	paddleocr-vl	2	101.9	84.9	0	10	0	1
+nl	falcon-ocr	1	162.2	148.4	0	10	0	1
+# Means of end_s. Falcon-OCR: base 170.4, new 148.2 (three legs with nl) -13.0%, prev 152.2 -10.7%. FAILS 15%.
+# PaddleOCR-VL: base 101.0, new 82.4, -18.4%. PASSES. nl's log: both slots busy from 2.1 s to 139.9 s; a Falcon page
+# read beside another took 1.5-1.6x its time alone (52-67 s against 30-44 s alone in model-throughput rep 2), so two slots do ~1.13x one's work.

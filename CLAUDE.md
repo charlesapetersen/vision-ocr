@@ -53,7 +53,7 @@ lets anything else through in seconds.
 ```sh
 ./build.sh            # build -> build/VisionOCR.app
 ./build.sh --install  # + install to /Applications
-./run_tests.sh        # 2,135 checks, no skips
+./run_tests.sh        # 2,137 checks, no skips
 ```
 
 The count on the `./run_tests.sh` line stays undated and current, because `check-staleness.sh` reads it

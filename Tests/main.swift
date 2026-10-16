@@ -13548,6 +13548,51 @@ do {
     check("a reader that may not share takes every slot once they are free, and nothing runs beside it",
           both?.count == Recogniser.readerSlotCount && besideWaits, "\(String(describing: both)) \(besideWaits)")
     both?.forEach { close($0) }
+    // Waiting readings go longest first: a live ticket for a larger page holds a smaller one back
+    // with both slots free, a larger one passes it, and a dead process's ticket is removed.
+    let queueDir = tmp.appendingPathComponent("reader-queue")
+    try? FileManager.default.createDirectory(at: queueDir, withIntermediateDirectories: true)
+    let ahead = Recogniser.ReaderTicket(size: 1000, in: queueDir)
+    let fromSmall = Date()
+    var smallWaits = false
+    do { _ = try Recogniser.takeReaderSlot(2, size: 10, in: queueDir, isCancelled: { Date().timeIntervalSince(fromSmall) > 0.3 }) }
+    catch Recogniser.Failure.cancelled { smallWaits = true } catch {}
+    let large = try? Recogniser.takeReaderSlot(2, size: 2000, in: queueDir, isCancelled: { true })
+    large?.forEach { close($0) }
+    ahead?.withdraw()
+    let queued = queueDir.appendingPathComponent("visionocr-model-reader.queue")
+    FileManager.default.createFile(atPath: queued.appendingPathComponent("5000.1.1.dead").path, contents: nil)
+    FileManager.default.createFile(atPath: queued.appendingPathComponent("1.1.1.dead").path, contents: nil)
+    let pastDead = try? Recogniser.takeReaderSlot(2, size: 10, in: queueDir, isCancelled: { true })
+    pastDead?.forEach { close($0) }
+    let left = (try? FileManager.default.contentsOfDirectory(atPath: queued.path)) ?? ["?"]
+    check("a waiting reading for a smaller page waits behind a larger one's live ticket, a larger one passes it, "
+          + "dead processes' tickets ahead and behind are removed, and a reading leaves no ticket behind",
+          ahead != nil && smallWaits && large?.count == 1 && pastDead?.count == 1 && left.isEmpty,
+          "\(ahead != nil) \(smallWaits) \(String(describing: large)) \(String(describing: pastDead)) \(left)")
+    // Three readings waiting on one slot take it largest first, whatever order they asked in.
+    let busy = open(queueDir.appendingPathComponent("visionocr-model-reader.lock").path, O_CREAT | O_RDWR, 0o600)
+    let busy1 = open(queueDir.appendingPathComponent("visionocr-model-reader.lock.1").path, O_CREAT | O_RDWR, 0o600)
+    _ = flock(busy, LOCK_EX | LOCK_NB); _ = flock(busy1, LOCK_EX | LOCK_NB)
+    var taken: [Int] = []
+    let takenLock = NSLock()
+    let waiters = DispatchGroup()
+    for (k, size) in [5, 50, 20].enumerated() {
+        DispatchQueue.global().async(group: waiters) {
+            usleep(UInt32(k) * 50_000)
+            let from = Date()
+            guard let held = try? Recogniser.takeReaderSlot(2, size: size, in: queueDir,
+                                                            isCancelled: { Date().timeIntervalSince(from) > 10 }) else { return }
+            takenLock.lock(); taken.append(size); takenLock.unlock()
+            usleep(150_000)
+            held.forEach { close($0) }
+        }
+    }
+    usleep(400_000)
+    close(busy1)
+    waiters.wait()
+    close(busy)
+    check("readings waiting on one slot take it largest page first", taken == [50, 20, 5], "\(taken)")
     // With one slot a batch's readings still run: a lab reader (one at a time) read from two threads at once.
     let oneDir = tmp.appendingPathComponent("one-slot")
     try? FileManager.default.createDirectory(at: oneDir, withIntermediateDirectories: true)

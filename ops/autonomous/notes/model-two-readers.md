@@ -32,3 +32,25 @@ item on PaddleOCR-VL's pass and Falcon's measured 11-19%, and let model-resident
   catches pressure; 16 GB is reasoned, not measured on a 16 GB Mac.
 - Known gap: an older app version running at once locks only the first file, so a new two-slot reading can
   run beside its reading (needs two versions at once; not handled).
+
+## 2026-10-16 — session 2 of round 1 (Opus 5.5, medium)
+
+Instrument: score-gate sees a batch's end only on its 20 s timer, so session 1's wall times (and this session's
+`wall_s`) are rounded up to 162/182/202 s. Fixed: the gate now prints `seconds`, the time to the last outcome.
+`end_s` (last PDF's mtime) is the measure below; session 1's "-28.6% / -11 to -15%" were on the rounded clock.
+
+Built: waiting readings go longest page first (`ReaderTicket`, a flock-held file per waiter in
+`$TMPDIR/visionocr-model-reader.queue`, ranked by the characters Vision read on the page). Timelines of the old
+code showed the batch's 40-56 s pages starting last and running alone.
+
+Measured by running code, same session, every page published, no fallback (`MODEL-TWO-READERS-2026-10-16.tsv`):
+PaddleOCR-VL 101.0 -> 82.4 s, -18.4%, PASSES. Falcon-OCR 170.4 -> 148.2 s, -13.0% (unordered: 152.2, -10.7%),
+FAILS 15%. The per-call log shows why: both slots busy from 2 s to 140 s, but a Falcon page read beside another
+takes 1.5-1.6x as long, so two slots do ~1.13x one's work; perfect order would gain ~3% more at most (283 s of
+shared reading over two slots = 141.5 s against 148.4 s). A third slot is ruled out by memory.
+
+Not met, and this item cannot meet it by scheduling: Falcon's 15%. Recommended to the owner (RUN.md NEEDS OWNER):
+accept -13% and tick, unblocking model-resident-reader, whose start-up share (10-14% for Falcon) is the next gain.
+The item is marked `needs: owner` so no session spends another attempt on it. Rejected: lowering the bar here.
+Reasoned, not fixed: size is a weak guide for handwriting (few Vision characters, long reading); LightOnOCR-3 has
+one slot below 32 GB, so it does not apply there.
