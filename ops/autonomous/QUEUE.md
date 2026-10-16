@@ -2299,30 +2299,12 @@ say so in the commit.
       - [x] **lc-run** — fit-test PP-DocLayoutV3 and docling-layout-heron on this Mac, then the detached job and its
             table.
       - [x] **lc-fused** — the fused-row attribution on C41's five scans. (blocked-on: lc-run)
-
-## Parked
-
-Potential future work, not queued. Nothing here is offered to a session: the entries have no checkbox,
-so `next-item.sh` does not read them. To queue one, move it back into the queue as a `- [ ]` item.
-(C28 was parked here from 2026-09-21 until the owner brought it back on 2026-09-25 as
-`c28-first-principles`.)
-
-- **annot-r3** — the third adversarial review round on the annotation-preservation feature (on
-      `main`, off by default, unadvertised). Rounds one and two are recorded in `TODO.md`. Run the review
-      by subagent, fix what it finds that is real, and record the verdict on whether the feature is fit to
-      turn on. BOUND: one review round and its fixes.
-      Parked by the owner 2026-09-27: potential future work, not queued.
-      (origin: TODO.md §"Preserving annotations through re-OCR")
-- **zotero-2** — the Zotero library sweep: look for new classes of document the app handles badly.
-      Re-run step 1 of `TODO.md` §"2. The Zotero library sweep" first; its survey is dated. Copy
-      `zotero.sqlite` before querying it, because Zotero locks it, and never write the library. BOUND: one
-      step per session, with its output committed. Each confirmed defect it finds becomes a `BUGS.md` entry
-      and a queue item above this one.
-      Parked by the owner 2026-09-27: potential future work, not queued.
-      (origin: TODO.md §"2. The Zotero library sweep")
-- **c41-newspaper-scans** — read whole-page scans of small-town newspapers as well as their print
+- [ ] **c41-newspaper-scans** — read whole-page scans of small-town newspapers as well as their print
       allows (`BUGS.md` C41, split from C39) (uses: build) (blocked-on: hp-regions).
-      Parked by the owner 2026-10-14: the accurate mode is the route for newspapers (assume Apple Silicon
+      UNPARKED (owner, 2026-10-16, walkthrough): back in the queue, scoped to the RE-SCOPED cut below (cut a Vision
+      line where it crosses two layout regions before alignment, judged with the accurate mode on). layout-compare
+      showed the fused rows survive every detector's regions; the detector stays DocLayout-YOLO. hp-regions is done.
+      Was parked by the owner 2026-10-14: the accurate mode is the route for newspapers (assume Apple Silicon
       with the mode on), and the fused-row question is measured in ocr-requeue.
       RE-SCOPED 2026-10-14 by ocr-requeue, for when it is queued again: the mode leaves the fused rows as it
       found them (at least 30 over the five pages off, 34 with Falcon and with PaddleOCR-VL, 16-17 on Kalispell;
@@ -2367,6 +2349,26 @@ so `next-item.sh` does not read them. To queue one, move it back into the queue 
 
 ## HOLD — owner-only, never auto-executed
 
+## Parked
+
+Potential future work, not queued. Nothing here is offered to a session: the entries have no checkbox,
+so `next-item.sh` does not read them. To queue one, move it back into the queue as a `- [ ]` item.
+(C28 was parked here from 2026-09-21 until the owner brought it back on 2026-09-25 as
+`c28-first-principles`.)
+
+- **annot-r3** — the third adversarial review round on the annotation-preservation feature (on
+      `main`, off by default, unadvertised). Rounds one and two are recorded in `TODO.md`. Run the review
+      by subagent, fix what it finds that is real, and record the verdict on whether the feature is fit to
+      turn on. BOUND: one review round and its fixes.
+      Parked by the owner 2026-09-27: potential future work, not queued.
+      (origin: TODO.md §"Preserving annotations through re-OCR")
+- **zotero-2** — the Zotero library sweep: look for new classes of document the app handles badly.
+      Re-run step 1 of `TODO.md` §"2. The Zotero library sweep" first; its survey is dated. Copy
+      `zotero.sqlite` before querying it, because Zotero locks it, and never write the library. BOUND: one
+      step per session, with its output committed. Each confirmed defect it finds becomes a `BUGS.md` entry
+      and a queue item above this one.
+      Parked by the owner 2026-09-27: potential future work, not queued.
+      (origin: TODO.md §"2. The Zotero library sweep")
 - [x] **larger-plan-active** — the owner says the larger Claude plan is in use. Tick it when it is, with the date;
       TICKED 2026-10-07: owner, "Claude for Education Premium has just been activated for this account. We now have access
       to Fable and a much larger usage window (approximately 5x what we had before)." The Claude readings now also carry
