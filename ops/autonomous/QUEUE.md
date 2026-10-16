@@ -2285,6 +2285,7 @@ say so in the commit.
       from, and the item's notes recommend keeping DocLayout-YOLO or switching, with the gain measured. A switch
       or a fix for the fused rows is queued as its own item with an ESTIMATE; do not build it here.
       ESTIMATE: 2 sessions. BOUND: rule 10. (context: owner request 2026-10-14)
+      (notes: ops/autonomous/notes/layout-compare.md)
       - [ ] **lc-run** — fit-test PP-DocLayoutV3 and docling-layout-heron on this Mac, then the detached job and its
             table.
       - [ ] **lc-fused** — the fused-row attribution on C41's five scans. (blocked-on: lc-run)

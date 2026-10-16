@@ -5,14 +5,17 @@ Turns layout-regions.py's `order label score x0 y0 x1 y1 megapixels` into the `n
 TSV read-mlx.py's --crops reads, ready for a region reader. DocLayout-YOLO has no class-agnostic
 suppression, so one block often comes back twice (a `title` and a `plain text` over the same ink). Boxes
 are taken highest score first, and one is dropped when more than F (default 0.5) of its own area lies
-inside a box already kept. Every box but images, tables, seals and formulas is kept, `abandon` (running
-heads) included; `figure` too, because YOLO boxes some headlines as figures (`--no-figures` drops them).
+inside a box already kept. Every box but images, tables, seals, formulas and heron's pictures and checkboxes
+is kept, `abandon` (running heads) included; `figure` too, because YOLO boxes some headlines as figures
+(`--no-figures` drops them). Heron's `picture` boxes are advertisements and photographs with their text
+blocks boxed separately inside them (layout-compare, Helena 1941), so they go the way of PP's `image`.
 Rows keep the detector's order; `overlap` is `yes` when a kept crop still touches another kept one.
 Prints `kept=N dropped=M` on stdout.
 """
 import argparse
 
-NON_TEXT = {"image", "chart", "table", "seal", "isolate_formula", "formula", "formula_number"}
+NON_TEXT = {"image", "chart", "table", "seal", "isolate_formula", "formula", "formula_number",
+            "picture", "checkbox_selected", "checkbox_unselected"}
 
 ap = argparse.ArgumentParser()
 ap.add_argument("regions")

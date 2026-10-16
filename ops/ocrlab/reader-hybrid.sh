@@ -41,8 +41,10 @@ text)
 blocks)
     "${guard[@]}" "$here/reader-chandra.sh" "$@" > /dev/null 2> "$err"; rc=$? ;;
 regions)
+    # HYBRID_LAYOUT is the detector (layout-compare), HYBRID_KEEP where the run keeps regions and readings.
     VISIONOCR_REGION_MODEL="$HYBRID_MODEL" VISIONOCR_REGION_PROMPT="${HYBRID_PROMPT:-OCR:}" \
-        VISIONOCR_REGION_EXTRA="${HYBRID_EXTRA:-}" \
+        VISIONOCR_REGION_EXTRA="${HYBRID_EXTRA:-}" VISIONOCR_LAYOUT="${HYBRID_LAYOUT:-yolo}" \
+        VISIONOCR_READER_KEEP="${HYBRID_KEEP:-}" \
         "${guard[@]}" "$here/reader-regions.sh" "$@" > /dev/null 2> "$err"; rc=$? ;;
 *) echo "reader-hybrid.sh: HYBRID_KIND is '${HYBRID_KIND:-}'" >&2; exit 2 ;;
 esac

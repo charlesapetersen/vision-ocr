@@ -62,12 +62,13 @@ for line in open(os.path.join(H, "sample.rows"), encoding="utf-8"):
 
 combo_rows = [l.split("\t") for l in open(os.path.join(H, "combos.tsv"), encoding="utf-8").read().splitlines() if l]
 combos = [r[0] for r in combo_rows]
-# A combination run on one page group only (the last column of combos.tsv) gets a row saying why not the other.
+# A combination run on one page group only (the eighth column of combos.tsv; a ninth, when there is one, is the
+# layout detector) gets a row saying why not the other.
 SCOPE_WHY = {
     "other": "whole newspaper pages loop or trip the guard (ocr-lab-setup)",
     "newspaper": "run on newspapers only, as ocr-hybrid-run ran it (ocr-hybrid-proto built regions for them)",
 }
-scope = {r[0]: r[-1] for r in combo_rows if len(r) >= 8}
+scope = {r[0]: r[7] for r in combo_rows if len(r) >= 8}
 not_run = [l.split("\t", 1) for l in open(os.path.join(H, "not-run.tsv"), encoding="utf-8").read().splitlines() if l]
 
 

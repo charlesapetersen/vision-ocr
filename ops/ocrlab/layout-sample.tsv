@@ -1,0 +1,20 @@
+# layout-compare's pages (layout-compare.sh, 2026-10-16): the 11 newspaper pages of OCR-SAMPLE-2026-10-04.tsv under their
+# own ids, and C41's four other whole-page scans (the fifth, Helena 1941, is s30). The four have no truth transcript:
+# they are published for Tools/count-fused-rows.swift (lc-fused) and the harness scores no words on them.
+# Columns as OCR-SAMPLE: id, document, page, route, why, class.
+id	document	page	route	why	class
+s17	newspaperArticle/Berendzen_1981_The Soaring Lesson of America in Space_Newsday (1940-1990), Nassau ed.; Long Island, N.Y..pdf	1	newspaper	ux-regression set	truth-only
+s22	newspaperArticle/___ 2.pdf	1	newspaper	ux-regression set	red
+s30	newspaperArticle/_1941_Fiedler's hiring at UM announced_Helena Independent.pdf	1	newspaper	ux-regression set	red
+s40	newspaperArticle/Glazer_2003_Neoconservatives, Then and Now_New York Times.pdf	1	newspaper	newspaper	green
+s41	newspaperArticle/Gitlin_2000_How Our Crowd Got Lonely_New York Times.pdf	1	newspaper	newspaper	truth-only
+s42	newspaperArticle/Zipkin_2000_Management.pdf	1	newspaper	newspaper	truth-only
+s43	newspaperArticle/_1926_Cox resigns, following most severe public criticism that ever has been_Anaconda Standard.pdf	1	newspaper	newspaper	red
+s44	newspaperArticle/Williams_1958_DEMOCRACY OR MERITOCRACY_The Manchester Guardian (1901-1959); Manchester (UK).pdf	1	newspaper	newspaper	red
+s45	newspaperArticle/___.pdf	1	newspaper	newspaper	red
+s46	newspaperArticle/_1931_Again, press most excited about Frontier's history section_Helena Daily Independent.pdf	1	newspaper	newspaper	red
+s47	newspaperArticle/___ 4.pdf	1	newspaper	newspaper	red
+c01	newspaperArticle/_1926_Clapp defends Cox_Billings Gazette.pdf	1	newspaper	C41 fused rows	c41
+c02	newspaperArticle/_1939_Kalispell resident offering private creative writing courses, out of her home_Kalispell Daily Inter Lake.pdf	1	newspaper	C41 fused rows	c41
+c03	newspaperArticle/_1950_Comic_Independent Record.pdf	1	newspaper	C41 fused rows	c41
+c04	document/October_2,_1960_(Page_24_of_25.pdf	1	newspaper	C41 fused rows	c41

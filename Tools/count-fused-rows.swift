@@ -10,7 +10,9 @@
 // line's words (4+ letters, near matches allowed) only on the left and some only on the right. A joined line is ONE RUN when the layer's letters run
 // through the gutter (their gap there under half its width: one drawn run spans it, checked
 // against the content stream on Kalispell), else TWO RUNS that PDFKit groups on one line.
-// Prints `lines= joined= oneRun= twoRuns= crossNotJoined=`; CFR_DEBUG=<text> prints the column
+// Prints `lines= joined= oneRun= twoRuns= crossNotJoined=`, and with examples each joined row's y, x
+// extent, `run=` (the glyphs joined through the gutter) and `at=` (the gutter), as fractions of the
+// page from the top left; CFR_DEBUG=<text> prints the column
 // profile of the line holding <text>. A lower bound: a gutter narrower than half a row, or flecked
 // with ink, is missed (Billings 1926's `Dr: Nich-lour inothers`, an 11 px gutter at 150 dpi).
 import Foundation
@@ -197,8 +199,16 @@ for row in rows {
     if shown < examples {
         shown += 1
         if examples > 100 { print("   L \(j.l)  R \(j.r)") }
-        print((single ? "ONE-RUN " : "TWO-RUNS") + String(format: " gap=%.1f gutter=%.1f y=%.3f x=%.3f-%.3f at=%.3f  ", j.gapPt, j.gutterPt,
-              1 - (u.midY - pb.minY) / pb.height, (u.minX - pb.minX) / pb.width, (u.maxX - pb.minX) / pb.width, j.gx) + s)
+        // `run=`: the extent of the glyphs joined through the gutter, a gap under an em apart (layout-compare's
+        // fused-regions.py places this, not `x=`, the whole PDFKit row, which can hold other columns' runs too).
+        let gpt = pb.minX + j.gx * pb.width
+        let glyphs = row.filter { !$0.c.isWhitespace }.sorted { $0.r.midX < $1.r.midX }
+        var l = glyphs.firstIndex(where: { $0.r.midX >= gpt }) ?? glyphs.count - 1, r = l
+        while l > 0, glyphs[l].r.minX - glyphs[l - 1].r.maxX < hPt { l -= 1 }
+        while r + 1 < glyphs.count, glyphs[r + 1].r.minX - glyphs[r].r.maxX < hPt { r += 1 }
+        print((single ? "ONE-RUN " : "TWO-RUNS") + String(format: " gap=%.1f gutter=%.1f y=%.3f x=%.3f-%.3f run=%.3f-%.3f at=%.3f  ", j.gapPt, j.gutterPt,
+              1 - (u.midY - pb.minY) / pb.height, (u.minX - pb.minX) / pb.width, (u.maxX - pb.minX) / pb.width,
+              (glyphs[l].r.minX - pb.minX) / pb.width, (glyphs[r].r.maxX - pb.minX) / pb.width, j.gx) + s)
     }
 }
 print("lines=\(judged) joined=\(oneRun + twoRuns) oneRun=\(oneRun) twoRuns=\(twoRuns) crossNotJoined=\(unconfirmed)")

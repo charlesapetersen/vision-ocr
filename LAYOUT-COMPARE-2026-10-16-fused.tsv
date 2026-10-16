@@ -1,0 +1,25 @@
+# layout-compare lc-fused, 2026-10-16 05:26: C41's five whole-page scans, page 1, published by score-gate (tools from ef91b9d) in /Users/cp1/.local/state/visionocr-autonomous/ocrlab/layout;
+# Tools/count-fused-rows.swift counts (lines joined oneRun twoRuns crossNotJoined, its header says what they are), and
+# ops/ocrlab/fused-regions.py places each oneRun row in the regions the run's reader was given (spans straddles crossed
+# oneSide none, its docstring says what they are). Counts are lower bounds, as C41-FUSED-ACCURATE-2026-10-14 says.
+combo	id	page	layout	lines	joined	oneRun	twoRuns	crossNotJoined	spans	straddles	crossed	oneSide	none
+vision-off	s30	helena	-	721	18	6	12	8	-	-	-	-	-
+vision-off	c01	billings	-	1009	32	3	29	8	-	-	-	-	-
+vision-off	c02	kalispell	-	503	22	16	6	2	-	-	-	-	-
+vision-off	c03	comic	-	596	26	4	22	37	-	-	-	-	-
+vision-off	c04	oct1960	-	720	4	1	3	22	-	-	-	-	-
+yolo-vision	s30	helena	yolo	721	19	8	11	12	4	1	2	1	0
+yolo-vision	c01	billings	yolo	1010	34	3	31	8	1	0	0	2	0
+yolo-vision	c02	kalispell	yolo	502	23	17	6	1	3	12	1	1	0
+yolo-vision	c03	comic	yolo	595	26	5	21	38	4	1	0	0	0
+yolo-vision	c04	oct1960	yolo	719	5	2	3	30	2	0	0	0	0
+pp-vision	s30	helena	pp	720	21	10	11	11	5	2	3	0	0
+pp-vision	c01	billings	pp	1008	35	4	31	8	2	1	0	1	0
+pp-vision	c02	kalispell	pp	503	22	16	6	2	1	4	10	0	1
+pp-vision	c03	comic	pp	596	29	5	24	36	2	0	3	0	0
+pp-vision	c04	oct1960	pp	718	5	2	3	30	2	0	0	0	0
+heron-vision	s30	helena	heron	721	20	9	11	11	3	4	1	1	0
+heron-vision	c01	billings	heron	1009	38	5	33	8	2	1	0	2	0
+heron-vision	c02	kalispell	heron	504	22	17	5	2	3	12	2	0	0
+heron-vision	c03	comic	heron	596	27	4	23	38	1	1	2	0	0
+heron-vision	c04	oct1960	heron	719	5	1	4	29	1	0	0	0	0

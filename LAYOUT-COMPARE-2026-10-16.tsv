@@ -1,0 +1,21 @@
+# layout-compare, 2026-10-16T02:20:04 to 2026-10-16T05:24:36: hybrid-run.sh in /Users/cp1/.local/state/visionocr-autonomous/ocrlab/layout, tools from ef91b9d, the 15 pages of
+# ops/ocrlab/layout-sample.tsv (the 11 newspaper pages of OCR-SAMPLE-2026-10-04.tsv, and C41's four other whole-page scans
+# c01-c04, which have no truth transcript, so they are published and counted in `pages`/`ok` and `unscored`, not in the word
+# counts), each published by score-gate and scored by ux-harness --truth; made by layout-table.py over hybrid-table.py
+# (column meanings in its docstring). Each combination is one layout detector's regions read by one reader; the
+# regions arrangement aligns the reader's words onto Vision's lines (Recogniser.regionAligned), so what differs between
+# detectors is which lines get a model's words. vision-off is Vision alone on the same pages, the baseline wm_cut is against.
+# Detectors (layout-regions.py, then dedupe-regions.py and reader-regions.sh's 2 px filter for all three alike):
+#   yolo: DocLayout-YOLO DocStructBench, juliozhao/DocLayout-YOLO-DocStructBench as the app's Core ML model (72 MB); the lab's ONNX build wybxc/DocLayout-YOLO-DocStructBench-onnx (71 MB) is the same net, boxes within 0.0002 px; licence Apache-2.0 (the weights' card; DocLayout-YOLO's code is AGPL-3.0, which the app neither ships nor runs); conf 0.25; reading order none: the app's column sort; fit test over 15 pages: detect 0.51 s a page on the CPU, peak RSS 1241 MB, ink in text regions 0.858
+#   pp: PP-DocLayoutV3, PaddlePaddle/PP-DocLayoutV3_safetensors (133 MB) converted to MLX float32 (128 MB), mlx-vlm's pp_doclayout_v3; licence Apache-2.0; conf 0.3; reading order the model's own; fit test over 15 pages: detect 0.47 s a page on the CPU, peak RSS 794 MB, ink in text regions 0.861
+#   heron: docling-layout-heron, ds4sd/docling-layout-heron (RT-DETRv2, 42.9M parameters, 164 MB safetensors) through transformers and torch; no MLX or Core ML build exists, so it needs a torch runtime the app does not ship; licence Apache-2.0; conf 0.3; reading order none: the app's column sort; fit test over 15 pages: detect 0.41 s a page on the CPU, peak RSS 1439 MB, ink in text regions 0.945
+# download_MB is the weights alone. PP and YOLO run in the lab's MLX/onnxruntime venv (the app runs YOLO through Core ML);
+# heron needs torch and transformers (the lab's venv-surya), a runtime of its own. fit_* and ink_covered are from
+# layout-fit.sh on 300 dpi renders (LAYOUT-COMPARE-*-fit.tsv), the detector alone, each page a fresh process; peak_mb is
+# the guard's sample of the reader's processes during the job, detector included.
+combo	group	pages	ok	failed	skipped	unscored	scored	right	wrong	missing	added	wm_share	vision_wm	wm_cut	copyErr	find	order	tflags	ink_red	colour_red	elInk	elCol	secs	vision_secs	ratio	model_secs	peak_mb	bytes	vision_bytes	note	layout	download_MB	licence	order	fit_detect_s	fit_peak_mb	ink_covered
+vision-off	all	15	15	0	0	4	24867	17499	6609	759	46860	0.2963	0.2963	0.0000	2.1807	0.8545	45/55	10	1	0	0.3600	-	26.0333	26.0333	1.0000	0.0000	-	7733364	7733364	-	-	-	-	-	-	-	-
+yolo-vision	all	15	15	0	0	4	24867	18267	5868	732	48335	0.2654	0.2963	0.1042	2.2092	0.8727	46/58	11	1	0	0.3600	-	37.0533	26.0333	1.4233	2.6000	201	7742041	7733364	-	yolo	72	Apache-2.0	none: the app's column sort	0.51	1241	0.858
+pp-vision	all	15	15	0	0	4	24867	18241	5864	762	48380	0.2665	0.2963	0.1007	2.2120	0.8482	45/57	10	1	0	0.3600	-	37.8467	26.0333	1.4538	3.1333	1136	7744004	7733364	-	pp	128	Apache-2.0	the model's own	0.47	794	0.861
+heron-vision	all	15	15	0	0	4	24867	18264	5859	744	48397	0.2655	0.2963	0.1038	2.2118	0.8645	47/59	11	1	0	0.3600	-	40.3200	26.0333	1.5488	4.8000	946	7742388	7733364	-	heron	164	Apache-2.0	none: the app's column sort	0.41	1439	0.945
+yolo-paddle	all	2	2	0	0	0	4375	4033	239	103	2730	0.0782	0.1589	0.5079	0.7022	0.9650	12/13	2	0	0	0.8600	-	44.2000	16.9000	2.6154	26.0000	1811	373868	374936	-	yolo	72	Apache-2.0	none: the app's column sort	0.51	1241	0.858

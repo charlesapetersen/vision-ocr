@@ -1,0 +1,14 @@
+# layout-compare's combinations (layout-compare.sh), in hybrid-run.sh's COMBOS columns: label, arrangement, reader kind,
+# model, prompt, extra read-mlx.py options, need_gb, pages, and a ninth, the layout detector reader-regions.sh cuts with
+# (yolo = DocLayout-YOLO DocStructBench, pp = PP-DocLayoutV3, heron = docling-layout-heron). Cheapest first: Vision alone
+# for the baseline, then each detector's regions read by Vision, then by PaddleOCR-VL, then by Falcon-OCR.
+vision-off	off	-	-	-	-	-	all	-
+yolo-vision	regions	regions	vision	-	-	2	all	yolo
+pp-vision	regions	regions	vision	-	-	2	all	pp
+heron-vision	regions	regions	vision	-	-	2	all	heron
+yolo-paddle	regions	regions	mlx-community/PaddleOCR-VL-1.6-4bit	OCR:	-	4	all	yolo
+pp-paddle	regions	regions	mlx-community/PaddleOCR-VL-1.6-4bit	OCR:	-	4	all	pp
+heron-paddle	regions	regions	mlx-community/PaddleOCR-VL-1.6-4bit	OCR:	-	4	all	heron
+yolo-falcon	regions	regions	tiiuae/Falcon-OCR	plain	-	4	all	yolo
+pp-falcon	regions	regions	tiiuae/Falcon-OCR	plain	-	4	all	pp
+heron-falcon	regions	regions	tiiuae/Falcon-OCR	plain	-	4	all	heron
