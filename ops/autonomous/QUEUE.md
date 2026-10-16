@@ -2200,8 +2200,10 @@ say so in the commit.
       - [x] **qw-build** — the pick in the dialog, and the text page if qw-place calls for it.
             LightOnOCR-3 on handwriting, a text page after each handwritten page by default: 99 missed per
             1,000 there, Find 1,238 of 1,405 words, align 922 (`HW-BUILD-2026-10-15.tsv`).
-- [ ] **lighton-print** — check LightOnOCR-3-4B on print and newspapers, scored beside Falcon-OCR.
+- [x] **lighton-print** — check LightOnOCR-3-4B on print and newspapers, scored beside Falcon-OCR.
       (uses: build,model:12) (blocked-on: hw-panel)
+      DONE 2026-10-15: worse than Falcon-OCR on every class (old 0.61%, newspapers 0.86%, modern 1.20%), three times
+      slower, fits at 7.9 GB; not queued for print (`OCR-BAKEOFF-2026-10-15.tsv`). (notes: ops/autonomous/notes/lighton-print.md)
       THE ASK (owner, 2026-10-15): "queue a one-session check of LightOnOCR-3-4B on the bake-off sample, run only
       after hw-panel shows it works in the lab, scored beside Falcon-OCR." If hw-panel found that no LightOnOCR-3-4B
       build runs in the lab, close this item with that line and do nothing else.

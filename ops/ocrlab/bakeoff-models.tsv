@@ -22,6 +22,8 @@
 # with embeddings, head and projector at 8 all read 0.000 of s01 and s03 and loop, so no run reads it. chandra-ocr-2-oQ4 is the
 # same quantizer as the fitted oQ8, mostly 4-bit with some layers at 5-6. lightonocr-2-1b-4bit-1540-quiet is the fitted 4-bit
 # read again, the same row under a new label: its first readings were timed on the busy night (ocr-bakeoff-score).
+# Set `lighton3` (lighton-print, 2026-10-15): LightOnOCR-3-4B, hw-panel's build, prithivMLmods/LightOnOCR-3-4B-MLX's 8bit/
+# folder, which has no repo of its own: $OCRLAB/mlx/LightOnOCR-3-4B-8bit is a symlink to that folder in the Hub cache.
 label	set	runtime	repo	prompt	extra	need_gb
 deepseek-ocr-2-4bit	fitted	mlx	mlx-community/DeepSeek-OCR-2-4bit	Free OCR.	--no-remote-code	4
 lightonocr-2-1b-4bit-1540	fitted	mlx	mlx-community/LightOnOCR-2-1B-4bit	""	--max-side 1540	5
@@ -46,3 +48,4 @@ falcon-ocr-4bit	failed	mlx	local/Falcon-OCR-4bit	plain	-	4
 lightonocr-2-1b-4bit-1540-quiet	bits	mlx	mlx-community/LightOnOCR-2-1B-4bit	""	--max-side 1540	5
 lightonocr-2-1b-8bit-1540	bits	mlx	mlx-community/LightOnOCR-2-1B-8bit	""	--max-side 1540	8
 chandra-ocr-2-oQ4	bits	mlx	beaupi/chandra-ocr-2-oQ4	-	-	6
+lightonocr-3-4b-8bit	lighton3	mlx	local/LightOnOCR-3-4B-8bit	""	--max-side 2048 --max-tokens 4096	8
