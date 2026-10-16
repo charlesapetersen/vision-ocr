@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 """ops/ocrlab/layout-table.py — layout-compare's tables, from the job's directory and the fit test.
 
-    layout-table.py <H> <fit dir> <out prefix>
+    layout-table.py <H> <fit dir> <out prefix> [tools] [header line]...
         e.g. layout-table.py $STATE/ocrlab/layout /tmp/lc-fit/out LAYOUT-COMPARE-2026-10-16
+    `tools` replaces H/bin/commit in the header (a job restarted from a later commit); each further argument is
+    one more header line (a run moved aside, a retry), since the tables show only what is under H/runs.
 
 Runs hybrid-table.py over H for <prefix>.tsv, one row per combination (every page is a newspaper, so hybrid-table's
 `all` and `newspaper` rows hold the same pages; only `all` is kept), and <prefix>-pages.tsv, one row per combination
@@ -17,14 +19,16 @@ import sys
 import tempfile
 
 H, FIT, OUT = sys.argv[1], sys.argv[2], sys.argv[3]
+TOOLS = sys.argv[4] if len(sys.argv) > 4 else None
+MORE = sys.argv[5:]
 here = os.path.dirname(os.path.abspath(__file__))
 
 DETECTORS = {
     "yolo": {"name": "DocLayout-YOLO DocStructBench", "fit": "yolo-0.25", "download_MB": 72,
              "licence": "Apache-2.0 (the weights' card; DocLayout-YOLO's code is AGPL-3.0, which the app neither ships nor runs)",
              "order": "none: the app's column sort",
-             "weights": "juliozhao/DocLayout-YOLO-DocStructBench as the app's Core ML model (72 MB); the lab's ONNX build "
-                        "wybxc/DocLayout-YOLO-DocStructBench-onnx (71 MB) is the same net, boxes within 0.0002 px"},
+             "weights": "juliozhao/DocLayout-YOLO-DocStructBench as the app's Core ML model (72 MB installed, a 64.8 MB archive); "
+                        "the lab's ONNX build wybxc/DocLayout-YOLO-DocStructBench-onnx (71 MB) is the same net, boxes within 0.0002 px"},
     "pp": {"name": "PP-DocLayoutV3", "fit": "pp-0.3", "download_MB": 128, "licence": "Apache-2.0",
            "order": "the model's own",
            "weights": "PaddlePaddle/PP-DocLayoutV3_safetensors (133 MB) converted to MLX float32 (128 MB), mlx-vlm's pp_doclayout_v3"},
@@ -33,7 +37,7 @@ DETECTORS = {
               "weights": "ds4sd/docling-layout-heron (RT-DETRv2, 42.9M parameters, 164 MB safetensors) through transformers "
                          "and torch; no MLX or Core ML build exists, so it needs a torch runtime the app does not ship"},
 }
-EXTRA = ["layout", "download_MB", "licence", "order", "fit_detect_s", "fit_peak_mb", "ink_covered"]
+EXTRA = ["layout", "download_MB", "licence", "reading_order", "fit_detect_s", "fit_peak_mb", "ink_covered"]
 
 
 def rows(path):
@@ -64,7 +68,8 @@ with tempfile.TemporaryDirectory() as tmp:
 
 log = [l.split("\t") for l in open(os.path.join(H, "hybrid.log"), encoding="utf-8").read().splitlines() if l]
 started, last = (log[0][0] if log else "-"), (log[-1][0] if log else "-")
-commit = open(os.path.join(H, "bin", "commit"), encoding="utf-8").read().strip() if os.path.exists(os.path.join(H, "bin", "commit")) else "-"
+commit = TOOLS or (open(os.path.join(H, "bin", "commit"), encoding="utf-8").read().strip()
+                   if os.path.exists(os.path.join(H, "bin", "commit")) else "-")
 n_pages = sum(1 for l in open(os.path.join(H, "sample.rows"), encoding="utf-8") if l.strip())
 fits = {k: fit_summary(v["fit"]) for k, v in DETECTORS.items()}
 
@@ -87,8 +92,10 @@ header += [
     "# download_MB is the weights alone. PP and YOLO run in the lab's MLX/onnxruntime venv (the app runs YOLO through Core ML);",
     "# heron needs torch and transformers (the lab's venv-surya), a runtime of its own. fit_* and ink_covered are from",
     "# layout-fit.sh on 300 dpi renders (LAYOUT-COMPARE-*-fit.tsv), the detector alone, each page a fresh process; peak_mb is",
-    "# the guard's sample of the reader's processes during the job, detector included.",
-]
+    "# the guard's sample of the reader's processes during the job. On the *-vision rows that reader is the detector alone,",
+    "# done in seconds, which the guard's 2 s sample mostly missed (2 MB on most pages, as OCR-COMPARE-2026-10-13 noted):",
+    "# fit_peak_mb is the detector's own peak. A run moved out of H/runs (runs-superseded/) is not in these tables.",
+] + ["# " + line for line in MORE]
 
 with open(OUT + ".tsv", "w", encoding="utf-8") as f:
     f.write("\n".join(header) + "\n")

@@ -2267,7 +2267,7 @@ say so in the commit.
       model-two-readers, the guard still stops a reader past the memory setting, cancel ends it, and the
       suite passes. If a prototype shows the gain under 10%, close it here with the figures instead.
       ESTIMATE: 2 sessions. BOUND: rule 10. (context: model-throughput 2026-10-15)
-- [ ] **layout-compare** — compare three layout detectors on the final text of newspaper pages, and find out
+- [x] **layout-compare** — compare three layout detectors on the final text of newspaper pages, and find out
       whether the regions explain C41's fused rows. (uses: build,model:12)
       THE ASK (owner, 2026-10-14). The app cuts newspaper pages with DocLayout-YOLO (DocStructBench, Core ML,
       `ModelDownloads` `.layout`). The only comparison, `OCR-LAYOUT-2026-10-07.tsv`, used one newspaper page and
@@ -2288,9 +2288,13 @@ say so in the commit.
       or a fix for the fused rows is queued as its own item with an ESTIMATE; do not build it here.
       ESTIMATE: 2 sessions. BOUND: rule 10. (context: owner request 2026-10-14)
       (notes: ops/autonomous/notes/layout-compare.md)
-      - [ ] **lc-run** — fit-test PP-DocLayoutV3 and docling-layout-heron on this Mac, then the detached job and its
+      Done 2026-10-16: keep DocLayout-YOLO (`LAYOUT-COMPARE-2026-10-16.tsv`; heron gains 0.2 points of wrong-or-missing
+      words with a model reader for 10-26 s more a page and a torch runtime, PP loses 0.7); the fused rows are Vision's
+      lines, not the regions' (`bugs/C41.md`); the fix is the parked `c41-newspaper-scans` item, its queuing the owner's
+      call (RUN.md NEEDS OWNER 2026-10-16).
+      - [x] **lc-run** — fit-test PP-DocLayoutV3 and docling-layout-heron on this Mac, then the detached job and its
             table.
-      - [ ] **lc-fused** — the fused-row attribution on C41's five scans. (blocked-on: lc-run)
+      - [x] **lc-fused** — the fused-row attribution on C41's five scans. (blocked-on: lc-run)
 
 ## Parked
 
