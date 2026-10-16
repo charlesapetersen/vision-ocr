@@ -2299,6 +2299,11 @@ say so in the commit.
       - [x] **lc-run** — fit-test PP-DocLayoutV3 and docling-layout-heron on this Mac, then the detached job and its
             table.
       - [x] **lc-fused** — the fused-row attribution on C41's five scans. (blocked-on: lc-run)
+      CONFIRMED (owner, 2026-10-16, after the walkthrough): keep DocLayout-YOLO. Heron's 0.2 points (46-52 words
+      in 24,867) do not pay for its 10-26 s a page, 92 MB and torch runtime. Correction to this item's commit (db21f5d):
+      not all weights are Apache-2.0. Hugging Face lists the variant in use, DocLayout-YOLO-DocStructBench-imgsz1280-2501,
+      as AGPL-3.0, and the DocLayout-YOLO code is AGPL-3.0; heron and PP-DocLayoutV3 are Apache-2.0. The licence
+      question stays with RUN.md NEEDS OWNER 2026-10-14 (is-downloads), which already says the weights are AGPL-3.0.
 - [ ] **c41-newspaper-scans** — read whole-page scans of small-town newspapers as well as their print
       allows (`BUGS.md` C41, split from C39) (uses: build) (blocked-on: hp-regions).
       UNPARKED (owner, 2026-10-16, walkthrough): back in the queue, scoped to the RE-SCOPED cut below (cut a Vision
