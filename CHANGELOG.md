@@ -12,7 +12,7 @@ edits its own history is worth less than one that reads slightly awkwardly. Wher
 an older entry mentions "Window ▸ Vision Reader Window", the menu item is now
 "Window ▸ Vision OCR Window"; nothing else moved.
 
-## Unreleased
+## 1.16.0 — 2026-10-16
 
 - On a Mac with 16 GB of memory or more, two pages can now be read by Falcon-OCR or PaddleOCR-VL at once,
   so a batch with an extra reader finishes sooner: in a ten-page test, about 18% sooner with PaddleOCR-VL
@@ -69,8 +69,8 @@ an older entry mentions "Window ▸ Vision Reader Window", the menu item is now
   for other pages among Vision and the readers already downloaded and enabled; choosing one never starts a
   download. Every file is checked before it is installed, and a stopped or failed download leaves nothing
   behind. Nothing is downloaded while the mode is off.
-- The run report has a `Model reader` row. It reads `off`: the setting that takes words from a stronger OCR
-  model is being built, is not yet in the panel, and changes nothing unless it is set.
+- The run report has a `Model reader` row. It names the extra reader used for each kind of page, or reads
+  `off` when Accurate mode is off.
 - On newspaper scans with a rule printed down the gap between columns, a line the recogniser read on into the
   next column is now split into its two columns, so it selects and searches as printed (C41). This now also
   holds where the gap is narrower than the columns' text suggests, and the halves often read better.
