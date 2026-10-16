@@ -1,0 +1,72 @@
+--- a/Sources/Recogniser.swift
++++ b/Sources/Recogniser.swift
+@@ -1449,17 +1449,29 @@
+         // once, and each reading loads the model (Falcon-OCR peaks at 3.4 GB), so six at
+         // once would ask more of an 18 GB Mac than it has. Released when the descriptor
+         // closes, which a crash does too.
+-        let lock = open(FileManager.default.temporaryDirectory
+-                            .appendingPathComponent("visionocr-model-reader.lock").path,
++        // MT SCRATCH (model-throughput): VISIONOCR_MT_SLOTS readers at once, VISIONOCR_MT_STATS logs each call.
++        let mtEnv = ProcessInfo.processInfo.environment
++        let mtSlots = max(1, Int(mtEnv["VISIONOCR_MT_SLOTS"] ?? "1") ?? 1)
++        var locks: [Int32] = []
++        for i in 0..<mtSlots {
++            let l = open(FileManager.default.temporaryDirectory
++                            .appendingPathComponent("visionocr-model-reader.lock" + (i == 0 ? "" : ".\(i)")).path,
+                         O_CREAT | O_RDWR, 0o600)
+-        guard lock >= 0 else { throw Failure.modelReader("its lock could not be opened") }
+-        defer { close(lock) }
+-        while flock(lock, LOCK_EX | LOCK_NB) != 0 {
++            guard l >= 0 else { throw Failure.modelReader("its lock could not be opened") }
++            locks.append(l)
++        }
++        defer { for l in locks { close(l) } }
++        let mtAsked = Date()
++        var held = false
++        while !held {
++            for l in locks where flock(l, LOCK_EX | LOCK_NB) == 0 { held = true; break }
++            if held { break }
+             if isCancelled() { throw Failure.cancelled }
+             usleep(100_000)
+         }
++        let mtID = UUID().uuidString
+         let out = FileManager.default.temporaryDirectory
+-            .appendingPathComponent("visionocr-reader-\(UUID().uuidString).txt")
++            .appendingPathComponent("visionocr-reader-\(mtID).txt")
+         defer { try? FileManager.default.removeItem(at: out) }
+         let process = Process()
+         if ModelRuntime.readers[reader] != nil {
+@@ -1474,6 +1486,21 @@
+         process.standardInput = FileHandle.nullDevice
+         process.standardOutput = FileHandle.nullDevice
+         process.standardError = FileHandle.nullDevice
++        let mtStats = mtEnv["VISIONOCR_MT_STATS"].flatMap { $0.isEmpty ? nil : URL(fileURLWithPath: $0) }
++        if let dir = mtStats {
++            let f = dir.appendingPathComponent("\(mtID).json")
++            FileManager.default.createFile(atPath: f.path, contents: nil)
++            process.standardOutput = try? FileHandle(forWritingTo: f)
++        }
++        var mtPeakMB = 0
++        let mtStart = Date()
++        defer {
++            if let dir = mtStats {
++                let line = "\(mtID)\t\(reader)\t\(crops == nil ? "page" : "crops")\t\(mtAsked.timeIntervalSince1970)\t"
++                    + "\(mtStart.timeIntervalSince1970)\t\(Date().timeIntervalSince1970)\t\(mtPeakMB)\t\(image.lastPathComponent)\n"
++                try? line.write(to: dir.appendingPathComponent("\(mtID).t"), atomically: true, encoding: .utf8)
++            }
++        }
+         if ModelGuard.pressure() >= ModelGuard.critical {
+             throw Failure.modelMemory("the Mac's memory pressure was critical, so \(reader) was not started")
+         }
+@@ -1499,8 +1526,10 @@
+             }
+             if Date().timeIntervalSince(sampled) >= ModelGuard.every {
+                 sampled = Date()
++                let mtFoot = ModelGuard.footprintMB(leader: process.processIdentifier, group: group)
++                mtPeakMB = max(mtPeakMB, mtFoot)
+                 if let why = ModelGuard.verdict(
+-                    footprintMB: ModelGuard.footprintMB(leader: process.processIdentifier, group: group),
++                    footprintMB: mtFoot,
+                     capMB: capMB, pressure: ModelGuard.pressure(),
+                     swapGrowthMB: ModelGuard.swapUsedMB() - swap0) {
+                     Runner.stop(process, knownGroup: group)

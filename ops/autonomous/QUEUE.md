@@ -2218,7 +2218,7 @@ say so in the commit.
       Falcon-OCR on any class by a clear margin and fits in memory. If it does, queue adding it as its own item with
       an ESTIMATE; do not build it here.
       ESTIMATE: 1 session. BOUND: rule 10. (context: owner request 2026-10-15)
-- [ ] **model-throughput** — measure whether keeping a model loaded between pages, or running two model readers
+- [x] **model-throughput** — measure whether keeping a model loaded between pages, or running two model readers
       at once, makes a batch read with Falcon-OCR or PaddleOCR-VL finish sooner. (uses: build,model:12)
       THE QUESTION (owner, 2026-10-14): with the large models, does reading several files at once still help as
       it does with Vision, or should model reading be serial? TODAY: `Recogniser.modelReading` holds
@@ -2234,6 +2234,36 @@ say so in the commit.
       change (if any) would shorten a batch and by how much, and whether it depends on the Mac's memory. If the
       answer is a code change, queue it as its own item with an ESTIMATE; do not build it here.
       ESTIMATE: 1 session. BOUND: rule 10. (context: owner request 2026-10-14)
+      (notes: ops/autonomous/notes/model-throughput.md)
+- [ ] **model-two-readers** — let two model readings run at once on a Mac with 16 GB or more, so a batch read
+      with Falcon-OCR or PaddleOCR-VL finishes about a fifth sooner. (uses: build,model:12)
+      THE EVIDENCE: `MODEL-THROUGHPUT-2026-10-15.tsv`. At the default concurrency the one reader is the
+      bottleneck; two at once (a scratch helper with two lock files) took ten pages from 190/200 s to 150/164 s
+      with Falcon-OCR and from 152/134 s to 114/103 s with PaddleOCR-VL, two overlapping calls' peaks summing to
+      at most 7.6 GiB and 4.6 GiB. No page failed and the guard stopped none, on 18 GB; swap grew 0.84 GB over
+      one two-Falcon leg. The 16 GB line below is reasoned, not measured on a smaller Mac.
+      BUILD: `Recogniser.modelReading` takes any free slot of N lock files, N = 2 when physical memory is at
+      least 16 GB and twice the reader's `Figures.memoryGB` fits under half of it, else 1 (Falcon's 3.9 GB
+      makes that 7.8 of 8 on 16 GB: decide whether the margin is enough). Check `ModelGuard` with two readers:
+      pressure and swap growth are machine-wide, so one reader's growth counts against the other's 2 GB swap
+      limit; decide whether that stays or becomes shared. A test that the second slot is taken only where the
+      rule allows it, and one that a batch still runs with N = 1.
+      DONE WHEN, through score-gate with accurate mode on over the same ten pages (the scratch harness:
+      `ops/autonomous/notes/model-throughput-helper.patch` and `-leg.sh`), the mean of two runs with two
+      readers is at least 15% under the mean of two one-reader runs taken in the same session, for each reader,
+      every page published, and the suite passes.
+      ESTIMATE: 1 session. BOUND: rule 10. (context: model-throughput 2026-10-15)
+- [ ] **model-resident-reader** — keep the model reader's process and weights loaded across a batch's pages
+      instead of starting one per page. (uses: build,model:12) (blocked-on: model-two-readers)
+      THE EVIDENCE: `MODEL-THROUGHPUT-2026-10-15.tsv`. Each call spends 2.3-2.8 s (Falcon-OCR, 10-14% of reader
+      time) and 3.5-3.9 s (PaddleOCR-VL, 21-27%) on interpreter start, imports, weight load and image preparation
+      beyond the model's reading; with the reader the bottleneck, that share is the expected gain (reasoned,
+      not measured). It costs a long-lived process the guard, cancel and the helper's SIGTERM must still stop,
+      and a reader that leaks memory across pages.
+      DONE WHEN the same ten-page batch finishes at least 10% sooner with each reader than after
+      model-two-readers, the guard still stops a reader past the memory setting, cancel ends it, and the
+      suite passes. If a prototype shows the gain under 10%, close it here with the figures instead.
+      ESTIMATE: 2 sessions. BOUND: rule 10. (context: model-throughput 2026-10-15)
 - [ ] **layout-compare** — compare three layout detectors on the final text of newspaper pages, and find out
       whether the regions explain C41's fused rows. (uses: build,model:12)
       THE ASK (owner, 2026-10-14). The app cuts newspaper pages with DocLayout-YOLO (DocStructBench, Core ML,

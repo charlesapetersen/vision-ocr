@@ -1,0 +1,19 @@
+# model-throughput, 2026-10-15: does a batch read by Falcon-OCR or PaddleOCR-VL finish sooner at concurrency 1 or 6, with two readers at once, or with the model kept loaded?
+# Batch: 10 one-page PDFs cut by hybrid-run.sh (OCR-SAMPLE ids s02 s03 s04 s09 s10 other, s17 s40 s41 s42 s47 newspaper), through score-gate (OCRModel.start, the helper) with accurate mode on:
+# each reader set for every kind (Falcon: align, regions on newspapers; Paddle: regions), memory setting 5 GB (the default), shipped runtime and Resources/read-model.py. Each leg ran alone under the heavy lock.
+# Scratch helper only (not committed): Recogniser.modelReading with VISIONOCR_MT_SLOTS lock files (2 = two readers at once) and VISIONOCR_MT_STATS logging each call's times, footprint peak and read-model.py's JSON line.
+# batch_wall_s: gate start to the last published PDF. reader_busy_s: sum of reader process lifetimes; reader_wait_sum_s: summed time helpers waited for the reader lock.
+# mean_read_s: read-model.py's read_s (after load); mean_overhead_s: lifetime less read_s (interpreter start, imports, weight load, image preparation); mean_load_s: its load_s alone (page cache warm).
+# overhead_share: overhead over reader busy time. max_reader_peak_mb: the guard's footprint peak of one call; max_two_peaks_mb: the largest sum over two overlapping calls. No page failed and the guard stopped none.
+# min_free_mb and swap_end are vm_stat free+speculative and swap used: not a measure of headroom on macOS (file cache keeps free low; swap was 2.9 GB before the first leg).
+rep	leg	reader	concurrency	readers_at_once	pages_ok	batch_wall_s	reader_calls	reader_busy_s	reader_wait_sum_s	mean_call_s	mean_read_s	mean_overhead_s	mean_load_s	overhead_share	max_reader_peak_mb	max_two_peaks_mb	min_free_mb	swap_end
+rep1	falcon-ocr-c1-s1	falcon-ocr	1	1	10	221.1	10	169.2	0.0	16.9	15.2	1.7	0.35	0.102	4208	-	99	2886.94M
+rep1	falcon-ocr-c6-s1	falcon-ocr	6	1	10	189.9	10	187.8	644.8	18.8	16.5	2.3	0.52	0.122	4132	-	150	2886.94M
+rep1	falcon-ocr-c6-s2	falcon-ocr	6	2	10	149.9	10	268.6	200.2	26.9	24.1	2.7	0.57	0.101	3929	7363	157	3725.44M
+rep1	paddleocr-vl-c1-s1	paddleocr-vl	1	1	10	228.3	10	135.3	0.0	13.5	9.8	3.7	1.36	0.276	2513	-	156	3565.44M
+rep1	paddleocr-vl-c6-s1	paddleocr-vl	6	1	10	151.9	10	146.5	469.0	14.7	10.8	3.9	1.37	0.263	2372	-	150	3661.44M
+rep1	paddleocr-vl-c6-s2	paddleocr-vl	6	2	10	114.2	10	200.9	190.1	20.1	15.4	4.7	1.89	0.231	2461	4719	139	3786.94M
+rep2	falcon-ocr-c6-s1	falcon-ocr	6	1	10	200.3	10	195.4	493.6	19.5	16.7	2.8	0.58	0.143	4027	-	167	5281.56M
+rep2	falcon-ocr-c6-s2	falcon-ocr	6	2	10	164.0	10	281.4	203.1	28.1	24.1	4.0	0.77	0.142	4113	7790	165	5497.62M
+rep2	paddleocr-vl-c6-s1	paddleocr-vl	6	1	10	134.1	10	128.7	355.8	12.9	9.4	3.5	1.34	0.272	2374	-	155	5145.56M
+rep2	paddleocr-vl-c6-s2	paddleocr-vl	6	2	10	103.1	10	186.4	152.6	18.6	14.7	3.9	1.5	0.21	2475	4672	123	5209.56M
