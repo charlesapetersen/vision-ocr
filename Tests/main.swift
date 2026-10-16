@@ -12035,6 +12035,8 @@ do {
         "photoModelReader",
         "handModelArrangement", // and for handwritten pages (page-kind-handwriting)
         "handModelReader",
+        "handTextPage",     // a page after the handwritten one (hw-qwen); checked where it is written
+        "textPage",         //   and the per-page flag `model(for:)` derives from it
         "password",       // opens the document; never reaches the request
         "pdfDPIAuto",       // what to rasterise at when not rebuilding
         "pdfDPI",
@@ -12514,6 +12516,21 @@ do {
               "--one-line-each", "--max-tokens", "3000", "--seconds", "540"]
               && cropped?.arguments[2] == "mlx-community/PaddleOCR-VL-1.6-4bit",
           cropped?.arguments.joined(separator: " ") ?? "nil")
+    // hw-qwen. LightOnOCR-3's build is a folder of its repo, loaded by its path, at the card's limits.
+    let lightonRepo = modelHome.appendingPathComponent("Models/hub/models--prithivMLmods--LightOnOCR-3-4B-MLX")
+    try? FileManager.default.createDirectory(at: lightonRepo, withIntermediateDirectories: true)
+    let lightonBare = try? ModelRuntime.command(reader: "lightonocr-3", image: source, out: argvFile, crops: nil,
+                                                environment: paddleEnv)
+    let lightonFolder = lightonRepo.appendingPathComponent(ModelRuntime.readers["lightonocr-3"]?.folder ?? "none")
+    try? FileManager.default.createDirectory(at: lightonFolder, withIntermediateDirectories: true)
+    try? "{}".write(to: lightonFolder.appendingPathComponent("config.json"), atomically: true, encoding: .utf8)
+    let lighton = try? ModelRuntime.command(reader: "lightonocr-3", image: source, out: argvFile, crops: nil,
+                                            environment: paddleEnv)
+    check("LightOnOCR-3 is run from its build's folder, with the card's empty prompt, side and tokens, once downloaded",
+          lightonBare == nil && lighton?.arguments[2] == lightonFolder.path
+              && lighton.map { Array($0.arguments.suffix(8)) } == ["--prompt", "", "--seconds", "540", "--max-side", "2048",
+                                                                   "--max-tokens", "4096"],
+          lighton?.arguments.joined(separator: " ") ?? "nil")
     try? FileManager.default.removeItem(at: python)
     // The same output name as the publish that succeeded above: gone first, so an empty layer means this run's.
     try? FileManager.default.removeItem(at: dir.appendingPathComponent("align-falcon-ocr.ocr.pdf"))
@@ -12712,6 +12729,8 @@ do {
     hands.modelReader = printReader
     hands.handModelArrangement = .align
     hands.handModelReader = reader("hand.sh", "The model reader's handz reach the text layer")
+    // Into the page's own layer: the text page (hw-qwen) is checked below.
+    hands.handTextPage = false
     let onHand = hands.model(for: .handwriting)
     check("with a handwriting pair, a handwritten page takes it, and the rest the main pair",
           onHand.modelReader.hasSuffix("hand.sh") && hands.model(for: .other).modelReader == printReader
@@ -12725,6 +12744,7 @@ do {
     var sameHand = Prefs.Snapshot.current()
     sameHand.modelArrangement = .align; sameHand.modelReader = "falcon-ocr"
     sameHand.handModelArrangement = .align; sameHand.handModelReader = "falcon-ocr"
+    sameHand.handTextPage = false
     var photoDiffers = sameHand
     photoDiffers.photoModelArrangement = .regions; photoDiffers.photoModelReader = "paddleocr-vl"
     var handOff = Prefs.Snapshot.current()
@@ -12768,6 +12788,38 @@ do {
     check("…a page whose ink render is a hand's takes the handwriting reader, and the same page without it does not",
           byInk.0.contains("handz") && !byInk.0.contains("printz") && byInk.1.contains("printz"),
           "\(byInk) lines \(read?.count ?? -1)")
+    // hw-qwen. With the text page on, the handwritten page keeps Vision's own lines and its
+    // reading is left beside the bitmap for `Model` to set on a page of its own; a typed page
+    // is read as before and leaves none, and a second reading leaves no stale one.
+    var paged = hands
+    paged.handTextPage = true
+    var pagedSame = sameHand
+    pagedSame.handTextPage = true
+    let pagedInk = text(inked, paged)
+    let leftInk = try? String(contentsOf: Recogniser.textPageURL(besides: inked), encoding: .utf8)
+    let pagedTyped = text(first, paged)
+    let leftTyped = FileManager.default.fileExists(atPath: Recogniser.textPageURL(besides: first).path)
+    check("with the text page on, a handwritten page keeps Vision's lines and leaves its reading for a page of its own",
+          !pagedInk.contains("handz") && pagedInk == text(inked, Prefs.Snapshot.current()) && leftInk?.contains("handz") == true
+              && paged.model(for: .handwriting).textPage && !paged.model(for: .other).textPage
+              && !paged.model(for: .photograph).textPage && !hands.model(for: .handwriting).textPage,
+          "\(pagedInk) / \(leftInk ?? "none")")
+    _ = text(inked, paged)
+    let leftAgain = FileManager.default.fileExists(atPath: Recogniser.textPageURL(besides: inked).path)
+    _ = text(inked, hands)
+    check("…a typed page takes the main reader and leaves none, and a reading into the layer removes an old one",
+          pagedTyped.contains("printz") && !leftTyped && leftAgain
+              && !FileManager.default.fileExists(atPath: Recogniser.textPageURL(besides: inked).path))
+    var pagedRegions = paged
+    pagedRegions.handModelArrangement = .regions
+    check("…the text page sets handwriting apart from the same pair, and is only for a whole-page reading",
+          pagedSame.handwritingApart && !sameHand.handwritingApart && !pagedRegions.model(for: .handwriting).textPage)
+    var pagedArguments = Recogniser.helperArguments(paged)
+    let pagedBack = Recogniser.helperSettings(from: pagedArguments)
+    if let i = pagedArguments.firstIndex(of: "--hand-text-page") { pagedArguments[i + 1] = "maybe" }
+    check("…and the helper is told it, refusing a value that is no flag",
+          pagedBack?.handTextPage == true && Recogniser.helperSettings(from: Recogniser.helperArguments(hands))?.handTextPage == false
+              && Recogniser.helperSettings(from: pagedArguments) == nil)
     var bogusHand = Recogniser.helperArguments(handOnly)
     if let i = bogusHand.firstIndex(of: "--hand-model-arrangement") { bogusHand[i + 1] = "bogus" }
     check("the helper refuses a handwriting arrangement that is none, and reads one that is",
@@ -12830,7 +12882,7 @@ do {
     let onHandwriting = s.model(for: .handwriting)
     check("…Falcon-OCR on handwriting runs as align, and handwriting is looked for",
           onHandwriting.modelArrangement == .align && onHandwriting.modelReader == "falcon-ocr" && s.handwritingApart
-              && AR.offered(.handwriting, memoryGB: 12) == [.vision, .paddle, .falcon],
+              && AR.offered(.handwriting, memoryGB: 12) == [.vision, .paddle, .falcon, .lighton],
           "\(onHandwriting.modelArrangement) \(onHandwriting.modelReader)")
     AR.setEnabled(.falcon, false, d)
     check("…and turning Falcon-OCR off puts handwriting back to Vision",
@@ -12888,6 +12940,14 @@ do {
           panel.contains("kind(\"Handwritten pages\", .handwriting, $accurateHandReader)")
               && panel.contains("one of four kinds") && panel.contains("counts as handwriting")
               && panel.contains("counts as a newspaper"))
+    // hw-qwen. The text page is a choice beside the handwritten kind alone, on unless turned off.
+    resetPrefs()
+    check("…and beside that kind only, a setting for the text page, on by default, saying what each way does",
+          panel.contains("if kind == .handwriting {\n                Toggle(\"Put the reader's text on a page of its own")
+              && panel.contains("isOn: $handTextPage") && d.bool(forKey: Prefs.handTextPage)
+              && Prefs.Snapshot.current(d).handTextPage && Prefs.allKeys.contains(Prefs.handTextPage)
+              && AR.textPageNote(.lighton).contains("next page holds LightOnOCR-3's reading")
+              && AR.textPageNote(.paddle).contains("adds no text page"))
 }
 }  // end of section
 
@@ -13049,8 +13109,30 @@ do {
     // The sizes the table states are the bytes each download fetches.
     check("the table's download sizes are the downloads' own",
           AR.runtimeDownloadMB == MD.Item.runtime.downloadMB && AR.layoutDownloadMB == MD.Item.layout.downloadMB
-              && AR.falconDownloadMB == MD.Item.falcon.downloadMB && AR.paddleDownloadMB == MD.Item.paddle.downloadMB,
+              && AR.falconDownloadMB == MD.Item.falcon.downloadMB && AR.paddleDownloadMB == MD.Item.paddle.downloadMB
+              && AR.lightonDownloadMB == MD.Item.lighton.downloadMB,
           MD.Item.allCases.map { "\($0.rawValue) \($0.downloadMB)" }.joined(separator: ", "))
+    // hw-qwen. LightOnOCR-3: its repo's 8-bit folder at the revision `HW-PANEL-2026-10-15.tsv` read,
+    // the folder the runtime loads it from; handwriting only, and over the default memory limit.
+    if case .hub(let repo, let revision, let files) = MD.Item.lighton.plan {
+        check("LightOnOCR-3's download is its 8-bit folder, at the revision the reader loads",
+              repo == ModelRuntime.readers["lightonocr-3"]?.repo
+                  && ModelRuntime.readers["lightonocr-3"]?.folder == "snapshots/\(revision)/8bit"
+                  && files.allSatisfy { $0.path.hasPrefix("8bit/") } && files.contains { $0.path == "8bit/config.json" }
+                  && files.contains { $0.path == "8bit/model.safetensors" && $0.bytes == 5_136_694_631 },
+              files.map(\.path).joined(separator: ", "))
+    } else {
+        check("LightOnOCR-3's download is its 8-bit folder, at the revision the reader loads", false)
+    }
+    check("LightOnOCR-3 is offered on handwritten pages only, needs the runtime and itself, and is not timed",
+          Recogniser.PageKind.allCases.filter { AR.lighton.figures($0) != nil } == [.handwriting]
+              && AR.lighton.allNeeds == [.runtime, .lighton] && !AR.lighton.isTimed && AR.falcon.isTimed
+              && AR.lighton.route(.handwriting) == (.align, "lightonocr-3")
+              && ModelRuntime.offered("lightonocr-3") == [.handwriting: [.align]]
+              && !AR.offered(.handwriting, memoryGB: Prefs.defaultModelMemoryGB(physicalBytes: 18 << 30)).contains(.lighton)
+              && AR.offered(.handwriting, memoryGB: 8).contains(.lighton)
+              && !AR.confirmation(.lighton, [.lighton]).contains("check its speed")
+              && AR.confirmation(.falcon, [.falcon]).contains("check its speed"))
     let hex = { (s: String, n: Int) in s.count == n && s.allSatisfy { "0123456789abcdef".contains($0) } }
     var malformed: [String] = []
     for item in MD.Item.allCases {
@@ -13226,6 +13308,99 @@ do {
 }
 }  // end of section
 
+section("a handwritten page's reading goes on a text page after it, in its place, outline and marks kept (hw-qwen)") {
+
+do {
+    let fm = FileManager.default
+    let dir = tmp.appendingPathComponent("text pages")
+    try? fm.removeItem(at: dir)
+    try? fm.createDirectory(at: dir, withIntermediateDirectories: true)
+    // Four pages of four sizes, the third turned, and an outline entry on the third.
+    let source = dir.appendingPathComponent("source.pdf")
+    let sizes = [CGSize(width: 612, height: 792), CGSize(width: 500, height: 700),
+                 CGSize(width: 842, height: 595), CGSize(width: 400, height: 400)]
+    var first = CGRect(origin: .zero, size: sizes[0])
+    if let ctx = CGContext(source as CFURL, mediaBox: &first, nil) {
+        for (i, size) in sizes.enumerated() {
+            var box = CGRect(origin: .zero, size: size)
+            ctx.beginPDFPage([kCGPDFContextMediaBox as String: Data(bytes: &box, count: MemoryLayout<CGRect>.size) as CFData]
+                                as CFDictionary)
+            ctx.setFillColor(gray: 0.2, alpha: 1)
+            ctx.fill(CGRect(x: 40, y: 40, width: 60 + 20 * i, height: 30))
+            ctx.endPDFPage()
+        }
+        ctx.closePDF()
+    }
+    if let doc = PDFDocument(url: source), let third = doc.page(at: 2) {
+        third.rotation = 90
+        let root = PDFOutline(), entry = PDFOutline()
+        entry.label = "The turned page"
+        entry.destination = PDFDestination(page: third, at: CGPoint(x: 0, y: 500))
+        root.insertChild(entry, at: 0)
+        doc.outlineRoot = root
+        doc.write(to: source)
+    }
+    // Longer than the tallest page PDF allows.
+    let long = (1...4000).map { "word\($0) of a long letter," }.joined(separator: " ")
+    let pages = [SearchableWriter.TextPage(page: 2, text: "Dear Fred: I am glad to hear the article is to be reprinted."),
+                 SearchableWriter.TextPage(page: 4, text: long)]
+    let text = dir.appendingPathComponent("t.pdf"), out = dir.appendingPathComponent("out.pdf")
+    check("the qpdf call keeps the file whole and puts each text page after its own page",
+          SearchableWriter.textPageArguments(pages, counts: [1, 2], file: source, pageCount: 4, text: text, to: out)
+              == [source.path, "--pages", source.path, "1-2", text.path, "1", source.path, "3-4", text.path, "2-3",
+                  "--", out.path]
+              && SearchableWriter.textPageArguments([SearchableWriter.TextPage(page: 1, text: "a")], counts: [1],
+                                                     file: source, pageCount: 1, text: text, to: out)
+              == [source.path, "--pages", source.path, "1", text.path, "1", "--", out.path])
+    guard let qpdf = JBIG2.merger else {
+        check("qpdf is installed for the text pages' checks", false); exit(1)
+    }
+    let added = (try? SearchableWriter.insertTextPages(pages, reader: "LightOnOCR-3", into: source, pageCount: 4,
+                                                       scratch: dir, to: out, using: qpdf)) ?? -1
+    let doc = PDFDocument(url: out)
+    let boxes = (0..<(doc?.pageCount ?? 0)).compactMap { doc?.page(at: $0)?.bounds(for: .mediaBox).size }
+    check("two handwritten pages gain three text pages, the long reading running on to a second",
+          added == 3 && doc?.pageCount == 7, "added \(added), pages \(doc?.pageCount ?? -1)")
+    check("…each page in its place and its size, the turned page still turned",
+          boxes.count == 7 && boxes[0] == sizes[0] && boxes[1] == sizes[1] && boxes[3] == sizes[2]
+              && boxes[4] == sizes[3] && [2, 5, 6].allSatisfy { boxes[$0].width == SearchableWriter.textPageWidth }
+              && doc?.page(at: 3)?.rotation == 90 && doc?.page(at: 2)?.rotation == 0,
+          "\(boxes)")
+    let found = doc?.findString("reprinted", withOptions: []).compactMap { $0.pages.first.flatMap { doc?.index(for: $0) } }
+    let lastWord = doc?.findString("word4000", withOptions: []).compactMap { $0.pages.first.flatMap { doc?.index(for: $0) } }
+    check("…the reading is found where its text page is, its header naming the page and the reader",
+          found == [2] && lastWord == [6] && doc?.page(at: 2)?.string?.contains("handwritten page before this one, page 2 of the original") == true
+              && doc?.page(at: 2)?.string?.contains("LightOnOCR-3") == true
+              && doc?.page(at: 6)?.string?.hasPrefix("Text of the handwritten page 4 of the original, continued:") == true,
+          "\(found ?? []) \(lastWord ?? [])")
+    let entry = doc?.outlineRoot?.child(at: 0)
+    check("…and the outline still names the turned page, now the fourth",
+          entry?.label == "The turned page" && entry?.destination?.page.flatMap { doc?.index(for: $0) } == 3)
+    check("a text page for a page the file does not have is refused",
+          (try? SearchableWriter.insertTextPages([SearchableWriter.TextPage(page: 5, text: "x")], reader: "r",
+                                                 into: source, pageCount: 4, scratch: dir,
+                                                 to: dir.appendingPathComponent("bad.pdf"), using: qpdf)) == nil)
+    check("the read-back compares letters, a ligature as its letters and a vowel sign wherever PDFKit puts it",
+          SearchableWriter.searchableLetters("ﬁne, — 12 offers") == SearchableWriter.searchableLetters("fine 12offers")
+              && SearchableWriter.searchableLetters("दुनिया") == SearchableWriter.searchableLetters("दुिनया")
+              && SearchableWriter.searchableLetters("fine") != SearchableWriter.searchableLetters("fin"))
+    // Drawn and read back in a script PDFKit reorders: the document is written, not failed.
+    let devanagari = dir.appendingPathComponent("devanagari.pdf")
+    check("…so a reading in Devanagari reaches its text page",
+          (try? SearchableWriter.insertTextPages([SearchableWriter.TextPage(page: 1, text: "दुनिया के लोग, नमस्ते")],
+                                                 reader: "r", into: source, pageCount: 4, scratch: dir,
+                                                 to: devanagari, using: qpdf)) == 1)
+    check("a text page shows the reading without the model's tokens, tags and marks, its lines kept",
+          Recogniser.modelText("# Dear Fred\n**I am** glad &amp; well<|end_of_query|>\n| a |\n|---|---|\nSo long")
+              == "Dear Fred\nI am glad & well \n| a |\nSo long",
+          Recogniser.modelText("# Dear Fred\n**I am** glad &amp; well<|end_of_query|>\n| a |\n|---|---|\nSo long")
+              .debugDescription)
+    check("the success line says which handwritten pages have one",
+          OCRModel.textPageSummary([3]) == "handwritten page 3 is followed by a page of its text"
+              && OCRModel.textPageSummary([2, 5]).hasPrefix("2 handwritten pages (2, 5)"))
+}
+}  // end of section
+
 section("a reader is downloaded only from the models dialog's confirmation, and only a downloaded, enabled one can be chosen for a kind of page (ocr-model-dialogs)") {
 
 do {
@@ -13238,8 +13413,9 @@ do {
 
     // The models dialog lists every reader that needs a download, each with all it needs for
     // every kind of page it is offered on, so a later page-kind choice never needs another.
-    check("the models dialog lists the three model readers, each downloaded whole",
-          AR.downloadable == [.visionRegions, .paddle, .falcon]
+    check("the models dialog lists the four model readers, each downloaded whole",
+          AR.downloadable == [.visionRegions, .paddle, .falcon, .lighton]
+              && AR.lighton.allNeeds == [.runtime, .lighton]
               && AR.falcon.allNeeds == [.runtime, .falcon, .layout] && AR.paddle.allNeeds == [.runtime, .paddle, .layout]
               && AR.visionRegions.allNeeds == [.layout] && AR.vision.allNeeds.isEmpty,
           "\(AR.downloadable) \(AR.falcon.allNeeds)")

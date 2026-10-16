@@ -446,6 +446,11 @@ enum Prefs {
     /// The same for handwritten pages (`Recogniser.isHandwritten`, page-kind-handwriting).
     static let handModelArrangement = "handModelArrangement"
     static let handModelReader = "handModelReader"
+    /// Whether a handwritten page read by a whole-page model reader is followed by a page of
+    /// that reader's text (hw-qwen), its image page keeping Vision's own layer. On by default:
+    /// the reader's words mostly cannot be placed on the hand's lines (`HW-PLACE-2026-10-15.tsv`).
+    /// Off, the words go into the page's own layer by `align`, as the other kinds' do.
+    static let handTextPage = "handTextPage"
     /// The most memory a model reader may hold, in GB, before `ModelGuard` stops it and the
     /// page keeps Vision's reading (C57, ie-guard): the memory slider `ocr-integrate-settings`
     /// gives a control. Measured as the reader's whole process group's physical footprint,
@@ -484,7 +489,8 @@ enum Prefs {
     /// (`OCR-COMPARE-DECISION-2026-10-13.md`), measured on this project's 67-page sample on
     /// one Mac. Speed is ours until a timing run on the user's Mac replaces it.
     enum AccurateReader: String, CaseIterable {
-        case vision, visionRegions = "vision-regions", paddle = "paddleocr-vl", falcon = "falcon-ocr"
+        case vision, visionRegions = "vision-regions", paddle = "paddleocr-vl", falcon = "falcon-ocr",
+             lighton = "lightonocr-3"
 
         var name: String {
             switch self {
@@ -492,6 +498,7 @@ enum Prefs {
             case .visionRegions: return "Vision, section by section"
             case .paddle: return "PaddleOCR-VL"
             case .falcon: return "Falcon-OCR"
+            case .lighton: return "LightOnOCR-3"
             }
         }
 
@@ -514,6 +521,7 @@ enum Prefs {
         static let layoutDownloadMB = 65
         static let paddleDownloadMB = 715
         static let falconDownloadMB = 1085
+        static let lightonDownloadMB = 5164
 
         /// This reader's figures on `kind`, or nil where it is not offered: Vision on regions
         /// off newspapers gave no real advantage (1.20% to 1.09% at twice the time).
@@ -548,6 +556,12 @@ enum Prefs {
                                                               downloadMB: Self.paddleDownloadMB + Self.layoutDownloadMB)
             case (.falcon, .handwriting):      return Figures(wrongPer1000: 409, secondsPerPage: 38.6, memoryGB: 3.9,
                                                               downloadMB: Self.falconDownloadMB)
+            // LightOnOCR-3 (hw-qwen): `HW-PANEL-2026-10-15.tsv`, the same 19 pages, missed words
+            // only; memory its guard peak there, seconds the app's own run over the 21 pages
+            // (`HW-BUILD-2026-10-15.tsv`, 8 min 30 s). Handwritten pages only: measured on nothing else.
+            case (.lighton, .handwriting):     return Figures(wrongPer1000: 96, secondsPerPage: 22.0, memoryGB: 7.6,
+                                                              downloadMB: Self.lightonDownloadMB)
+            case (.lighton, _):                return nil
             }
         }
 
@@ -559,6 +573,7 @@ enum Prefs {
             case .visionRegions: return (.regions, ModelRuntime.visionRegions)
             case .paddle: return (.regions, rawValue)
             case .falcon: return (kind == .newspaper ? .regions : .align, rawValue)
+            case .lighton: return (.align, rawValue)
             }
         }
 
@@ -577,6 +592,7 @@ enum Prefs {
             case (.paddle, .other):            return 10.1
             case (.falcon, .newspaper):        return 96.2
             case (.falcon, .other):            return 10.3
+            case (.lighton, _):                return nil
             // No timing run has photographed or handwritten pages; their speed stays ours.
             case (_, .photograph), (_, .handwriting): return nil
             }
@@ -636,6 +652,9 @@ enum Prefs {
             case .visionRegions: return "For newspapers: helps Vision read each block of text on its own. The smallest download."
             case .paddle: return "For books, articles and newspapers: fewer word mistakes in our sample, using less memory than Falcon-OCR."
             case .falcon: return "For books, articles and newspapers: the fewest word mistakes in our sample, using more memory than PaddleOCR-VL."
+            case .lighton: return "For handwritten pages only: about a sixth of Vision's missed words in our small sample of letters "
+                + "and notes. A large download, and it needs a memory limit of 8 GB or more. Its text goes on a page "
+                + "of its own after each handwritten page."
             }
         }
 
@@ -805,6 +824,11 @@ enum Prefs {
         /// Nil: handwritten pages are read as the rest (`Prefs.handModelArrangement`).
         var handModelArrangement: ModelArrangement? = nil
         var handModelReader: String = ""
+        /// `Prefs.handTextPage`. Read only through `model(for: .handwriting)`, which sets `textPage`.
+        var handTextPage: Bool = false
+        /// Whether this page's model reading goes on a text page after it rather than into its
+        /// layer: set by `model(for:)` on a handwritten page only, never by a caller.
+        var textPage: Bool = false
         var modelMemoryGB: Double = Prefs.defaultModelMemoryGB()
 
         /// Reads the live settings. Call on the main actor, once per batch.
@@ -844,6 +868,7 @@ enum Prefs {
                 handModelArrangement: (d.string(forKey: Prefs.handModelArrangement))
                     .flatMap { $0.isEmpty ? nil : ModelArrangement(rawValue: $0) ?? .off },
                 handModelReader: d.string(forKey: Prefs.handModelReader) ?? "",
+                handTextPage: d.bool(forKey: Prefs.handTextPage),
                 // Unset reads 0, which would stop every reader at its first sample.
                 modelMemoryGB: d.double(forKey: Prefs.modelMemoryGB) > 0
                     ? d.double(forKey: Prefs.modelMemoryGB) : Prefs.defaultModelMemoryGB())
@@ -890,7 +915,7 @@ enum Prefs {
         joinHyphenated, preserveAnnotations, writeRunReport, concurrency,
         checkForUpdates, skippedVersion, lastUpdateCheck, modelArrangement, modelReader,
         newspaperModelArrangement, newspaperModelReader, photoModelArrangement, photoModelReader,
-        handModelArrangement, handModelReader, modelMemoryGB, accurateMode, accurateReader,
+        handModelArrangement, handModelReader, handTextPage, modelMemoryGB, accurateMode, accurateReader,
         accurateNewspaperReader, accuratePhotoReader, accurateHandReader, accurateEnabled, accurateTiming,
     ]
 
@@ -1038,6 +1063,7 @@ enum Prefs {
             accuratePhotoReader: AccurateReader.vision.rawValue,
             accurateHandReader: AccurateReader.vision.rawValue,
             accurateEnabled: "",
+            handTextPage: true,
 
             // On by default. The cost is a few kilobytes of text per batch in
             // the directory macOS already keeps logs in; the benefit is that a

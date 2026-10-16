@@ -2280,6 +2280,9 @@ final class OCRModel: ObservableObject {
                 + " Vision's reading. " + reasons.prefix(3).map { "Page \($0.page): \($0.why)." }
                     .joined(separator: " "))
         }
+        // hw-qwen. The handwritten pages whose reading goes on a page of its own, read now,
+        // while the files `recognisePage(at:)` left beside the bitmaps are there.
+        let textPages = Recogniser.textPages(of: bitmaps)
         // The bilevel bitmaps have been read and compressed; nothing wants them
         // again. Deliberately not the whole directory — the picture pages' JPEGs
         // sit beside them and are the streams the assembly is about to embed.
@@ -2305,6 +2308,8 @@ final class OCRModel: ObservableObject {
         var outlineNote: String?
         // C48. Set when the page labels and title could not be written.
         var infoNote: String?
+        // hw-qwen. Which handwritten pages were given a text page.
+        var textPageNote: String?
 
         // Read the expected page count now, while everything still exists. The
         // scratch intermediates get deleted as they're spent, so asking later
@@ -2965,6 +2970,8 @@ final class OCRModel: ObservableObject {
             // it here would undo the compression that route exists for.
             let outlined = work.appendingPathComponent("outlined.pdf")
             var finished = staged
+            // The pages the published file has: the source's, and any text pages (hw-qwen).
+            var published = expected
             if !usedJBIG2, !outline.isEmpty,
                SearchableWriter.copyOutline(from: inputFile, of: staged, to: outlined,
                                             password: password),
@@ -3043,10 +3050,32 @@ final class OCRModel: ObservableObject {
                     infoNote = "the original's page numbers and title could not be "
                         + "carried across"
                 }
+                // hw-qwen. After the labels, which qpdf carries page by page as it inserts, and
+                // before the packing, which its rewrite would undo. Verified inside: the count,
+                // and each text page's letters read back.
+                if !textPages.isEmpty {
+                    let withText = work.appendingPathComponent("with-text.pdf")
+                    let reader = settings.model(for: .handwriting).modelReader
+                    let added = try control.adopting { register in
+                        try SearchableWriter.insertTextPages(
+                            textPages, reader: Prefs.AccurateReader(rawValue: reader)?.name ?? reader,
+                            into: finished, pageCount: expected, scratch: work, to: withText,
+                            using: qpdf, register: register)
+                    }
+                    finished = withText
+                    published = expected + added
+                    textPageNote = Self.textPageSummary(textPages.map(\.page))
+                }
                 // C47. Last, so no later rewrite unpacks it again.
                 control.adopting { register in
                     JBIG2.packObjects(in: finished, using: qpdf, register: register)
                 }
+            }
+            // A text page needs qpdf to put it in its place; without it the reading would be lost.
+            if !textPages.isEmpty && JBIG2.merger == nil {
+                report(.failed, "The handwritten pages' text pages need qpdf, which this copy of the app "
+                    + "cannot find; nothing was written.")
+                return
             }
             // Last thing before the user's disk is touched.
             //
@@ -3057,7 +3086,7 @@ final class OCRModel: ObservableObject {
             // never published" and "three gates, then publish" were both false. This does
             // not shorten the window, it stops it from ending in a publish.
             if control.isCancelled { report(.cancelled, "Cancelled."); return }
-            try publishVerified(finished, expecting: expected, to: output)
+            try publishVerified(finished, expecting: published, to: output)
         } catch {
             // Cancelling reaches the jbig2 and qpdf children as SIGTERM, so they
             // exit 15 and JBIG2.encode/overlay throw — arriving here, where the
@@ -3101,8 +3130,17 @@ final class OCRModel: ObservableObject {
         // front of the message every ordinary run showed the user.
         report(.succeeded, [sizeNote(from: inputFile, to: output),
                             emptyDocumentNote ?? "", outlineNote ?? "", infoNote ?? "",
-                            marksNote ?? ""]
+                            marksNote ?? "", textPageNote ?? ""]
                              .filter { !$0.isEmpty }.joined(separator: " — "))
+    }
+
+    /// hw-qwen. The success line's word on the text pages, so a reader of the file knows why
+    /// it has more pages than the original.
+    nonisolated static func textPageSummary(_ pages: [Int]) -> String {
+        let list = pages.prefix(10).map(String.init).joined(separator: ", ") + (pages.count > 10 ? ", …" : "")
+        return pages.count == 1
+            ? "handwritten page \(list) is followed by a page of its text"
+            : "\(pages.count) handwritten pages (\(list)) are each followed by a page of their text"
     }
 
     /// A note when the searchable copy came out **larger** than the original.

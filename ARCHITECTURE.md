@@ -115,6 +115,11 @@ from [`makeSearchablePDF`](Sources/Model.swift#L438):
    just carried, which is the 4.08x inflation that ruled PDFKit out as the
    mechanism. A failure here fails the document rather than publishing marks it
    cannot vouch for.
+9b. **Text pages** (hw-qwen), when a handwritten page's whole-page model reading was set
+   apart (`Prefs.handTextPage`): `recognisePage(at:)` leaves the reading beside the bitmap,
+   and after the page labels are carried, `SearchableWriter.insertTextPages` puts a page of
+   it after its image page with one `qpdf --pages` pass over the finished file, then reads
+   each one back through PDFKit. The published count is the source's plus those pages.
 10. [`finish`](Sources/Model.swift#L702) → `finishUp` when `completed == total`.
 
 ## Two page boxes, deliberately kept apart

@@ -938,6 +938,7 @@ struct AccuratePageKindsDialog: View {
     @AppStorage(Prefs.accurateEnabled) private var enabledRaw = ""
     @AppStorage(Prefs.modelMemoryGB) private var modelMemoryGB = Prefs.defaultModelMemoryGB()
     @AppStorage(Prefs.accurateTiming) private var accurateTimingData = Data()
+    @AppStorage(Prefs.handTextPage) private var handTextPage = true
     @ObservedObject private var downloads = DownloadRunner.shared
 
     var body: some View {
@@ -963,8 +964,8 @@ struct AccuratePageKindsDialog: View {
                     PageKindWarnings(labelWidth: 0)
                     Text("A reader is a method of reading text. Vision is built in; Vision, section by section "
                          + "reads a newspaper's separate blocks. PaddleOCR-VL and Falcon-OCR are optional extra "
-                         + "readers. Only downloaded readers with Offer in Choose pages turned on, and enough memory, "
-                         + "can be selected. Add them in Downloads in Settings.")
+                         + "readers, and LightOnOCR-3 is one for handwriting. Only downloaded readers with Offer in "
+                         + "Choose pages turned on, and enough memory, can be selected. Add them in Downloads in Settings.")
                         .font(.caption).foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                     Text("Errors means words wrong or missing out of every 1,000; lower is better. "
@@ -1027,6 +1028,14 @@ struct AccuratePageKindsDialog: View {
                 }
             }
             .font(.caption)
+            if kind == .handwriting {
+                Toggle("Put the reader's text on a page of its own after each handwritten page", isOn: $handTextPage)
+                    .font(.caption)
+                    .accessibilityLabel("Text page after each handwritten page")
+                Text(Prefs.AccurateReader.textPageNote(chosen))
+                    .font(.caption).foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
         }
     }
 }

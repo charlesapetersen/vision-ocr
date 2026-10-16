@@ -677,12 +677,31 @@ final class Harness: NSObject, NSApplicationDelegate {
                raw.range(of: Data("/DeviceRGB".utf8)) != nil { colour += 1 }
 
             let src = PDFDocument(url: input)
-            if let srcPages = src?.pageCount, srcPages != doc.pageCount {
+            // hw-qwen. A handwritten page's text page follows it and has no input page: it is
+            // known by its width and its header, which must name the input page before it. The
+            // rest are compared with the input's pages in order.
+            var textPages = Set<Int>()
+            for i in 0..<doc.pageCount {
+                guard let page = doc.page(at: i), page.bounds(for: .mediaBox).width == SearchableWriter.textPageWidth,
+                      let head = page.string, head.hasPrefix("Text of the handwritten page "),
+                      let of = head.range(of: " of the original")
+                else { continue }
+                // "…page before this one, page N of the original" or "…page N of the original, continued".
+                let named = head[..<of.lowerBound].split(separator: " ").last.flatMap { Int($0) } ?? -1
+                if named != i - textPages.count {
+                    hard.append("\(out.lastPathComponent) p\(i + 1): a text page for page \(named) "
+                                + "does not follow it")
+                }
+                textPages.insert(i)
+            }
+            if let srcPages = src?.pageCount, srcPages + textPages.count != doc.pageCount {
                 hard.append("\(out.lastPathComponent): \(doc.pageCount) pages "
-                            + "against the input's \(srcPages)")
+                            + "against the input's \(srcPages)"
+                            + (textPages.isEmpty ? "" : " and \(textPages.count) text pages"))
             }
             var darkSum = 0.0, blanks = 0, worst = 1.0, faded = 0, dimmest = 1.0
-            for i in 0..<doc.pageCount {
+            for i in 0..<doc.pageCount where !textPages.contains(i) {
+                let s = i - textPages.filter { $0 < i }.count
                 guard let page = doc.page(at: i) else {
                     hard.append("\(out.lastPathComponent) p\(i + 1): no page object")
                     continue
@@ -696,7 +715,7 @@ final class Harness: NSObject, NSApplicationDelegate {
                 pagesSeen += 1
                 if ink.isFlat { blanks += 1; blankPages += 1 }
 
-                guard let sp = src?.page(at: i), let si = Self.ink(of: sp) else {
+                guard let sp = src?.page(at: s), let si = Self.ink(of: sp) else {
                     soft.append("\(out.lastPathComponent) p\(i + 1): the input page could not be "
                                 + "rendered, so this page's pixels are unverified "
                                 + "(output darkness \(Self.fmt(ink.darkness)))")
@@ -747,8 +766,10 @@ final class Harness: NSObject, NSApplicationDelegate {
                     }
                 }
             }
+            // The ink of the input's pages only: a text page has none to compare.
+            let imagePages = doc.pageCount - textPages.count
             perDocument.append((out.lastPathComponent, these, size, doc.pageCount,
-                                doc.pageCount > 0 ? darkSum / Double(doc.pageCount) : 0,
+                                imagePages > 0 ? darkSum / Double(imagePages) : 0,
                                 blanks, worst, faded, dimmest))
         }
 

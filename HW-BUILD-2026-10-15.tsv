@@ -1,0 +1,35 @@
+# qw-build (hw-qwen), 2026-10-15: LightOnOCR-3 in the app. The 21 pages of HW-PANEL-2026-10-15.tsv, each a one-page PDF of its JPEG (sips),
+# through Tools/score-gate.swift (OCRModel.start(), the helper, JBIG2) built from this commit's Sources less two late changes (the text page's
+# header wording, and model markup stripped from it; rerun with them: the same 20 text pages, every gate check clean), with -accurateMode YES -accurateHandReader
+# lightonocr-3 -accurateEnabledReaders lightonocr-3 -modelMemoryGB 8 -handTextPage YES; the model from the lab's cache of the pinned revision,
+# run by the app's runtime (mlx-vlm 0.7.4) and Resources/read-model.py. 22 documents (the 21 and a mixed file) in 8 min 30 s, 21 model readings.
+# Scored exactly as HW-PANEL (score-bakeoff.py's tokens, a bag, [illegible] left out); the scorer reproduces HW-PANEL's lighton rows and HW-MEASURE's Vision rows exactly.
+# text_page: page 2 is a 612 pt text page. missed_textpage/added: its reading against the truth; missed_vision/added: page 1's own layer (Vision's);
+# missed_union: the two together, as Find sees the file; panel_missed: HW-PANEL's reading of the source JPEG.
+# Handwritten (2,825 words), missed per 1,000 and added: text page 120, 350 (p048 had none: not judged handwritten); on the 18 with one, 99 against the panel's 96.
+# Vision's layer 561, 1,189 (as HW-MEASURE). Union 81. Mixed (202 words): p031 has one (20, as the panel); p009 was not judged handwritten.
+# p049: 88 added against the panel's 11, a model note appended to the reading ("Note: The handwritten text contains some unclear ...").
+# Find, PDFKit findString over each file, HW-PLACE's 1,405 distinct truth words of 4+ letters: 1,238 found (align 922, Vision alone 585; image pages alone 585).
+# mixed-3pages (p007, a printed page of "1954 - Why.pdf", p015): 5 pages, p007 image, its text page, the printed page, p015 image, its text page.
+id	kind	pages	text_page	truth_tokens	missed_textpage	added_textpage	missed_vision	added_vision	missed_union	panel_missed
+p007	handwritten	2	yes	73	7	4	45	34	5	7
+p009	mixed	1	no	152	-	-	36	38	36	12
+p015	handwritten	2	yes	217	35	5	35	28	9	35
+p022	handwritten	2	yes	290	1	1	117	36	0	1
+p031	mixed	2	yes	50	1	0	16	11	1	1
+p040	handwritten	2	yes	185	11	7	91	45	7	11
+p045	handwritten	2	yes	113	1	2	25	24	1	1
+p046	handwritten	2	yes	86	6	3	42	33	4	6
+p047	handwritten	2	yes	106	8	2	84	57	4	9
+p048	handwritten	1	no	67	-	-	26	66	26	4
+p049	handwritten	2	yes	83	11	88	70	41	10	13
+p050	handwritten	2	yes	199	58	19	170	67	43	58
+p051	handwritten	2	yes	91	2	6	43	46	1	3
+p052	handwritten	2	yes	154	3	3	50	51	1	5
+p053	handwritten	2	yes	151	9	12	73	68	8	9
+p054	handwritten	2	yes	145	22	18	120	67	22	19
+p055	handwritten	2	yes	90	6	3	37	49	5	6
+p056	handwritten	2	yes	132	9	9	71	66	9	8
+p086	handwritten	2	yes	310	25	38	193	185	21	26
+p094	handwritten	2	yes	80	20	29	76	20	19	19
+p096	handwritten	2	yes	253	38	101	218	206	34	30

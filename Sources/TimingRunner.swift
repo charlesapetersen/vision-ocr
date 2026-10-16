@@ -27,7 +27,7 @@ final class TimingRunner: ObservableObject {
     /// Called once a requested reader's whole download is in place. Pending/active requests
     /// are coalesced, so shared download parts or a second open panel cannot start duplicates.
     func afterDownload(_ reader: Prefs.AccurateReader) {
-        guard reader != .vision, activeReader != reader,
+        guard reader != .vision, reader.isTimed, activeReader != reader,
               !requests.contains(where: { if case .automatic(let pending) = $0 { return pending == reader }; return false }),
               Prefs.store.bool(forKey: Prefs.accurateMode),
               Prefs.AccurateReader.enabled(Prefs.store).contains(reader), reader.toFetch().isEmpty else { return }

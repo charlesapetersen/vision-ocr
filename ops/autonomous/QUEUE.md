@@ -2126,7 +2126,7 @@ say so in the commit.
             (blocked-on: hw-pages, pk-upright)
       - [x] **hw-settings** — the fourth kind in the dialog and the routing, with the overlap rule.
             (blocked-on: hw-detect, hw-measure)
-- [ ] **hw-qwen** — measure four downloadable readers for handwritten pages (Qwen3.5-9B, LightOnOCR-3-4B,
+- [x] **hw-qwen** — measure four downloadable readers for handwritten pages (Qwen3.5-9B, LightOnOCR-3-4B,
       Churro 3B, Kraken PP-OCRv6 on Vision's lines), add the best one that passes the bar, and if its words cannot
       be placed, give handwritten pages a separate text page by default. (uses: build,model:12)
       (blocked-on: page-kind-handwriting)
@@ -2197,8 +2197,9 @@ say so in the commit.
             Pick: LightOnOCR-3-4B, 96 missed per 1,000 (`HW-PANEL-2026-10-15.tsv`).
       - [x] **qw-place** — whether align can place the pick's words, and the decision on the text page.
             Align places 65% of its words, so handwritten pages get the text page (`HW-PLACE-2026-10-15.tsv`).
-      - [ ] **qw-build** — the pick in the dialog, and the text page if qw-place calls for it.
-            (blocked-on: qw-place, hw-settings)
+      - [x] **qw-build** — the pick in the dialog, and the text page if qw-place calls for it.
+            LightOnOCR-3 on handwriting, a text page after each handwritten page by default: 99 missed per
+            1,000 there, Find 1,238 of 1,405 words, align 922 (`HW-BUILD-2026-10-15.tsv`).
 - [ ] **lighton-print** — check LightOnOCR-3-4B on print and newspapers, scored beside Falcon-OCR.
       (uses: build,model:12) (blocked-on: hw-panel)
       THE ASK (owner, 2026-10-15): "queue a one-session check of LightOnOCR-3-4B on the bake-off sample, run only

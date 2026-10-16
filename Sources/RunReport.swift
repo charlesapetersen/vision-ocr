@@ -263,7 +263,8 @@ enum RunReport {
                             + (s.photoModelArrangement.map {
                                 "; photographs: " + pair($0, s.photoModelReader) } ?? "")
                             + (s.handModelArrangement.map {
-                                "; handwriting: " + pair($0, s.handModelReader) } ?? "")
+                                "; handwriting: " + pair($0, s.handModelReader)
+                                    + ($0 == .align && s.handTextPage ? ", with text pages" : "") } ?? "")
                             + String(format: "; stopped over %.1f GB", s.modelMemoryGB)
                             + (c.rebuildImages ? "" : " — not used: pages are not rebuilt")))
         }
@@ -325,6 +326,8 @@ enum RunReport {
         "photoModelReader": "Model reader",
         "handModelArrangement": "Model reader",
         "handModelReader": "Model reader",
+        "handTextPage": "Model reader",
+        "textPage": "Model reader",       // never set on the batch's snapshot; `model(for:)` sets it
         "modelMemoryGB": "Model reader",
     ]
 

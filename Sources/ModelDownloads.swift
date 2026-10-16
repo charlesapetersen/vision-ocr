@@ -44,7 +44,7 @@ enum ModelDownloads {
     }
 
     enum Item: String, CaseIterable {
-        case runtime, layout, falcon, paddle
+        case runtime, layout, falcon, paddle, lighton
 
         var name: String {
             switch self {
@@ -52,6 +52,7 @@ enum ModelDownloads {
             case .layout: return "the helper that finds columns"
             case .falcon: return Prefs.AccurateReader.falcon.name
             case .paddle: return Prefs.AccurateReader.paddle.name
+            case .lighton: return Prefs.AccurateReader.lighton.name
             }
         }
 
@@ -97,6 +98,21 @@ enum ModelDownloads {
                     File(path: "special_tokens_map.json", bytes: 1151, sha256: "d3a125c03103deb2acaf7730791bdbbf196f620e5a2213b664511ff9b4b25bab"),
                     File(path: "tokenizer.json", bytes: 11_188_983, sha256: "f64dee5b500fd0737498420a95cfa25927990ecbe37c0c112a6c8fcea22bc7f9"),
                     File(path: "tokenizer_config.json", bytes: 782, sha256: "ec27a60e0ac749b3820964af0511115d8e5a9b63ce22ff933ef6a09c36aa50fe"),
+                ])
+            // The 8-bit build in the repo's `8bit/` folder (`ModelRuntime.Reader.folder`), which
+            // `read-model.py` loads by its path; not the folder's README.
+            case .lighton:
+                return .hub(repo: "prithivMLmods/LightOnOCR-3-4B-MLX", revision: "e93084acf44a380776866b23b122f48fe47cab7f", files: [
+                    File(path: "8bit/chat_template.jinja", bytes: 7759, sha256: "d5ddb788d5f3df12e32244954037eb535409d24eeb48c2429d7588af4e7b69a7"),
+                    File(path: "8bit/config.json", bytes: 3871, sha256: "c30af3d2604e023294f6ea220336fc65a947be61fe889c9005ffa687d163b10a"),
+                    File(path: "8bit/generation_config.json", bytes: 204, sha256: "8ce51af0baac298c116b7db144efe1ebd78b0b792d084002634fd3ed63f4d515"),
+                    File(path: "8bit/model.safetensors", bytes: 5_136_694_631, sha256: "69865211678f2520fa99de033fd4e802e461b02abfe98fd5391de59de74e2b42"),
+                    File(path: "8bit/model.safetensors.index.json", bytes: 101_944, sha256: "b2509109dd795a3aa81bc12778b26685b492c7e3358a9340e96d4ec915d90e16"),
+                    File(path: "8bit/preprocessor_config.json", bytes: 390, sha256: "27225450ac9c6529872ee1924fcb0962ff5634834f817040f444118116f4e516"),
+                    File(path: "8bit/processor_config.json", bytes: 992, sha256: "361048fbb4d3ef01e74b60884904599bcc5224fc57f867fcb2f7141d48bf76c3"),
+                    File(path: "8bit/tokenizer.json", bytes: 19_989_339, sha256: "a5cd9732badce41de57e6efce8302930ded1c1188c5f81feb2bd6c24c4a1941f"),
+                    File(path: "8bit/tokenizer_config.json", bytes: 1190, sha256: "7d884d6eaf8142a3343a933ca5ab6ccc2fa93d52591cdbbe2ea33559bb2b503a"),
+                    File(path: "8bit/vocab.json", bytes: 6_722_759, sha256: "ce99b4cb2983d118806ce0a8b777a35b093e2000a503ebde25853284c9dfa003"),
                 ])
             }
         }
@@ -349,6 +365,7 @@ extension Prefs.AccurateReader {
         switch self {
         case .falcon: out += [.runtime, .falcon]
         case .paddle: out += [.runtime, .paddle]
+        case .lighton: out += [.runtime, .lighton]
         case .vision, .visionRegions: break
         }
         if route(kind).arrangement == .regions { out.append(.layout) }
@@ -431,12 +448,28 @@ extension Prefs.AccurateReader {
             + "another reader. Until then, a file holding these pages stops with a message rather than being read."
     }
 
+    /// Whether a speed check can time it: only newspapers and other pages have sample pages
+    /// (`TimingRun.legs`), so a reader offered on neither is never checked.
+    var isTimed: Bool { figures(.newspaper) != nil || figures(.other) != nil }
+
+    /// What the text-page setting does with `reader` chosen for handwritten pages, in the
+    /// page-kind dialog's words (hw-qwen).
+    static func textPageNote(_ reader: Prefs.AccurateReader) -> String {
+        if reader.route(.handwriting).arrangement == .align {
+            return "On, each handwritten page keeps Vision's text where the writing is, and the next page holds "
+                + "\(reader.name)'s reading, which you can select, copy and search. Off, \(reader.name)'s words "
+                + "are matched to Vision's lines instead, and about a third of them were lost in our sample."
+        }
+        return "This applies to a reader that reads the whole page, such as LightOnOCR-3 or Falcon-OCR; "
+            + "\(reader.name) adds no text page."
+    }
+
     /// The confirmation's sentence: the total and what makes it up.
     static func confirmation(_ reader: Prefs.AccurateReader, _ items: [ModelDownloads.Item]) -> String {
         "This downloads \(DownloadRunner.size(items)) from the internet: "
             + items.map { "\($0.name) (\(DownloadRunner.size([$0])))" }.joined(separator: ", ")
             + ". It uses about \(reader.diskSpace) of disk space with the shared parts; installation needs extra room. "
-            + "Once ready, we check its speed on sample pages automatically. You can stop the check. "
+            + (reader.isTimed ? "Once ready, we check its speed on sample pages automatically. You can stop the check. " : "")
             + "Then choose where to use \(reader.name) in Choose pages. Your documents are not uploaded."
     }
 }

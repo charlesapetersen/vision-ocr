@@ -176,9 +176,11 @@ enum SearchableWriter {
         case unreadableSource
         case unreadableObservations
         case cannotWrite
+        case textPages(String)
 
         var errorDescription: String? {
             switch self {
+            case .textPages(let why): return "The handwritten pages' text pages could not be added: \(why); nothing was written."
             case .unreadableSource: return "Could not read the page images to build the PDF."
             case .unreadableObservations: return "Could not read Vision's output."
             case .cannotWrite: return "Could not write the searchable PDF."
@@ -2250,5 +2252,184 @@ enum SearchableWriter {
             CTLineDraw(line, pdf)
             return nil
         }
+    }
+}
+
+// MARK: - Text pages (hw-qwen)
+
+extension SearchableWriter {
+    /// One handwritten page's text page: the page it follows, counted from 1, and the reading.
+    struct TextPage: Equatable {
+        let page: Int
+        let text: String
+    }
+
+    /// The text page's layout, borrowed from Archive Suite's (`PDFGenerator.makeTextPage`): a
+    /// letter-wide page, a grey header, the reading in 11 pt Georgia, the page as tall as the
+    /// text needs and never shorter than a letter page. A reading too long for one page of the
+    /// tallest size PDF allows runs on to another.
+    static let textPageWidth: CGFloat = 612
+    static let textPageMinHeight: CGFloat = 792
+    static let textPageMaxHeight: CGFloat = 14_400
+    static let textPageMargin: CGFloat = 54
+
+    /// The words on a text page above the reading.
+    static func textPageHeader(page: Int, reader: String) -> String {
+        "Text of the handwritten page before this one, page \(page) of the original, as \(reader) read it. "
+            + "Its words are not placed on that page's image, which keeps Vision's own text.\n\n"
+    }
+
+    /// The words above a reading that runs on to another text page.
+    static func textPageContinued(page: Int) -> String {
+        "Text of the handwritten page \(page) of the original, continued:\n\n"
+    }
+
+    /// Writes `pages`' text pages, in order, to one PDF at `url`, and returns the text drawn on
+    /// each of each one's pages, headers included. Ligatures are off, so a search or a copy finds
+    /// the letters that were read.
+    static func writeTextPages(_ pages: [TextPage], reader: String, to url: URL) throws -> [[String]] {
+        var box = CGRect(x: 0, y: 0, width: textPageWidth, height: textPageMinHeight)
+        guard let context = CGContext(url as CFURL, mediaBox: &box, nil) else { throw Failure.cannotWrite }
+        defer { context.closePDF() }
+        let width = textPageWidth - 2 * textPageMargin
+        func style(_ spacing: CGFloat) -> CTParagraphStyle {
+            var lineSpacing: CGFloat = 4, paragraphSpacing = spacing
+            var wrap = CTLineBreakMode.byWordWrapping
+            return withUnsafeBytes(of: &lineSpacing) { ls in
+                withUnsafeBytes(of: &paragraphSpacing) { ps in
+                    withUnsafeBytes(of: &wrap) { w in
+                        let settings = [
+                            CTParagraphStyleSetting(spec: .lineSpacingAdjustment, valueSize: ls.count, value: ls.baseAddress!),
+                            CTParagraphStyleSetting(spec: .paragraphSpacing, valueSize: ps.count, value: ps.baseAddress!),
+                            CTParagraphStyleSetting(spec: .lineBreakMode, valueSize: w.count, value: w.baseAddress!),
+                        ]
+                        return CTParagraphStyleCreate(settings, settings.count)
+                    }
+                }
+            }
+        }
+        let headerFont = CTFontCreateUIFontForLanguage(.emphasizedSystem, 11, nil)
+            ?? CTFontCreateWithName("Helvetica-Bold" as CFString, 11, nil)
+        let bodyFont = CTFontCreateWithName("Georgia" as CFString, 11, nil)
+        let headerAttributes: [NSAttributedString.Key: Any] = [
+            kCTFontAttributeName as NSAttributedString.Key: headerFont,
+            kCTForegroundColorAttributeName as NSAttributedString.Key: CGColor(gray: 0.33, alpha: 1),
+            kCTParagraphStyleAttributeName as NSAttributedString.Key: style(2),
+            kCTLigatureAttributeName as NSAttributedString.Key: 0]
+        let bodyAttributes: [NSAttributedString.Key: Any] = [
+            kCTFontAttributeName as NSAttributedString.Key: bodyFont,
+            kCTForegroundColorAttributeName as NSAttributedString.Key: CGColor(gray: 0, alpha: 1),
+            kCTParagraphStyleAttributeName as NSAttributedString.Key: style(6),
+            kCTLigatureAttributeName as NSAttributedString.Key: 0]
+        var drawn: [[String]] = []
+        for page in pages {
+            var rest = page.text.trimmingCharacters(in: .whitespacesAndNewlines) as NSString
+            var these: [String] = []
+            while rest.length > 0 {
+                let header = these.isEmpty ? textPageHeader(page: page.page, reader: reader)
+                    : textPageContinued(page: page.page)
+                let text = NSMutableAttributedString(string: header, attributes: headerAttributes)
+                text.append(NSAttributedString(string: rest as String, attributes: bodyAttributes))
+                let setter = CTFramesetterCreateWithAttributedString(text as CFAttributedString)
+                let all = CFRange(location: 0, length: text.length)
+                let need = CTFramesetterSuggestFrameSizeWithConstraints(
+                    setter, all, nil, CGSize(width: width, height: .greatestFiniteMagnitude), nil).height
+                let height = min(max(textPageMinHeight, ceil(need) + 8 + 2 * textPageMargin), textPageMaxHeight)
+                var media = CGRect(x: 0, y: 0, width: textPageWidth, height: height)
+                let frame = CTFramesetterCreateFrame(setter, all, CGPath(
+                    rect: CGRect(x: textPageMargin, y: textPageMargin, width: width, height: height - 2 * textPageMargin),
+                    transform: nil), nil)
+                // Some of the reading on every page, or the loop would never end.
+                let shown = CTFrameGetVisibleStringRange(frame).length - (header as NSString).length
+                guard shown > 0 else { throw Failure.cannotWrite }
+                let boxData = Data(bytes: &media, count: MemoryLayout<CGRect>.size) as CFData
+                context.beginPDFPage([kCGPDFContextMediaBox as String: boxData] as CFDictionary)
+                CTFrameDraw(frame, context)
+                context.endPDFPage()
+                these.append(header + rest.substring(to: min(shown, rest.length)))
+                rest = rest.substring(from: min(shown, rest.length)) as NSString
+            }
+            drawn.append(these)
+        }
+        return drawn
+    }
+
+    /// The `qpdf --pages` arguments that put each of `counts`' text pages, from `text`, after
+    /// the page of `file` it follows. `file` is the primary input, so its outline, its page
+    /// labels and every page object with its marks are kept as they are.
+    static func textPageArguments(_ pages: [TextPage], counts: [Int], file: URL, pageCount: Int,
+                                  text: URL, to destination: URL) -> [String] {
+        var arguments = [file.path, "--pages"]
+        var from = 1, next = 1
+        for (page, count) in zip(pages, counts) {
+            if page.page >= from { arguments += [file.path, from == page.page ? "\(from)" : "\(from)-\(page.page)"] }
+            arguments += [text.path, count == 1 ? "\(next)" : "\(next)-\(next + count - 1)"]
+            from = page.page + 1
+            next += count
+        }
+        if from <= pageCount { arguments += [file.path, from == pageCount ? "\(from)" : "\(from)-\(pageCount)"] }
+        return arguments + ["--", destination.path]
+    }
+
+    /// The letters and digits a search can find, compatibility-folded so a ligature is its letters,
+    /// and sorted: PDFKit gives some scripts' vowel signs in the order they are drawn, not read
+    /// (Devanagari's), so only which letters came back, and how many, is compared.
+    static func searchableLetters(_ s: String) -> [Unicode.Scalar] {
+        s.precomposedStringWithCompatibilityMapping.unicodeScalars
+            .filter { CharacterSet.letters.contains($0) || CharacterSet.decimalDigits.contains($0) }
+            .sorted { $0.value < $1.value }
+    }
+
+    /// Puts `pages`' text pages after their pages of `file`, a finished PDF of `pageCount`
+    /// pages, into `destination`, and returns how many pages were added. Throws unless the
+    /// result has exactly that many more pages and each text page reads back, through PDFKit,
+    /// with every letter of its header and reading.
+    static func insertTextPages(_ pages: [TextPage], reader: String, into file: URL, pageCount: Int,
+                                scratch: URL, to destination: URL, using qpdf: String,
+                                register: (Process) -> Void = { _ in }) throws -> Int {
+        guard !pages.isEmpty else { return 0 }
+        guard pages.allSatisfy({ (1...pageCount).contains($0.page) }),
+              zip(pages, pages.dropFirst()).allSatisfy({ $0.page < $1.page }) else {
+            throw Failure.textPages("a page number was out of order")
+        }
+        let text = scratch.appendingPathComponent("text-pages.pdf")
+        let drawn: [[String]]
+        do { drawn = try writeTextPages(pages, reader: reader, to: text) }
+        catch { throw Failure.textPages("they could not be drawn") }
+        let counts = drawn.map(\.count)
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: qpdf)
+        process.arguments = textPageArguments(pages, counts: counts, file: file, pageCount: pageCount,
+                                              text: text, to: destination)
+        process.standardOutput = FileHandle.nullDevice
+        process.standardError = FileHandle.nullDevice
+        try process.run()
+        register(process)
+        process.waitUntilExit()
+        // 3 is qpdf's warning, which a file it wrote whole still earns.
+        guard process.terminationStatus == 0 || process.terminationStatus == 3 else {
+            throw Failure.textPages("qpdf exited with code \(process.terminationStatus)")
+        }
+        let added = counts.reduce(0, +)
+        guard let out = PDFDocument(url: destination), out.pageCount == pageCount + added else {
+            throw Failure.textPages("the result did not have \(pageCount + added) pages")
+        }
+        var at = 0, before = 0
+        for (page, these) in zip(pages, drawn) {
+            at = page.page + before
+            let read = (at..<(at + these.count)).compactMap { out.page(at: $0)?.string }.joined()
+            // What was drawn reads back, and what was drawn, its headers aside, is the whole reading.
+            let headers = these.indices.map { $0 == 0 ? textPageHeader(page: page.page, reader: reader)
+                                                      : textPageContinued(page: page.page) }
+            guard searchableLetters(read) == searchableLetters(these.joined()),
+                  zip(these, headers).allSatisfy({ $0.hasPrefix($1) }),
+                  searchableLetters(zip(these, headers).map { String($0.dropFirst($1.count)) }.joined())
+                      == searchableLetters(page.text)
+            else {
+                throw Failure.textPages("page \(page.page)'s text page did not read back as written")
+            }
+            before += these.count
+        }
+        return added
     }
 }

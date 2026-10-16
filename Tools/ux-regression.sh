@@ -272,14 +272,24 @@ done < "$SET"
 echo "ux-regression: publishing $(/usr/bin/wc -l < "$W/jobs.txt" | tr -d ' ') documents into $W/pub"
 # A prior measurement can leave this CLI's defaults with Accurate mode on.
 # Both legs must name their mode; register(defaults:) does not clear saved values.
-VISIONOCR_HELPER="$W/visionocr-recognise" "$W/gate" "$W/in" "$W/pub" -accurateMode NO > "$W/gate.log" 2>&1
+# hw-qwen: VISIONOCR_UX_TEXT_PAGE=0 or 1 sets the handwritten pages' text page (Prefs.handTextPage) on
+# every leg; unset, the shipped default (on). It changes only handwritten pages a model reader reads.
+TEXTPAGE=()
+case "${VISIONOCR_UX_TEXT_PAGE:-}" in
+    0) TEXTPAGE=(-handTextPage NO); echo "ux-regression: the handwritten pages' text page is off";;
+    1) TEXTPAGE=(-handTextPage YES); echo "ux-regression: the handwritten pages' text page is on";;
+    "") ;;
+    *) echo "ux-regression: VISIONOCR_UX_TEXT_PAGE must be 0 or 1"; exit 2;;
+esac
+VISIONOCR_HELPER="$W/visionocr-recognise" "$W/gate" "$W/in" "$W/pub" -accurateMode NO ${TEXTPAGE[@]+"${TEXTPAGE[@]}"} \
+    > "$W/gate.log" 2>&1
 g=$?   # 1 is the gate's own hard checks failing, which is a result; anything else is a failed run
 [ $g -le 1 ] || { echo "ux-regression: the gate exited $g, see $W/gate.log"; exit 2; }
 for r in $readers; do
     # the gate takes the mode from its argument domain, as the app's settings would hold it
     VISIONOCR_HELPER="$W/visionocr-recognise" "$W/gate" "$W/in-$r" "$W/pub-$r" -accurateMode YES \
         -accurateReader "$r" -accurateNewspaperReader "$r" -accuratePhotoReader "$r" -accurateHandReader "$r" \
-        -accurateEnabledReaders "$r" > "$W/gate-$r.log" 2>&1
+        -accurateEnabledReaders "$r" ${TEXTPAGE[@]+"${TEXTPAGE[@]}"} > "$W/gate-$r.log" 2>&1
     a=$?
     [ $a -le 1 ] || { echo "ux-regression: the $r gate exited $a, see $W/gate-$r.log"; exit 2; }
     # a mode that did not take would publish Vision's reading under the accurate label

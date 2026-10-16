@@ -48,3 +48,31 @@ on by default for handwritten pages only, ux-regression with the mode off and on
   height max(792, text height + margins), one page, never overflowing.
 - `makeSearchablePDF` checks the page count it publishes (`Model.swift`, `pageCount: expected`); a text page
   changes the expected count, and invariant 1 needs a check that each handwritten page's text page is there.
+
+## 2026-10-15 — round 1, session 2 (Opus 5.5, medium): qw-build
+
+LightOnOCR-3 is a fifth reader, `lightonocr-3`, on handwritten pages only (align route), its download the repo's
+`8bit/` folder pinned by size and SHA-256 (hashes taken from the lab's copy, LFS hashes checked against the Hub; the
+app's installer was not run over the 5 GB, only its plan checked). It runs in the app's own runtime unchanged
+(mlx-vlm 0.7.4), loaded by the folder's path, the card's empty prompt, 2,048 px, 4,096 tokens. Memory 7.6 GB, so it is
+offered only with the limit at 8 GB or more; no speed check after its download (no handwritten sample pages).
+
+The text page. With `handTextPage` on (default), a handwritten page read by a whole-page reader (LightOnOCR-3, and
+Falcon-OCR too) keeps Vision's own layer and the reading goes on the page after it: Archive Suite's layout (612 pt
+wide, Georgia 11, as tall as the text, a header naming the original page), inserted by one `qpdf --pages` pass after
+the page labels are carried, each text page read back through PDFKit. PaddleOCR-VL (regions) adds none. Off, the
+words go through align. A mixed file: each handwritten page is followed by its text page, every other page as before.
+- Through the app (`HW-BUILD-2026-10-15.tsv`): 19 of 21 pages got a text page (p048, p009 not judged handwritten);
+  99 missed per 1,000 on the 18 handwritten pages with one, against the panel's 96; Find 1,238 of 1,405 (align 922).
+- Known: p049's reading ends with a model note ("Note: The handwritten text contains some unclear ..."), published as
+  text. One page of 19; not stripped (any rule for it would be a guess).
+- Known: a source with page labels gives a text page an empty label (qpdf's `{/St n}`), as C48 records for splices.
+- `score-gate` knows a text page by its width and header; `ux-regression.sh` takes `VISIONOCR_UX_TEXT_PAGE=0|1`.
+- ux-regression with the text page on and off (`VISIONOCR_UX_TEXT_PAGE=1`, `=0`): 0 worse, 0 better, 53 pages, 40
+  documents, each; its quality columns and byte counts identical between the two. Its set has no page judged
+  handwritten, so it shows the change leaves other pages alone, not the text page itself.
+- Diff review: the read-back compared letters in order and failed a document in Devanagari (PDFKit gives vowel signs
+  in drawn order); now a sorted bag. The text page now gets `modelText` (control tokens, tags, Markdown marks out).
+  Left: a reading cut at 4,096 tokens is published as read, unreported (as align's is); the run's notes number pages
+  by the original, so in a file with text pages they point early; the detector now runs on every page when the same
+  whole-page reader is chosen for handwriting and the rest, since the text page sets handwriting apart.

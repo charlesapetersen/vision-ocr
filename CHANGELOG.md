@@ -14,6 +14,13 @@ an older entry mentions "Window ▸ Vision Reader Window", the menu item is now
 
 ## Unreleased
 
+- A new extra reader for handwritten pages, LightOnOCR-3 (a 5.2 GB download that needs the memory limit at
+  8 GB or more). On 19 photographed letters and notes, a small sample, it missed about 96 words in 1,000,
+  where Vision misses 561 and Falcon-OCR 409. Its words mostly cannot be matched to the lines Vision finds in
+  a hand, so by default each handwritten page read by a whole-page reader is followed by a page of that
+  reader's text, which can be selected, copied and searched; the handwritten page keeps Vision's text where
+  the writing is. A setting under Handwritten pages in Choose pages turns this off. Pages not judged
+  handwritten are read as before (hw-qwen).
 - Choose pages has a fourth kind, Handwritten pages. The app tells a page written mostly by hand from a typed
   or printed one by itself, from the shape of the ink in its lines, and reads it with the reader chosen for
   handwriting; a typed page with notes in its margins is not one. A photo of a handwritten page counts as

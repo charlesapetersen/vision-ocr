@@ -740,6 +740,23 @@ enum Recogniser {
     /// `p00001.png` has it in `p00001.read.png`.
     static let readSuffix = ".read.png"
 
+    /// Where `recognisePage(at:)` leaves a handwritten page's model reading for its text page
+    /// (hw-qwen), beside the bitmap, so the helper's pages and the app's own reach `Model` alike.
+    static func textPageURL(besides image: URL) -> URL {
+        image.deletingPathExtension().appendingPathExtension("textpage.txt")
+    }
+
+    /// The text pages `recognisePage(at:)` left for `bitmaps`, in page order.
+    static func textPages(of bitmaps: [Flattener.RebuiltPage]) -> [SearchableWriter.TextPage] {
+        bitmaps.enumerated().compactMap { index, page in
+            guard let image = imageURL(of: page),
+                  let data = FileManager.default.contents(atPath: textPageURL(besides: image).path),
+                  let text = String(data: data, encoding: .utf8),
+                  !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return nil }
+            return SearchableWriter.TextPage(page: index + 1, text: text)
+        }
+    }
+
     /// The page bitmap the recogniser reads in place of the published one at `image`.
     static func readingImage(besides image: URL) -> URL {
         let read = image.deletingPathExtension().appendingPathExtension("read.png")
@@ -951,6 +968,8 @@ enum Recogniser {
                               isCancelled: () -> Bool = { false },
                               onModelFallback: (_ why: String, _ stopped: Bool) -> Void)
         throws -> [SearchableWriter.Observation]? {
+        // A text page is this reading's alone: none is left from a reading of this path before.
+        try? FileManager.default.removeItem(at: textPageURL(besides: image))
         let coarse = recognitionImage(besides: image)
         let pageURL = readingImage(besides: image)
         guard let first = loadImage(at: coarse) else { return nil }
@@ -1026,7 +1045,14 @@ enum Recogniser {
             return fitted
         }
         do {
-            return try modelPass(fitted, on: fitOn, shown: shown, settings: settings, isCancelled: isCancelled)
+            return try modelPass(fitted, on: fitOn, shown: shown, settings: settings, isCancelled: isCancelled,
+                                 onTextPage: { reading in
+                                     // Only text worth a page; a reading of nothing over no lines adds none.
+                                     guard !modelWords(reading).isEmpty else { return }
+                                     do { try Data(modelText(reading).utf8).write(to: textPageURL(besides: image),
+                                                                                    options: .atomic) }
+                                     catch { throw Failure.modelReader("its text page could not be written") }
+                                 })
         } catch {
             // A reader the app ships that fails or is stopped by its guard leaves the page
             // Vision's reading, saying so (C57, ie-guard). One given by path is the lab's, whose
@@ -1044,7 +1070,8 @@ enum Recogniser {
 
     /// The model's part of `recognisePage(at:)`: the arrangement set, over Vision's `fitted` lines.
     private static func modelPass(_ fitted: [SearchableWriter.Observation], on fitOn: CGImage, shown: URL,
-                                  settings: Prefs.Snapshot, isCancelled: () -> Bool)
+                                  settings: Prefs.Snapshot, isCancelled: () -> Bool,
+                                  onTextPage: (String) throws -> Void)
         throws -> [SearchableWriter.Observation] {
         // pk-upright. Vision reads sideways pixels, but alignment and layout work in an
         // upright frame. Turn the reader's view and the matching coordinates together;
@@ -1074,7 +1101,7 @@ enum Recogniser {
                 return line
             }
             let read = try modelReadingPass(lines, on: upright, shown: view, settings: settings,
-                                            isCancelled: isCancelled)
+                                            isCancelled: isCancelled, onTextPage: onTextPage)
             guard read.count == fitted.count else {
                 throw Failure.modelReader("the upright reading changed the number of lines")
             }
@@ -1084,7 +1111,8 @@ enum Recogniser {
                                              region: original.region)
             }
         }
-        return try modelReadingPass(fitted, on: fitOn, shown: shown, settings: settings, isCancelled: isCancelled)
+        return try modelReadingPass(fitted, on: fitOn, shown: shown, settings: settings, isCancelled: isCancelled,
+                                    onTextPage: onTextPage)
     }
 
     /// A strict majority of the recognised letters and digits chooses the page's turn.
@@ -1119,7 +1147,8 @@ enum Recogniser {
     }
 
     private static func modelReadingPass(_ fitted: [SearchableWriter.Observation], on fitOn: CGImage, shown: URL,
-                                         settings: Prefs.Snapshot, isCancelled: () -> Bool)
+                                         settings: Prefs.Snapshot, isCancelled: () -> Bool,
+                                         onTextPage: (String) throws -> Void)
         throws -> [SearchableWriter.Observation] {
         if settings.modelArrangement == .fill {
             return try filledReading(of: fitted, on: fitOn, shown: shown, reader: settings.modelReader,
@@ -1140,6 +1169,11 @@ enum Recogniser {
         if modelWords(reading).isEmpty && !fitted.isEmpty {
             throw Failure.modelReader("\(settings.modelReader) read nothing on a page holding "
                                       + "\(fitted.count) lines")
+        }
+        // hw-qwen. The reading goes on a page of its own, and this page keeps Vision's lines.
+        if settings.textPage {
+            try onTextPage(reading)
+            return fitted
         }
         return alignedReading(of: fitted, from: modelWords(reading),
                               aspect: Double(fitOn.height) / Double(fitOn.width))
@@ -1493,6 +1527,13 @@ enum Recogniser {
     /// Markdown's heading, list and emphasis marks and a table's rule cells are dropped.
     /// A `<` that opens no tag, as in `p < 0.05`, is text.
     static func modelWords(_ text: String) -> [String] {
+        modelText(text).split(whereSeparator: \.isWhitespace).map(String.init)
+            .filter { t in !(t.allSatisfy { "|-:".contains($0) } && (t.contains("|") || t.count >= 3)) }
+    }
+
+    /// A model's reading without its control tokens, tags, entities and Markdown marks, its
+    /// lines kept: `modelWords`' text, and what a text page shows (hw-qwen).
+    static func modelText(_ text: String) -> String {
         func sub(_ t: String, _ pattern: String, _ with: String) -> String {
             t.replacingOccurrences(of: pattern, with: with, options: [.regularExpression, .caseInsensitive])
         }
@@ -1507,8 +1548,8 @@ enum Recogniser {
         t = sub(t, "(?m)^[ \\t]*(#{1,6}|[-*•])[ \\t]+", "")
         t = t.replacingOccurrences(of: "**", with: "").replacingOccurrences(of: "__", with: "")
         t = sub(t, "(?<![\\w*])\\*(\\S[^*\\n]*?)\\*(?![\\w*])", "$1")
-        return t.split(whereSeparator: \.isWhitespace).map(String.init)
-            .filter { t in !(t.allSatisfy { "|-:".contains($0) } && (t.contains("|") || t.count >= 3)) }
+        // A Markdown table's rule lines carry nothing.
+        return sub(t, "(?m)^[ \\t|:-]*-{3,}[ \\t|:-]*$\\n?", "")
     }
 
     /// A word as the alignment compares it: case folded, letters and digits only.
@@ -4705,6 +4746,7 @@ enum Recogniser {
             // Empty: handwritten pages are read as the rest (page-kind-handwriting).
             "--hand-model-arrangement", settings.handModelArrangement?.rawValue ?? "",
             "--hand-model-reader", settings.handModelReader,
+            "--hand-text-page", settings.handTextPage ? "1" : "0",
             "--model-memory-gb", "\(settings.modelMemoryGB)",
         ]
     }
@@ -4757,6 +4799,7 @@ enum Recogniser {
               let handArrangement = values["--hand-model-arrangement"],
               handArrangement.isEmpty || Prefs.ModelArrangement(rawValue: handArrangement) != nil,
               let handReader = values["--hand-model-reader"],
+              let handTextPage = flag("--hand-text-page"),
               let memoryGB = number("--model-memory-gb")
         else { return nil }
 
@@ -4777,7 +4820,7 @@ enum Recogniser {
             photoModelArrangement: Prefs.ModelArrangement(rawValue: photoArrangement),
             photoModelReader: photoReader,
             handModelArrangement: Prefs.ModelArrangement(rawValue: handArrangement),
-            handModelReader: handReader, modelMemoryGB: memoryGB)
+            handModelReader: handReader, handTextPage: handTextPage, modelMemoryGB: memoryGB)
     }
 
     /// One page's worth of the helper's output, and the app's input.
@@ -5478,10 +5521,11 @@ extension Prefs.Snapshot {
     }
 
     /// Whether a handwritten page would be read otherwise than it is as a photograph or as
-    /// the rest, so that judging its ink (`isHandwritten`) is worth the time.
+    /// the rest, or given a text page, so that judging its ink (`isHandwritten`) is worth the time.
     var handwritingApart: Bool {
         guard handModelArrangement != nil else { return false }
         let hand = model(for: .handwriting)
+        if hand.textPage { return true }
         return [Recogniser.PageKind.other, .photograph].contains { kind in
             let otherwise = model(for: kind)
             return otherwise.modelArrangement != hand.modelArrangement
@@ -5505,6 +5549,8 @@ extension Prefs.Snapshot {
         var routed = self
         routed.modelArrangement = arrangement
         routed.modelReader = reader
+        // hw-qwen: only a whole-page reading has a text to set apart, and only on handwriting.
+        routed.textPage = kind == .handwriting && handTextPage && arrangement == .align
         return routed
     }
 }
@@ -5522,6 +5568,11 @@ enum ModelRuntime {
         /// which its input cap of about 1 MP rules out; Falcon-OCR's whole newspaper page loops
         /// or trips the guard; neither is offered on `fill`.
         let arrangements: [Recogniser.PageKind: Set<Prefs.ModelArrangement>]
+        /// The model's directory inside its cached repo, where that is not the snapshot itself:
+        /// a build kept in a subfolder, loaded from its path rather than by the repo's name.
+        var folder: String? = nil
+        /// A whole page's limits in place of `command`'s, where the model card sets its own.
+        var pageLimits: [String]? = nil
     }
 
     static let readers: [String: Reader] = [
@@ -5531,6 +5582,12 @@ enum ModelRuntime {
         "paddleocr-vl": Reader(repo: "mlx-community/PaddleOCR-VL-1.6-4bit", prompt: "OCR:",
                                arrangements: [.other: [.regions], .photograph: [.regions], .handwriting: [.regions],
                                               .newspaper: [.regions]]),
+        // hw-qwen: handwritten pages only, as `HW-PANEL-2026-10-15.tsv` read it: the card's empty
+        // prompt, its 2,048 px longest side and 4,096 tokens, the 8-bit build at the revision measured.
+        "lightonocr-3": Reader(repo: "prithivMLmods/LightOnOCR-3-4B-MLX", prompt: "",
+                               arrangements: [.handwriting: [.align]],
+                               folder: "snapshots/e93084acf44a380776866b23b122f48fe47cab7f/8bit",
+                               pageLimits: ["--seconds", "540", "--max-side", "2048", "--max-tokens", "4096"]),
     ]
 
     /// `modelReader`'s name for Vision reading `LayoutModel`'s regions itself: the regions
@@ -5594,12 +5651,20 @@ enum ModelRuntime {
             throw Recogniser.Failure.modelSetup("\(reader)'s script is not in this build")
         }
         let limits = crops.map { ["--crops", $0.path, "--one-line-each", "--max-tokens", "3000", "--seconds", "540"] }
-            ?? ["--seconds", "540", "--max-side", "3300"]
+            ?? model.pageLimits ?? ["--seconds", "540", "--max-side", "3300"]
+        var name = model.repo
+        if let folder = model.folder {
+            let path = cached.appendingPathComponent(folder)
+            guard FileManager.default.fileExists(atPath: path.appendingPathComponent("config.json").path) else {
+                throw Recogniser.Failure.modelSetup("\(reader) has not been downloaded to \(path.path)")
+            }
+            name = path.path
+        }
         var env = ["HF_HOME": models.path, "HF_HUB_OFFLINE": "1", "HF_HUB_DISABLE_TELEMETRY": "1",
                    "PATH": "/usr/bin:/bin:/usr/sbin:/sbin"]
         for key in ["HOME", "TMPDIR"] { env[key] = environment[key] }
         return Command(executable: python,
-                       arguments: ["-I", script.path, model.repo, image.path, out.path, "--prompt", model.prompt] + limits,
+                       arguments: ["-I", script.path, name, image.path, out.path, "--prompt", model.prompt] + limits,
                        environment: env)
     }
 }
