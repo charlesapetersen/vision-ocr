@@ -2235,7 +2235,7 @@ say so in the commit.
       answer is a code change, queue it as its own item with an ESTIMATE; do not build it here.
       ESTIMATE: 1 session. BOUND: rule 10. (context: owner request 2026-10-14)
       (notes: ops/autonomous/notes/model-throughput.md)
-- [ ] **model-two-readers** — let two model readings run at once on a Mac with 16 GB or more, so a batch read
+- [x] **model-two-readers** — let two model readings run at once on a Mac with 16 GB or more, so a batch read
       with Falcon-OCR or PaddleOCR-VL finishes about a fifth sooner. (uses: build,model:12)
       THE EVIDENCE: `MODEL-THROUGHPUT-2026-10-15.tsv`. At the default concurrency the one reader is the
       bottleneck; two at once (a scratch helper with two lock files) took ten pages from 190/200 s to 150/164 s
@@ -2253,7 +2253,9 @@ say so in the commit.
       readers is at least 15% under the mean of two one-reader runs taken in the same session, for each reader,
       every page published, and the suite passes.
       ESTIMATE: 1 session. BOUND: rule 10. (context: model-throughput 2026-10-15)
-      (notes: ops/autonomous/notes/model-two-readers.md) needs: owner (accept Falcon-OCR's measured -13%? RUN.md)
+      (notes: ops/autonomous/notes/model-two-readers.md)
+      CONFIRMED (owner, 2026-10-16, walkthrough): accepted on PaddleOCR-VL's -18.4% and Falcon-OCR's measured
+      -13.0%; closed, which unblocks model-resident-reader for Falcon's start-up share.
 - [ ] **model-resident-reader** — keep the model reader's process and weights loaded across a batch's pages
       instead of starting one per page. (uses: build,model:12) (blocked-on: model-two-readers)
       THE EVIDENCE: `MODEL-THROUGHPUT-2026-10-15.tsv`. Each call spends 2.3-2.8 s (Falcon-OCR, 10-14% of reader
