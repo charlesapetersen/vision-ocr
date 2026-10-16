@@ -1,0 +1,20 @@
+# model-two-readers 2026-10-15/16: ten one-page files (/private/tmp/mt/in, five newspaper, five other) through score-gate, accurate mode on, concurrency 6, each leg alone under the heavy lock, 18 GB Mac.
+# variant base = origin/main ff798aa (one reading at a time); new = this change (two at once); new reps 1-2 lacked the retry-alone, reps 3-4 are the committed code.
+# fallbacks = pages whose model reading was stopped and kept Vision's; max_pressure = kern.memorystatus_vm_pressure_level sampled every 2 s.
+variant	reader	rep	wall_s	gate_exit	published	fallbacks	max_pressure
+base	falcon-ocr	1	202.5	0	10	0	1
+new	falcon-ocr	1	164.7	0	10	0	2
+base	falcon-ocr	2	203.1	0	10	0	1
+new	falcon-ocr	2	163.2	0	10	1	2
+base	paddleocr-vl	1	143.2	0	10	0	1
+new	paddleocr-vl	1	103.1	0	10	0	1
+base	paddleocr-vl	2	141.9	0	10	0	1
+new	paddleocr-vl	2	101.9	0	10	0	1
+new	falcon-ocr	3	182.6	0	10	0	2
+new	falcon-ocr	4	162.0	0	10	0	1
+new	paddleocr-vl	3	101.9	0	10	0	1
+new	paddleocr-vl	4	101.8	0	10	0	1
+base	falcon-ocr	3	182.00	0	10	0	1
+new	falcon-ocr	5	162.01	0	10	0	2
+base	falcon-ocr	4	181.88	0	10	0	1
+new	falcon-ocr	6	161.90	0	10	0	1

@@ -2253,6 +2253,7 @@ say so in the commit.
       readers is at least 15% under the mean of two one-reader runs taken in the same session, for each reader,
       every page published, and the suite passes.
       ESTIMATE: 1 session. BOUND: rule 10. (context: model-throughput 2026-10-15)
+      (notes: ops/autonomous/notes/model-two-readers.md)
 - [ ] **model-resident-reader** — keep the model reader's process and weights loaded across a batch's pages
       instead of starting one per page. (uses: build,model:12) (blocked-on: model-two-readers)
       THE EVIDENCE: `MODEL-THROUGHPUT-2026-10-15.tsv`. Each call spends 2.3-2.8 s (Falcon-OCR, 10-14% of reader

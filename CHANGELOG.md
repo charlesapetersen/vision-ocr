@@ -14,6 +14,10 @@ an older entry mentions "Window ▸ Vision Reader Window", the menu item is now
 
 ## Unreleased
 
+- On a Mac with 16 GB of memory or more, two pages can now be read by Falcon-OCR or PaddleOCR-VL at once,
+  so a batch with an extra reader finishes sooner: in a ten-page test, about 29% sooner with PaddleOCR-VL
+  and 11-19% with Falcon-OCR. LightOnOCR-3 still reads one page at a time below 32 GB, and nothing else is
+  read beside it (model-two-readers).
 - A new extra reader for handwritten pages, LightOnOCR-3 (a 5.2 GB download that needs the memory limit at
   8 GB or more). On 19 photographed letters and notes, a small sample, it missed about 96 words in 1,000,
   where Vision misses 561 and Falcon-OCR 409. Its words mostly cannot be matched to the lines Vision finds in

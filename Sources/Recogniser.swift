@@ -1432,6 +1432,60 @@ enum Recogniser {
     /// The longest one page's reading may take before it counts as failed.
     static let readerSeconds: Double = 600
 
+    /// How many readings by `reader` may run at once (model-two-readers): two on a Mac with
+    /// 16 GB or more where two of its largest guard peaks (`memoryNeedGB`) fit under half the
+    /// memory, else one. At concurrency 6 one reader was the batch's bottleneck, and two cut ten
+    /// pages' time by 18-25% (`MODEL-THROUGHPUT-2026-10-15.tsv`). Falcon-OCR's 3.9 GB makes 7.8 of
+    /// 8 on 16 GB; the guard still stops either reading at critical pressure. The peaks, not the
+    /// memory setting: two of its default 5 GB would leave no second slot on an 18 GB Mac. A
+    /// reader by path (the lab's) has no figures, so one.
+    static func readerSlots(reader: String, physicalBytes: UInt64 = ProcessInfo.processInfo.physicalMemory) -> Int {
+        let gb = Prefs.physicalGB(physicalBytes)
+        guard gb >= 16, let need = Prefs.AccurateReader(rawValue: reader)?.memoryNeedGB, need > 0 else { return 1 }
+        return 2 * need <= gb / 2 ? 2 : 1
+    }
+
+    /// The reader slots' lock files: `visionocr-model-reader.lock` and `.lock.1`.
+    static let readerSlotCount = 2
+
+    /// The descriptors of the slot lock files held for one reading, waiting for them. With
+    /// `slots` 2, any one free slot; with 1, every slot, so that a reader too large to share
+    /// the memory never runs beside another, whichever reader that is. Slots are taken in
+    /// order and a reading never waits holding a later one, so two waiters cannot deadlock.
+    static func takeReaderSlot(_ slots: Int, in dir: URL = FileManager.default.temporaryDirectory,
+                               isCancelled: () -> Bool) throws -> [Int32] {
+        var locks: [Int32] = []
+        for i in 0..<readerSlotCount {
+            let l = open(dir.appendingPathComponent("visionocr-model-reader.lock" + (i == 0 ? "" : ".\(i)")).path,
+                         O_CREAT | O_RDWR, 0o600)
+            guard l >= 0 else {
+                locks.forEach { close($0) }
+                throw Failure.modelReader("its lock could not be opened")
+            }
+            locks.append(l)
+        }
+        var held: [Int32] = []
+        func wait() throws {
+            if isCancelled() {
+                locks.forEach { close($0) }
+                throw Failure.cancelled
+            }
+            usleep(100_000)
+        }
+        if slots >= 2 {
+            while held.isEmpty {
+                if let free = locks.first(where: { flock($0, LOCK_EX | LOCK_NB) == 0 }) { held = [free] } else { try wait() }
+            }
+        } else {
+            for l in locks {
+                while flock(l, LOCK_EX | LOCK_NB) != 0 { try wait() }
+                held.append(l)
+            }
+        }
+        locks.filter { !held.contains($0) }.forEach { close($0) }
+        return held
+    }
+
     /// The text `reader` writes for the page at `image`, run as `<reader> <image>
     /// <out.txt>`. Throws when no reader is set, or it cannot start, exits non-zero,
     /// runs past `readerSeconds` or writes no file: the run asked for the model's
@@ -1441,23 +1495,36 @@ enum Recogniser {
     /// It runs under `ModelGuard`, with `memoryGB` (the memory setting) as its cap: stopped,
     /// throwing `modelMemory`, when its process group's footprint passes it, the Mac's
     /// memory pressure turns critical or swap grows past 2 GB, and not started at all
-    /// while the pressure is critical.
+    /// while the pressure is critical. Pressure and swap are the whole Mac's, so a reading that
+    /// shared the memory with another (`readerSlots` 2) and was stopped by either is read again
+    /// alone before it counts as failed: one of two Falcon-OCR readings on an 18 GB Mac was
+    /// stopped at critical pressure (model-two-readers). `slots` and `pressure` are for tests.
     static func modelReading(of image: URL, reader: String, crops: URL? = nil, memoryGB: Double,
+                             slots: Int? = nil, pressure: () -> Int32 = ModelGuard.pressure,
                              isCancelled: () -> Bool = { false }) throws -> String {
         guard !reader.isEmpty else { throw Failure.modelSetup("no reader is set") }
-        // One reader at a time across every process: a batch runs several helpers at
-        // once, and each reading loads the model (Falcon-OCR peaks at 3.4 GB), so six at
-        // once would ask more of an 18 GB Mac than it has. Released when the descriptor
-        // closes, which a crash does too.
-        let lock = open(FileManager.default.temporaryDirectory
-                            .appendingPathComponent("visionocr-model-reader.lock").path,
-                        O_CREAT | O_RDWR, 0o600)
-        guard lock >= 0 else { throw Failure.modelReader("its lock could not be opened") }
-        defer { close(lock) }
-        while flock(lock, LOCK_EX | LOCK_NB) != 0 {
-            if isCancelled() { throw Failure.cancelled }
-            usleep(100_000)
+        let shared = slots ?? readerSlots(reader: reader)
+        if shared >= 2 {
+            do {
+                return try modelReading(of: image, reader: reader, crops: crops, memoryGB: memoryGB, slots: shared,
+                                        alone: false, pressure: pressure, isCancelled: isCancelled)
+            } catch is SharedMemoryStop {}
         }
+        return try modelReading(of: image, reader: reader, crops: crops, memoryGB: memoryGB, slots: 1,
+                                alone: true, pressure: pressure, isCancelled: isCancelled)
+    }
+
+    /// A reading that shared the memory stopped for the whole Mac's sake, to be read again alone.
+    private struct SharedMemoryStop: Error {}
+
+    private static func modelReading(of image: URL, reader: String, crops: URL?, memoryGB: Double, slots: Int,
+                                     alone: Bool, pressure: () -> Int32, isCancelled: () -> Bool) throws -> String {
+        // At most `readerSlots` readings at a time across every process: a batch runs several
+        // helpers at once, and each reading loads the model (Falcon-OCR peaks at 3.9 GB), so six
+        // at once would ask more of an 18 GB Mac than it has. Released when the descriptors
+        // close, which a crash does too.
+        let locks = try takeReaderSlot(slots, isCancelled: isCancelled)
+        defer { locks.forEach { close($0) } }
         let out = FileManager.default.temporaryDirectory
             .appendingPathComponent("visionocr-reader-\(UUID().uuidString).txt")
         defer { try? FileManager.default.removeItem(at: out) }
@@ -1474,7 +1541,8 @@ enum Recogniser {
         process.standardInput = FileHandle.nullDevice
         process.standardOutput = FileHandle.nullDevice
         process.standardError = FileHandle.nullDevice
-        if ModelGuard.pressure() >= ModelGuard.critical {
+        if pressure() >= ModelGuard.critical {
+            if !alone { throw SharedMemoryStop() }
             throw Failure.modelMemory("the Mac's memory pressure was critical, so \(reader) was not started")
         }
         // A value written by hand may be anything; Int() traps on what does not fit.
@@ -1499,11 +1567,11 @@ enum Recogniser {
             }
             if Date().timeIntervalSince(sampled) >= ModelGuard.every {
                 sampled = Date()
-                if let why = ModelGuard.verdict(
-                    footprintMB: ModelGuard.footprintMB(leader: process.processIdentifier, group: group),
-                    capMB: capMB, pressure: ModelGuard.pressure(),
-                    swapGrowthMB: ModelGuard.swapUsedMB() - swap0) {
+                let footprint = ModelGuard.footprintMB(leader: process.processIdentifier, group: group)
+                if let why = ModelGuard.verdict(footprintMB: footprint, capMB: capMB, pressure: pressure(),
+                                                swapGrowthMB: ModelGuard.swapUsedMB() - swap0) {
                     Runner.stop(process, knownGroup: group)
+                    if !alone && footprint <= capMB { throw SharedMemoryStop() }
                     throw Failure.modelMemory("\(reader) \(why)")
                 }
             }

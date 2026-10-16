@@ -13518,6 +13518,81 @@ do {
           "\(Prefs.defaultModelMemoryGB(physicalBytes: 8 * gb))")
     check("the guard's footprint sees this process", ModelGuard.footprintMB(leader: getpid(), group: nil) > 10, "\(ModelGuard.footprintMB(leader: getpid(), group: nil)) MB")
 
+    // model-two-readers: a second reading at once only from 16 GB, and only where two of the
+    // reader's peaks fit under half the memory.
+    let slots = [("falcon-ocr", 16), ("falcon-ocr", 15), ("paddleocr-vl", 16), ("paddleocr-vl", 8),
+                 ("lightonocr-3", 18), ("lightonocr-3", 32), ("/lab/reader.sh", 64), ("vision", 64)]
+        .map { Recogniser.readerSlots(reader: $0.0, physicalBytes: UInt64($0.1) * gb) }
+    check("two readings at once only where the rule allows it: Falcon-OCR and PaddleOCR-VL from 16 GB, "
+          + "LightOnOCR-3 from 32 GB, never a reader by path or one with no model",
+          slots == [2, 1, 2, 1, 1, 2, 1, 1], "\(slots)")
+    let slotDir = tmp.appendingPathComponent("reader-slots")
+    try? FileManager.default.createDirectory(at: slotDir, withIntermediateDirectories: true)
+    let other = open(slotDir.appendingPathComponent("visionocr-model-reader.lock").path, O_CREAT | O_RDWR, 0o600)
+    _ = flock(other, LOCK_EX | LOCK_NB)
+    let second = try? Recogniser.takeReaderSlot(2, in: slotDir, isCancelled: { false })
+    // True when taking `slots` waited until it was cancelled, after `seconds`.
+    func waits(_ slots: Int, _ seconds: Double) -> Bool {
+        let from = Date()
+        do { _ = try Recogniser.takeReaderSlot(slots, in: slotDir, isCancelled: { Date().timeIntervalSince(from) > seconds }) }
+        catch Recogniser.Failure.cancelled { return true } catch {}
+        return false
+    }
+    let aloneWaits = waits(1, 0.3), thirdWaits = waits(2, 0.3)
+    check("with one reading running, a second takes the other slot, and a third, or a reader that may not share, waits",
+          second?.count == 1 && aloneWaits && thirdWaits, "\(String(describing: second)) \(aloneWaits) \(thirdWaits)")
+    close(other)
+    second?.forEach { close($0) }
+    let both = try? Recogniser.takeReaderSlot(1, in: slotDir, isCancelled: { true })
+    let besideWaits = waits(2, 0)
+    check("a reader that may not share takes every slot once they are free, and nothing runs beside it",
+          both?.count == Recogniser.readerSlotCount && besideWaits, "\(String(describing: both)) \(besideWaits)")
+    both?.forEach { close($0) }
+    // With one slot a batch's readings still run: a lab reader (one at a time) read from two threads at once.
+    let oneDir = tmp.appendingPathComponent("one-slot")
+    try? FileManager.default.createDirectory(at: oneDir, withIntermediateDirectories: true)
+    let oneReader = oneDir.appendingPathComponent("reader.sh")
+    try? ("#!/bin/sh\necho start >> '\(oneDir.path)/log'\n/bin/sleep 0.3\necho end >> '\(oneDir.path)/log'\n"
+          + "echo \"read $1\" > \"$2\"\n").write(to: oneReader, atomically: true, encoding: .utf8)
+    try? FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: oneReader.path)
+    var oneTexts = [String](repeating: "", count: 2)
+    let oneLock = NSLock()
+    DispatchQueue.concurrentPerform(iterations: 2) { i in
+        let text = (try? Recogniser.modelReading(of: URL(fileURLWithPath: "/page\(i).png"), reader: oneReader.path,
+                                                  memoryGB: 4)) ?? ""
+        oneLock.lock(); oneTexts[i] = text; oneLock.unlock()
+    }
+    let oneLog = ((try? String(contentsOf: oneDir.appendingPathComponent("log"), encoding: .utf8)) ?? "")
+        .split(separator: "\n").map(String.init)
+    check("with one slot, a batch's two readings both run, one after the other",
+          oneTexts == ["read /page0.png\n", "read /page1.png\n"] && oneLog == ["start", "end", "start", "end"],
+          "\(oneTexts) \(oneLog)")
+    // A shared reading stopped by the whole Mac's pressure is read again alone; one alone is not.
+    // Long enough that the guard's third sample, 0.5 s in, finds it running.
+    let slowReader = oneDir.appendingPathComponent("slow-reader.sh")
+    try? ("#!/bin/sh\necho start >> '\(oneDir.path)/log'\n/bin/sleep 2\necho \"read $1\" > \"$2\"\n")
+        .write(to: slowReader, atomically: true, encoding: .utf8)
+    try? FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: slowReader.path)
+    func pressured(slots: Int, criticalAt: Int) -> (text: String?, error: String, starts: Int) {
+        try? FileManager.default.removeItem(at: oneDir.appendingPathComponent("log"))
+        var asked = 0
+        var text: String?, why = ""
+        do {
+            text = try Recogniser.modelReading(of: URL(fileURLWithPath: "/page.png"), reader: slowReader.path, memoryGB: 4,
+                                               slots: slots, pressure: { asked += 1; return asked == criticalAt ? 4 : 1 })
+        } catch { why = "\(error)" }
+        let log = (try? String(contentsOf: oneDir.appendingPathComponent("log"), encoding: .utf8)) ?? ""
+        return (text, why, log.split(separator: "\n").filter { $0 == "start" }.count)
+    }
+    let atStart = pressured(slots: 2, criticalAt: 1), midway = pressured(slots: 2, criticalAt: 3),
+        aloneMidway = pressured(slots: 1, criticalAt: 3)
+    check("a reading sharing the memory and stopped, or not started, at critical pressure is read again alone, "
+          + "and one already alone fails as before",
+          atStart.text == "read /page.png\n" && atStart.starts == 1 && midway.text == "read /page.png\n"
+              && midway.starts == 2 && aloneMidway.text == nil && aloneMidway.error.contains("critical")
+              && aloneMidway.starts == 1,
+          "\(atStart) \(midway) \(aloneMidway)")
+
     resetPrefs()
     let dir = tmp.appendingPathComponent("model-guard")
     try? FileManager.default.removeItem(at: dir)
