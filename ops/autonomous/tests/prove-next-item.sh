@@ -11,6 +11,7 @@
 #   [7] an empty `(not-before:)` in prose is not a clause and does not hide the real one
 #   [8] a VISIONOCR_TODAY that is not YYYY-MM-DD refuses (exit 2) instead of ordering wrongly
 #   [9] unpinned, today comes from `date`
+#  [10] a heading ends a span: a parked entry's `(blocked-on:)` below `## Parked` does not gate the item above (D21)
 # Reads nothing outside its temp directory; no suite, no build.
 set -uo pipefail
 export PATH="/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:${PATH:-}"
@@ -63,6 +64,9 @@ if [ "$rc" -eq 2 ]; then echo "PASS [8] bad today refused"; else echo "FAIL [8] 
 q "- [ ] **now** — due today. (not-before: $(date +%Y-%m-%d))"
 got="$(VISIONOCR_QUEUE="$T/Q.md" VISIONOCR_BUGS="$T/BUGS.md" "$NI" "$T" | cut -f1)"
 if [ "$got" = ok ]; then echo "PASS [9] real date"; else echo "FAIL [9] got [$got]"; fail=1; fi
+
+q '- [ ] **last** — the last open item.' '' '## Parked' '' '- **parked** — not queued. (blocked-on: nosuch)'
+expect '[10] heading ends the span'     "$(printf 'ok\tlast')" 2026-10-07
 
 [ "$fail" -eq 0 ] && echo "prove-next-item: all pass" || echo "prove-next-item: FAILED"
 exit "$fail"

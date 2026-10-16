@@ -152,6 +152,35 @@ class Queue(Fixture):
         self.assertIn("the date 2099-01-01", items["later"]["reason"])
         self.assertEqual(items["release"]["status"], "hold")
 
+    def test_a_heading_ends_the_span(self):
+        # README.md D21: parked entries have no checkbox, so a span that ended only at `- [` gave the last open
+        # item every marker in `## Parked`. On 2026-10-16 that was layout-compare taking c41's (effort: max).
+        self.write("ops/autonomous/QUEUE.md", QUEUE.replace("\n## HOLD", """- [ ] **last** — the last open item.
+
+## Parked
+
+- **parked-one** — not queued. (uses: build) (effort: max) (attempts: 4)
+      ESTIMATE: 3 sessions.
+
+## HOLD""", 1))
+        r = self.hook("queue")
+        self.assertEqual(r.returncode, 0, r.stderr)
+        last = {d["tag"]: d for d in self.jsonl(r.stdout)}["last"]
+        self.assertEqual((last["status"], last["uses"], last["attempts"]), ("ok", [], 0))
+        self.assertNotIn("effort", last)
+        self.assertNotIn("estimate", last)
+
+    def test_a_hash_line_in_a_fence_is_not_a_heading(self):
+        self.write("ops/autonomous/QUEUE.md", QUEUE.replace("\n## HOLD", """- [ ] **last** — an example:
+      ```
+# a shell comment
+      ```
+      (effort: high)
+
+## HOLD""", 1))
+        last = {d["tag"]: d for d in self.jsonl(self.hook("queue").stdout)}["last"]
+        self.assertEqual(last.get("effort"), "high")
+
     def test_all_blocked_exits_3_and_empty_exits_2(self):
         self.write("ops/autonomous/QUEUE.md", QUEUE.replace("- [ ] **first**", "- [ ] **first** (blocked-on: approve)"))
         r = self.hook("queue")

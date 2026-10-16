@@ -29,6 +29,7 @@ EFFORT = re.compile(r"\(effort: (low|medium|high|xhigh|max)\)")
 USES = re.compile(r"\(uses:\s*([a-z0-9:]+(?:\s*,\s*[a-z0-9:]+)*)\s*\)")
 ESTIMATE = re.compile(r"ESTIMATE:\s*(\d+(?:\s*-\s*\d+)?\s+sessions?)\b")
 DATE = re.compile(r"\b(20\d\d-\d\d-\d\d)\b")
+FENCE = re.compile(r"\s*(```|~~~)")
 
 
 def read(path):
@@ -53,10 +54,14 @@ def resolver_rows():
 
 
 def span(queue, tag):
-    """The item's lines: from its `- [` line naming **tag** to the next `- [` line (the daemon's head_span)."""
-    out, inside = [], False
+    """The item's lines: from its `- [` line naming **tag** to the next `- [` line or heading (the daemon's
+    head_span). The heading stop keeps `## Parked` entries, which have no checkbox, out of the item above them;
+    a `#` inside a fenced block is not a heading, as in next-item.sh."""
+    out, inside, fence = [], False, False
     for line in queue.splitlines():
-        if inside and line.startswith("- ["):
+        if FENCE.match(line):
+            fence = not fence
+        if inside and (line.startswith("- [") or (line.startswith("#") and not fence)):
             break
         if not inside and line.startswith("- [") and ("**%s**" % tag) in line:
             inside = True

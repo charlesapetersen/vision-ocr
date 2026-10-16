@@ -91,7 +91,8 @@
 # DRIFT — the precise failure it exists to prevent, and the one that gets a guard switched off.
 #   One inherited quirk, copied on purpose and recorded so nobody "fixes" it here alone: the span rule is
 #   greedy. Any line that is not a checkbox, a heading, a fence or a blockquote is appended to the item
-#   above, so prose sitting between items belongs to the item above it in BOTH readers. That is harmless
+#   above, up to the next heading, which ends the span (README.md D21: `## Parked` entries have no
+#   checkbox), so prose sitting between items belongs to the item above it in BOTH readers. That is harmless
 #   today and it is a real constraint on how `QUEUE.md` may be written: prose between items must not contain
 #   a parenthesised `(origin: …)` clause. If that ever needs to change, it changes in both files together.
 #
@@ -207,6 +208,11 @@ ST_BUGS
 - [ ] **h-origin-open-open** — open, origin cite on an OPEN entry: agreement, silent. (origin: BUGS.md C99)
 - [ ] **i-origin-missing** — origin cite on a tag that is NOT in the register: CITE-MISSING. (origin: BUGS.md C77)
 - [ ] **j-origin-elsewhere** — origin cite naming another file: skipped, silent. (origin: ops/autonomous/README.md D18)
+- [ ] **k-before-parked** — open, no cite of its own: the parked cite below the heading is not its (D21).
+
+## Parked
+
+- **parked** — no checkbox, not an item. (origin: BUGS.md C98)
 ST_QUEUE
   mkdir -p "$st_dir/notes"
   echo "2026-10-14: round 1, session 1." > "$st_dir/notes/h-origin-open-open.md"
@@ -249,6 +255,8 @@ ST_QUEUE
   # and is what keeps this file's own `[x] queue-cite-rule` box silent, since that box cites a README defect.
   # Delete that guard and the real tree grows 8 phantom findings, one of them on that very box.
   st_reject "origin/other-file-is-skipped" "j-origin-elsewhere"
+  # Row k — a heading ends the span, so the parked entry's closed cite does not make k a WOULD-REDO (D21).
+  st_reject "heading/ends-the-span" "k-before-parked"
   # GUARD (3) THE OTHER TWO QUADRANTS — the AGREEING `origin:` rows, which must stay silent. ⛔ These were MISSING
   # from the first version of this self-test and their absence made it survive a real sabotage: with
   # `TICKED-OPEN`'s guard loosened from `[ "$n_open" -gt 0 ]` to `-ge 0` — i.e. "report every ticked item
@@ -268,7 +276,7 @@ ST_QUEUE
   # GUARD (6) notes files: one whose tag is an item stays silent, one whose tag is not is reported.
   st_reject "notes/item-has-notes"  "NOTES-ORPHAN h-origin-open-open"
   st_want   "notes/orphan"          "queue-coherence: NOTES-ORPHAN zz-removed-item"
-  st_want  "summary counts"      "(10 items, 6 citing BUGS.md)"
+  st_want  "summary counts"      "(11 items, 6 citing BUGS.md)"
   st_want  "finding total"       "5 item(s) disagree"
 
   if [ "$st_fail" = 0 ]; then echo "check-queue-coherence: self-test ok ($st_checks checks)"; exit 0; fi
@@ -374,11 +382,11 @@ awk '
     if (match(tag, /^[A-Za-z0-9][A-Za-z0-9._-]*/)) tag = substr(tag, 1, RLENGTH); else tag = ""
     boxes++
     if (tag == "") next                        # as in next-item.sh: not an item; its lines fall to the one above
-    n++; otag[n] = tag; ost[n] = st; oline[n] = FNR; ospan[n] = raw
+    n++; otag[n] = tag; ost[n] = st; oline[n] = FNR; ospan[n] = raw; spanned = 1
     next
   }
-  /^#/ { next }                                # headings never continue an item
-  n > 0 { ospan[n] = ospan[n] " " $0 }         # greedy span — see the header note
+  /^#/ { spanned = 0; next }                   # a heading ends the item above (README.md D21)
+  n > 0 && spanned { ospan[n] = ospan[n] " " $0 }   # greedy span — see the header note
 
   END {
     for (k = 1; k <= n; k++) {

@@ -1605,6 +1605,29 @@ install/start only — so this landing re-rendered it by hand and verified byte-
 said nothing about them: the litter case, in the window the fix opens. (6) Nothing is gated —
 `prove-daemon.sh` is in no hook, so a red row here refuses no commit.
 
+## Defects found 2026-10-16, from a max-effort grant nobody asked for
+
+### D21 · An item's span ran past `## Parked` and took the parked entries' markers — FIXED
+
+**What happened.** On 2026-10-16 at 01:57 (tree `ef91b9d`) layout-compare was the last open item above
+`## Parked`. Parked entries start `- **tag**` with no checkbox, and three readers ended an item's span only at the
+next `- [` line: `span()` in `ops/agent/hooks.py`, the daemon's `head_span` awk, and `next-item.sh`, whose comment
+said a heading ended the span but whose rule only skipped the heading line. So layout-compare took every marker in
+Parked. The parked c41-newspaper-scans entry's `(effort: max)` gave it Fable at max effort with a $350 cap from
+the Agent Manager, and its `(uses: build)` replaced the item's own `(uses: build,model:12)`, since the last match
+wins. In `next-item.sh` the same leak would have let a parked entry's `(blocked-on:)` or `(not-before:)` hold back
+the item above it.
+
+`check-queue-coherence.sh` copies the resolver's span rule, so it would have credited a parked entry's
+`(origin: BUGS.md …)` cite to the same item and could report false drift.
+
+**The fix.** A line starting with `#` outside a fenced block ends the span in all four readers. On today's
+QUEUE.md the output of `hooks.py queue` and `next-item.sh` is byte-identical before and after, and the checker
+still reads `OK 173 items 29 cited`. On `ef91b9d` layout-compare now has no effort and its own uses. Covered by
+`ops/agent/tests/test_hooks.py` (`test_a_heading_ends_the_span`, `test_a_hash_line_in_a_fence_is_not_a_heading`),
+`prove-next-item.sh` [10], the checker's self-test row k and `prove-daemon.sh` [20]. Each goes red with its
+reader's old rule put back.
+
 ## What this deliberately does not have
 
 The sibling daemon has eleven helper scripts and thirteen proof harnesses. Most of what is missing here is

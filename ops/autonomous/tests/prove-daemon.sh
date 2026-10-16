@@ -24,8 +24,8 @@
 # as a second layer. preflight() PROVES the interposition works before any daemon is launched, and aborts
 # if it does not — the one check that must never be taken on trust.
 #
-# EXPECTED RESULT: 126 assertions, 0 skipped — RUN 2026-08-30, not inherited (118 before D20's eight, itself
-# 110 before D17's eight). ⚠️ D20's eight were WATCHED THREE WAYS: against the pre-fix daemon this harness read
+# EXPECTED RESULT: 162 assertions, 0 skipped — RUN 2026-10-16 (161 before D21's one row). On 2026-08-30 it was
+# 126 (118 before D20's eight, itself 110 before D17's eight). ⚠️ D20's eight were WATCHED THREE WAYS: against the pre-fix daemon this harness read
 # 120 passed / 6 failed, exactly the six predicted by name and in order; against the fixed tree 126/0/0; and
 # against a one-token sabotage widening the copy allowlist to `Tools/mutation-out/*` it read 125 passed /
 # 1 failed, the allowlist-is-a-filter row alone, also predicted first. That third run exists because that row
@@ -1115,6 +1115,15 @@ done <<'CASES'
 (effort: max)|fable opus max 350|a max marker with no attempts is Fable at max
 (effort: high)|opus sonnet high 1|a high marker with no attempts stays on Opus
 CASES
+# D21: a heading ends the head item's span. A parked entry (no checkbox) directly below the head item carries
+# markers that would put it on Fable at max if head_span read past `## Parked`.
+reset_repo
+awk -v em="$EM" '{print} /\*\*C24b\*\*/{print ""; print "## Parked"; print ""; print "- **parked-one** " em " not queued. (attempts: 4) (effort: max)"}' "$QUEUE" > "$QUEUE.d21" && mv "$QUEUE.d21" "$QUEUE"
+git -C "$REPO" commit -qam parked >/dev/null 2>&1; git -C "$REPO" update-ref refs/remotes/origin/main HEAD
+rm -f "$STATE/attempts.tsv" "$T/claude.argv"; L=$(run_daemon 0 4)
+grep -q 'parked-one' "$QUEUE" || bad "premise failed (D21): the parked entry is not in the queue"
+[ "$(launched)" = "opus sonnet medium 1" ] && ok "a parked entry's markers below a heading do not reach the head item" \
+  || bad "D21: launched '$(launched)', want 'opus sonnet medium 1'"
 markq "(attempts: 2)"; L=$(run_daemon 0 4)
 grep -q 'budget \$2.5, model fable, effort high for C24b after 2 attempts' "$L" && ok "the launch line names the rung's model and effort" \
   || bad "launch line: $(grep 'launching fresh' "$L" | head -1)"

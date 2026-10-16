@@ -1883,7 +1883,7 @@ culprits are per-worktree build/ directories and Tools/mutation-out/. Free some 
   local head_tag head_span n_q n_d eff="$EFFORT" eff_set="" head_attempts=0
   head_tag="$("$REPO/ops/autonomous/next-item.sh" "$REPO" 2>/dev/null | awk -F'\t' '$1=="ok"{print $2; exit}')"
   if [ -n "$head_tag" ]; then
-    head_span="$(awk -v t="**$head_tag**" 'f && /^- \[/{exit} index($0,"- [")==1 && index($0,t){f=1} f' "$REPO/ops/autonomous/QUEUE.md")"
+    head_span="$(awk -v t="**$head_tag**" '/^[[:space:]]*(```|~~~)/{fe=!fe} f && (/^- \[/ || (!fe && /^#/)){exit} index($0,"- [")==1 && index($0,t){f=1} f' "$REPO/ops/autonomous/QUEUE.md")"
     n_q="$(printf '%s\n' "$head_span" | grep -oE '\(attempts: [0-9]+\)' | grep -oE '[0-9]+' | head -1)"
     n_d="$(awk -F'\t' -v t="$head_tag" '$1==t{c++} END{print c+0}' "$STATE/attempts.tsv" 2>/dev/null)"
     head_attempts=$(( ${n_q:-0} + ${n_d:-0} ))

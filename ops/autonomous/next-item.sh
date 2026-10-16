@@ -198,12 +198,15 @@ out="$(awk -v bugstate="$BUGSTATE" -v today="$TODAY" '
     if (length(cur_text) > 150) cur_text = substr(cur_text, 1, 147) "..."
     buf_n++
     order[buf_n] = tag; ostate[buf_n] = st; ospan[buf_n] = raw; otext[buf_n] = cur_text
+    spanned = 1
     cur_tag = ""    # spans are re-walked at END; this pass only builds the maps
     next
   }
-  # Continuation of the item above: anything until the next checkbox or a markdown heading.
-  /^#/ { next }
-  buf_n > 0 { ospan[buf_n] = ospan[buf_n] " " $0 }
+  # Continuation of the item above: anything until the next checkbox or a markdown heading. The heading must
+  # END the span, not just be skipped: `## Parked` entries have no checkbox, so skipping alone gave their
+  # markers to the last item above the heading (README.md D21).
+  /^#/ { spanned = 0; next }
+  buf_n > 0 && spanned { ospan[buf_n] = ospan[buf_n] " " $0 }
 
   END {
     for (k = 1; k <= buf_n; k++) {
