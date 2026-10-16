@@ -2304,8 +2304,11 @@ say so in the commit.
       not all weights are Apache-2.0. Hugging Face lists the variant in use, DocLayout-YOLO-DocStructBench-imgsz1280-2501,
       as AGPL-3.0, and the DocLayout-YOLO code is AGPL-3.0; heron and PP-DocLayoutV3 are Apache-2.0. The licence
       question stays with RUN.md NEEDS OWNER 2026-10-14 (is-downloads), which already says the weights are AGPL-3.0.
-- [ ] **c41-newspaper-scans** — read whole-page scans of small-town newspapers as well as their print
+- [x] **c41-newspaper-scans** — read whole-page scans of small-town newspapers as well as their print
       allows (`BUGS.md` C41, split from C39) (uses: build) (blocked-on: hp-regions).
+      MOVED (owner, 2026-10-16): Vision OCR's queue is done. This item moves to Archive Suite as
+      `W42.c41-newspaper-scans` (its `SUITE_TODO.md`, pushed c73839aa), to be worked on the engine after the
+      integration's Stage 1 brings it into that repository. The record below stays here as its history.
       UNPARKED (owner, 2026-10-16, walkthrough): back in the queue, scoped to the RE-SCOPED cut below (cut a Vision
       line where it crosses two layout regions before alignment, judged with the accurate mode on). layout-compare
       showed the fused rows survive every detector's regions; the detector stays DocLayout-YOLO. hp-regions is done.
