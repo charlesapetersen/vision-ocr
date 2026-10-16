@@ -1,0 +1,787 @@
+diff --git a/Resources/read-model.py b/Resources/read-model.py
+index 7742553..a739423 100644
+--- a/Resources/read-model.py
++++ b/Resources/read-model.py
+@@ -2,11 +2,19 @@
+ 
+     python3 -I read-model.py <hub repo> <image> <out.txt> --prompt P [--crops crops.tsv --one-line-each]
+                              [--max-tokens N] [--seconds S] [--max-side PX]
++    python3 -I read-model.py --serve <socket> --slot <lock> [--idle S] <hub repo>
+ 
+ Run by the helper (`ModelRuntime.command`) in the runtime `ops/ocrlab/make-runtime.sh` builds. It is the part
+ of the lab's `ops/ocrlab/read-mlx.py` that Falcon-OCR and PaddleOCR-VL use, line for line, so it writes the
+ same text ocr-compare-run measured; change one and compare the two again. Prints one JSON line of statistics,
+ and exits 1 when --seconds stopped the reading, so the app fails the page rather than publish part of it.
++
++--serve keeps the model loaded across a batch's pages (model-resident-reader): it loads the model once, then
++answers one reading a connection on a Unix socket, each request a JSON line {"argv": [the arguments above]}
++and each answer the statistics line with "status", the exit status the reading would have had. Its only
++client is the helper holding the reader slot's lock file, `--slot`, so it reads one page at a time, and it
++leaves once idle for S seconds and able to take that lock itself: then no helper is about to connect. It holds
++`<socket>.pid` under flock while it lives, so a pid file that can be locked is a dead server's.
+ """
+ import argparse, json, os, sys, time
+ 
+@@ -18,7 +26,15 @@ ap.add_argument("--seconds", type=float, default=600)
+ ap.add_argument("--crops", help="a header line, then `name x y width height` a line: read each crop in turn")
+ ap.add_argument("--one-line-each", action="store_true", help="with --crops, each crop's reading on one line")
+ ap.add_argument("--max-side", type=int, help="shrink each image (or crop) so its longer side is at most this")
+-a = ap.parse_args()
++
++serve = None
++if sys.argv[1:2] == ["--serve"]:
++    sp = argparse.ArgumentParser()
++    sp.add_argument("--serve", required=True); sp.add_argument("--slot", required=True)
++    sp.add_argument("--idle", type=float, default=60); sp.add_argument("model")
++    serve = sp.parse_args()
++else:
++    a = ap.parse_args()
+ 
+ import mlx.core as mx
+ from mlx_vlm import load, stream_generate
+@@ -27,58 +43,111 @@ from mlx_vlm.prompt_utils import apply_chat_template
+ # Freed buffers otherwise stay in MLX's cache and count in the process's footprint, which the guard
+ # reads; a small cache keeps the footprint near what the model actually holds.
+ mx.set_cache_limit(256 * 2**20)
++
++
++def read(a, model, processor, t1):
++    """One page's reading, written to a.out, from t1: (the statistics, the exit status)."""
++    import shutil, tempfile
++    tmps = []
++    try:
++        prompt = apply_chat_template(processor, model.config, a.prompt, num_images=1)
++        images = [a.image]
++        if a.crops:
++            from PIL import Image
++            page, tmp, images = Image.open(a.image), tempfile.mkdtemp(prefix="visionocr-crops-"), []
++            tmps.append(tmp)
++            for line in open(a.crops).read().splitlines()[1:]:
++                name, x, y, w, h = line.split("\t")[:5]
++                x, y, w, h = int(x), int(y), int(w), int(h)
++                images.append(os.path.join(tmp, name)); page.crop((x, y, x + w, y + h)).save(images[-1])
++        if a.max_side:
++            # A model trained at a fixed resolution can spend its memory on vision tokens for a 300 dpi page.
++            from PIL import Image
++            tmp, shrunk = tempfile.mkdtemp(prefix="visionocr-shrunk-"), []
++            tmps.append(tmp)
++            for i, path in enumerate(images):
++                im = Image.open(path); im.thumbnail((a.max_side, a.max_side), Image.LANCZOS)
++                shrunk.append(os.path.join(tmp, f"{i}.png")); im.save(shrunk[-1])
++            images = shrunk
++        text, last, cut, gen = [], None, "-", 0
++        first = None
++        for img in images:
++            last = None   # a crop that yields nothing must not count the previous crop's tokens again
++            piece = []
++            for r in stream_generate(model, processor, prompt, image=[img], max_tokens=a.max_tokens, temperature=0.0):
++                if first is None: first = time.time()
++                piece.append(r.text); last = r
++                if time.time() - t1 > a.seconds:
++                    cut = "seconds"; break
++            piece = "".join(piece)
++            text.append(piece)
++            if a.one_line_each: text[-1] = " ".join(text[-1].split())
++            gen += getattr(last, "generation_tokens", 0)
++            if cut == "seconds": text.append("\n"); break
++            # One crop that runs to max_tokens (usually a loop) marks the read cut but does not stop the next crops.
++            if last is not None and last.generation_tokens >= a.max_tokens: cut = "max_tokens"
++            text.append("\n")
++        t2 = time.time()
++        out = "".join(text)
++        open(a.out, "w").write(out)
++        return {
++            "read_s": round(t2 - t1, 1), "first_token_s": round((first or t2) - t1, 1),
++            "prompt_tokens": getattr(last, "prompt_tokens", 0), "gen_tokens": gen, "images": len(images),
++            "gen_tps": round(getattr(last, "generation_tps", 0.0), 1),
++            "mlx_peak_gb": round(mx.get_peak_memory() / 2**30, 2), "cut": cut, "chars": len(out),
++        }, (1 if cut == "seconds" else 0)
++    finally:
++        for tmp in tmps: shutil.rmtree(tmp, True)
++
++
++if serve is None:
++    t0 = time.time()
++    model, processor = load(a.model, trust_remote_code=True)
++    t1 = time.time()
++    stats, status = read(a, model, processor, t1)
++    print(json.dumps({"load_s": round(t1 - t0, 1), **stats}))
++    sys.exit(status)
++
++import fcntl, socket
++pid = os.open(serve.serve + ".pid", os.O_RDWR | os.O_CREAT, 0o600)
++fcntl.flock(pid, fcntl.LOCK_EX | fcntl.LOCK_NB)   # raises, and so exits, if a live server holds it
++os.ftruncate(pid, 0); os.write(pid, f"{os.getpid()}\n".encode())
+ t0 = time.time()
+-model, processor = load(a.model, trust_remote_code=True)
+-t1 = time.time()
+-prompt = apply_chat_template(processor, model.config, a.prompt, num_images=1)
+-images = [a.image]
+-if a.crops:
+-    import tempfile
+-    from PIL import Image
+-    page, tmp, images = Image.open(a.image), tempfile.mkdtemp(prefix="visionocr-crops-"), []
+-    for line in open(a.crops).read().splitlines()[1:]:
+-        name, x, y, w, h = line.split("\t")[:5]
+-        x, y, w, h = int(x), int(y), int(w), int(h)
+-        images.append(os.path.join(tmp, name)); page.crop((x, y, x + w, y + h)).save(images[-1])
+-    import atexit, shutil
+-    atexit.register(shutil.rmtree, tmp, True)
+-if a.max_side:
+-    # A model trained at a fixed resolution can spend its memory on vision tokens for a 300 dpi page.
+-    import tempfile
+-    from PIL import Image
+-    tmp, shrunk = tempfile.mkdtemp(prefix="visionocr-shrunk-"), []
+-    for i, path in enumerate(images):
+-        im = Image.open(path); im.thumbnail((a.max_side, a.max_side), Image.LANCZOS)
+-        shrunk.append(os.path.join(tmp, f"{i}.png")); im.save(shrunk[-1])
+-    images = shrunk
+-    import atexit, shutil
+-    atexit.register(shutil.rmtree, tmp, True)
+-text, last, cut, gen = [], None, "-", 0
+-first = None
+-for img in images:
+-    last = None   # a crop that yields nothing must not count the previous crop's tokens again
+-    piece = []
+-    for r in stream_generate(model, processor, prompt, image=[img], max_tokens=a.max_tokens, temperature=0.0):
+-        if first is None: first = time.time()
+-        piece.append(r.text); last = r
+-        if time.time() - t1 > a.seconds:
+-            cut = "seconds"; break
+-    piece = "".join(piece)
+-    text.append(piece)
+-    if a.one_line_each: text[-1] = " ".join(text[-1].split())
+-    gen += getattr(last, "generation_tokens", 0)
+-    if cut == "seconds": text.append("\n"); break
+-    # One crop that runs to max_tokens (usually a loop) marks the read cut but does not stop the next crops.
+-    if last is not None and last.generation_tokens >= a.max_tokens: cut = "max_tokens"
+-    text.append("\n")
+-t2 = time.time()
+-out = "".join(text)
+-open(a.out, "w").write(out)
+-print(json.dumps({
+-    "load_s": round(t1 - t0, 1), "read_s": round(t2 - t1, 1),
+-    "first_token_s": round((first or t2) - t1, 1),
+-    "prompt_tokens": getattr(last, "prompt_tokens", 0), "gen_tokens": gen, "images": len(images),
+-    "gen_tps": round(getattr(last, "generation_tps", 0.0), 1),
+-    "mlx_peak_gb": round(mx.get_peak_memory() / 2**30, 2), "cut": cut, "chars": len(out),
+-}))
+-sys.exit(1 if cut == "seconds" else 0)
++model, processor = load(serve.model, trust_remote_code=True)
++loaded = round(time.time() - t0, 1)
++try: os.unlink(serve.serve)
++except FileNotFoundError: pass
++listener = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
++listener.bind(serve.serve); listener.listen(4)
++listener.settimeout(min(max(serve.idle, 1), 5))
++idle = time.time()
++while True:
++    try: conn, _ = listener.accept()
++    except socket.timeout:
++        if time.time() - idle < serve.idle: continue
++        slot = os.open(serve.slot, os.O_RDWR | os.O_CREAT, 0o600)
++        try: fcntl.flock(slot, fcntl.LOCK_EX | fcntl.LOCK_NB)
++        except OSError:
++            os.close(slot); continue   # a helper holds the slot and may be about to connect
++        # Held to the exit, so no helper takes the slot and connects to a socket about to go.
++        for leftover in ("", ".footprint", ".pid"):
++            try: os.unlink(serve.serve + leftover)
++            except FileNotFoundError: pass
++        break
++    with conn:
++        # A client killed before it asked must not hold the server; the reading itself has --seconds.
++        conn.settimeout(10)
++        try:
++            request = conn.makefile("rb").readline()
++            conn.settimeout(None)
++            a = ap.parse_args(json.loads(request)["argv"])
++            if a.model != serve.model: raise ValueError(f"this server reads {serve.model}, not {a.model}")
++            mx.reset_peak_memory()
++            stats, status = read(a, model, processor, time.time())
++            stats, loaded = {"load_s": loaded, **stats}, 0.0
++        except (Exception, SystemExit) as e:
++            stats, status = {"error": str(e)}, 2
++        stats["status"] = status
++        try: conn.sendall((json.dumps(stats) + "\n").encode())
++        except OSError: pass
++    idle = time.time()
+diff --git a/Sources/Recogniser.swift b/Sources/Recogniser.swift
+index b7c0238..4491f9d 100644
+--- a/Sources/Recogniser.swift
++++ b/Sources/Recogniser.swift
+@@ -1461,19 +1461,29 @@ enum Recogniser {
+     /// process has died is lockable, and is removed by whoever finds it.
+     static func takeReaderSlot(_ slots: Int, size: Int = 0, in dir: URL = FileManager.default.temporaryDirectory,
+                                isCancelled: () -> Bool) throws -> [Int32] {
++        try takeIndexedReaderSlot(slots, size: size, in: dir, isCancelled: isCancelled).locks
++    }
++
++    /// The lock file of reader slot `i`.
++    static func readerSlotLock(_ i: Int, in dir: URL = FileManager.default.temporaryDirectory) -> URL {
++        dir.appendingPathComponent("visionocr-model-reader.lock" + (i == 0 ? "" : ".\(i)"))
++    }
++
++    /// `takeReaderSlot`'s descriptors, and the slot read in: the one taken, or 0 with every slot.
++    static func takeIndexedReaderSlot(_ slots: Int, size: Int = 0, in dir: URL = FileManager.default.temporaryDirectory,
++                                      isCancelled: () -> Bool) throws -> (locks: [Int32], slot: Int) {
+         let ticket = ReaderTicket(size: size, in: dir)
+         defer { ticket?.withdraw() }
+         var locks: [Int32] = []
+         for i in 0..<readerSlotCount {
+-            let l = open(dir.appendingPathComponent("visionocr-model-reader.lock" + (i == 0 ? "" : ".\(i)")).path,
+-                         O_CREAT | O_RDWR, 0o600)
++            let l = open(readerSlotLock(i, in: dir).path, O_CREAT | O_RDWR, 0o600)
+             guard l >= 0 else {
+                 locks.forEach { close($0) }
+                 throw Failure.modelReader("its lock could not be opened")
+             }
+             locks.append(l)
+         }
+-        var held: [Int32] = []
++        var held: [Int32] = [], slot = 0
+         func wait() throws {
+             if isCancelled() {
+                 locks.forEach { close($0) }
+@@ -1485,8 +1495,9 @@ enum Recogniser {
+         func first() -> Bool { ticket?.isFirst() != false }
+         if slots >= 2 {
+             while held.isEmpty {
+-                if first(), let free = locks.first(where: { flock($0, LOCK_EX | LOCK_NB) == 0 }) {
+-                    held = [free]
++                if first(), let free = locks.indices.first(where: { flock(locks[$0], LOCK_EX | LOCK_NB) == 0 }) {
++                    held = [locks[free]]
++                    slot = free
+                 } else { try wait() }
+             }
+         } else {
+@@ -1496,7 +1507,7 @@ enum Recogniser {
+             }
+         }
+         locks.filter { !held.contains($0) }.forEach { close($0) }
+-        return held
++        return (held, slot)
+     }
+ 
+     /// One waiting reading's place in `takeReaderSlot`'s queue: a file named
+@@ -1605,14 +1616,69 @@ enum Recogniser {
+         // helpers at once, and each reading loads the model (Falcon-OCR peaks at 3.9 GB), so six
+         // at once would ask more of an 18 GB Mac than it has. Released when the descriptors
+         // close, which a crash does too.
+-        let locks = try takeReaderSlot(slots, size: size, isCancelled: isCancelled)
++        let (locks, slot) = try takeIndexedReaderSlot(slots, size: size, isCancelled: isCancelled)
+         defer { locks.forEach { close($0) } }
+-        let out = FileManager.default.temporaryDirectory
+-            .appendingPathComponent("visionocr-reader-\(UUID().uuidString).txt")
++        let dir = FileManager.default.temporaryDirectory
++        let out = dir.appendingPathComponent("visionocr-reader-\(UUID().uuidString).txt")
+         defer { try? FileManager.default.removeItem(at: out) }
++        let command = ModelRuntime.readers[reader] == nil ? nil
++            : try ModelRuntime.command(reader: reader, image: image, out: out, crops: crops)
++        // A reading with every slot keeps no other server loaded beside it; one with a slot, none of
++        // another model on it.
++        let resident = command.flatMap { c in
++            ModelRuntime.residentReaders().contains(reader) ? ResidentReader(command: c, slot: slot, in: dir) : nil
++        }
++        let held = alone ? Array(0..<readerSlotCount) : [slot]
++        resident?.stopOthers(slots: held)
++        if pressure() >= ModelGuard.critical {
++            // A loaded server may be what holds the memory: it goes too, rather than sit idle while pages fail.
++            resident?.stopOthers(slots: held, keepingThis: false)
++            if !alone { throw SharedMemoryStop() }
++            throw Failure.modelMemory("the Mac's memory pressure was critical, so \(reader) was not started")
++        }
++        // A value written by hand may be anything; Int() traps on what does not fit.
++        let capMB = Int(min(max(memoryGB.isFinite ? memoryGB : Prefs.defaultModelMemoryGB(), 0), 1024) * 1024)
++        let swap0 = ModelGuard.swapUsedMB()
++        defer { readerGroup.pointee = 0 }
++        // Until `finished`, stopping the reader with `stop` and throwing when the run is cancelled, it
++        // runs past `readerSeconds` or `ModelGuard` says so.
++        func watch(_ leader: () -> pid_t, group: () -> pid_t?, finished: () throws -> Bool, stop: () -> Void) throws {
++            let deadline = Date().addingTimeInterval(readerSeconds)
++            var sampled = Date.distantPast
++            while try !finished() {
++                if isCancelled() {
++                    stop()
++                    throw Failure.cancelled
++                }
++                if Date() > deadline {
++                    stop()
++                    throw Failure.modelTimeout("\(reader) took longer than \(Int(readerSeconds)) seconds")
++                }
++                if Date().timeIntervalSince(sampled) >= ModelGuard.every {
++                    sampled = Date()
++                    let footprint = ModelGuard.footprintMB(leader: leader(), group: group())
++                    if let why = ModelGuard.verdict(footprintMB: footprint, capMB: capMB, pressure: pressure(),
++                                                    swapGrowthMB: ModelGuard.swapUsedMB() - swap0) {
++                        stop()
++                        if !alone && footprint <= capMB { throw SharedMemoryStop() }
++                        throw Failure.modelMemory("\(reader) \(why)")
++                    }
++                }
++                usleep(50_000)
++            }
++        }
++        func text() throws -> String {
++            guard let text = try? String(contentsOf: out, encoding: .utf8) else {
++                throw Failure.modelReader("\(reader) wrote no text")
++            }
++            return text
++        }
++        if let resident {
++            try resident.read(reader: reader, watch: watch)
++            return try text()
++        }
+         let process = Process()
+-        if ModelRuntime.readers[reader] != nil {
+-            let command = try ModelRuntime.command(reader: reader, image: image, out: out, crops: crops)
++        if let command {
+             process.executableURL = command.executable
+             process.arguments = command.arguments
+             process.environment = command.environment
+@@ -1623,52 +1689,222 @@ enum Recogniser {
+         process.standardInput = FileHandle.nullDevice
+         process.standardOutput = FileHandle.nullDevice
+         process.standardError = FileHandle.nullDevice
+-        if pressure() >= ModelGuard.critical {
+-            if !alone { throw SharedMemoryStop() }
+-            throw Failure.modelMemory("the Mac's memory pressure was critical, so \(reader) was not started")
+-        }
+-        // A value written by hand may be anything; Int() traps on what does not fit.
+-        let capMB = Int(min(max(memoryGB.isFinite ? memoryGB : Prefs.defaultModelMemoryGB(), 0), 1024) * 1024)
+-        let swap0 = ModelGuard.swapUsedMB()
+         do { try process.run() } catch {
+             throw Failure.modelReader("\(reader) could not be started (\(error.localizedDescription))")
+         }
+         let group = Runner.processGroup(of: process)
+         readerGroup.pointee = group ?? 0
+-        defer { readerGroup.pointee = 0 }
+-        let deadline = Date().addingTimeInterval(readerSeconds)
+-        var sampled = Date.distantPast
+-        while process.isRunning {
+-            if isCancelled() {
+-                Runner.stop(process, knownGroup: group)
+-                throw Failure.cancelled
++        try watch({ process.processIdentifier }, group: { group }, finished: { !process.isRunning },
++                  stop: { Runner.stop(process, knownGroup: group) })
++        try ResidentReader.exitStatus(process, reader: reader)
++        return try text()
++    }
++
++    /// A shipped reader kept loaded across a batch's pages (model-resident-reader; which readers:
++    /// `ModelRuntime.residentReaders`): `read-model.py --serve`, one server for each reader slot,
++    /// reached by a Unix socket. Started per page, a
++    /// reader spent 2.3-2.8 s (Falcon-OCR) and 3.5-3.9 s (PaddleOCR-VL) a call starting Python,
++    /// importing MLX and loading the weights (`MODEL-THROUGHPUT-2026-10-15.tsv`).
++    ///
++    /// A slot's server has one client at a time, the reading holding that slot's lock, so the helper
++    /// that starts it need not outlive it: the next helper with the slot finds its socket. It goes
++    /// when it has been idle for `idleSeconds` and the slot is free. Every reading runs under the guard
++    /// as a reader started for it does, the server's footprint, weights included, against the memory
++    /// setting; cancel, the time limit, the guard and the helper's SIGTERM (`readerGroup`, set while
++    /// it reads) stop the server, and the next page starts another.
++    /// The socket's name holds a key of the command it runs, so a server of another model, script or
++    /// runtime is never asked to read: it is stopped (`stopOthers`).
++    struct ResidentReader {
++        static let idleSeconds = 60
++        /// A server holding more than this over its footprint after its first page is stopped once
++        /// its page is read, so that memory a reader gains across pages is given back. That first
++        /// footprint is kept in `<socket>.footprint`.
++        static let growthMB = 1024
++        let command: ModelRuntime.Command
++        let socket: URL, slotLock: URL, dir: URL, slot: Int, key: String
++
++        /// Nil for a socket path too long for `sockaddr_un`; the page is then read by a reader started for it.
++        init?(command: ModelRuntime.Command, slot: Int, in dir: URL) {
++            guard command.arguments.count >= 3 else { return nil }
++            self.command = command
++            self.dir = dir
++            self.slot = slot
++            key = ResidentReader.key(command)
++            socket = dir.appendingPathComponent("visionocr-reader.\(slot).\(key).sock")
++            slotLock = Recogniser.readerSlotLock(slot, in: dir)
++            guard socket.path.utf8.count < MemoryLayout.size(ofValue: sockaddr_un().sun_path) else { return nil }
++        }
++
++        /// What a server is for: its runtime, its script (with the file's size and date, so an updated
++        /// app's script is another server), its model and its environment.
++        static func key(_ command: ModelRuntime.Command) -> String {
++            var text = ([command.executable.path] + command.arguments.prefix(3)).joined(separator: "\n")
++            if let a = try? FileManager.default.attributesOfItem(atPath: command.arguments[1]) {
++                text += "\n\((a[.size] as? NSNumber)?.int64Value ?? 0) "
++                    + "\((a[.modificationDate] as? Date)?.timeIntervalSince1970 ?? 0)"
+             }
+-            if Date() > deadline {
+-                Runner.stop(process, knownGroup: group)
+-                throw Failure.modelTimeout("\(reader) took longer than \(Int(readerSeconds)) seconds")
+-            }
+-            if Date().timeIntervalSince(sampled) >= ModelGuard.every {
+-                sampled = Date()
+-                let footprint = ModelGuard.footprintMB(leader: process.processIdentifier, group: group)
+-                if let why = ModelGuard.verdict(footprintMB: footprint, capMB: capMB, pressure: pressure(),
+-                                                swapGrowthMB: ModelGuard.swapUsedMB() - swap0) {
+-                    Runner.stop(process, knownGroup: group)
+-                    if !alone && footprint <= capMB { throw SharedMemoryStop() }
+-                    throw Failure.modelMemory("\(reader) \(why)")
+-                }
++            text += command.environment.sorted { $0.key < $1.key }.map { "\n\($0.key)=\($0.value)" }.joined()
++            var h: UInt64 = 0xcbf2_9ce4_8422_2325
++            for b in text.utf8 { h = (h ^ UInt64(b)) &* 0x100_0000_01b3 }
++            return String(h, radix: 16)
++        }
++
++        /// The live server whose pid file is `pidFile`, held under flock while it lives; a dead
++        /// one's files are removed. Nil when none lives.
++        static func livePid(_ pidFile: String) -> pid_t? {
++            let f = open(pidFile, O_RDONLY)
++            guard f >= 0 else { return nil }
++            defer { close(f) }
++            if flock(f, LOCK_SH | LOCK_NB) == 0 {
++                unlink(pidFile)
++                unlink(String(pidFile.dropLast(4)))
++                unlink(String(pidFile.dropLast(4)) + ".footprint")
++                return nil
++            }
++            // Written just after the lock is taken.
++            for _ in 0..<20 {
++                var buffer = [UInt8](repeating: 0, count: 32)
++                let n = pread(f, &buffer, 31, 0)
++                if n > 0, let pid = pid_t(String(decoding: buffer[0..<n], as: UTF8.self)
++                    .trimmingCharacters(in: .whitespacesAndNewlines)), pid > 1 { return pid }
++                usleep(10_000)
+             }
+-            usleep(50_000)
++            return nil
+         }
+-        guard process.terminationReason == .exit else {
+-            throw Failure.modelReader("\(reader) was stopped by signal \(process.terminationStatus)")
++
++        /// SIGKILL to the server and its group, waiting up to 2 s for it to go.
++        static func kill(_ pid: pid_t, pidFile: String) {
++            if let group = group(of: pid) { Darwin.kill(-group, SIGKILL) } else { Darwin.kill(pid, SIGKILL) }
++            for _ in 0..<40 where livePid(pidFile) != nil { usleep(50_000) }
+         }
+-        guard process.terminationStatus == 0 else {
+-            throw Failure.modelReader("\(reader) exited with status \(process.terminationStatus)")
++
++        /// Stops every server on `slots` but this one, the slots being held: none is reading.
++        /// The group a server leads, as `Runner.processGroup` reads one: never this process's own.
++        static func group(of pid: pid_t) -> pid_t? {
++            getpgid(pid) == pid && pid != getpgid(0) ? pid : nil
+         }
+-        guard let text = try? String(contentsOf: out, encoding: .utf8) else {
+-            throw Failure.modelReader("\(reader) wrote no text")
++
++        /// Stops every server on `slots` but this one (or this one too), the slots being held: none is reading.
++        func stopOthers(slots: [Int], keepingThis: Bool = true) {
++            let mine = keepingThis ? socket.lastPathComponent + ".pid" : ""
++            let names = (try? FileManager.default.contentsOfDirectory(atPath: dir.path)) ?? []
++            for name in names where name.hasSuffix(".sock.pid") && name != mine {
++                guard slots.contains(where: { name.hasPrefix("visionocr-reader.\($0).") }) else { continue }
++                let path = dir.appendingPathComponent(name).path
++                if let pid = ResidentReader.livePid(path) { ResidentReader.kill(pid, pidFile: path) }
++            }
++        }
++
++        /// A reader's exit as `modelReading` reports it: nothing for 0.
++        static func exitStatus(_ process: Process, reader: String) throws {
++            guard process.terminationReason == .exit else {
++                throw Failure.modelReader("\(reader) was stopped by signal \(process.terminationStatus)")
++            }
++            guard process.terminationStatus == 0 else {
++                throw Failure.modelReader("\(reader) exited with status \(process.terminationStatus)")
++            }
++        }
++
++        /// Has the slot's server read the page into the command's output, starting the server when none is
++        /// running, under `watch`.
++        func read(reader: String, watch: (() -> pid_t, () -> pid_t?, () throws -> Bool, () -> Void) throws -> Void) throws {
++            let pidFile = socket.path + ".pid"
++            var started: Process?
++            var pid = ResidentReader.livePid(pidFile) ?? 0
++            let footprintFile = socket.path + ".footprint"
++            if pid == 0 {
++                unlink(socket.path)
++                unlink(footprintFile)
++                let process = Process()
++                process.executableURL = command.executable
++                process.arguments = Array(command.arguments.prefix(2))
++                    + ["--serve", socket.path, "--slot", slotLock.path, "--idle", "\(ResidentReader.idleSeconds)",
++                       command.arguments[2]]
++                process.environment = command.environment
++                process.standardInput = FileHandle.nullDevice
++                process.standardOutput = FileHandle.nullDevice
++                process.standardError = FileHandle.nullDevice
++                do { try process.run() } catch {
++                    throw Failure.modelReader("\(reader) could not be started (\(error.localizedDescription))")
++                }
++                started = process
++                pid = process.processIdentifier
++            }
++            let group = ResidentReader.group(of: pid)
++            readerGroup.pointee = group ?? 0
++            let request = try JSONSerialization.data(withJSONObject: ["argv": Array(command.arguments.dropFirst(2))])
++                + Data("\n".utf8)
++            var fd: Int32 = -1
++            defer { if fd >= 0 { close(fd) } }
++            var reply = Data()
++            func stop() { ResidentReader.kill(pid, pidFile: pidFile) }
++            try watch({ pid }, { group }, {
++                if fd < 0 {
++                    if let started, !started.isRunning {
++                        try ResidentReader.exitStatus(started, reader: reader)
++                        throw Failure.modelReader("\(reader) stopped before it answered")
++                    }
++                    if started == nil, ResidentReader.livePid(pidFile) == nil {
++                        throw Failure.modelReader("\(reader) stopped before it answered")
++                    }
++                    fd = ResidentReader.connect(socket.path)
++                    guard fd >= 0 else { return false }
++                    let sent = request.withUnsafeBytes { Darwin.write(fd, $0.baseAddress, $0.count) }
++                    guard sent == request.count else { throw Failure.modelReader("\(reader) could not be asked to read") }
++                    _ = fcntl(fd, F_SETFL, fcntl(fd, F_GETFL) | O_NONBLOCK)
++                }
++                var buffer = [UInt8](repeating: 0, count: 4096)
++                while true {
++                    let n = Darwin.read(fd, &buffer, buffer.count)
++                    if n > 0 { reply.append(contentsOf: buffer[0..<n]); continue }
++                    if n == 0 || reply.last == UInt8(ascii: "\n") { return true }
++                    if errno == EAGAIN || errno == EINTR { return false }
++                    return true
++                }
++            }, stop)
++            let answer = (try? JSONSerialization.jsonObject(with: reply)) as? [String: Any]
++            guard let status = answer?["status"] as? Int else {
++                if let started, !started.isRunning { try ResidentReader.exitStatus(started, reader: reader) }
++                throw Failure.modelReader("\(reader) stopped before it answered")
++            }
++            // Memory the server gained over this page is given back now rather than counted on the next.
++            let footprint = ModelGuard.footprintMB(leader: pid, group: group)
++            if let first = (try? String(contentsOfFile: footprintFile, encoding: .utf8)).flatMap({ Int($0) }) {
++                if footprint > first + ResidentReader.growthMB { stop() }
++            } else {
++                try? "\(footprint)".write(toFile: footprintFile, atomically: true, encoding: .utf8)
++            }
++            if status == 2 {
++                throw Failure.modelReader("\(reader) could not read the page (\(answer?["error"] as? String ?? "?"))")
++            }
++            guard status == 0 else { throw Failure.modelReader("\(reader) exited with status \(status)") }
++        }
++
++        /// A connected socket to `path`, or -1.
++        static func connect(_ path: String) -> Int32 {
++            let fd = Darwin.socket(AF_UNIX, SOCK_STREAM, 0)
++            guard fd >= 0 else { return -1 }
++            // A server gone between connect and write must fail the page, not SIGPIPE the helper or the app.
++            var on: Int32 = 1
++            setsockopt(fd, SOL_SOCKET, SO_NOSIGPIPE, &on, socklen_t(MemoryLayout<Int32>.size))
++            var address = sockaddr_un()
++            address.sun_family = sa_family_t(AF_UNIX)
++            let capacity = MemoryLayout.size(ofValue: address.sun_path)
++            let ok = withUnsafeMutableBytes(of: &address.sun_path) { raw -> Bool in
++                let bytes = Array(path.utf8)
++                guard bytes.count < capacity else { return false }
++                raw.copyBytes(from: bytes)
++                raw[bytes.count] = 0
++                return true
++            }
++            let connected = ok && withUnsafePointer(to: &address) {
++                $0.withMemoryRebound(to: sockaddr.self, capacity: 1) {
++                    Darwin.connect(fd, $0, socklen_t(MemoryLayout<sockaddr_un>.size)) == 0
++                }
++            }
++            if !connected { close(fd); return -1 }
++            return fd
+         }
+-        return text
+     }
+ 
+     /// A model's reading as words, with the markup some models write taken out:
+@@ -5768,6 +6004,19 @@ enum ModelRuntime {
+     /// The reader script, found beside the helper at run time and never from a stored
+     /// path: an app run from where it was downloaded is translocated to a random one.
+     /// `VISIONOCR_READER_SCRIPT` is the suite's way to it, as `VISIONOCR_HELPER` is the helper's.
++    /// The readers kept loaded across a batch's pages (`Recogniser.ResidentReader`): those it made
++    /// faster by the item's 10%. Ten pages at two readers took PaddleOCR-VL 89.0 -> 79.4 s (-10.8%) and
++    /// Falcon-OCR 147.8 -> 142.2 s (-3.8%, -0.2% to -7.8% over three pairs; MODEL-RESIDENT-2026-10-16.tsv):
++    /// two Falcon readings keep the GPU busy, so the start-up a page saves overlapped the other slot's
++    /// reading. LightOnOCR-3 was not measured.
++    /// `VISIONOCR_RESIDENT_READERS`, a comma-separated list, is the suite's way to others.
++    static func residentReaders(_ environment: [String: String] = ProcessInfo.processInfo.environment) -> Set<String> {
++        if let names = environment["VISIONOCR_RESIDENT_READERS"] {
++            return Set(names.split(separator: ",").map(String.init))
++        }
++        return ["paddleocr-vl"]
++    }
++
+     static func script(_ environment: [String: String] = ProcessInfo.processInfo.environment) -> URL? {
+         if let override = environment["VISIONOCR_READER_SCRIPT"], !override.isEmpty {
+             return URL(fileURLWithPath: override)
+diff --git a/Tests/main.swift b/Tests/main.swift
+index 93790df..62d2e78 100644
+--- a/Tests/main.swift
++++ b/Tests/main.swift
+@@ -36,6 +36,76 @@ if CommandLine.arguments.count == 3, CommandLine.arguments[1] == "--probe-hostil
+     exit(0)
+ }
+ 
++// model-resident-reader. A stand-in for `read-model.py --serve`, run by a stand-in runtime python as
++// `--fake-reader-server <record> -I <script> --serve <socket> --slot <lock> --idle S <model>`: the same pid
++// file, socket and answers. Each start appends `start <pid>` to `<record>.starts`; each request writes its
++// server's arguments, `--`, the request's and the model environment to `<record>`, and the words to its out
++// file. `<record>.slow` makes it sleep 60 s before answering, `<record>.hog` hold 300 MB first.
++if CommandLine.arguments.count >= 3, CommandLine.arguments[1] == "--fake-reader-server" {
++    let record = CommandLine.arguments[2]
++    let args = Array(CommandLine.arguments.dropFirst(3))
++    guard let at = args.firstIndex(of: "--serve"), at + 1 < args.count else { exit(64) }
++    let path = args[at + 1]
++    let pid = open(path + ".pid", O_RDWR | O_CREAT, 0o600)
++    guard pid >= 0, flock(pid, LOCK_EX | LOCK_NB) == 0 else { exit(1) }
++    ftruncate(pid, 0)
++    _ = "\(getpid())\n".withCString { write(pid, $0, strlen($0)) }
++    if let h = FileHandle(forWritingAtPath: record + ".starts") ?? {
++        FileManager.default.createFile(atPath: record + ".starts", contents: nil)
++        return FileHandle(forWritingAtPath: record + ".starts")
++    }() {
++        h.seekToEndOfFile(); h.write(Data("start \(getpid())\n".utf8)); h.closeFile()
++    }
++    unlink(path)
++    let listener = socket(AF_UNIX, SOCK_STREAM, 0)
++    var address = sockaddr_un()
++    address.sun_family = sa_family_t(AF_UNIX)
++    withUnsafeMutableBytes(of: &address.sun_path) { raw in
++        let bytes = Array(path.utf8)
++        raw.copyBytes(from: bytes); raw[bytes.count] = 0
++    }
++    let bound = withUnsafePointer(to: &address) {
++        $0.withMemoryRebound(to: sockaddr.self, capacity: 1) { bind(listener, $0, socklen_t(MemoryLayout<sockaddr_un>.size)) }
++    }
++    guard bound == 0, listen(listener, 4) == 0 else { exit(1) }
++    var hog: [UInt8] = []
++    var idleSince = Date()
++    while true {
++        var p = pollfd(fd: listener, events: Int16(POLLIN), revents: 0)
++        if poll(&p, 1, 200) <= 0 {
++            // The suite does not wait out a minute's idle: 20 s, then gone once the slot is free.
++            guard Date().timeIntervalSince(idleSince) > 20 else { continue }
++            let at = args.firstIndex(of: "--slot").map { args[$0 + 1] } ?? ""
++            let slot = open(at, O_RDWR | O_CREAT, 0o600)
++            if slot >= 0, flock(slot, LOCK_EX | LOCK_NB) == 0 {
++                unlink(path); unlink(path + ".pid"); exit(0)
++            }
++            if slot >= 0 { close(slot) }
++            continue
++        }
++        let conn = accept(listener, nil, nil)
++        guard conn >= 0 else { continue }
++        var line = Data(), byte: UInt8 = 0
++        while read(conn, &byte, 1) == 1, byte != UInt8(ascii: "\n") { line.append(byte) }
++        let argv = ((try? JSONSerialization.jsonObject(with: line)) as? [String: [String]])?["argv"] ?? []
++        let env = ProcessInfo.processInfo.environment
++        try? (args + ["--"] + argv + ["HF_HOME=\(env["HF_HOME"] ?? "")", "OFFLINE=\(env["HF_HUB_OFFLINE"] ?? "")"])
++            .joined(separator: "\n").write(toFile: record, atomically: true, encoding: .utf8)
++        if FileManager.default.fileExists(atPath: record + ".hog") {
++            hog = [UInt8](repeating: 1, count: 300_000_000)
++            for i in stride(from: 0, to: hog.count, by: 4096) { hog[i] = UInt8(i & 0xff) }
++            sleep(3)   // past the guard's next samples, 0.5 s apart
++        }
++        if FileManager.default.fileExists(atPath: record + ".slow") { sleep(60) }
++        if argv.count > 2 {
++            try? "The model reader's wordz reach the texts layer\n".write(toFile: argv[2], atomically: true, encoding: .utf8)
++        }
++        _ = "{\"status\": 0, \"hog\": \(hog.count)}\n".withCString { write(conn, $0, strlen($0)) }
++        close(conn)
++        idleSince = Date()
++    }
++}
++
+ // A7.1 and A3.2. Two `Int(Double)` conversions on numbers descending entirely from
+ // what a file declares, 1,300 lines below the `safeInt` that exists for exactly
+ // this. Both trap, so both are exercised here and the parent reads the markers:
+@@ -12481,6 +12551,87 @@ do {
+               && Array(argv[5...10]) == ["--prompt", "plain", "--seconds", "540", "--max-side", "3300"]
+               && argv[11] == "HF_HOME=" + modelHome.appendingPathComponent("Models").path && argv[12] == "OFFLINE=1",
+           shipped.1 + " | " + argv.joined(separator: " "))
++    // model-resident-reader. PaddleOCR-VL alone stays loaded by default; the suite keeps Falcon-OCR
++    // loaded too, to read it through the pipeline, with a stand-in for `read-model.py --serve`.
++    check("only PaddleOCR-VL, which it made faster, is kept loaded across pages by default",
++          ModelRuntime.residentReaders([:]) == ["paddleocr-vl"], "\(ModelRuntime.residentReaders([:]))")
++    setenv("VISIONOCR_RESIDENT_READERS", "falcon-ocr,paddleocr-vl", 1)
++    let testsBinary = URL(fileURLWithPath: CommandLine.arguments[0]).path
++    try? "#!/bin/sh\nexec '\(testsBinary)' --fake-reader-server '\(argvFile.path)' \"$@\"\n"
++        .write(to: python, atomically: true, encoding: .utf8)
++    let served = publish(.align, "falcon-ocr")
++    let request = (try? String(contentsOf: argvFile, encoding: .utf8))?.split(separator: "\n").map(String.init) ?? []
++    check("a resident reader is started as a server, and asked to read the page with the same arguments",
++          served.2 == .succeeded && served.0.contains("wordz") && request.count == 21
++              && Array(request[0...2]) == ["-I", script.path, "--serve"] && request[4] == "--slot"
++              && Array(request[6...9]) == ["--idle", "60", "tiiuae/Falcon-OCR", "--"]
++              && argv.count == 13 && request[10] == argv[2] && Array(request[13...]) == Array(argv[5...]),
++          served.1 + " | " + request.joined(separator: " "))
++    // The reader stays loaded: a second document is read by the same server.
++    let startsFile = URL(fileURLWithPath: argvFile.path + ".starts")
++    func starts() -> [String] {
++        ((try? String(contentsOf: startsFile, encoding: .utf8)) ?? "").split(separator: "\n").map(String.init)
++    }
++    let again = publish(.align, "falcon-ocr")
++    check("a shipped reader stays loaded: a second document is read by the server the first one started",
++          again.2 == .succeeded && again.0.contains("wordz") && starts().count == 1, again.1 + " | \(starts())")
++    // Its socket and pid file, in the temporary directory the helper and the app share.
++    let temporary = FileManager.default.temporaryDirectory
++    func servers() -> [(name: String, pid: pid_t)] {
++        ((try? FileManager.default.contentsOfDirectory(atPath: temporary.path)) ?? [])
++            .filter { $0.hasPrefix("visionocr-reader.") && $0.hasSuffix(".sock.pid") }
++            .compactMap { n in Recogniser.ResidentReader.livePid(temporary.appendingPathComponent(n).path).map { (n, $0) } }
++    }
++    func gone(_ pid: pid_t) -> Bool {
++        for _ in 0..<60 { if kill(pid, 0) != 0 { return true }; usleep(50_000) }
++        return false
++    }
++    // A cancel mid-reading stops the server, in the app and through the helper's SIGTERM handler.
++    let slow = URL(fileURLWithPath: argvFile.path + ".slow")
++    FileManager.default.createFile(atPath: slow.path, contents: nil)
++    var shippedSettings = Prefs.Snapshot.current()
++    shippedSettings.modelArrangement = .align
++    shippedSettings.modelReader = "falcon-ocr"
++    for viaHelperRoute in [false, true] {
++        let reading = servers().first?.pid ?? 0
++        let began = Date()
++        let cancelled = (try? Recogniser.recogniseDocument(
++            visible: rebuilt, bitmaps: bitmaps, settings: shippedSettings, useHelper: viaHelperRoute,
++            isCancelled: { Date().timeIntervalSince(began) > 2 })) == nil
++        check("a cancel stops the resident reader mid-reading, \(viaHelperRoute ? "through the helper" : "in the app")",
++              cancelled && reading > 0 && gone(reading) && Date().timeIntervalSince(began) < 30,
++              "cancelled \(cancelled), pid \(reading), \(starts())")
++        // The next reading starts the server again.
++        try? FileManager.default.removeItem(at: slow)
++        _ = publish(.align, "falcon-ocr")
++        FileManager.default.createFile(atPath: slow.path, contents: nil)
++    }
++    try? FileManager.default.removeItem(at: slow)
++    // The guard watches the server's footprint while it reads, its weights included.
++    let hogMarker = URL(fileURLWithPath: argvFile.path + ".hog")
++    FileManager.default.createFile(atPath: hogMarker.path, contents: nil)
++    let hogging = servers().first?.pid ?? 0
++    var guardStop = ""
++    do { _ = try Recogniser.modelReading(of: source, reader: "falcon-ocr", memoryGB: 0.1, isCancelled: { false }) }
++    catch { guardStop = "\(error)" }
++    try? FileManager.default.removeItem(at: hogMarker)
++    check("the guard stops a resident reader that passes the memory setting while it reads",
++          hogging > 0 && guardStop.contains("over the 102 MB") && gone(hogging), "\(hogging) \(guardStop)")
++    // A server of another model on the slot is stopped before this one starts, and none is left beside it.
++    let falconServer = { () -> pid_t in _ = publish(.align, "falcon-ocr"); return servers().first?.pid ?? 0 }()
++    try? FileManager.default.createDirectory(
++        at: modelHome.appendingPathComponent("Models/hub/models--mlx-community--PaddleOCR-VL-1.6-4bit"),
++        withIntermediateDirectories: true)
++    let paddleText = try? Recogniser.modelReading(of: source, reader: "paddleocr-vl", memoryGB: 4, isCancelled: { false })
++    let left = servers()
++    check("a server of another model on the slot is stopped, and the new model's reads the page",
++          falconServer > 0 && gone(falconServer) && paddleText?.contains("wordz") == true && left.count == 1
++              && left[0].pid != falconServer,
++          "\(falconServer) \(String(describing: paddleText)) \(left)")
++    left.forEach { Recogniser.ResidentReader.kill($0.pid, pidFile: temporary.appendingPathComponent($0.name).path) }
++    try? FileManager.default.removeItem(
++        at: modelHome.appendingPathComponent("Models/hub/models--mlx-community--PaddleOCR-VL-1.6-4bit"))
++    unsetenv("VISIONOCR_RESIDENT_READERS")
+     // Only the approved arrangements: no fill, PaddleOCR-VL never on a whole page, and Vision by
+     // name only on its regions.
+     for (arrangement, name) in [(Prefs.ModelArrangement.fill, "falcon-ocr"), (.align, "paddleocr-vl"),

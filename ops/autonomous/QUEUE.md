@@ -2256,7 +2256,7 @@ say so in the commit.
       (notes: ops/autonomous/notes/model-two-readers.md)
       CONFIRMED (owner, 2026-10-16, walkthrough): accepted on PaddleOCR-VL's -18.4% and Falcon-OCR's measured
       -13.0%; closed, which unblocks model-resident-reader for Falcon's start-up share.
-- [ ] **model-resident-reader** — keep the model reader's process and weights loaded across a batch's pages
+- [x] **model-resident-reader** — keep the model reader's process and weights loaded across a batch's pages
       instead of starting one per page. (uses: build,model:12) (blocked-on: model-two-readers)
       THE EVIDENCE: `MODEL-THROUGHPUT-2026-10-15.tsv`. Each call spends 2.3-2.8 s (Falcon-OCR, 10-14% of reader
       time) and 3.5-3.9 s (PaddleOCR-VL, 21-27%) on interpreter start, imports, weight load and image preparation
@@ -2267,6 +2267,10 @@ say so in the commit.
       model-two-readers, the guard still stops a reader past the memory setting, cancel ends it, and the
       suite passes. If a prototype shows the gain under 10%, close it here with the figures instead.
       ESTIMATE: 2 sessions. BOUND: rule 10. (context: model-throughput 2026-10-15)
+      (notes: ops/autonomous/notes/model-resident-reader.md)
+      Closed 2026-10-16 by the prototype clause, nothing shipped: kept loaded, ten pages took PaddleOCR-VL
+      88.1 -> 82.0 s (-6.9%, five pairs) and Falcon-OCR 147.8 -> 142.2 s (-3.8%, three)
+      (`MODEL-RESIDENT-2026-10-16.tsv`); the GPU, not start-up, bounds two readers. The prototype is in the notes.
 - [x] **layout-compare** — compare three layout detectors on the final text of newspaper pages, and find out
       whether the regions explain C41's fused rows. (uses: build,model:12)
       THE ASK (owner, 2026-10-14). The app cuts newspaper pages with DocLayout-YOLO (DocStructBench, Core ML,

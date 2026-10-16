@@ -1,0 +1,19 @@
+# model-resident-reader, 2026-10-16: does keeping the model reader loaded across a batch's pages (read-model.py --serve, one server a slot) make a batch finish sooner?
+# Batch: MODEL-THROUGHPUT-2026-10-15.tsv's ten one-page PDFs (OCR-SAMPLE s02 s03 s04 s09 s10 other, s17 s40 s41 s42 s47 newspaper), through score-gate with accurate mode on, concurrency 6, two reader slots (this 18 GB Mac), memory setting 5 GB.
+# base: origin/main db21f5d (a reader started per page). resident: the prototype (ops/autonomous/notes/model-resident-reader.patch), build "res" with every shipped reader loaded, build "final" after the review's fixes with PaddleOCR-VL alone loaded.
+# Each leg ran alone under the heavy lock (ops/autonomous/notes/model-resident-reader-leg.sh); idle servers were killed between legs. seconds: the gate's time to the last outcome. server_starts: distinct server processes in the leg.
+# Every leg published all ten PDFs and no page fell back. Falcon rep 1's first resident leg was void (the script was edited mid-leg) and rerun after rep 2.
+# Legs 7-8 ran res and final back to back: 81.3/80.1 and 80.3/81.9 s, so the two builds read alike and the drift between reps is the machine's over the session.
+# Smoke check, one page (s02, Falcon): a cold call 15.0 s, the same page read by a loaded server 10.4 s and 9.8 s, text byte-identical to the cold call's.
+rep	reader	resident_build	base_seconds	resident_seconds	change	server_starts
+1	paddleocr-vl	res	89.7	79.2	-11.7%	2
+2	paddleocr-vl	res	88.2	79.5	-9.9%	2
+4	paddleocr-vl	final	88.7	83.9	-5.4%	2
+5	paddleocr-vl	final	86.5	83.3	-3.7%	2
+6	paddleocr-vl	final	87.2	83.9	-3.8%	2
+mean	paddleocr-vl	-	88.06	81.96	-6.9%	-
+1	falcon-ocr	res	147.3	142.8	-3.1%	2
+2	falcon-ocr	res	144.2	143.9	-0.2%	2
+3	falcon-ocr	res	151.8	139.9	-7.8%	2
+mean	falcon-ocr	-	147.77	142.20	-3.8%	-
+# Both under the item's 10%: closed with these figures, nothing shipped. Falcon's two readings keep the GPU busy, so the start-up a page saves (CPU: interpreter, imports) overlapped the other slot's reading.
