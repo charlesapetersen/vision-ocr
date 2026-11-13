@@ -28,6 +28,8 @@ lines. State a finding once, in the place that owns it, and do not restate old c
   entry is a file plus its index line. Open entry: C57. C41's work moved to Archive Suite
   (`W42.c41-newspaper-scans`) on 2026-10-16; its entry here is history.
 - `ops/autonomous/QUEUE.md` — the work order for autonomous sessions. Its queue is done (owner, 2026-10-16); only the three permanent owner holds remain.
+  No autonomous sessions run here: the engine is stopped and new work goes to Archive Suite. The
+  `ops/autonomous/` scripts stay in place for the merge into Archive Processor.
 - `CHANGELOG.md` — `## Unreleased` holds user-visible changes awaiting the next release.
 - `ARCHITECTURE.md` — the call path and where the risk sits. `CONTRIBUTING.md` — the change process
   for interactive work; autonomous sessions follow `ops/autonomous/resume-prompt.txt` where the two
