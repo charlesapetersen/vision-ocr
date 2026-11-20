@@ -102,7 +102,7 @@ in the section a reader starts from and reaches for when making exactly that dec
 `check-staleness.sh` was green throughout: it counts open register entries and does not read
 this sentence. Nothing in this repo checks a number or a status written in prose.)*
 
-## What is actually left
+## What is actually left — CLOSED (project stopped 2026-10-16; open work lives in Archive Suite; owner walkthrough 2026-11-19)
 
 **The shape signal is SHIPPED, 2026-08-16, and R56 and R57 are closed with it** —
 `Flattener.pageMarks` / `largeMarkTone` / `paleDrawing`, held by seven fixtures and by a

@@ -1002,7 +1002,7 @@ without reading qpdf's documentation to the end. This register has a long histor
 refusals in a row is exactly the pattern that deserves one sceptical pass before a
 fifth attempt is designed around them.
 
-### A glyphless font and a second knob for the text layer — NOT STARTED, costed 2026-08-16
+### A glyphless font and a second knob for the text layer — MOVED to Archive Suite (W49.proc-glyphless-font-measure, behind nice-to-have; owner 2026-11-19)
 
 **The idea.** Stop fitting the run's width with its font size. Set the font size from the ink
 height, fit the width with a horizontal scale, and delete the vertical squash. Two independent
@@ -1611,7 +1611,7 @@ misrepresentation that no count would catch, so the pages carrying marks get
 rendered and compared.
 
 
-### Clickable footnote and endnote links
+### Clickable footnote and endnote links — MOVED to Archive Suite (W49.proc-footnote-links, behind nice-to-have; owner 2026-11-19)
 *(raised 2026-08-13. **Research first, and not started.** What follows is one
 hour of looking, recorded so the next hour does not repeat it.)*
 

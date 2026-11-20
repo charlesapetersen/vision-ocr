@@ -6,7 +6,7 @@ unless marked *reasoned* or *unverified*.
 
 Status: `OPEN` · `FIXED` · `WONTFIX` (with a reason)
 
-**2 open (2026-10-14): `C41` and `C57`; `C56` closed `FIXED` 2026-10-14. `C27` closed `FIXED` 2026-09-25, and `C28` was `HALF FIXED` as of 2026-08-22, its
+**0 open (2026-11-19): `C41` and `C57` closed, both carried into Archive Suite; `C56` closed `FIXED` 2026-10-14. `C27` closed `FIXED` 2026-09-25, and `C28` was `HALF FIXED` as of 2026-08-22, its
 shape term WIRED into `pageIsAllText()` as a third refusal condition once all five of its questions were
 measured. `C29` closed `FIXED` 2026-09-25.**
 ✅ **`C28`'s ONE REMAINING MEASUREMENT IS TAKEN AS OF 2026-09-02 AND IT IS THE MOVE THE ENTRY CALLS *"the
@@ -2694,7 +2694,7 @@ denominator for "asserts width, not order".
 
 ### C40 · On Hughes p5 four rows still join the two columns, above and below a figure — FIXED
 
-### C41 · Whole-page scans of small-town newspapers are read far below their print: misread words and rows fused across columns — OPEN
+### C41 · Whole-page scans of small-town newspapers are read far below their print: misread words and rows fused across columns — CLOSED (moved to Archive Suite 2026-10-16; its fix W42.c41-newspaper-scans shipped there 2026-11-18)
 
 ### C42 · A page whose crop box is not centred on its media box gets its text layer shifted off the ink, 81 pt on a two-page book spread — FIXED
 
@@ -2726,7 +2726,7 @@ denominator for "asserts width, not order".
 
 ### C56 · Pages that arrive 1-bit, or are re-gridded, come out with heavier type than the source — FIXED 2026-10-14
 
-### C57 · Old print and newspapers are read with more words wrong or missing than the approved on-device models leave — OPEN
+### C57 · Old print and newspapers are read with more words wrong or missing than the approved on-device models leave — CLOSED (the approved readers, PaddleOCR-VL, Falcon-OCR and Vision on regions, are built and live on in Archive Suite's VisionOCRKit; owner walkthrough 2026-11-19)
 
 ## Robustness and correctness of reporting
 
