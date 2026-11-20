@@ -502,7 +502,7 @@ not built because it needs a bound on helpers shared across the whole batch,
 where today the count is `Prefs.concurrency` by construction and needs no pool.
 Worth doing only if someone is waiting on single big books.
 
-## 2. The Zotero library sweep — step 1 done 2026-08-13, steps 2-4 pending
+## 2. The Zotero library sweep — MOVED to Archive Suite (W49.zotero-library-sweep, behind nice-to-have; owner 2026-11-20)
 
 ### What the survey found
 
@@ -769,7 +769,7 @@ Photo detail level, cross-column hyphen joining, JPEG 2000 for picture pages
       Fixed, reproduced first, and **zero of 232 corpus documents change**, so
       the 1.10.0 gate figures still stand.
 
-## Smaller, and genuinely optional
+## Smaller, and genuinely optional — settled (its last open line accepted 2026-08-13)
 
 - [x] **The tab order was walked on 2026-08-12** and it is sound: 22 stops
       through the settings sheet in visual order — Recognition, Searchable PDF,
