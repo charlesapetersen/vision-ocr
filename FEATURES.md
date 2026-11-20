@@ -1744,13 +1744,15 @@ observation rather than the top candidate. Prior art was cheaper than the
 fixtures. MIT, Copyright (c) Hiroki Osame; the licence still ships and
 `Recogniser.swift` carries the credit.
 
-### Symbol-mode JBIG2
+### Symbol-mode JBIG2 — declined (owner rule, 2026-11-20)
+Owner, 2026-11-20 walkthrough: never used, here or in the Archive Processor this app merges into.
 Compresses several times harder than the generic coding used now. **Never.** It
 is the mechanism behind the Xerox scanners that silently swapped digits in
 scanned documents, and jbig2enc's supposedly-lossless variant reports itself as
 broken. For archival material this is disqualifying, not a trade-off.
 
-### `--roi` region selection
+### `--roi` region selection — declined (owner, 2026-11-20)
+Owner, 2026-11-20 walkthrough: dropped; the Processor's region-first routes find regions on their own.
 mac-ocr supports it; without a visual region picker it is unusable, and with one
 it is a substantial UI feature for a narrow benefit.
 
