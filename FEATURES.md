@@ -1756,7 +1756,7 @@ Owner, 2026-11-20 walkthrough: dropped; the Processor's region-first routes find
 mac-ocr supports it; without a visual region picker it is unusable, and with one
 it is a substantial UI feature for a narrow benefit.
 
-### Making the searchable-PDF text visible for debugging
+### Making the searchable-PDF text visible for debugging — declined (owner, 2026-11-20)
 Tempting for diagnosing layer geometry, but `Tools/probe-text-offset.swift` and
 `probe-line-edges.swift` already answer those questions numerically, and a
 "visible text" mode is a setting users would find and enable by accident.
